@@ -9,8 +9,6 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-pnpm-lock.yaml
-bun.lockb
 
 # testing
 /coverage
@@ -23,6 +21,10 @@ bun.lockb
 # production
 /build
 /dist
+
+# lock files
+package-lock.json
+yarn.lock
 
 # misc
 .DS_Store
