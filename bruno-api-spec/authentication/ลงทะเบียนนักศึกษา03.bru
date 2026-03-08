@@ -1,0 +1,30 @@
+meta {
+  name: ลงทะเบียนนักศึกษา03
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{url}}/auth/sign-up/intern
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "fname": "กันยา",
+    "lname": "พาสบาย",
+    "phoneNumber": "0987654321",
+    "email": "65111949@dpu.ac.th",
+    "password": "1212312121",
+    "gender": "MALE",
+    "institutionId": 1,
+    "faculty": "business",
+    "major": "be"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

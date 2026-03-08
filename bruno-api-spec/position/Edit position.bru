@@ -1,0 +1,23 @@
+meta {
+  name: Edit position
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{url}}/position/1
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "applyStart": "2026-03-01",
+    "applyEnd": "2026-05-01"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

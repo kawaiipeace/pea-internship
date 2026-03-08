@@ -1,0 +1,16 @@
+meta {
+  name: เรียกดูรายการบทบาททั้งหมด
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/role
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

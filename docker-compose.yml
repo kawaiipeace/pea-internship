@@ -1,0 +1,105 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  db:
+    build:
+      context: ./db
+      dockerfile: dockerfile
+    container_name: pea-internship-db
+    environment:
+      POSTGRES_DB: intern-pea
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "2703:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pea-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d intern-pea"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend Main API
+  backend-main:
+    build:
+      context: ./backend-main
+      dockerfile: dockerfile
+    container_name: pea-internship-backend
+    environment:
+      PORT: 2702
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/intern-pea
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-your-secure-secret-key-change-in-production}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:2702}
+    ports:
+      - "2702:2702"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pea-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const res = await fetch('http://localhost:2702/docs'); if (res.status !== 200) throw new Error(res.status)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # Frontend Main Application
+  frontend-main:
+    build:
+      context: ./frontend-main
+      dockerfile: Dockerfile
+    container_name: pea-internship-frontend-main
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "2700:2700"
+    depends_on:
+      - backend-main
+    networks:
+      - pea-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2700/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # Frontend ITT Application (Time Tracking Microservice)
+  frontend-itt:
+    build:
+      context: ./frontend-itt
+      dockerfile: Dockerfile
+    container_name: pea-internship-frontend-itt
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+    ports:
+      - "2701:2701"
+    depends_on:
+      - backend-main
+    networks:
+      - pea-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2701/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  pea-network:
+    driver: bridge

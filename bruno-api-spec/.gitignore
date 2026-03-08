@@ -1,0 +1,29 @@
+# Bruno API Specification files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Logs
+*.log
+
+# Runtime
+.bruno/

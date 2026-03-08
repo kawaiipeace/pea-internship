@@ -1,0 +1,16 @@
+meta {
+  name: Delete position
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{url}}/position/2
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

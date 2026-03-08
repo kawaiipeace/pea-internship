@@ -1,0 +1,34 @@
+# Build and production stage (Bun)
+FROM oven/bun:latest
+
+WORKDIR /app
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+# Copy package files
+COPY package.json bun.lock* ./
+
+# Install dependencies
+RUN bun install --production
+
+# Copy source code (excluding node_modules via .dockerignore)
+COPY src ./src
+COPY scripts ./scripts
+COPY drizzle.config.ts ./
+COPY tsconfig.json ./
+COPY biome.json ./
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=2702
+
+# Expose port
+EXPOSE 2702
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=5 \
+  CMD curl -f http://localhost:2702/docs || exit 1
+
+# Start application
+CMD ["bun", "run", "src/index.ts"]

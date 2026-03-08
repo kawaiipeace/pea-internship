@@ -1,0 +1,24 @@
+meta {
+  name: แก้ไขข้อมูลแผนก
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/dept/1
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "deptSap": 10512,
+    "deptShort": "ผบก.",
+    "deptFull": "แผนกบริการกาแฟ",
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,0 +1,28 @@
+meta {
+  name: เพิ่มข้อมูลแผนก
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/dept
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "deptSap": 10512,
+    "deptShort": "ผบส.",
+    "deptFull": "แผนกบริการและลูกค้าสัมพันธ์",
+    "officeId": 1,
+    "location": null,
+    "isActive": true
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

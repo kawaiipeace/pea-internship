@@ -1,0 +1,43 @@
+# PostgreSQL data files
+data/
+pgdata/
+postgres_data/
+*.sql.bak
+
+# PostgreSQL logs
+pg_log/
+postgresql.log
+postgresql.conf.bak
+
+# PostgreSQL temp files
+pg_tblspc/
+pg_twophase/
+pgfarm.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Backups
+*.bak
+*.backup
+*.sql.gz
+*.sql.bak
+
+# Docker
+docker-compose.override.yml
+
+# OS
+*.log
+*.pid

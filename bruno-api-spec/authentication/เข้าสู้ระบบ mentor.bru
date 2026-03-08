@@ -1,0 +1,16 @@
+meta {
+  name: เข้าสู้ระบบ mentor
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost:8080/api/auth/sign-in/keycloak
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
