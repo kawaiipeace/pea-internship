@@ -20,10 +20,22 @@ pea-internship/
 
 | Service | Technology | Port | วัตถุประสงค์ |
 |---------|-----------|------|---------|
-| frontend-main | Next.js 16+ | 2700 | หน้าต่างหลักของระบบ |
+| frontend-main | Next.js 16+ | 2700 | ระบบจัดการนักศึกษาฝึกงาน |
 | frontend-itt | Next.js 16+ | 2701 | ระบบบันทึกเวลานักศึกษาฝึกงาน |
 | backend-main | Elysia + Bun | 2702 | REST API Backend |
 | db | PostgreSQL 18 | 2703 | ฐานข้อมูล |
+| minio | MinIO (S3) | 2704/2705 | Object Storage สำหรับไฟล์เอกสาร |
+
+## 🌐 ลิงก์การเข้าถึง Production (Simulation)
+
+| Service | URL | วัตถุประสงค์ |
+|---------|-----|---------|
+| Frontend Main | https://pea-internship-main.vercel.app/ | ระบบจัดการนักศึกษาฝึกงาน |
+| Frontend ITT | https://pea-internship-itt.vercel.app/ | ระบบบันทึกเวลานักศึกษาฝึกงาน |
+| Backend API | https://pea-internship-backend.up.railway.app/docs | REST API และ Swagger Documentation |
+| Database | `postgresql://postgres:yajQMgjvGdfDTFHWOuZANSeDSlmhJXcw@shortline.proxy.rlwy.net:42595/pea-internship` | PostgreSQL Connection String |
+| MinIO | https://pea-internship-minio.up.railway.app | Object Storage สำหรับไฟล์เอกสาร |
+
 
 ## 🚀 เริ่มต้นด่วน
 
@@ -57,7 +69,8 @@ pea-internship/
    - Backend API: http://localhost:2702
    - API Docs: http://localhost:2702/docs
    - Database: localhost:2703
-
+   - MinIO Console: http://localhost:2705
+   - MinIO API: http://localhost:2704
 5. **ดูลอก:**
    ```bash
    docker-compose logs -f
@@ -173,6 +186,9 @@ docker-compose up -d --build
    NODE_ENV=production
    DB_USER=postgres
    DB_PASSWORD=รหัสผ่านที่ปลอดภัย
+   MINIO_ROOT_USER=minioadmin
+   MINIO_ROOT_PASSWORD=รหัสผ่านที่ปลอดภัย
+   MINIO_BUCKET=intern-pea
    ```
 3. **ดูการ Deploy** - Railway จะ Build และ Deploy อัตโนมัติจาก Dockerfiles
 
@@ -190,7 +206,7 @@ docker-compose up -d --build
 - Next.js 16+ กับ TypeScript
 - Tailwind CSS สำหรับ styling
 - Redux สำหรับจัดการ state
-- หน้าต่างหลักของระบบ
+- ระบบจัดการนักศึกษาฝึกงาน
 
 ### Frontend ITT (`frontend-itt/`)
 - ระบบไมโครเซอร์วิสแยกสำหรับบันทึกเวลาของนักศึกษา
@@ -211,6 +227,15 @@ docker-compose up -d --build
 - TDS FDW สำหรับการเชื่อมต่อแหล่งข้อมูลภายนอก
 - Automatic schema initialization
 
+### MinIO Object Storage (`minio/`)
+- S3-compatible object storage สำหรับไฟล์เอกสาร
+- Ports: 2704 (API), 2705 (Web Console)
+- Default credentials: minioadmin / minioadmin
+- Bucket name: intern-pea
+- Persistent storage ด้วย Docker volume
+- Health checks สำหรับ API endpoint
+- ใช้สำหรับเก็บไฟล์เอกสารนักศึกษา (resume, transcripts, application documents)
+
 ## 🔧 Environment Variables
 
 สร้างไฟล์ `.env` ในโปรเจค root:
@@ -219,6 +244,11 @@ docker-compose up -d --build
 # ฐานข้อมูล
 DB_USER=postgres
 DB_PASSWORD=รหัสผ่าน
+
+# MinIO Object Storage
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_BUCKET=intern-pea
 
 # สภาพแวดล้อมแอปพลิเคชัน
 NODE_ENV=production
@@ -231,11 +261,16 @@ NEXT_PUBLIC_API_URL=http://localhost:2702
 
 Swagger/OpenAPI documentation อยู่ที่:
 - **Local**: http://localhost:2702/docs
-- **Production**: https://your-railway-domain.com/docs
+- **Production**: https://pea-internship-backend.up.railway.app/docs
+
+MinIO Console เข้าถึงได้ที่:
+- **Local**: http://localhost:2705
+- **Production**: https://pea-internship-minio.up.railway.app
 
 ## 🔐 ความปลอดภัย
 
 - รหัสผ่านฐานข้อมูลควรเปลี่ยนในการ Production
+- MinIO credentials (MINIO_ROOT_USER, MINIO_ROOT_PASSWORD) ควรเปลี่ยนเป็นรหัสผ่านที่ปลอดภัย
 - ใช้ environment variables สำหรับข้อมูลที่ไวต่อ
 - Health checks ได้รับการตั้งค่าสำหรับทั้ง Services
 - Dockerfiles ใช้ base images ที่มีขนาดเล็ก
@@ -251,6 +286,12 @@ curl http://localhost:2702/docs
 
 # ตรวจสอบ Frontend
 curl http://localhost:2700
+
+# ตรวจสอบ MinIO
+curl http://localhost:2704/minio/health/live
+
+# ตรวจสอบฐานข้อมูล
+docker-compose exec db pg_isready -U postgres -d intern-pea
 ```
 
 ## 🤝 การมีส่วนร่วม
