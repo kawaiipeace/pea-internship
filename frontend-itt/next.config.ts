@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: false,
   },
+  turbopack: {},
 };
 
 export default withSerwist(nextConfig);
