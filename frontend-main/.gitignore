@@ -10,6 +10,12 @@
 !.yarn/releases
 !.yarn/versions
 
+# lock files - regenerate fresh
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
 # testing
 /coverage
 
@@ -21,10 +27,6 @@
 # production
 /build
 /dist
-
-# lock files
-package-lock.json
-yarn.lock
 
 # misc
 .DS_Store
