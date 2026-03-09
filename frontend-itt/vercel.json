@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm build",
-  "installCommand": "pnpm install",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --no-audit --no-fund",
   "framework": "nextjs",
   "env": {
     "SERWIST_SUPPRESS_TURBOPACK_WARNING": "1"
