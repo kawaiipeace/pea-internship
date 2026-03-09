@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# ติดตั้ง pnpm
+RUN npm install -g pnpm
+
+# Copy เฉพาะไฟล์ตั้งค่า เพื่อทำ Layer Caching
+COPY package.json pnpm-lock.yaml* ./
+
+# ติดตั้ง Dependencies ทั้งหมด (รวม devDeps สำหรับรันโหมด dev)
+RUN pnpm install
+
+# Copy ไฟล์ที่เหลือ (จะถูก Volume ทับในโหมด Dev แต่ต้องมีไว้ตอน Build Image)
+COPY . .
+
+# เปิด Port ตามที่คุณตั้งไว้ใน package.json
+EXPOSE 2701
+
+# ใช้คำสั่ง dev เพื่อให้รองรับ Hot Reload
+CMD ["pnpm", "dev"]

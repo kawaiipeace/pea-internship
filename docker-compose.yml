@@ -17,7 +17,7 @@ services:
     networks:
       - pea-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d intern-pea"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d intern-pea" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +40,7 @@ services:
     command: minio server /data --console-address ":9001"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -74,7 +74,7 @@ services:
       - pea-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "bun", "-e", "const res = await fetch('http://localhost:2702/docs'); if (res.status !== 200) throw new Error(res.status)"]
+      test: [ "CMD", "bun", "-e", "const res = await fetch('http://localhost:2702/docs'); if (res.status !== 200) throw new Error(res.status)" ]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -96,7 +96,7 @@ services:
       - pea-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2700/"]
+      test: [ "CMD", "curl", "-f", "http://localhost:2700/" ]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -106,10 +106,13 @@ services:
   frontend-itt:
     build:
       context: ./frontend-itt
-      dockerfile: Dockerfile
+      dockerfile: dockerfile.dev
     container_name: pea-internship-frontend-itt
     environment:
       NODE_ENV: ${NODE_ENV:-production}
+    volumes:
+      - ./frontend-itt:/app
+      - /app/node_modules
     ports:
       - "2701:2701"
     depends_on:
@@ -118,7 +121,7 @@ services:
       - pea-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2701/"]
+      test: [ "CMD", "curl", "-f", "http://localhost:2701/" ]
       interval: 30s
       timeout: 5s
       retries: 5
