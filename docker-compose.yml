@@ -84,10 +84,13 @@ services:
   frontend-main:
     build:
       context: ./frontend-main
-      dockerfile: Dockerfile
+      dockerfile: dockerfile.dev
     container_name: pea-internship-frontend-main
     environment:
       NODE_ENV: ${NODE_ENV:-production}
+    volumes:
+      - ./frontend-main:/app
+      - /app/node_modules
     ports:
       - "2700:2700"
     depends_on:
