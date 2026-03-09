@@ -10,8 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
-# lock files - use npm for frontend-itt
-pnpm-lock.yaml
+# lock files
+package-lock.json
+yarn.lock
 bun.lockb
 
 # testing
