@@ -490,3 +490,4 @@ CREATE TABLE public.daily_work_logs (
   CONSTRAINT daily_work_logs_approve_by_fkey
     FOREIGN KEY (approve_by) REFERENCES public.staff_profiles(id)
 );
+

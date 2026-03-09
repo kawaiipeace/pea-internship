@@ -55,7 +55,7 @@ services:
     environment:
       PORT: 2702
       NODE_ENV: ${NODE_ENV:-production}
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:2703/intern-pea
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/intern-pea
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-your-secure-secret-key-change-in-production}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:2702}
       MINIO_ENDPOINT: http://minio:2704
