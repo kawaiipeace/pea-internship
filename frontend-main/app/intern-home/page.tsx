@@ -47,15 +47,8 @@ export default function InternHomePage() {
         const response = await positionApi.getPositions({ limit: 100 });
         const positions = response.data || [];
 
-        // ลองดึง staff list (อาจ fail ถ้าไม่มีสิทธิ์)
-        let staffList: StaffUser[] = [];
-        try {
-          staffList = await userApi.getStaff();
-        } catch {
-          // ไม่มีสิทธิ์ดึง staff - ใช้ข้อมูลว่าง
-        }
-
-        // Convert positions to Job format with staff data
+        // Convert positions to Job format
+        const staffList: StaffUser[] = [];
         // Filter: only OPEN positions within their apply period (or no time limit)
         const now = new Date();
         // Helper: normalize PostgreSQL timestamp "YYYY-MM-DD HH:MM:SS" → ISO "YYYY-MM-DDTHH:MM:SS"
@@ -67,8 +60,8 @@ export default function InternHomePage() {
         const apiJobs = positions
           .filter((p) => {
             if (p.recruitmentStatus !== "OPEN") return false;
-            const start = safeDate(p.applyStart);
-            const end = safeDate(p.applyEnd);
+            const start = safeDate(p.recruitStart);
+            const end = safeDate(p.recruitEnd);
             if (start && now < start) return false; // not yet open
             if (end) {
               // Position remains visible until end of the last day (23:59:59)
@@ -130,8 +123,8 @@ export default function InternHomePage() {
         const activeItems = response.data.filter((item) => {
           const p = item.position;
           if (p.recruitmentStatus !== "OPEN") return false;
-          const start = safeDate(p.applyStart);
-          const end = safeDate(p.applyEnd);
+          const start = safeDate(p.recruitStart);
+          const end = safeDate(p.recruitEnd);
           if (start && now < start) return false;
           if (end) {
             const endOfDay = new Date(end);

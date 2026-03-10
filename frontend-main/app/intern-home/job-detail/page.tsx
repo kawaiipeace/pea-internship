@@ -58,8 +58,6 @@ interface JobDetail {
   endDate?: string;
   recruitStartDate?: string;
   recruitEndDate?: string;
-  applyStartDate?: string;
-  applyEndDate?: string;
   responsibilities: string[];
   qualifications: string[];
   benefits?: string;
@@ -106,14 +104,12 @@ export default function InternJobDetailPage() {
             (parsedJob.startDate && parsedJob.endDate
               ? `${parsedJob.startDate} - ${parsedJob.endDate}`
               : defaultJobDetail.applicationPeriod),
-          positions: parsedJob.positions || `0/${parsedJob.maxApplicants || 1} ตำแหน่ง`,
+          positions: parsedJob.positions || ((parsedJob.maxApplicants || 0) === 0 ? "ไม่จำกัดจำนวน" : `0/${parsedJob.maxApplicants || 1} ตำแหน่ง`),
           responsibilities: parsedJob.responsibilities || defaultJobDetail.responsibilities,
           qualifications: parsedJob.qualifications || defaultJobDetail.qualifications,
           benefits: parsedJob.benefits || defaultJobDetail.benefits,
           recruitStartDate: parsedJob.recruitStartDate,
           recruitEndDate: parsedJob.recruitEndDate,
-          applyStartDate: parsedJob.applyStartDate,
-          applyEndDate: parsedJob.applyEndDate,
           requiredDocuments: parsedJob.requiredDocuments,
           supervisorName: parsedJob.supervisorName,
           supervisorEmail: parsedJob.supervisorEmail,
@@ -328,7 +324,7 @@ export default function InternJobDetailPage() {
                         <path d="M8.24167 1.75833C8.08055 1.59722 8 1.4 8 1.16667C8 0.933333 8.08055 0.736111 8.24167 0.575C8.40278 0.413889 8.6 0.333333 8.83333 0.333333C9.06667 0.333333 9.26389 0.413889 9.425 0.575C9.58611 0.736111 9.66667 0.933333 9.66667 1.16667C9.66667 1.4 9.58611 1.59722 9.425 1.75833C9.26389 1.91944 9.06667 2 8.83333 2C8.6 2 8.40278 1.91944 8.24167 1.75833ZM8.24167 12.7583C8.08055 12.5972 8 12.4 8 12.1667C8 11.9333 8.08055 11.7361 8.24167 11.575C8.40278 11.4139 8.6 11.3333 8.83333 11.3333C9.06667 11.3333 9.26389 11.4139 9.425 11.575C9.58611 11.7361 9.66667 11.9333 9.66667 12.1667C9.66667 12.4 9.58611 12.5972 9.425 12.7583C9.26389 12.9194 9.06667 13 8.83333 13C8.6 13 8.40278 12.9194 8.24167 12.7583ZM10.9083 4.09167C10.7472 3.93056 10.6667 3.73333 10.6667 3.5C10.6667 3.26667 10.7472 3.06944 10.9083 2.90833C11.0694 2.74722 11.2667 2.66667 11.5 2.66667C11.7333 2.66667 11.9306 2.74722 12.0917 2.90833C12.2528 3.06944 12.3333 3.26667 12.3333 3.5C12.3333 3.73333 12.2528 3.93056 12.0917 4.09167C11.9306 4.25278 11.7333 4.33333 11.5 4.33333C11.2667 4.33333 11.0694 4.25278 10.9083 4.09167ZM10.9083 10.425C10.7472 10.2639 10.6667 10.0667 10.6667 9.83333C10.6667 9.6 10.7472 9.40278 10.9083 9.24167C11.0694 9.08055 11.2667 9 11.5 9C11.7333 9 11.9306 9.08055 12.0917 9.24167C12.2528 9.40278 12.3333 9.6 12.3333 9.83333C12.3333 10.0667 12.2528 10.2639 12.0917 10.425C11.9306 10.5861 11.7333 10.6667 11.5 10.6667C11.2667 10.6667 11.0694 10.5861 10.9083 10.425ZM11.9083 7.25833C11.7472 7.09722 11.6667 6.9 11.6667 6.66667C11.6667 6.43333 11.7472 6.23611 11.9083 6.075C12.0694 5.91389 12.2667 5.83333 12.5 5.83333C12.7333 5.83333 12.9306 5.91389 13.0917 6.075C13.2528 6.23611 13.3333 6.43333 13.3333 6.66667C13.3333 6.9 13.2528 7.09722 13.0917 7.25833C12.9306 7.41944 12.7333 7.5 12.5 7.5C12.2667 7.5 12.0694 7.41944 11.9083 7.25833ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0V1.33333C5.17778 1.33333 3.91667 1.85 2.88333 2.88333C1.85 3.91667 1.33333 5.17778 1.33333 6.66667C1.33333 8.15555 1.85 9.41667 2.88333 10.45C3.91667 11.4833 5.17778 12 6.66667 12V13.3333ZM8.86667 9.8L6 6.93333V3.33333H7.33333V6.4L9.8 8.86667L8.86667 9.8Z" fill="#A80689" />
                       </svg>
                       <span>
-                        ระยะเวลาที่เปิดรับสมัคร: {jobDetail.applyStartDate && jobDetail.applyEndDate ? `${jobDetail.applyStartDate} - ${jobDetail.applyEndDate}` : jobDetail.applicationPeriod}
+                        ระยะเวลาที่เปิดรับสมัคร: {jobDetail.recruitStartDate && jobDetail.recruitEndDate && jobDetail.recruitStartDate !== "-" && jobDetail.recruitEndDate !== "-" ? `${jobDetail.recruitStartDate} - ${jobDetail.recruitEndDate}` : (jobDetail.applicationPeriod && jobDetail.applicationPeriod !== "- - -" ? jobDetail.applicationPeriod : "ไม่กำหนดระยะเวลา")}
                       </span>
                     </div>
                   </div>

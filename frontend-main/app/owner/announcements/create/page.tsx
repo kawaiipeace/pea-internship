@@ -22,8 +22,6 @@ interface PositionFormData {
   positionCount: number;
   recruitStart: string;
   recruitEnd: string;
-  applyStart: string;
-  applyEnd: string;
   jobDetails: string;
   requirement: string;
   benefits: string;
@@ -45,8 +43,6 @@ const initialFormData: PositionFormData = {
   positionCount: 1,
   recruitStart: "",
   recruitEnd: "",
-  applyStart: "",
-  applyEnd: "",
   jobDetails: "",
   requirement: "",
   benefits: "",
@@ -396,10 +392,10 @@ export default function CreateAnnouncementPage() {
     }
     if (isNoTimeLimit === null) {
       newErrors.startDate = "กรุณาเลือกระยะเวลาที่เปิดรับสมัคร";
-    } else if (!isNoTimeLimit && !formData.applyStart) {
+    } else if (!isNoTimeLimit && !formData.recruitStart) {
       newErrors.startDate = "ระบุวันที่เปิดรับสมัคร";
     }
-    if (isNoTimeLimit === false && !formData.applyEnd) {
+    if (isNoTimeLimit === false && !formData.recruitEnd) {
       newErrors.endDate = "ระบุวันที่ปิดรับสมัคร";
     }
     if (selectedMajors.length === 0) {
@@ -461,10 +457,10 @@ export default function CreateAnnouncementPage() {
       const apiData: CreatePositionData = {
         name: formData.name,
         location: formData.location,
-        positionCount: isUnlimitedCount ? 0 : formData.positionCount,
+        positionCount: isUnlimitedCount ? null : formData.positionCount,
         major: selectedMajors.join(", "),
-        applyStart: isNoTimeLimit ? undefined : (formData.applyStart ? new Date(formData.applyStart).toISOString() : undefined),
-        applyEnd: isNoTimeLimit ? undefined : (formData.applyEnd ? new Date(formData.applyEnd).toISOString() : undefined),
+        recruitStart: isNoTimeLimit ? null : (formData.recruitStart ? new Date(formData.recruitStart).toISOString() : null),
+        recruitEnd: isNoTimeLimit ? null : (formData.recruitEnd ? new Date(formData.recruitEnd).toISOString() : null),
         jobDetails: jobDetailsList.filter(d => d.trim()).join("\n"),
         requirement: requirementsList.filter(r => r.trim()).join("\n"),
         benefits: benefitsList.filter(b => b.trim()).join("\n"),
@@ -924,7 +920,7 @@ export default function CreateAnnouncementPage() {
                     checked={isNoTimeLimit === true}
                     onChange={() => {
                       setIsNoTimeLimit(true);
-                      setFormData({ ...formData, applyStart: "", applyEnd: "" });
+                      setFormData({ ...formData, recruitStart: "", recruitEnd: "" });
                     }}
                     className="w-4 h-4 accent-[#9B1F7A] cursor-pointer"
                   />
@@ -954,8 +950,8 @@ export default function CreateAnnouncementPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <ThaiDateInput
-                        value={formData.applyStart}
-                        onChange={(val) => setFormData({ ...formData, applyStart: val })}
+                        value={formData.recruitStart}
+                        onChange={(val) => setFormData({ ...formData, recruitStart: val })}
                         className={`pl-12 pr-4 py-3 rounded-lg border ${errors.startDate ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-primary-600"
                           } focus:outline-none focus:ring-2`}
                       />
@@ -971,9 +967,9 @@ export default function CreateAnnouncementPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <ThaiDateInput
-                        value={formData.applyEnd}
-                        min={formData.applyStart}
-                        onChange={(val) => setFormData({ ...formData, applyEnd: val })}
+                        value={formData.recruitEnd}
+                        min={formData.recruitStart}
+                        onChange={(val) => setFormData({ ...formData, recruitEnd: val })}
                         className={`pl-12 pr-4 py-3 rounded-lg border ${errors.endDate ? "border-red-300 focus:ring-red-600" : "border-gray-200 focus:ring-primary-600"
                           } focus:outline-none focus:ring-2`}
                       />

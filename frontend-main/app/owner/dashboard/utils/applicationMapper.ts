@@ -66,7 +66,13 @@ const statusMap: Record<
     step: 1,
     status: "cancelled",
     detailedStatus: "cancelled",
-    stepDescription: "ยกเลิก",
+    stepDescription: "ไม่ผ่าน",
+  },
+  ABORT: {
+    step: 1,
+    status: "cancelled",
+    detailedStatus: "cancelled",
+    stepDescription: "ยกเลิกการสมัคร",
   },
 };
 
@@ -161,7 +167,7 @@ export function mapApiToApplication(
     faculty: item.faculty || undefined,
     studentNote: item.studentNote || undefined,
     cancellationReason:
-      item.applicationStatus === "CANCEL"
+      item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
         ? item.statusNote || undefined
         : undefined,
     mentors:

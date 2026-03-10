@@ -107,7 +107,7 @@ function ApplicationStatusContent() {
           setApplicationId(app.applicationId);
 
           // Check if application is active (not cancelled or completed without stepParam)
-          if (app.applicationStatus === "CANCEL" || app.applicationStatus === "COMPLETE") {
+          if (app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || app.applicationStatus === "COMPLETE") {
             if (!stepParam) {
               // No active application, show empty state
               setHasApplication(false);
@@ -136,7 +136,7 @@ function ApplicationStatusContent() {
                   currentApplicants: jobData.currentApplicants,
                   maxApplicants: jobData.maxApplicants,
                   tags: jobData.tags,
-                  applicationPeriod: `${jobData.applyStartDate} - ${jobData.applyEndDate}`,
+                  applicationPeriod: jobData.recruitStartDate && jobData.recruitEndDate && jobData.recruitStartDate !== "-" && jobData.recruitEndDate !== "-" ? `${jobData.recruitStartDate} - ${jobData.recruitEndDate}` : "ไม่กำหนดระยะเวลา",
                   startDate: jobData.startDate,
                   endDate: jobData.endDate,
                   requiredDocuments: jobData.requiredDocuments,
@@ -193,6 +193,12 @@ function ApplicationStatusContent() {
             if (!stepParam) {
               setCurrentStep("รอการยืนยัน");
             }
+          } else if (app.applicationStatus === "ABORT") {
+            // ABORT = ยกเลิกการสมัคร (not rejected)
+            setIsRejected(false);
+            if (!stepParam) {
+              setHasApplication(false);
+            }
           } else {
             // Set step from backend status if no stepParam override
             if (!stepParam) {
@@ -248,6 +254,8 @@ function ApplicationStatusContent() {
   };
   const [documentError, setDocumentError] = useState<string>("");
   const [isReuploadReady, setIsReuploadReady] = useState(false);
+  const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
+  const [uploadErrorMessage, setUploadErrorMessage] = useState<string>("");
   const [isMentorContactOpen, setIsMentorContactOpen] = useState(false);
 
   const transcriptInputRef = useRef<HTMLInputElement>(null);
@@ -366,11 +374,16 @@ function ApplicationStatusContent() {
       }
     } catch (err) {
       console.error("Failed to upload documents:", err);
-      // Continue anyway (graceful degradation)
-    } finally {
       setIsUploading(false);
+      const error = err as { response?: { data?: { message?: string } } };
+      setUploadErrorMessage(
+        error?.response?.data?.message || "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง"
+      );
+      setShowUploadErrorModal(true);
+      return;
     }
 
+    setIsUploading(false);
     setShowConfirmSuccessModal(true);
     // Auto close and move to next step after 2 seconds
     setTimeout(() => {
@@ -989,9 +1002,17 @@ function ApplicationStatusContent() {
           {/* Document Upload Card - Second on mobile */}{" "}
           {/* Document Upload Section - First on mobile, Second on desktop */}
           <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6 h-fit order-1 md:order-1 border-2 border-primary-600 md:border-gray-200">
-            <h2 className="text-base md:text-lg font-bold text-gray-800 mb-3 md:mb-4">
+            <h2 className="text-base md:text-lg font-bold text-gray-800 mb-1 md:mb-2">
               <span className="text-red-500">*</span>เอกสารที่ต้องอัปโหลด
             </h2>
+            {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
+              <div className="flex items-center gap-1.5 mb-3 md:mb-4 text-red-600">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3.75 6H14.25V4.5H3.75V6ZM3.75 16.5C3.3375 16.5 2.98438 16.3531 2.69063 16.0594C2.39688 15.7656 2.25 15.4125 2.25 15V4.5C2.25 4.0875 2.39688 3.73438 2.69063 3.44063C2.98438 3.14688 3.3375 3 3.75 3H4.5V2.25C4.5 2.0375 4.57188 1.85938 4.71563 1.71562C4.85938 1.57187 5.0375 1.5 5.25 1.5C5.4625 1.5 5.64062 1.57187 5.78438 1.71562C5.92813 1.85938 6 2.0375 6 2.25V3H12V2.25C12 2.0375 12.0719 1.85938 12.2156 1.71562C12.3594 1.57187 12.5375 1.5 12.75 1.5C12.9625 1.5 13.1406 1.57187 13.2844 1.71562C13.4281 1.85938 13.5 2.0375 13.5 2.25V3H14.25C14.6625 3 15.0156 3.14688 15.3094 3.44063C15.6031 3.73438 15.75 4.0875 15.75 4.5V8.00625C15.75 8.21875 15.6781 8.39687 15.5344 8.54062C15.3906 8.68437 15.2125 8.75625 15 8.75625C14.7875 8.75625 14.6094 8.68437 14.4656 8.54062C14.3219 8.39687 14.25 8.21875 14.25 8.00625V7.5H3.75V15H8.1C8.3125 15 8.49062 15.0719 8.63437 15.2156C8.77812 15.3594 8.85 15.5375 8.85 15.75C8.85 15.9625 8.77812 16.1406 8.63437 16.2844C8.49062 16.4281 8.3125 16.5 8.1 16.5H3.75ZM13.5 17.25C12.4625 17.25 11.5781 16.8844 10.8469 16.1531C10.1156 15.4219 9.75 14.5375 9.75 13.5C9.75 12.4625 10.1156 11.5781 10.8469 10.8469C11.5781 10.1156 12.4625 9.75 13.5 9.75C14.5375 9.75 15.4219 10.1156 16.1531 10.8469C16.8844 11.5781 17.25 12.4625 17.25 13.5C17.25 14.5375 16.8844 15.4219 16.1531 16.1531C15.4219 16.8844 14.5375 17.25 13.5 17.25ZM13.875 13.35V11.625C13.875 11.525 13.8375 11.4375 13.7625 11.3625C13.6875 11.2875 13.6 11.25 13.5 11.25C13.4 11.25 13.3125 11.2875 13.2375 11.3625C13.1625 11.4375 13.125 11.525 13.125 11.625V13.3313C13.125 13.4313 13.1438 13.5281 13.1812 13.6219C13.2188 13.7156 13.275 13.8 13.35 13.875L14.4938 15.0187C14.5688 15.0938 14.6563 15.1313 14.7563 15.1313C14.8563 15.1313 14.9437 15.0938 15.0187 15.0187C15.0938 14.9437 15.1313 14.8563 15.1313 14.7563C15.1313 14.6563 15.0938 14.5688 15.0187 14.4938L13.875 13.35Z" fill="#F04438" />
+                </svg>
+                <span className="text-xs md:text-sm font-medium">กรุณาอัปโหลดเอกสารภายใน 30 วัน</span>
+              </div>
+            )}
 
             {/* Transcript Upload */}
             <div className="mb-4">
@@ -1109,7 +1130,7 @@ function ApplicationStatusContent() {
                     />
                   </svg>
                   <span className="font-bold text-gray-800 text-sm md:text-base">
-                    Resume (PDF/DOC)<span className="text-red-500">*</span>
+                    Resume (PDF)<span className="text-red-500">*</span>
                   </span>
                 </div>
                 <div
@@ -1467,8 +1488,8 @@ function ApplicationStatusContent() {
                 </>
               )}
 
-            {/* Action Buttons - Show only when step is รอยื่นเอกสาร and transcript is uploaded */}
-            {currentStep === "รอยื่นเอกสาร" && allRequiredDocsUploaded() && (
+            {/* Action Buttons - Show when step is รอยื่นเอกสาร */}
+            {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
               <div className="hidden md:flex gap-3 mt-6">
                 <button
                   type="button"
@@ -1480,7 +1501,8 @@ function ApplicationStatusContent() {
                 <button
                   type="button"
                   onClick={handleConfirmApplication}
-                  className="flex-1 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-white hover:text-primary-600 hover:border-2 hover:border-primary-600 border-2 border-primary-600 transition-colors cursor-pointer active:scale-95"
+                  disabled={!allRequiredDocsUploaded()}
+                  className={`flex-1 py-3 rounded-xl font-medium border-2 transition-colors cursor-pointer active:scale-95 ${allRequiredDocsUploaded() ? "bg-primary-600 text-white border-primary-600 hover:bg-white hover:text-primary-600 hover:border-primary-600" : "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"}`}
                 >
                   ยืนยันการสมัคร
                 </button>
@@ -1528,7 +1550,7 @@ function ApplicationStatusContent() {
       </main>
 
       {/* Fixed Mobile Action Buttons */}
-      {currentStep === "รอยื่นเอกสาร" && allRequiredDocsUploaded() && (
+      {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex gap-3 md:hidden z-40">
           <button
             type="button"
@@ -1540,7 +1562,8 @@ function ApplicationStatusContent() {
           <button
             type="button"
             onClick={handleConfirmApplication}
-            className="flex-1 py-3 bg-primary-600 text-white rounded-xl font-medium border-2 border-primary-600 transition-colors cursor-pointer active:scale-95 active:bg-primary-700"
+            disabled={!allRequiredDocsUploaded()}
+            className={`flex-1 py-3 rounded-xl font-medium border-2 transition-colors cursor-pointer active:scale-95 ${allRequiredDocsUploaded() ? "bg-primary-600 text-white border-primary-600 active:bg-primary-700" : "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"}`}
           >
             ยืนยันการสมัคร
           </button>
@@ -1697,6 +1720,43 @@ function ApplicationStatusContent() {
                 ยืนยัน
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Error Modal */}
+      {showUploadErrorModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 text-center">
+            {/* Error Icon */}
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-black mb-2">
+              อัปโหลดเอกสารไม่สำเร็จ
+            </h3>
+            <p className="text-gray-500 text-sm mb-6">
+              {uploadErrorMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowUploadErrorModal(false)}
+              className="w-full py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer"
+            >
+              ตกลง
+            </button>
           </div>
         </div>
       )}

@@ -176,7 +176,7 @@ export default function JobDetailPage() {
                                         />
                                     </svg>
                                     <span>
-                                        {job.currentApplicants}/{job.maxApplicants} ตำแหน่ง
+                                        {job.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
                                     </span>
                                 </div>
 
@@ -309,7 +309,7 @@ export default function JobDetailPage() {
                                 />
                             </svg>
                             <span>
-                                {job.currentApplicants}/{job.maxApplicants} ตำแหน่ง
+                                {job.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
                             </span>
                         </div>
 

@@ -42,6 +42,8 @@ function mapBackendStatus(status: AppStatusEnum): ApplicationStatus {
   switch (status) {
     case "CANCEL":
       return "rejected";
+    case "ABORT":
+      return "cancelled";
     case "COMPLETE":
       return "completed";
     default:
@@ -71,11 +73,11 @@ export default function ApplicationHistoryPage() {
         const jobPromises = allApps.map(async (app, index) => {
           const appStatus = mapBackendStatus(app.applicationStatus);
           const appStep = APP_STATUS_TO_STEP[app.applicationStatus];
-          const reason = (app.applicationStatus === "CANCEL" && app.statusNote) ? app.statusNote : "";
+          const reason = ((app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT") && app.statusNote) ? app.statusNote : "";
 
           // Determine if this is the "current" application:
           // Only the first active (non-CANCEL/COMPLETE) application is considered current
-          const isCurrent = app.isActive && app.applicationStatus !== "CANCEL" && app.applicationStatus !== "COMPLETE";
+          const isCurrent = app.isActive && app.applicationStatus !== "CANCEL" && app.applicationStatus !== "ABORT" && app.applicationStatus !== "COMPLETE";
 
           let department = "";
           let location = "";
@@ -95,12 +97,12 @@ export default function ApplicationHistoryPage() {
                 department = jobData.department;
                 location = jobData.location;
                 tags = jobData.tags;
-                applicationPeriod = `${jobData.applyStartDate} - ${jobData.applyEndDate}`;
+                applicationPeriod = jobData.recruitStartDate && jobData.recruitEndDate && jobData.recruitStartDate !== "-" && jobData.recruitEndDate !== "-" ? `${jobData.recruitStartDate} - ${jobData.recruitEndDate}` : "ไม่กำหนดระยะเวลา";
                 startDate = jobData.startDate;
                 endDate = jobData.endDate;
                 currentApplicants = jobData.currentApplicants;
                 maxApplicants = jobData.maxApplicants;
-                positions = `${currentApplicants}/${maxApplicants} คน`;
+                positions = maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${currentApplicants}/${maxApplicants} คน`;
               }
             } catch { /* fallback to basic data */ }
           }
@@ -218,8 +220,8 @@ export default function ApplicationHistoryPage() {
       case "cancelled":
         return (
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm">
-              ยกเลิกฝึกงาน
+            <span className="px-3 py-2 bg-gray-100 text-gray-500 rounded-full font-bold text-sm">
+              ยกเลิกการสมัคร
             </span>
           </div>
         );
@@ -418,7 +420,7 @@ export default function ApplicationHistoryPage() {
                           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                         />
                       </svg>
-                      <span>{job.positions || `${job.currentApplicants || 0}/${job.maxApplicants || 0} คน`}</span>
+                      <span>{job.positions || ((job.maxApplicants || 0) === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants || 0}/${job.maxApplicants || 0} คน`)}</span>
                     </div>
 
                     {/* Tags */}

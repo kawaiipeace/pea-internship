@@ -46,6 +46,8 @@ function mapBackendStatusToDisplay(status: AppStatusEnum): string {
       return "completed";
     case "CANCEL":
       return "rejected";
+    case "ABORT":
+      return "cancelled";
     default:
       return "active";
   }
@@ -107,7 +109,7 @@ function JobDetailContent() {
         setApplicationStep(APP_STATUS_TO_STEP[matchedApp.applicationStatus] || null);
 
         // Store rejection reason if cancelled/rejected
-        if (matchedApp.applicationStatus === "CANCEL" && matchedApp.statusNote) {
+        if ((matchedApp.applicationStatus === "CANCEL" || matchedApp.applicationStatus === "ABORT") && matchedApp.statusNote) {
           setRejectionReason(matchedApp.statusNote);
         }
 
@@ -120,7 +122,7 @@ function JobDetailContent() {
             location: job.location,
             positions: job.maxApplicants,
             tags: job.tags,
-            applicationPeriod: `${job.applyStartDate} - ${job.applyEndDate}`,
+            applicationPeriod: job.recruitStartDate && job.recruitEndDate && job.recruitStartDate !== "-" && job.recruitEndDate !== "-" ? `${job.recruitStartDate} - ${job.recruitEndDate}` : "ไม่กำหนดระยะเวลา",
             responsibilities: job.responsibilities,
             qualifications: job.qualifications,
             benefits: job.benefits || "ไม่มีค่าตอบแทน",
@@ -164,8 +166,8 @@ function JobDetailContent() {
       case "cancelled":
         return (
           <div className="flex flex-wrap gap-2">
-            <button className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm  transition-transform ">
-              ยกเลิกฝึกงาน
+            <button className="px-3 py-2 bg-gray-100 text-gray-500 rounded-full font-bold text-sm  transition-transform ">
+              ยกเลิกการสมัคร
             </button>
           </div>
         );
@@ -325,7 +327,7 @@ function JobDetailContent() {
                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                   />
                 </svg>
-                <span>{jobDetail.positions} คน</span>
+                <span>{jobDetail.positions === 0 ? "ไม่จำกัดจำนวน" : `${jobDetail.positions} คน`}</span>
               </div>
 
               {/* Tags */}
@@ -370,13 +372,13 @@ function JobDetailContent() {
       </div>
 
       {/* Rejection Reason */}
-      {status === "rejected" && rejectionReason && (
+      {(status === "rejected" || status === "cancelled") && rejectionReason && (
         <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6 mb-6">
           <h4 className="font-bold text-gray-800 text-sm mb-1.5">
-            เหตุผลที่ไม่ผ่าน
+            {status === "rejected" ? "เหตุผลที่ไม่ผ่าน" : "เหตุผลที่ยกเลิก"}
           </h4>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-red-700 text-sm">
+          <div className={`${status === "rejected" ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"} border rounded-lg p-3`}>
+            <p className={`${status === "rejected" ? "text-red-700" : "text-gray-600"} text-sm`}>
               {rejectionReason}
             </p>
           </div>

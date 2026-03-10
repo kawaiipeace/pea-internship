@@ -37,15 +37,8 @@ export default function Home() {
         const response = await positionApi.getPositions({ limit: 100 });
         const positions = response.data || [];
 
-        // ลองดึง staff list (อาจ fail ถ้าไม่มีสิทธิ์หรือไม่ได้ login)
-        let staffList: StaffUser[] = [];
-        try {
-          staffList = await userApi.getStaff();
-        } catch {
-          // ไม่มีสิทธิ์ดึง staff - ใช้ข้อมูลว่าง
-        }
-
-        // Convert positions to Job format with staff data
+        // Convert positions to Job format
+        const staffList: StaffUser[] = [];
         // Filter: only OPEN positions within their apply period
         const now = new Date();
         const safeDate = (d: string | null | undefined): Date | null => {
@@ -56,8 +49,8 @@ export default function Home() {
         const apiJobs = positions
           .filter((p) => {
             if (p.recruitmentStatus !== "OPEN") return false;
-            const start = safeDate(p.applyStart);
-            const end = safeDate(p.applyEnd);
+            const start = safeDate(p.recruitStart);
+            const end = safeDate(p.recruitEnd);
             if (start && now < start) return false;
             if (end) {
               const endOfDay = new Date(end);

@@ -203,8 +203,7 @@ export default function JobDetailPanel({
           </div>
           <div>
             <p className="text-gray-700">
-              {selectedJob.currentApplicants}/{selectedJob.maxApplicants}{" "}
-              คน
+              {selectedJob.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${selectedJob.currentApplicants}/${selectedJob.maxApplicants} คน`}
             </p>
           </div>
         </div>
@@ -244,8 +243,7 @@ export default function JobDetailPanel({
           </div>
           <div>
             <p className="text-gray-700">
-              ระยะเวลาที่เปิดรับสมัคร : {selectedJob.applyStartDate} -{" "}
-              {selectedJob.applyEndDate}
+              ระยะเวลาที่เปิดรับสมัคร : {selectedJob.recruitStartDate && selectedJob.recruitEndDate && selectedJob.recruitStartDate !== "-" && selectedJob.recruitEndDate !== "-" ? `${selectedJob.recruitStartDate} - ${selectedJob.recruitEndDate}` : "ไม่กำหนดระยะเวลา"}
             </p>
           </div>
         </div>

@@ -352,7 +352,7 @@ export default function InternProfilePage() {
             // Fetch latest application to determine hasApplication and get position data
             try {
               const latestApp = await applicationApi.getMyLatestApplication();
-              if (latestApp && latestApp.applicationStatus !== "CANCEL") {
+              if (latestApp && latestApp.applicationStatus !== "CANCEL" && latestApp.applicationStatus !== "ABORT") {
                 setHasApplication(true);
                 // Fetch position data for owner/mentor info
                 if (latestApp.positionId) {
