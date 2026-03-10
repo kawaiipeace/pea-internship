@@ -107,7 +107,7 @@ export class ApplicationService {
     await tx
       .update(applicationStatuses)
       .set({
-        applicationStatus: "IS_FULL",
+        applicationStatus: "ABORT",
         statusNote: "ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
         updatedAt: new Date(),
       })
@@ -127,7 +127,7 @@ export class ApplicationService {
         app.id,
         actionBy,
         app.status,
-        "IS_FULL"
+        "ABORT"
       );
     }
 
@@ -1374,7 +1374,7 @@ export class ApplicationService {
       await tx
         .update(applicationStatuses)
         .set({
-          applicationStatus: "CANCEL",
+          applicationStatus: "ABORT",
           statusNote: null,
           updatedAt: new Date(),
         })
@@ -1385,15 +1385,15 @@ export class ApplicationService {
         applicationId,
         userId,
         "PENDING_DOCUMENT",
-        "CANCEL"
+        "ABORT"
       );
 
       await tx
         .update(studentProfiles)
-        .set({ internshipStatus: "CANCEL" })
+        .set({ internshipStatus: "IDLE" })
         .where(eq(studentProfiles.userId, userId));
 
-      return { applicationStatus: "CANCEL" };
+      return { applicationStatus: "ABORT" };
     });
   }
 
