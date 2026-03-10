@@ -35,14 +35,31 @@ export const params = t.Object({
   id: t.Numeric(),
 });
 
-export const UpdatePositionBody = t.Partial(
-  t.Intersect([
-    t.Omit(CreatePositionBody, ["mentorStaffIds"]),
-    t.Object({
-      mentorStaffIds: t.Optional(t.Array(t.Numeric(), { minItems: 1 })),
-    }),
-  ])
-);
+export const UpdatePositionBody = t.Object({
+  name: t.Optional(t.String({ minLength: 2 })),
+  location: t.Optional(t.String()),
+  positionCount: t.Optional(t.Numeric()),
+  major: t.Optional(t.String()),
+
+  recruitStart: t.Optional(t.Union([t.String(), t.Null()])),
+  recruitEnd: t.Optional(t.Union([t.String(), t.Null()])),
+
+  applyStart: t.Optional(t.String()),
+  applyEnd: t.Optional(t.String()),
+
+  resumeRq: t.Optional(t.Boolean()),
+  portfolioRq: t.Optional(t.Boolean()),
+
+  jobDetails: t.Optional(t.String()),
+  requirement: t.Optional(t.String()),
+  benefits: t.Optional(t.String()),
+
+  recruitmentStatus: t.Optional(
+    t.Union([t.Literal("OPEN"), t.Literal("CLOSE")])
+  ),
+
+  mentorStaffIds: t.Optional(t.Array(t.Numeric(), { minItems: 1 })),
+});
 
 export type GetPositionsQueryType = typeof GetPositionsQuery.static;
 export type CreatePositionBodyType = typeof CreatePositionBody.static;
