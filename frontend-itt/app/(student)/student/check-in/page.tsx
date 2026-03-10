@@ -193,7 +193,7 @@ const MobileView: React.FC<MobileViewProps> = ({
     const formatMobileTime = (date: Date) => date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
     return (
-        <div className="flex flex-col items-center min-h-[calc(100vh-60px)] font-nunito -m-4 sm:-m-6 px-4 pt-10 pb-12 overflow-hidden relative">
+        <div className="flex flex-col items-center min-h-[calc(100vh-60px)] font-sans -m-4 sm:-m-6 px-4 pt-10 pb-12 overflow-hidden relative">
 
             {/* Background Base */}
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none bg-[#fdfbfe]">

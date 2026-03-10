@@ -6,8 +6,8 @@ import {
   studentProfiles,
 } from "@/db/schema";
 
-const TIMEOUT_SECONDS = 30 * 24 * 60 * 60;
-// const TIMEOUT_SECONDS = 10; // test
+// const TIMEOUT_SECONDS = 30 * 24 * 60 * 60;
+const TIMEOUT_SECONDS = 10; // test
 
 export class ApplicationTimeoutService {
   async cancelExpiredApplications() {
@@ -40,7 +40,7 @@ export class ApplicationTimeoutService {
           await tx
             .update(applicationStatuses)
             .set({
-              applicationStatus: "CANCEL",
+              applicationStatus: "ABORT",
               isActive: false,
               updatedAt: new Date(),
             })
@@ -57,7 +57,7 @@ export class ApplicationTimeoutService {
             applicationStatusId: app.id,
             actionBy: "system",
             oldStatus: "PENDING_DOCUMENT",
-            newStatus: "CANCEL",
+            newStatus: "ABORT",
           });
 
           console.log("[CRON] application cancelled:", app.id);

@@ -57,7 +57,8 @@ module.exports = {
                 'white-dark': '#888ea8',
             },
             fontFamily: {
-                nunito: ['var(--font-nunito)'],
+                sans: ['var(--font-google-sans)', 'sans-serif'],
+                nunito: ['var(--font-google-sans)', 'sans-serif'],
             },
             spacing: {
                 4.5: '18px',
