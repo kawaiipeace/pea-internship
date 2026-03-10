@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { institutions } from "@/db/schema";
 
 // required: bun add xlsx
-// docker run: docker compose exec backend-main bun run scripts/import-institutions.ts --file schools_list.xlsx 
+// docker run: docker compose exec backend-main bun run scripts/import-institutions.ts --file schools_list.xlsx
 
 /**
  * ทำความสะอาดชื่อสถาบันให้ไม่มีตัวอักษรพิเศษ

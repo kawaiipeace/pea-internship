@@ -2,6 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { logger } from "elysia-logger";
 import swagger from "@/config/swagger";
+import { applicationTimeoutCron } from "@/cron/application-timeout";
 import { auth } from "@/lib/auth";
 import { errorMiddleware } from "@/middlewares/error.middleware";
 import modules from "@/modules";
@@ -21,6 +22,7 @@ const app = new Elysia()
   .use(swagger)
   .use(errorMiddleware)
   .use(modules)
+  .use(applicationTimeoutCron)
   .listen(PORT);
 
 console.log(
