@@ -14,8 +14,8 @@ export const CreatePositionBody = t.Object({
   positionCount: t.Optional(t.Union([t.Numeric(), t.Null()])),
   major: t.Optional(t.String()),
 
-  recruitStart: t.Optional(t.String()),
-  recruitEnd: t.Optional(t.String()),
+  recruitStart: t.Optional(t.Union([t.String(), t.Null()])),
+  recruitEnd: t.Optional(t.Union([t.String(), t.Null()])),
 
   applyStart: t.Optional(t.String()),
   applyEnd: t.Optional(t.String()),
