@@ -2,7 +2,14 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  Suspense,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import OwnerNavbar from "../../../components/ui/OwnerNavbar";
@@ -264,7 +271,7 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
 function ApplicationsContent() {
   const searchParams = useSearchParams();
   const positionId = searchParams.get("positionId");
-  const positionQueryAmp = positionId ? `&positionId=${positionId}` : '';
+  const positionQueryAmp = positionId ? `&positionId=${positionId}` : "";
 
   // All applications fetched from API (replaces mockApplications)
   const [allApplications, setAllApplications] = useState<Application[]>([]);
@@ -279,9 +286,8 @@ function ApplicationsContent() {
     Application[]
   >([]);
   const itemsPerPage = 10;
-  
-  // (Include rest of original AllApplicationsPage content here...)
 
+  // (Include rest of original AllApplicationsPage content here...)
 
   // Popup states
   const [showInterviewConfirm, setShowInterviewConfirm] = useState(false);
@@ -331,7 +337,9 @@ function ApplicationsContent() {
   const [showMentorInfo, setShowMentorInfo] = useState(false);
 
   // Timeline actions state (real data from API)
-  const [timelineActions, setTimelineActions] = useState<ApplicationStatusAction[]>([]);
+  const [timelineActions, setTimelineActions] = useState<
+    ApplicationStatusAction[]
+  >([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
 
   // Search and filter states
@@ -465,7 +473,11 @@ function ApplicationsContent() {
     try {
       setLoading(true);
       // Fetch applications (optionally filtered by positionId)
-      const query: { positionId?: number; limit: number; includeCanceled: boolean } = {
+      const query: {
+        positionId?: number;
+        limit: number;
+        includeCanceled: boolean;
+      } = {
         limit: 9999,
         includeCanceled: true,
       };
@@ -475,7 +487,9 @@ function ApplicationsContent() {
 
       // Fetch position info only if positionId is provided
       const [positionData, response] = await Promise.all([
-        positionId ? positionApi.getPositionById(Number(positionId)) : Promise.resolve(null),
+        positionId
+          ? positionApi.getPositionById(Number(positionId))
+          : Promise.resolve(null),
         applicationApi.getAllStudentsHistory(query),
       ]);
       setPositionInfo(positionData);
@@ -864,8 +878,14 @@ function ApplicationsContent() {
         const buddhistYear = now.getFullYear() + 543;
         const rejectedDate = `${buddhistYear}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
         // Use the position owner name (logged-in user who performed the action)
-        const ownerData = positionInfo?.owner || (positionInfo?.owners && positionInfo.owners.length > 0 ? positionInfo.owners[0] : null);
-        const ownerName = ownerData ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim() : "เจ้าของหน่วยงาน";
+        const ownerData =
+          positionInfo?.owner ||
+          (positionInfo?.owners && positionInfo.owners.length > 0
+            ? positionInfo.owners[0]
+            : null);
+        const ownerName = ownerData
+          ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
+          : "เจ้าของหน่วยงาน";
         const newRejectedData = [
           ...rejectedAppsData,
           {
@@ -988,7 +1008,9 @@ function ApplicationsContent() {
     setHistoryData([]);
     try {
       const data = await applicationApi.getStudentHistory(app.internId, true);
-      setHistoryData(data.filter((h) => String(h.applicationId) !== String(app.id)));
+      setHistoryData(
+        data.filter((h) => h.applicationStatus === "COMPLETE" || h.applicationStatus === "CANCEL"),
+      );
     } catch (error) {
       console.error("Failed to fetch student history:", error);
       setHistoryData([]);
@@ -1001,18 +1023,40 @@ function ApplicationsContent() {
   const getHistoryStatusInfo = (status: AppStatusEnum) => {
     switch (status) {
       case "COMPLETE":
-        return { label: "ฝึกงานเสร็จสิ้น", color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]" };
+        return {
+          label: "ฝึกงานเสร็จสิ้น",
+          color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
+        };
       case "CANCEL":
-        return { label: "ยกเลิกฝึกงาน", color: "bg-red-50 text-red-600 border-red-200" };
+        return {
+          label: "ยกเลิกฝึกงาน",
+          color: "bg-red-50 text-red-600 border-red-200",
+        };
       default:
-        return { label: "กำลังดำเนินการ", color: "bg-yellow-50 text-yellow-700 border-yellow-200" };
+        return {
+          label: "กำลังดำเนินการ",
+          color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+        };
     }
   };
 
   // Helper: format date to Thai short format
   const formatHistoryDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    const thaiShortMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    const thaiShortMonths = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
     return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
@@ -1141,14 +1185,29 @@ function ApplicationsContent() {
 
     const formatActionDate = (dateStr: string): string => {
       const d = new Date(dateStr);
-      const thaiShortMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      const thaiShortMonths = [
+        "ม.ค.",
+        "ก.พ.",
+        "มี.ค.",
+        "เม.ย.",
+        "พ.ค.",
+        "มิ.ย.",
+        "ก.ค.",
+        "ส.ค.",
+        "ก.ย.",
+        "ต.ค.",
+        "พ.ย.",
+        "ธ.ค.",
+      ];
       const beYear = d.getFullYear() + 543;
       const hours = String(d.getHours()).padStart(2, "0");
       const minutes = String(d.getMinutes()).padStart(2, "0");
       return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${beYear} ${hours}:${minutes}`;
     };
 
-    const getActorLabel = (action: ApplicationStatusAction): string | undefined => {
+    const getActorLabel = (
+      action: ApplicationStatusAction,
+    ): string | undefined => {
       if (!action.actor) return undefined;
       const { fname, lname, roleId } = action.actor;
       if (roleId === 3 || (!fname && !lname)) return undefined;
@@ -1156,14 +1215,17 @@ function ApplicationsContent() {
       return `พนักงาน : ${name}`;
     };
 
-    const stepCompletedInfo: { date: string; operator?: string }[] = stepStatusMap.map((targetStatus) => {
-      const action = timelineActions.find((a) => a.newStatus === targetStatus);
-      if (!action) return { date: "", operator: undefined };
-      return {
-        date: formatActionDate(action.createdAt),
-        operator: getActorLabel(action),
-      };
-    });
+    const stepCompletedInfo: { date: string; operator?: string }[] =
+      stepStatusMap.map((targetStatus) => {
+        const action = timelineActions.find(
+          (a) => a.newStatus === targetStatus,
+        );
+        if (!action) return { date: "", operator: undefined };
+        return {
+          date: formatActionDate(action.createdAt),
+          operator: getActorLabel(action),
+        };
+      });
 
     return (
       <div className="py-2">
@@ -1261,44 +1323,103 @@ function ApplicationsContent() {
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { setShowHistoryModal(true); fetchApplicationHistory(selectedApplication); }}
-                className="p-2 text-gray-500 rounded-4xl hover:bg-gray-200 transition-colors cursor-pointer"
+                onClick={() => {
+                  setShowHistoryModal(true);
+                  fetchApplicationHistory(selectedApplication);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z" fill="currentColor" />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z"
+                    fill="currentColor"
+                  />
                 </svg>
+                ประวัติผู้สมัคร
               </button>
               <Link
                 href={`/owner/dashboard/${selectedApplication.id}?from=applications${positionQueryAmp}`}
                 className="p-2 text-gray-500 rounded-4xl hover:bg-gray-200 transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
                 </svg>
               </Link>
             </div>
           </div>
           {/* Badge */}
           <div className="flex flex-wrap gap-1 mb-4">
-            <span className="bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA] text-sm px-3 py-1 rounded-full">ยกเลิกฝึกงาน</span>
+            <span className="bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA] text-sm px-3 py-1 rounded-full">
+              ยกเลิกฝึกงาน
+            </span>
           </div>
           {/* Department */}
           <div className="flex items-center gap-2 text-gray-600 mb-6 border-b mtb-6 pb-4 border-[#CECFD2]">
-            <svg width="20" height="19" viewBox="0 0 20 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2 19C1.45 19 0.979167 18.8042 0.5875 18.4125C0.195833 18.0208 0 17.55 0 17V6C0 5.45 0.195833 4.97917 0.5875 4.5875C0.979167 4.19583 1.45 4 2 4H6V2C6 1.45 6.19583 0.979167 6.5875 0.5875C6.97917 0.195833 7.45 0 8 0H12C12.55 0 13.0208 0.195833 13.4125 0.5875C13.8042 0.979167 14 1.45 14 2V4H18C18.55 4 19.0208 4.19583 19.4125 4.5875C19.8042 4.97917 20 5.45 20 6V17C20 17.55 19.8042 18.0208 19.4125 18.4125C19.0208 18.8042 18.55 19 18 19H2ZM2 17H18V6H2V17ZM8 4H12V2H8V4Z" fill="#A80689" />
+            <svg
+              width="20"
+              height="19"
+              viewBox="0 0 20 19"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2 19C1.45 19 0.979167 18.8042 0.5875 18.4125C0.195833 18.0208 0 17.55 0 17V6C0 5.45 0.195833 4.97917 0.5875 4.5875C0.979167 4.19583 1.45 4 2 4H6V2C6 1.45 6.19583 0.979167 6.5875 0.5875C6.97917 0.195833 7.45 0 8 0H12C12.55 0 13.0208 0.195833 13.4125 0.5875C13.8042 0.979167 14 1.45 14 2V4H18C18.55 4 19.0208 4.19583 19.4125 4.5875C19.8042 4.97917 20 5.45 20 6V17C20 17.55 19.8042 18.0208 19.4125 18.4125C19.0208 18.8042 18.55 19 18 19H2ZM2 17H18V6H2V17ZM8 4H12V2H8V4Z"
+                fill="#A80689"
+              />
             </svg>
-            <span className="text-sm">{positionInfo?.name || selectedApplication?.position || "ตำแหน่งงาน"}</span>
+            <span className="text-sm">
+              {positionInfo?.name ||
+                selectedApplication?.position ||
+                "ตำแหน่งงาน"}
+            </span>
           </div>
           {/* Cancellation reason */}
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-2">
-              <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-5 h-5 text-red-500 mt-0.5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <div>
-                <p className="font-semibold text-red-600 mb-2">เหตุผลประกอบการยกเลิกฝึกงาน</p>
+                <p className="font-semibold text-red-600 mb-2">
+                  เหตุผลประกอบการยกเลิกฝึกงาน
+                </p>
                 <p className="text-gray-700 text-sm">
-                  {(() => { const cancelData = getCancellationData(selectedApplication.id); return cancelData?.reason || selectedApplication.cancellationReason || "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"; })()}
+                  {(() => {
+                    const cancelData = getCancellationData(
+                      selectedApplication.id,
+                    );
+                    return (
+                      cancelData?.reason ||
+                      selectedApplication.cancellationReason ||
+                      "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"
+                    );
+                  })()}
                 </p>
               </div>
             </div>
@@ -1306,87 +1427,283 @@ function ApplicationsContent() {
               <div>
                 <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                 <p className="text-gray-900 text-sm">
-                  {(() => { const cancelData = getCancellationData(selectedApplication.id); const od = positionInfo?.owner || (positionInfo?.owners && positionInfo.owners.length > 0 ? positionInfo.owners[0] : null); const ownerName = od ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-" : "-"; return cancelData?.cancelledBy || selectedApplication.cancelledBy || ownerName; })()}
+                  {(() => {
+                    const cancelData = getCancellationData(
+                      selectedApplication.id,
+                    );
+                    const od =
+                      positionInfo?.owner ||
+                      (positionInfo?.owners && positionInfo.owners.length > 0
+                        ? positionInfo.owners[0]
+                        : null);
+                    const ownerName = od
+                      ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
+                      : "-";
+                    return (
+                      cancelData?.cancelledBy ||
+                      selectedApplication.cancelledBy ||
+                      ownerName
+                    );
+                  })()}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
                 <p className="text-gray-900 text-sm">
-                  {formatDateThai((() => { const cancelData = getCancellationData(selectedApplication.id); return cancelData?.cancelledDate || selectedApplication.cancelledDate || selectedApplication.actionDate || ""; })())}
+                  {formatDateThai(
+                    (() => {
+                      const cancelData = getCancellationData(
+                        selectedApplication.id,
+                      );
+                      return (
+                        cancelData?.cancelledDate ||
+                        selectedApplication.cancelledDate ||
+                        selectedApplication.actionDate ||
+                        ""
+                      );
+                    })(),
+                  )}
                 </p>
               </div>
             </div>
           </div>
           {/* Status Progress Dropdown */}
           <div className="mb-6">
-            <button onClick={() => setShowAdditionalInfo(!showAdditionalInfo)} className="w-full flex items-center justify-between py-3 cursor-pointer">
-              <span className="text-md font-semibold text-gray-900">สถานะการดำเนินการ</span>
-              <svg className={`w-5 h-5 text-gray-400 transition-transform ${showAdditionalInfo ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <button
+              onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}
+              className="w-full flex items-center justify-between py-3 cursor-pointer"
+            >
+              <span className="text-md font-semibold text-gray-900">
+                สถานะการดำเนินการ
+              </span>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform ${showAdditionalInfo ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </button>
             {(() => {
               const totalSteps = 5;
-              const completedSteps = Math.min(selectedApplication.step - 1, totalSteps);
-              const currentStepLabel = ["รอผู้สมัครยื่นเอกสาร", "รอสัมภาษณ์", "รอการยืนยัน", "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์", "รอ HR ตรวจสอบ"];
+              const completedSteps = Math.min(
+                selectedApplication.step - 1,
+                totalSteps,
+              );
+              const currentStepLabel = [
+                "รอผู้สมัครยื่นเอกสาร",
+                "รอสัมภาษณ์",
+                "รอการยืนยัน",
+                "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์",
+                "รอ HR ตรวจสอบ",
+              ];
               const currentStepIndex = Math.min(completedSteps, totalSteps - 1);
               const circumference = 2 * Math.PI * 36;
               const progress = (completedSteps / totalSteps) * circumference;
-              const summaryStepStatusMap: AppStatusEnum[] = ["PENDING_INTERVIEW", "PENDING_CONFIRMATION", "PENDING_REQUEST", "PENDING_REVIEW", "COMPLETE"];
-              const fmtDate = (dateStr: string): string => { const d = new Date(dateStr); const mo = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]; return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
-              const fmtActor = (action: ApplicationStatusAction): string | undefined => { if (!action.actor) return undefined; const { fname, lname, roleId } = action.actor; if (roleId === 3 || (!fname && !lname)) return undefined; return `พนักงาน : ${[fname, lname].filter(Boolean).join(" ")}`; };
-              const stepCompletedInfo: { date: string; operator?: string }[] = summaryStepStatusMap.map((targetStatus) => { const action = timelineActions.find((a) => a.newStatus === targetStatus); if (!action) return { date: "" }; return { date: fmtDate(action.createdAt), operator: fmtActor(action) }; });
+              const summaryStepStatusMap: AppStatusEnum[] = [
+                "PENDING_INTERVIEW",
+                "PENDING_CONFIRMATION",
+                "PENDING_REQUEST",
+                "PENDING_REVIEW",
+                "COMPLETE",
+              ];
+              const fmtDate = (dateStr: string): string => {
+                const d = new Date(dateStr);
+                const mo = [
+                  "ม.ค.",
+                  "ก.พ.",
+                  "มี.ค.",
+                  "เม.ย.",
+                  "พ.ค.",
+                  "มิ.ย.",
+                  "ก.ค.",
+                  "ส.ค.",
+                  "ก.ย.",
+                  "ต.ค.",
+                  "พ.ย.",
+                  "ธ.ค.",
+                ];
+                return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+              };
+              const fmtActor = (
+                action: ApplicationStatusAction,
+              ): string | undefined => {
+                if (!action.actor) return undefined;
+                const { fname, lname, roleId } = action.actor;
+                if (roleId === 3 || (!fname && !lname)) return undefined;
+                return `พนักงาน : ${[fname, lname].filter(Boolean).join(" ")}`;
+              };
+              const stepCompletedInfo: { date: string; operator?: string }[] =
+                summaryStepStatusMap.map((targetStatus) => {
+                  const action = timelineActions.find(
+                    (a) => a.newStatus === targetStatus,
+                  );
+                  if (!action) return { date: "" };
+                  return {
+                    date: fmtDate(action.createdAt),
+                    operator: fmtActor(action),
+                  };
+                });
               return (
                 <div className="flex items-center gap-5 mb-4">
                   <div className="relative w-20 h-20 shrink-0">
                     <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                      <circle cx="40" cy="40" r="36" stroke="#E5E7EB" strokeWidth="5" fill="none" />
-                      <circle cx="40" cy="40" r="36" stroke="#A80689" strokeWidth="5" fill="none" strokeDasharray={circumference} strokeDashoffset={circumference - progress} strokeLinecap="round" />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        stroke="#E5E7EB"
+                        strokeWidth="5"
+                        fill="none"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        stroke="#A80689"
+                        strokeWidth="5"
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference - progress}
+                        strokeLinecap="round"
+                      />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-gray-700">{completedSteps}/{totalSteps}</span>
+                    <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-gray-700">
+                      {completedSteps}/{totalSteps}
+                    </span>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">{currentStepLabel[currentStepIndex]}</p>
+                    <p className="font-bold text-gray-900">
+                      {currentStepLabel[currentStepIndex]}
+                    </p>
                     {stepCompletedInfo[currentStepIndex - 1]?.date && (
-                      <p className="text-gray-400 text-sm">{stepCompletedInfo[currentStepIndex - 1].date}</p>
+                      <p className="text-gray-400 text-sm">
+                        {stepCompletedInfo[currentStepIndex - 1].date}
+                      </p>
                     )}
                     {stepCompletedInfo[currentStepIndex - 1]?.operator && (
-                      <p className="text-gray-400 text-sm">{stepCompletedInfo[currentStepIndex - 1].operator}</p>
+                      <p className="text-gray-400 text-sm">
+                        {stepCompletedInfo[currentStepIndex - 1].operator}
+                      </p>
                     )}
-                    <p className="text-gray-400 text-sm">กระบวนการสมัครสิ้นสุดแล้ว</p>
+                    <p className="text-gray-400 text-sm">
+                      กระบวนการสมัครสิ้นสุดแล้ว
+                    </p>
                   </div>
                 </div>
               );
             })()}
-            {showAdditionalInfo && <div className="pb-2">{renderStatusTimeline(selectedApplication)}</div>}
+            {showAdditionalInfo && (
+              <div className="pb-2">
+                {renderStatusTimeline(selectedApplication)}
+              </div>
+            )}
           </div>
           {/* Documents per-type */}
           <div className="mb-6">
             <div className="space-y-4">
               {["Transcript", "Portfolio", "Resume"].map((docType) => {
-                const uploadedDoc = selectedApplication.documents?.find((d) => d.type?.toLowerCase() === docType.toLowerCase() || d.name?.toLowerCase().startsWith(docType.toLowerCase()));
+                const uploadedDoc = selectedApplication.documents?.find(
+                  (d) =>
+                    d.type?.toLowerCase() === docType.toLowerCase() ||
+                    d.name?.toLowerCase().startsWith(docType.toLowerCase()),
+                );
                 if (!uploadedDoc && docType !== "Transcript") return null;
                 return (
                   <div key={docType}>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-2">{docType}</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-2">
+                      {docType}
+                    </h5>
                     {uploadedDoc ? (
                       <div className="group flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-primary-50 hover:border-primary-600 transition-colors">
                         <div className="flex items-center gap-3">
-                          <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z" fill="#A80689" /></svg>
-                          <span className="text-gray-700">{uploadedDoc.name}</span>
+                          <svg
+                            width="16"
+                            height="20"
+                            viewBox="0 0 16 20"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z"
+                              fill="#A80689"
+                            />
+                          </svg>
+                          <span className="text-gray-700">
+                            {uploadedDoc.name}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => handleDownloadDocument(uploadedDoc.docFile)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title="ดาวน์โหลด">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                          <button
+                            onClick={() =>
+                              handleDownloadDocument(uploadedDoc.docFile)
+                            }
+                            className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                            title="ดาวน์โหลด"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                              />
+                            </svg>
                           </button>
-                          <button onClick={() => handlePreviewDocument(uploadedDoc.docFile)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title="ดูเอกสาร">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          <button
+                            onClick={() =>
+                              handlePreviewDocument(uploadedDoc.docFile)
+                            }
+                            className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                            title="ดูเอกสาร"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                        <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z" fill="#A80689" /></svg>
+                        <svg
+                          width="16"
+                          height="20"
+                          viewBox="0 0 16 20"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z"
+                            fill="#A80689"
+                          />
+                        </svg>
                         <span className="text-gray-400">ยังไม่มีเอกสารแนบ</span>
                       </div>
                     )}
@@ -1397,52 +1714,191 @@ function ApplicationsContent() {
           </div>
           {/* Personal Info */}
           <div className="mb-6">
-            <h4 className="text-md font-semibold text-gray-900 mb-4">ข้อมูลผู้สมัคร</h4>
+            <h4 className="text-md font-semibold text-gray-900 mb-4">
+              ข้อมูลผู้สมัคร
+            </h4>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">ระยะเวลาการฝึกงาน</span><p className="text-gray-900 text-sm">{formatDateThai(selectedApplication.startDate)} - {formatDateThai(selectedApplication.endDate)}</p></div>
-                <div><span className="text-gray-500 text-sm">ชั่วโมงที่ต้องฝึก</span><p className="text-gray-900 text-sm">{selectedApplication.trainingHours} ชั่วโมง</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">
+                    ระยะเวลาการฝึกงาน
+                  </span>
+                  <p className="text-gray-900 text-sm">
+                    {formatDateThai(selectedApplication.startDate)} -{" "}
+                    {formatDateThai(selectedApplication.endDate)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">
+                    ชั่วโมงที่ต้องฝึก
+                  </span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.trainingHours} ชั่วโมง
+                  </p>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">อีเมล</span><p className="text-gray-900 text-sm">{selectedApplication.email}</p></div>
-                <div><span className="text-gray-500 text-sm">เพศ</span><p className="text-gray-900 text-sm">{selectedApplication.gender === "male" ? "ชาย" : "หญิง"}</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">อีเมล</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.email}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">เพศ</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.gender === "male" ? "ชาย" : "หญิง"}
+                  </p>
+                </div>
               </div>
-              <div><span className="text-gray-500 text-sm">เบอร์โทร</span><p className="text-gray-900 text-sm">{selectedApplication.phone}</p></div>
+              <div>
+                <span className="text-gray-500 text-sm">เบอร์โทร</span>
+                <p className="text-gray-900 text-sm">
+                  {selectedApplication.phone}
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">การศึกษาปัจจุบัน</span><p className="text-gray-900 text-sm">{getEducationLabel(selectedApplication.education)}</p></div>
-                <div><span className="text-gray-500 text-sm">ชื่อสถาบัน</span><p className="text-gray-900 text-sm">{selectedApplication.institution}</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">
+                    การศึกษาปัจจุบัน
+                  </span>
+                  <p className="text-gray-900 text-sm">
+                    {getEducationLabel(selectedApplication.education)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">ชื่อสถาบัน</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.institution}
+                  </p>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">คณะ</span><p className="text-gray-900 text-sm">{selectedApplication.faculty || "-"}</p></div>
-                <div><span className="text-gray-500 text-sm">สาขา</span><p className="text-gray-900 text-sm">{selectedApplication.major}</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.faculty || "-"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">สาขา</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.major}
+                  </p>
+                </div>
               </div>
-              <div><span className="text-gray-500 text-sm">ทักษะด้านต่าง ๆ ของผู้สมัคร</span><p className="text-gray-900 text-sm">{selectedApplication.skill || "-"}</p></div>
-              <div><span className="text-gray-500 text-sm">สิ่งที่คาดหวังจากการฝึกงาน</span><p className="text-gray-900 text-sm">{selectedApplication.expectation}</p></div>
+              <div>
+                <span className="text-gray-500 text-sm">
+                  ทักษะด้านต่าง ๆ ของผู้สมัคร
+                </span>
+                <p className="text-gray-900 text-sm">
+                  {selectedApplication.skill || "-"}
+                </p>
+              </div>
+              <div>
+                <span className="text-gray-500 text-sm">
+                  สิ่งที่คาดหวังจากการฝึกงาน
+                </span>
+                <p className="text-gray-900 text-sm">
+                  {selectedApplication.expectation}
+                </p>
+              </div>
             </div>
           </div>
           {/* Mentor Info Dropdown */}
           <div className="border-t border-gray-100">
-            <button onClick={() => setShowMentorInfo(!showMentorInfo)} className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <span className="font-semibold text-gray-900">ข้อมูลพี่เลี้ยง</span>
-              <svg className={`w-5 h-5 text-gray-400 transition-transform ${showMentorInfo ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            <button
+              onClick={() => setShowMentorInfo(!showMentorInfo)}
+              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-semibold text-gray-900">
+                ข้อมูลพี่เลี้ยง
+              </span>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform ${showMentorInfo ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
             </button>
             {showMentorInfo && (
               <div className="pb-4">
                 <div className="bg-gray-50 rounded-xl p-4 space-y-4">
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    <div><p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p><p className=" text-gray-900 text-sm">{getMentor().name}</p></div>
+                    <svg
+                      className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p>
+                      <p className=" text-gray-900 text-sm">
+                        {getMentor().name}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    <div><p className="text-gray-400 text-sm">อีเมล</p><p className="font-medium text-gray-900 text-sm">{getMentor().email}</p></div>
+                    <svg
+                      className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-gray-400 text-sm">อีเมล</p>
+                      <p className=" text-gray-900 text-sm">
+                        {getMentor().email}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                    <div><p className="text-gray-400 text-sm">เบอร์โทร</p><p className="font-medium text-gray-900 text-sm">{getMentor().phone}</p></div>
+                    <svg
+                      className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-gray-400 text-sm">เบอร์โทร</p>
+                      <p className=" text-gray-900 text-sm">
+                        {getMentor().phone}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <p className="text-red-500 text-sm mt-3">*หมายเหตุ: หากประสงค์ให้ลงนามในเอกสารตอบรับกรุณาติดต่อพี่เลี้ยง</p>
+                <p className="text-red-500 text-sm mt-3">
+                  *หมายเหตุ:
+                  หากประสงค์ให้ลงนามในเอกสารตอบรับกรุณาติดต่อพี่เลี้ยง
+                </p>
               </div>
             )}
           </div>
@@ -1460,12 +1916,25 @@ function ApplicationsContent() {
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { setShowHistoryModal(true); fetchApplicationHistory(selectedApplication); }}
-                className="p-2 text-gray-500 rounded-4xl hover:bg-gray-200 transition-colors cursor-pointer"
+                onClick={() => {
+                  setShowHistoryModal(true);
+                  fetchApplicationHistory(selectedApplication);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z" fill="currentColor" />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z"
+                    fill="currentColor"
+                  />
                 </svg>
+                ประวัติผู้สมัคร
               </button>
               <Link
                 href={`/owner/dashboard/${selectedApplication.id}?from=applications${positionQueryAmp}`}
@@ -1518,8 +1987,14 @@ function ApplicationsContent() {
             const rejectData = rejectedAppsData.find(
               (a) => a.id === selectedApplication.id,
             );
-            const od = positionInfo?.owner || (positionInfo?.owners && positionInfo.owners.length > 0 ? positionInfo.owners[0] : null);
-            const ownerName = od ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-" : "-";
+            const od =
+              positionInfo?.owner ||
+              (positionInfo?.owners && positionInfo.owners.length > 0
+                ? positionInfo.owners[0]
+                : null);
+            const ownerName = od
+              ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
+              : "-";
             return (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <div className="flex items-start gap-2">
@@ -1559,8 +2034,8 @@ function ApplicationsContent() {
                     <p className="text-gray-900 text-sm">
                       {formatDateThai(
                         rejectData?.rejectedDate ||
-                        selectedApplication.actionDate ||
-                        "",
+                          selectedApplication.actionDate ||
+                          "",
                       )}
                     </p>
                   </div>
@@ -1632,20 +2107,41 @@ function ApplicationsContent() {
               ];
               const fmtDate = (dateStr: string): string => {
                 const d = new Date(dateStr);
-                const mo = ["\u0e21.\u0e04.", "\u0e01.\u0e1e.", "\u0e21\u0e35.\u0e04.", "\u0e40\u0e21.\u0e22.", "\u0e1e.\u0e04.", "\u0e21\u0e34.\u0e22.", "\u0e01.\u0e04.", "\u0e2a.\u0e04.", "\u0e01.\u0e22.", "\u0e15.\u0e04.", "\u0e1e.\u0e22.", "\u0e18.\u0e04."];
+                const mo = [
+                  "\u0e21.\u0e04.",
+                  "\u0e01.\u0e1e.",
+                  "\u0e21\u0e35.\u0e04.",
+                  "\u0e40\u0e21.\u0e22.",
+                  "\u0e1e.\u0e04.",
+                  "\u0e21\u0e34.\u0e22.",
+                  "\u0e01.\u0e04.",
+                  "\u0e2a.\u0e04.",
+                  "\u0e01.\u0e22.",
+                  "\u0e15.\u0e04.",
+                  "\u0e1e.\u0e22.",
+                  "\u0e18.\u0e04.",
+                ];
                 return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
               };
-              const fmtActor = (action: ApplicationStatusAction): string | undefined => {
+              const fmtActor = (
+                action: ApplicationStatusAction,
+              ): string | undefined => {
                 if (!action.actor) return undefined;
                 const { fname, lname, roleId } = action.actor;
                 if (roleId === 3 || (!fname && !lname)) return undefined;
                 return `\u0e1e\u0e19\u0e31\u0e01\u0e07\u0e32\u0e19 : ${[fname, lname].filter(Boolean).join(" ")}`;
               };
-              const stepCompletedInfo: { date: string; operator?: string }[] = summaryStepStatusMap.map((targetStatus) => {
-                const action = timelineActions.find((a) => a.newStatus === targetStatus);
-                if (!action) return { date: "" };
-                return { date: fmtDate(action.createdAt), operator: fmtActor(action) };
-              });
+              const stepCompletedInfo: { date: string; operator?: string }[] =
+                summaryStepStatusMap.map((targetStatus) => {
+                  const action = timelineActions.find(
+                    (a) => a.newStatus === targetStatus,
+                  );
+                  if (!action) return { date: "" };
+                  return {
+                    date: fmtDate(action.createdAt),
+                    operator: fmtActor(action),
+                  };
+                });
               return (
                 <div className="flex items-center gap-5 mb-4">
                   <div className="relative w-20 h-20 shrink-0">
@@ -1742,7 +2238,9 @@ function ApplicationsContent() {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleDownloadDocument(uploadedDoc.docFile)}
+                            onClick={() =>
+                              handleDownloadDocument(uploadedDoc.docFile)
+                            }
                             className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
                             title="ดาวน์โหลด"
                           >
@@ -1761,7 +2259,9 @@ function ApplicationsContent() {
                             </svg>
                           </button>
                           <button
-                            onClick={() => handlePreviewDocument(uploadedDoc.docFile)}
+                            onClick={() =>
+                              handlePreviewDocument(uploadedDoc.docFile)
+                            }
                             className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
                             title="ดูเอกสาร"
                           >
@@ -1973,7 +2473,7 @@ function ApplicationsContent() {
                     </svg>
                     <div>
                       <p className="text-gray-400 text-sm">อีเมล</p>
-                      <p className="font-medium text-gray-900 text-sm">
+                      <p className=" text-gray-900 text-sm">
                         {getMentor().email}
                       </p>
                     </div>
@@ -1994,7 +2494,7 @@ function ApplicationsContent() {
                     </svg>
                     <div>
                       <p className="text-gray-400 text-sm">เบอร์โทร</p>
-                      <p className="font-medium text-gray-900 text-sm">
+                      <p className=" text-gray-900 text-sm">
                         {getMentor().phone}
                       </p>
                     </div>
@@ -2029,19 +2529,42 @@ function ApplicationsContent() {
             </h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { setShowHistoryModal(true); fetchApplicationHistory(selectedApplication); }}
-                className="p-2 text-gray-500 rounded-4xl hover:bg-gray-200 transition-colors cursor-pointer"
+                onClick={() => {
+                  setShowHistoryModal(true);
+                  fetchApplicationHistory(selectedApplication);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z" fill="currentColor" />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z"
+                    fill="currentColor"
+                  />
                 </svg>
+                ประวัติผู้สมัคร
               </button>
               <Link
                 href={`/owner/dashboard/${selectedApplication.id}?from=applications${positionQueryAmp}`}
                 className="p-2 text-gray-500 rounded-4xl hover:bg-gray-200 transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
                 </svg>
               </Link>
             </div>
@@ -2051,25 +2574,52 @@ function ApplicationsContent() {
             <span className="text-sm px-3 py-1 rounded-full bg-[#DCFAE6] text-[#085D3A] font-semibold border border-[#A9EFC5]">
               รับเข้าฝึกงาน
             </span>
-            <span className={`text-sm px-3 py-1 rounded-full font-medium ${acceptedSubBadge.color}`}>
+            <span
+              className={`text-sm px-3 py-1 rounded-full font-medium ${acceptedSubBadge.color}`}
+            >
               {acceptedSubBadge.text}
             </span>
           </div>
           {/* Department */}
           <div className="flex items-center gap-2 text-gray-600 mb-6 border-b mtb-6 pb-4 border-[#CECFD2]">
-            <svg width="20" height="19" viewBox="0 0 20 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2 19C1.45 19 0.979167 18.8042 0.5875 18.4125C0.195833 18.0208 0 17.55 0 17V6C0 5.45 0.195833 4.97917 0.5875 4.5875C0.979167 4.19583 1.45 4 2 4H6V2C6 1.45 6.19583 0.979167 6.5875 0.5875C6.97917 0.195833 7.45 0 8 0H12C12.55 0 13.0208 0.195833 13.4125 0.5875C13.8042 0.979167 14 1.45 14 2V4H18C18.55 4 19.0208 4.19583 19.4125 4.5875C19.8042 4.97917 20 5.45 20 6V17C20 17.55 19.8042 18.0208 19.4125 18.4125C19.0208 18.8042 18.55 19 18 19H2ZM2 17H18V6H2V17ZM8 4H12V2H8V4Z" fill="#A80689" />
+            <svg
+              width="20"
+              height="19"
+              viewBox="0 0 20 19"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2 19C1.45 19 0.979167 18.8042 0.5875 18.4125C0.195833 18.0208 0 17.55 0 17V6C0 5.45 0.195833 4.97917 0.5875 4.5875C0.979167 4.19583 1.45 4 2 4H6V2C6 1.45 6.19583 0.979167 6.5875 0.5875C6.97917 0.195833 7.45 0 8 0H12C12.55 0 13.0208 0.195833 13.4125 0.5875C13.8042 0.979167 14 1.45 14 2V4H18C18.55 4 19.0208 4.19583 19.4125 4.5875C19.8042 4.97917 20 5.45 20 6V17C20 17.55 19.8042 18.0208 19.4125 18.4125C19.0208 18.8042 18.55 19 18 19H2ZM2 17H18V6H2V17ZM8 4H12V2H8V4Z"
+                fill="#A80689"
+              />
             </svg>
-            <span className="text-sm">{positionInfo?.name || selectedApplication?.position || "ตำแหน่งงาน"}</span>
+            <span className="text-sm">
+              {positionInfo?.name ||
+                selectedApplication?.position ||
+                "ตำแหน่งงาน"}
+            </span>
           </div>
           {/* Cancel button */}
           {isDocPassed && (
             <button
-              onClick={() => { setCancelReason(""); setShowCancelModal(true); }}
+              onClick={() => {
+                setCancelReason("");
+                setShowCancelModal(true);
+              }}
               className="w-full flex items-center justify-center gap-2 bg-red-600 border-2 border-red-600 text-white py-3 rounded-lg hover:bg-red-700 hover:text-red-100 transition-colors font-medium mb-6 cursor-pointer"
             >
-              <svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15.4167 5.77083L14.25 6.91667C14.0972 7.06944 13.9063 7.14931 13.6771 7.15625C13.4479 7.16319 13.25 7.08333 13.0833 6.91667C12.9306 6.76389 12.8542 6.56944 12.8542 6.33333C12.8542 6.09722 12.9306 5.90278 13.0833 5.75L14.2292 4.58333L13.0833 3.4375C12.9306 3.28472 12.8542 3.09375 12.8542 2.86458C12.8542 2.63542 12.9306 2.4375 13.0833 2.27083C13.25 2.10417 13.4479 2.02083 13.6771 2.02083C13.9063 2.02083 14.1042 2.10417 14.2708 2.27083L15.4167 3.41667L16.5625 2.25C16.7153 2.08333 16.9062 2 17.1354 2C17.3646 2 17.5625 2.08333 17.7292 2.25C17.8958 2.41667 17.9792 2.61458 17.9792 2.84375C17.9792 3.07292 17.8958 3.27083 17.7292 3.4375L16.5833 4.58333L17.75 5.75C17.9167 5.91667 17.9965 6.11111 17.9896 6.33333C17.9826 6.55556 17.8958 6.75 17.7292 6.91667C17.5625 7.06944 17.3681 7.14931 17.1458 7.15625C16.9236 7.16319 16.7292 7.08333 16.5625 6.91667L15.4167 5.77083ZM6.66667 6.66667C5.75 6.66667 4.96528 6.34028 4.3125 5.6875C3.65972 5.03472 3.33333 4.25 3.33333 3.33333C3.33333 2.41667 3.65972 1.63194 4.3125 0.979167C4.96528 0.326389 5.75 0 6.66667 0C7.58333 0 8.36806 0.326389 9.02083 0.979167C9.67361 1.63194 10 2.41667 10 3.33333C10 4.25 9.67361 5.03472 9.02083 5.6875C8.36806 6.34028 7.58333 6.66667 6.66667 6.66667ZM0 11.6667V11C0 10.5278 0.121528 10.0938 0.364583 9.69792C0.607639 9.30208 0.930556 9 1.33333 8.79167C2.19444 8.36111 3.06944 8.03819 3.95833 7.82292C4.84722 7.60764 5.75 7.5 6.66667 7.5C7.58333 7.5 8.48611 7.60764 9.375 7.82292C10.2639 8.03819 11.1389 8.36111 12 8.79167C12.4028 9 12.7257 9.30208 12.9688 9.69792C13.2118 10.0938 13.3333 10.5278 13.3333 11V11.6667C13.3333 12.125 13.1701 12.5174 12.8438 12.8438C12.5174 13.1701 12.125 13.3333 11.6667 13.3333H1.66667C1.20833 13.3333 0.815972 13.1701 0.489583 12.8438C0.163194 12.5174 0 12.125 0 11.6667ZM1.66667 11.6667H11.6667V11C11.6667 10.8472 11.6285 10.7083 11.5521 10.5833C11.4757 10.4583 11.375 10.3611 11.25 10.2917C10.5 9.91667 9.74306 9.63542 8.97917 9.44792C8.21528 9.26042 7.44444 9.16667 6.66667 9.16667C5.88889 9.16667 5.11806 9.26042 4.35417 9.44792C3.59028 9.63542 2.83333 9.91667 2.08333 10.2917C1.95833 10.3611 1.85764 10.4583 1.78125 10.5833C1.70486 10.7083 1.66667 10.8472 1.66667 11V11.6667ZM6.66667 5C7.125 5 7.51736 4.83681 7.84375 4.51042C8.17014 4.18403 8.33333 3.79167 8.33333 3.33333C8.33333 2.875 8.17014 2.48264 7.84375 2.15625C7.51736 1.82986 7.125 1.66667 6.66667 1.66667C6.20833 1.66667 5.81597 1.82986 5.48958 2.15625C5.16319 2.48264 5 2.875 5 3.33333C5 3.79167 5.16319 4.18403 5.48958 4.51042C5.81597 4.83681 6.20833 5 6.66667 5Z" fill="CurrentColor" />
+              <svg
+                width="18"
+                height="14"
+                viewBox="0 0 18 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15.4167 5.77083L14.25 6.91667C14.0972 7.06944 13.9063 7.14931 13.6771 7.15625C13.4479 7.16319 13.25 7.08333 13.0833 6.91667C12.9306 6.76389 12.8542 6.56944 12.8542 6.33333C12.8542 6.09722 12.9306 5.90278 13.0833 5.75L14.2292 4.58333L13.0833 3.4375C12.9306 3.28472 12.8542 3.09375 12.8542 2.86458C12.8542 2.63542 12.9306 2.4375 13.0833 2.27083C13.25 2.10417 13.4479 2.02083 13.6771 2.02083C13.9063 2.02083 14.1042 2.10417 14.2708 2.27083L15.4167 3.41667L16.5625 2.25C16.7153 2.08333 16.9062 2 17.1354 2C17.3646 2 17.5625 2.08333 17.7292 2.25C17.8958 2.41667 17.9792 2.61458 17.9792 2.84375C17.9792 3.07292 17.8958 3.27083 17.7292 3.4375L16.5833 4.58333L17.75 5.75C17.9167 5.91667 17.9965 6.11111 17.9896 6.33333C17.9826 6.55556 17.8958 6.75 17.7292 6.91667C17.5625 7.06944 17.3681 7.14931 17.1458 7.15625C16.9236 7.16319 16.7292 7.08333 16.5625 6.91667L15.4167 5.77083ZM6.66667 6.66667C5.75 6.66667 4.96528 6.34028 4.3125 5.6875C3.65972 5.03472 3.33333 4.25 3.33333 3.33333C3.33333 2.41667 3.65972 1.63194 4.3125 0.979167C4.96528 0.326389 5.75 0 6.66667 0C7.58333 0 8.36806 0.326389 9.02083 0.979167C9.67361 1.63194 10 2.41667 10 3.33333C10 4.25 9.67361 5.03472 9.02083 5.6875C8.36806 6.34028 7.58333 6.66667 6.66667 6.66667ZM0 11.6667V11C0 10.5278 0.121528 10.0938 0.364583 9.69792C0.607639 9.30208 0.930556 9 1.33333 8.79167C2.19444 8.36111 3.06944 8.03819 3.95833 7.82292C4.84722 7.60764 5.75 7.5 6.66667 7.5C7.58333 7.5 8.48611 7.60764 9.375 7.82292C10.2639 8.03819 11.1389 8.36111 12 8.79167C12.4028 9 12.7257 9.30208 12.9688 9.69792C13.2118 10.0938 13.3333 10.5278 13.3333 11V11.6667C13.3333 12.125 13.1701 12.5174 12.8438 12.8438C12.5174 13.1701 12.125 13.3333 11.6667 13.3333H1.66667C1.20833 13.3333 0.815972 13.1701 0.489583 12.8438C0.163194 12.5174 0 12.125 0 11.6667ZM1.66667 11.6667H11.6667V11C11.6667 10.8472 11.6285 10.7083 11.5521 10.5833C11.4757 10.4583 11.375 10.3611 11.25 10.2917C10.5 9.91667 9.74306 9.63542 8.97917 9.44792C8.21528 9.26042 7.44444 9.16667 6.66667 9.16667C5.88889 9.16667 5.11806 9.26042 4.35417 9.44792C3.59028 9.63542 2.83333 9.91667 2.08333 10.2917C1.95833 10.3611 1.85764 10.4583 1.78125 10.5833C1.70486 10.7083 1.66667 10.8472 1.66667 11V11.6667ZM6.66667 5C7.125 5 7.51736 4.83681 7.84375 4.51042C8.17014 4.18403 8.33333 3.79167 8.33333 3.33333C8.33333 2.875 8.17014 2.48264 7.84375 2.15625C7.51736 1.82986 7.125 1.66667 6.66667 1.66667C6.20833 1.66667 5.81597 1.82986 5.48958 2.15625C5.16319 2.48264 5 2.875 5 3.33333C5 3.79167 5.16319 4.18403 5.48958 4.51042C5.81597 4.83681 6.20833 5 6.66667 5Z"
+                  fill="CurrentColor"
+                />
               </svg>
               ยกเลิกฝึกงาน
             </button>
@@ -2078,99 +2628,293 @@ function ApplicationsContent() {
           {isDocRejected && selectedApplication.rejectionReason && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 text-red-500 mt-0.5 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <div>
-                  <p className="font-semibold text-red-600 mb-1">เหตุผลที่เอกสารไม่ผ่าน</p>
-                  <p className="text-gray-700 text-sm">{selectedApplication.rejectionReason}</p>
+                  <p className="font-semibold text-red-600 mb-1">
+                    เหตุผลที่เอกสารไม่ผ่าน
+                  </p>
+                  <p className="text-gray-700 text-sm">
+                    {selectedApplication.rejectionReason}
+                  </p>
                 </div>
               </div>
             </div>
           )}
           {/* Status Progress Dropdown */}
           <div className="mb-6">
-            <button onClick={() => setShowAdditionalInfo(!showAdditionalInfo)} className="w-full flex items-center justify-between py-3 cursor-pointer">
-              <span className="text-md font-semibold text-gray-900">สถานะการดำเนินการ</span>
-              <svg className={`w-5 h-5 text-gray-400 transition-transform ${showAdditionalInfo ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <button
+              onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}
+              className="w-full flex items-center justify-between py-3 cursor-pointer"
+            >
+              <span className="text-md font-semibold text-gray-900">
+                สถานะการดำเนินการ
+              </span>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform ${showAdditionalInfo ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </button>
             {(() => {
               const totalSteps = 5;
-              const completedSteps = Math.min(selectedApplication.step - 1, totalSteps);
-              const currentStepLabel = ["รอผู้สมัครยื่นเอกสาร", "รอสัมภาษณ์", "รอการยืนยัน", "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์", "รอ HR ตรวจสอบ"];
+              const completedSteps = Math.min(
+                selectedApplication.step - 1,
+                totalSteps,
+              );
+              const currentStepLabel = [
+                "รอผู้สมัครยื่นเอกสาร",
+                "รอสัมภาษณ์",
+                "รอการยืนยัน",
+                "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์",
+                "รอ HR ตรวจสอบ",
+              ];
               const currentStepIndex = Math.min(completedSteps, totalSteps - 1);
               const isAllCompleted = completedSteps >= totalSteps;
-              const nextStepLabel = currentStepIndex + 1 < totalSteps && !isAllCompleted ? currentStepLabel[currentStepIndex + 1] : null;
+              const nextStepLabel =
+                currentStepIndex + 1 < totalSteps && !isAllCompleted
+                  ? currentStepLabel[currentStepIndex + 1]
+                  : null;
               const circumference = 2 * Math.PI * 36;
               const progress = (completedSteps / totalSteps) * circumference;
-              const summaryStepStatusMap: AppStatusEnum[] = ["PENDING_INTERVIEW", "PENDING_CONFIRMATION", "PENDING_REQUEST", "PENDING_REVIEW", "COMPLETE"];
-              const fmtDate = (dateStr: string): string => { const d = new Date(dateStr); const mo = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]; return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
-              const fmtActor = (action: ApplicationStatusAction): string | undefined => { if (!action.actor) return undefined; const { fname, lname, roleId } = action.actor; if (roleId === 3 || (!fname && !lname)) return undefined; return `พนักงาน : ${[fname, lname].filter(Boolean).join(" ")}`; };
-              const stepCompletedInfo: { date: string; operator?: string }[] = summaryStepStatusMap.map((targetStatus) => { const action = timelineActions.find((a) => a.newStatus === targetStatus); if (!action) return { date: "" }; return { date: fmtDate(action.createdAt), operator: fmtActor(action) }; });
+              const summaryStepStatusMap: AppStatusEnum[] = [
+                "PENDING_INTERVIEW",
+                "PENDING_CONFIRMATION",
+                "PENDING_REQUEST",
+                "PENDING_REVIEW",
+                "COMPLETE",
+              ];
+              const fmtDate = (dateStr: string): string => {
+                const d = new Date(dateStr);
+                const mo = [
+                  "ม.ค.",
+                  "ก.พ.",
+                  "มี.ค.",
+                  "เม.ย.",
+                  "พ.ค.",
+                  "มิ.ย.",
+                  "ก.ค.",
+                  "ส.ค.",
+                  "ก.ย.",
+                  "ต.ค.",
+                  "พ.ย.",
+                  "ธ.ค.",
+                ];
+                return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+              };
+              const fmtActor = (
+                action: ApplicationStatusAction,
+              ): string | undefined => {
+                if (!action.actor) return undefined;
+                const { fname, lname, roleId } = action.actor;
+                if (roleId === 3 || (!fname && !lname)) return undefined;
+                return `พนักงาน : ${[fname, lname].filter(Boolean).join(" ")}`;
+              };
+              const stepCompletedInfo: { date: string; operator?: string }[] =
+                summaryStepStatusMap.map((targetStatus) => {
+                  const action = timelineActions.find(
+                    (a) => a.newStatus === targetStatus,
+                  );
+                  if (!action) return { date: "" };
+                  return {
+                    date: fmtDate(action.createdAt),
+                    operator: fmtActor(action),
+                  };
+                });
               return (
                 <div className="flex items-center gap-5 mb-4">
                   <div className="relative w-20 h-20 shrink-0">
                     <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                      <circle cx="40" cy="40" r="36" stroke="#E5E7EB" strokeWidth="5" fill="none" />
-                      <circle cx="40" cy="40" r="36" stroke="#A80689" strokeWidth="5" fill="none" strokeDasharray={circumference} strokeDashoffset={circumference - progress} strokeLinecap="round" />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        stroke="#E5E7EB"
+                        strokeWidth="5"
+                        fill="none"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="36"
+                        stroke="#A80689"
+                        strokeWidth="5"
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={circumference - progress}
+                        strokeLinecap="round"
+                      />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-gray-700">{completedSteps}/{totalSteps}</span>
+                    <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-gray-700">
+                      {completedSteps}/{totalSteps}
+                    </span>
                   </div>
                   <div>
                     {isAllCompleted ? (
                       <>
-                        <p className="font-bold text-gray-900">การตรวจสอบเสร็จสิ้น</p>
-                        {stepCompletedInfo[4]?.operator && (<p className="text-gray-400 text-sm">{stepCompletedInfo[4].operator}</p>)}
-                        <p className="text-gray-400 text-sm">{stepCompletedInfo[4]?.date}</p>
+                        <p className="font-bold text-gray-900">
+                          การตรวจสอบเสร็จสิ้น
+                        </p>
+                        {stepCompletedInfo[4]?.operator && (
+                          <p className="text-gray-400 text-sm">
+                            {stepCompletedInfo[4].operator}
+                          </p>
+                        )}
+                        <p className="text-gray-400 text-sm">
+                          {stepCompletedInfo[4]?.date}
+                        </p>
                       </>
                     ) : (
                       <>
-                        <p className="font-bold text-gray-900">{currentStepLabel[currentStepIndex]}</p>
+                        <p className="font-bold text-gray-900">
+                          {currentStepLabel[currentStepIndex]}
+                        </p>
                         {stepCompletedInfo[currentStepIndex - 1]?.date && (
-                          <p className="text-gray-400 text-sm">{stepCompletedInfo[currentStepIndex - 1].date}</p>
+                          <p className="text-gray-400 text-sm">
+                            {stepCompletedInfo[currentStepIndex - 1].date}
+                          </p>
                         )}
                         {stepCompletedInfo[currentStepIndex - 1]?.operator && (
-                          <p className="text-gray-400 text-sm">{stepCompletedInfo[currentStepIndex - 1].operator}</p>
+                          <p className="text-gray-400 text-sm">
+                            {stepCompletedInfo[currentStepIndex - 1].operator}
+                          </p>
                         )}
                         <p className="text-gray-400 text-sm">กำลังดำเนินการ</p>
-                        {nextStepLabel && (<p className="text-gray-400 text-sm">ขั้นตอนถัดไป : {nextStepLabel}</p>)}
+                        {nextStepLabel && (
+                          <p className="text-gray-400 text-sm">
+                            ขั้นตอนถัดไป : {nextStepLabel}
+                          </p>
+                        )}
                       </>
                     )}
                   </div>
                 </div>
               );
             })()}
-            {showAdditionalInfo && <div className="pb-2">{renderStatusTimeline(selectedApplication)}</div>}
+            {showAdditionalInfo && (
+              <div className="pb-2">
+                {renderStatusTimeline(selectedApplication)}
+              </div>
+            )}
           </div>
           {/* Documents per-type */}
           <div className="mb-6">
             <div className="space-y-4">
               {["Transcript", "Portfolio", "Resume"].map((docType) => {
-                const uploadedDoc = selectedApplication.documents?.find((d) => d.type?.toLowerCase() === docType.toLowerCase() || d.name?.toLowerCase().startsWith(docType.toLowerCase()));
+                const uploadedDoc = selectedApplication.documents?.find(
+                  (d) =>
+                    d.type?.toLowerCase() === docType.toLowerCase() ||
+                    d.name?.toLowerCase().startsWith(docType.toLowerCase()),
+                );
                 if (!uploadedDoc && docType !== "Transcript") return null;
                 return (
                   <div key={docType}>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-2">{docType}</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-2">
+                      {docType}
+                    </h5>
                     {uploadedDoc ? (
                       <div className="group flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-primary-50 hover:border-primary-600 transition-colors">
                         <div className="flex items-center gap-3">
-                          <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z" fill="#A80689" /></svg>
-                          <span className="text-gray-700">{uploadedDoc.name}</span>
+                          <svg
+                            width="16"
+                            height="20"
+                            viewBox="0 0 16 20"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z"
+                              fill="#A80689"
+                            />
+                          </svg>
+                          <span className="text-gray-700">
+                            {uploadedDoc.name}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => handleDownloadDocument(uploadedDoc.docFile)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title="ดาวน์โหลด">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                          <button
+                            onClick={() =>
+                              handleDownloadDocument(uploadedDoc.docFile)
+                            }
+                            className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                            title="ดาวน์โหลด"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                              />
+                            </svg>
                           </button>
-                          <button onClick={() => handlePreviewDocument(uploadedDoc.docFile)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title="ดูเอกสาร">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          <button
+                            onClick={() =>
+                              handlePreviewDocument(uploadedDoc.docFile)
+                            }
+                            className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                            title="ดูเอกสาร"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                        <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z" fill="#A80689" /></svg>
+                        <svg
+                          width="16"
+                          height="20"
+                          viewBox="0 0 16 20"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M5 16H11C11.2833 16 11.5208 15.9042 11.7125 15.7125C11.9042 15.5208 12 15.2833 12 15C12 14.7167 11.9042 14.4792 11.7125 14.2875C11.5208 14.0958 11.2833 14 11 14H5C4.71667 14 4.47917 14.0958 4.2875 14.2875C4.09583 14.4792 4 14.7167 4 15C4 15.2833 4.09583 15.5208 4.2875 15.7125C4.47917 15.9042 4.71667 16 5 16ZM5 12H11C11.2833 12 11.5208 11.9042 11.7125 11.7125C11.9042 11.5208 12 11.2833 12 11C12 10.7167 11.9042 10.4792 11.7125 10.2875C11.5208 10.0958 11.2833 10 11 10H5C4.71667 10 4.47917 10.0958 4.2875 10.2875C4.09583 10.4792 4 10.7167 4 11C4 11.2833 4.09583 11.5208 4.2875 11.7125C4.47917 11.9042 4.71667 12 5 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H9.175C9.44167 0 9.69583 0.05 9.9375 0.15C10.1792 0.25 10.3917 0.391667 10.575 0.575L15.425 5.425C15.6083 5.60833 15.75 5.82083 15.85 6.0625C15.95 6.30417 16 6.55833 16 6.825V18C16 18.55 15.8042 19.0208 15.4125 19.4125C15.0208 19.8042 14.55 20 14 20H2ZM9 6V2H2V18H14V7H10C9.71667 7 9.47917 6.90417 9.2875 6.7125C9.09583 6.52083 9 6.28333 9 6Z"
+                            fill="#A80689"
+                          />
+                        </svg>
                         <span className="text-gray-400">ยังไม่มีเอกสารแนบ</span>
                       </div>
                     )}
@@ -2181,52 +2925,191 @@ function ApplicationsContent() {
           </div>
           {/* Personal Info */}
           <div className="mb-6">
-            <h4 className="text-md font-semibold text-gray-900 mb-4">ข้อมูลผู้สมัคร</h4>
+            <h4 className="text-md font-semibold text-gray-900 mb-4">
+              ข้อมูลผู้สมัคร
+            </h4>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">ระยะเวลาการฝึกงาน</span><p className="text-gray-900 text-sm">{formatDateThai(selectedApplication.startDate)} - {formatDateThai(selectedApplication.endDate)}</p></div>
-                <div><span className="text-gray-500 text-sm">ชั่วโมงที่ต้องฝึก</span><p className="text-gray-900 text-sm">{selectedApplication.trainingHours} ชั่วโมง</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">
+                    ระยะเวลาการฝึกงาน
+                  </span>
+                  <p className="text-gray-900 text-sm">
+                    {formatDateThai(selectedApplication.startDate)} -{" "}
+                    {formatDateThai(selectedApplication.endDate)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">
+                    ชั่วโมงที่ต้องฝึก
+                  </span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.trainingHours} ชั่วโมง
+                  </p>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">อีเมล</span><p className="text-gray-900 text-sm">{selectedApplication.email}</p></div>
-                <div><span className="text-gray-500 text-sm">เพศ</span><p className="text-gray-900 text-sm">{selectedApplication.gender === "male" ? "ชาย" : "หญิง"}</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">อีเมล</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.email}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">เพศ</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.gender === "male" ? "ชาย" : "หญิง"}
+                  </p>
+                </div>
               </div>
-              <div><span className="text-gray-500 text-sm">เบอร์โทร</span><p className="text-gray-900 text-sm">{selectedApplication.phone}</p></div>
+              <div>
+                <span className="text-gray-500 text-sm">เบอร์โทร</span>
+                <p className="text-gray-900 text-sm">
+                  {selectedApplication.phone}
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">การศึกษาปัจจุบัน</span><p className="text-gray-900 text-sm">{getEducationLabel(selectedApplication.education)}</p></div>
-                <div><span className="text-gray-500 text-sm">ชื่อสถาบัน</span><p className="text-gray-900 text-sm">{selectedApplication.institution}</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">
+                    การศึกษาปัจจุบัน
+                  </span>
+                  <p className="text-gray-900 text-sm">
+                    {getEducationLabel(selectedApplication.education)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">ชื่อสถาบัน</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.institution}
+                  </p>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-gray-500 text-sm">คณะ</span><p className="text-gray-900 text-sm">{selectedApplication.faculty || "-"}</p></div>
-                <div><span className="text-gray-500 text-sm">สาขา</span><p className="text-gray-900 text-sm">{selectedApplication.major}</p></div>
+                <div>
+                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.faculty || "-"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">สาขา</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.major}
+                  </p>
+                </div>
               </div>
-              <div><span className="text-gray-500 text-sm">ทักษะด้านต่าง ๆ ของผู้สมัคร</span><p className="text-gray-900 text-sm">{selectedApplication.skill || "-"}</p></div>
-              <div><span className="text-gray-500 text-sm">สิ่งที่คาดหวังจากการฝึกงาน</span><p className="text-gray-900 text-sm">{selectedApplication.expectation}</p></div>
+              <div>
+                <span className="text-gray-500 text-sm">
+                  ทักษะด้านต่าง ๆ ของผู้สมัคร
+                </span>
+                <p className="text-gray-900 text-sm">
+                  {selectedApplication.skill || "-"}
+                </p>
+              </div>
+              <div>
+                <span className="text-gray-500 text-sm">
+                  สิ่งที่คาดหวังจากการฝึกงาน
+                </span>
+                <p className="text-gray-900 text-sm">
+                  {selectedApplication.expectation}
+                </p>
+              </div>
             </div>
           </div>
           {/* Mentor Info Dropdown */}
           <div className="border-t border-gray-100">
-            <button onClick={() => setShowMentorInfo(!showMentorInfo)} className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <span className="font-semibold text-gray-900">ข้อมูลพี่เลี้ยง</span>
-              <svg className={`w-5 h-5 text-gray-400 transition-transform ${showMentorInfo ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            <button
+              onClick={() => setShowMentorInfo(!showMentorInfo)}
+              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-semibold text-gray-900">
+                ข้อมูลพี่เลี้ยง
+              </span>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform ${showMentorInfo ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
             </button>
             {showMentorInfo && (
               <div className="pb-4">
                 <div className="bg-gray-50 rounded-xl p-4 space-y-4">
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    <div><p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p><p className=" text-gray-900 text-sm">{getMentor().name}</p></div>
+                    <svg
+                      className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p>
+                      <p className=" text-gray-900 text-sm">
+                        {getMentor().name}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    <div><p className="text-gray-400 text-sm">อีเมล</p><p className="font-medium text-gray-900 text-sm">{getMentor().email}</p></div>
+                    <svg
+                      className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-gray-400 text-sm">อีเมล</p>
+                      <p className=" text-gray-900 text-sm">
+                        {getMentor().email}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                    <div><p className="text-gray-400 text-sm">เบอร์โทร</p><p className="font-medium text-gray-900 text-sm">{getMentor().phone}</p></div>
+                    <svg
+                      className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-gray-400 text-sm">เบอร์โทร</p>
+                      <p className=" text-gray-900 text-sm">
+                        {getMentor().phone}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <p className="text-red-500 text-sm mt-3">*หมายเหตุ: หากประสงค์ให้ลงนามในเอกสารตอบรับกรุณาติดต่อพี่เลี้ยง</p>
+                <p className="text-red-500 text-sm mt-3">
+                  *หมายเหตุ:
+                  หากประสงค์ให้ลงนามในเอกสารตอบรับกรุณาติดต่อพี่เลี้ยง
+                </p>
               </div>
             )}
           </div>
@@ -2244,12 +3127,25 @@ function ApplicationsContent() {
           </h3>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setShowHistoryModal(true); fetchApplicationHistory(selectedApplication); }}
-              className="p-2 text-gray-500 rounded-4xl hover:bg-gray-200 transition-colors cursor-pointer"
+              onClick={() => {
+                setShowHistoryModal(true);
+                fetchApplicationHistory(selectedApplication);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 border border-gray-300 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z" fill="currentColor" />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 18 18"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z"
+                  fill="currentColor"
+                />
               </svg>
+              ประวัติผู้สมัคร
             </button>
             <Link
               href={`/owner/dashboard/${selectedApplication.id}?from=applications${positionQueryAmp}`}
@@ -2452,20 +3348,41 @@ function ApplicationsContent() {
             ];
             const fmtDate = (dateStr: string): string => {
               const d = new Date(dateStr);
-              const mo = ["\u0e21.\u0e04.", "\u0e01.\u0e1e.", "\u0e21\u0e35.\u0e04.", "\u0e40\u0e21.\u0e22.", "\u0e1e.\u0e04.", "\u0e21\u0e34.\u0e22.", "\u0e01.\u0e04.", "\u0e2a.\u0e04.", "\u0e01.\u0e22.", "\u0e15.\u0e04.", "\u0e1e.\u0e22.", "\u0e18.\u0e04."];
+              const mo = [
+                "\u0e21.\u0e04.",
+                "\u0e01.\u0e1e.",
+                "\u0e21\u0e35.\u0e04.",
+                "\u0e40\u0e21.\u0e22.",
+                "\u0e1e.\u0e04.",
+                "\u0e21\u0e34.\u0e22.",
+                "\u0e01.\u0e04.",
+                "\u0e2a.\u0e04.",
+                "\u0e01.\u0e22.",
+                "\u0e15.\u0e04.",
+                "\u0e1e.\u0e22.",
+                "\u0e18.\u0e04.",
+              ];
               return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
             };
-            const fmtActor = (action: ApplicationStatusAction): string | undefined => {
+            const fmtActor = (
+              action: ApplicationStatusAction,
+            ): string | undefined => {
               if (!action.actor) return undefined;
               const { fname, lname, roleId } = action.actor;
               if (roleId === 3 || (!fname && !lname)) return undefined;
               return `\u0e1e\u0e19\u0e31\u0e01\u0e07\u0e32\u0e19 : ${[fname, lname].filter(Boolean).join(" ")}`;
             };
-            const stepCompletedInfo: { date: string; operator?: string }[] = summaryStepStatusMap.map((targetStatus) => {
-              const action = timelineActions.find((a) => a.newStatus === targetStatus);
-              if (!action) return { date: "" };
-              return { date: fmtDate(action.createdAt), operator: fmtActor(action) };
-            });
+            const stepCompletedInfo: { date: string; operator?: string }[] =
+              summaryStepStatusMap.map((targetStatus) => {
+                const action = timelineActions.find(
+                  (a) => a.newStatus === targetStatus,
+                );
+                if (!action) return { date: "" };
+                return {
+                  date: fmtDate(action.createdAt),
+                  operator: fmtActor(action),
+                };
+              });
             return (
               <div className="flex items-center gap-5 mb-4">
                 <div className="relative w-20 h-20 shrink-0">
@@ -2562,7 +3479,9 @@ function ApplicationsContent() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleDownloadDocument(uploadedDoc.docFile)}
+                          onClick={() =>
+                            handleDownloadDocument(uploadedDoc.docFile)
+                          }
                           className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
                           title="ดาวน์โหลด"
                         >
@@ -2581,7 +3500,9 @@ function ApplicationsContent() {
                           </svg>
                         </button>
                         <button
-                          onClick={() => handlePreviewDocument(uploadedDoc.docFile)}
+                          onClick={() =>
+                            handlePreviewDocument(uploadedDoc.docFile)
+                          }
                           className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
                           title="ดูเอกสาร"
                         >
@@ -2638,18 +3559,14 @@ function ApplicationsContent() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-gray-500 text-sm">
-                  ระยะเวลาการฝึกงาน
-                </span>
+                <span className="text-gray-500 text-sm">ระยะเวลาการฝึกงาน</span>
                 <p className="text-gray-900 text-sm">
                   {formatDateThai(selectedApplication.startDate)} -{" "}
                   {formatDateThai(selectedApplication.endDate)}
                 </p>
               </div>
               <div>
-                <span className="text-gray-500 text-sm">
-                  ชั่วโมงที่ต้องฝึก
-                </span>
+                <span className="text-gray-500 text-sm">ชั่วโมงที่ต้องฝึก</span>
                 <p className="text-gray-900 text-sm">
                   {selectedApplication.trainingHours} ชั่วโมง
                 </p>
@@ -2680,9 +3597,7 @@ function ApplicationsContent() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-gray-500 text-sm">
-                  การศึกษาปัจจุบัน
-                </span>
+                <span className="text-gray-500 text-sm">การศึกษาปัจจุบัน</span>
                 <p className="text-gray-900 text-sm">
                   {getEducationLabel(selectedApplication.education)}
                 </p>
@@ -2743,233 +3658,285 @@ function ApplicationsContent() {
         {/* Analysis Documents Section - Only for steps 4-7 or approved apps */}
         {(selectedApplication.step >= 4 ||
           approvedApps.includes(selectedApplication.id)) && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-md font-semibold text-gray-900">
-                  เอกสารขอความอนุเคราะห์
-                </h4>
-                {/* Show status badge based on effective step */}
-                {docUploadedApps.includes(selectedApplication.id) && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-md font-semibold text-gray-900">
+                เอกสารขอความอนุเคราะห์
+              </h4>
+              {/* Show status badge based on effective step */}
+              {docUploadedApps.includes(selectedApplication.id) && (
+                <span className="text-sm px-3 py-1 rounded-full bg-[#DCFAE6] text-[#085D3A] font-semibold border border-[#A9EFC5]">
+                  ส่งเอกสารแล้ว
+                </span>
+              )}
+              {!docUploadedApps.includes(selectedApplication.id) &&
+                approvedApps.includes(selectedApplication.id) &&
+                (selectedApplication.step >= 5 ||
+                  (selectedApplication.analysisDocuments &&
+                    selectedApplication.analysisDocuments.length > 0)) && (
+                  <button className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
+                    รอส่งเอกสาร
+                  </button>
+                )}
+              {!docUploadedApps.includes(selectedApplication.id) &&
+                selectedApplication.step === 5 &&
+                !approvedApps.includes(selectedApplication.id) &&
+                !docApprovedApps.includes(selectedApplication.id) &&
+                !docRejectedApps.includes(selectedApplication.id) && (
+                  <button className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
+                    รอส่งเอกสาร
+                  </button>
+                )}
+              {!docUploadedApps.includes(selectedApplication.id) &&
+                (selectedApplication.step === 7 ||
+                  docApprovedApps.includes(selectedApplication.id)) && (
                   <span className="text-sm px-3 py-1 rounded-full bg-[#DCFAE6] text-[#085D3A] font-semibold border border-[#A9EFC5]">
                     ส่งเอกสารแล้ว
                   </span>
                 )}
-                {!docUploadedApps.includes(selectedApplication.id) &&
-                  approvedApps.includes(selectedApplication.id) &&
-                  (selectedApplication.step >= 5 ||
-                    (selectedApplication.analysisDocuments &&
-                      selectedApplication.analysisDocuments.length > 0)) && (
-                    <button className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
-                      รอส่งเอกสาร
-                    </button>
-                  )}
-                {!docUploadedApps.includes(selectedApplication.id) &&
-                  selectedApplication.step === 5 &&
-                  !approvedApps.includes(selectedApplication.id) &&
-                  !docApprovedApps.includes(selectedApplication.id) &&
-                  !docRejectedApps.includes(selectedApplication.id) && (
-                    <button className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
-                      รอส่งเอกสาร
-                    </button>
-                  )}
-                {!docUploadedApps.includes(selectedApplication.id) &&
-                  (selectedApplication.step === 7 ||
-                    docApprovedApps.includes(selectedApplication.id)) && (
-                    <span className="text-sm px-3 py-1 rounded-full bg-[#DCFAE6] text-[#085D3A] font-semibold border border-[#A9EFC5]">
-                      ส่งเอกสารแล้ว
-                    </span>
-                  )}
-                {!docUploadedApps.includes(selectedApplication.id) &&
-                  selectedApplication.step === 6 &&
-                  selectedApplication.detailedStatus === "doc_rejected" && (
-                    <span className="text-sm px-3 py-1 rounded-full bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA]">
-                      เอกสารไม่ผ่าน
-                    </span>
-                  )}
-                {!docUploadedApps.includes(selectedApplication.id) &&
-                  docRejectedApps.includes(selectedApplication.id) && (
-                    <span className="text-sm px-3 py-1 rounded-full bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA]">
-                      เอกสารไม่ผ่าน
-                    </span>
-                  )}
-                {!docUploadedApps.includes(selectedApplication.id) &&
-                  selectedApplication.step === 4 &&
-                  !approvedApps.includes(selectedApplication.id) && (
-                    <span className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
-                      รอเอกสารขอความอนุเคราะห์
-                    </span>
-                  )}
-                {!docUploadedApps.includes(selectedApplication.id) &&
-                  approvedApps.includes(selectedApplication.id) &&
-                  selectedApplication.step < 5 &&
-                  !(
-                    selectedApplication.analysisDocuments &&
-                    selectedApplication.analysisDocuments.length > 0
-                  ) && (
-                    <span className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
-                      รอเอกสารขอความอนุเคราะห์
-                    </span>
-                  )}
-              </div>
+              {!docUploadedApps.includes(selectedApplication.id) &&
+                selectedApplication.step === 6 &&
+                selectedApplication.detailedStatus === "doc_rejected" && (
+                  <span className="text-sm px-3 py-1 rounded-full bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA]">
+                    เอกสารไม่ผ่าน
+                  </span>
+                )}
+              {!docUploadedApps.includes(selectedApplication.id) &&
+                docRejectedApps.includes(selectedApplication.id) && (
+                  <span className="text-sm px-3 py-1 rounded-full bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA]">
+                    เอกสารไม่ผ่าน
+                  </span>
+                )}
+              {!docUploadedApps.includes(selectedApplication.id) &&
+                selectedApplication.step === 4 &&
+                !approvedApps.includes(selectedApplication.id) && (
+                  <span className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
+                    รอเอกสารขอความอนุเคราะห์
+                  </span>
+                )}
+              {!docUploadedApps.includes(selectedApplication.id) &&
+                approvedApps.includes(selectedApplication.id) &&
+                selectedApplication.step < 5 &&
+                !(
+                  selectedApplication.analysisDocuments &&
+                  selectedApplication.analysisDocuments.length > 0
+                ) && (
+                  <span className="text-sm px-3 py-1 rounded-full bg-[#FEF0C7] text-[#7A2E0E] font-semibold border border-[#FEDF89]">
+                    รอเอกสารขอความอนุเคราะห์
+                  </span>
+                )}
+            </div>
 
-              {hasAnalysisDocuments && (
-                <>
-                  {selectedApplication.analysisDocuments!.map((doc, index) => (
-                    <button
-                      key={index}
-                      className={`flex items-center gap-2 text-sm px-3 py-1 rounded-full border mb-3 ${doc.status === "rejected" ||
-                        docRejectedApps.includes(selectedApplication.id)
+            {hasAnalysisDocuments && (
+              <>
+                {selectedApplication.analysisDocuments!.map((doc, index) => (
+                  <button
+                    key={index}
+                    className={`flex items-center gap-2 text-sm px-3 py-1 rounded-full border mb-3 ${
+                      doc.status === "rejected" ||
+                      docRejectedApps.includes(selectedApplication.id)
                         ? "bg-red-50 border-red-200 text-red-600"
                         : doc.status === "approved" ||
-                          docApprovedApps.includes(selectedApplication.id)
+                            docApprovedApps.includes(selectedApplication.id)
                           ? "bg-green-50 border-green-200 text-green-600"
                           : "bg-green-50 border-green-200 text-green-600"
-                        }`}
+                    }`}
+                  >
+                    <div
+                      className={`flex items-center gap-2 ${doc.status === "rejected" || docRejectedApps.includes(selectedApplication.id) ? "text-red-600" : "text-green-600"}`}
                     >
-                      <div
-                        className={`flex items-center gap-2 ${doc.status === "rejected" || docRejectedApps.includes(selectedApplication.id) ? "text-red-600" : "text-green-600"}`}
-                      >
+                      {doc.status === "rejected" ||
+                      docRejectedApps.includes(selectedApplication.id) ? (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      )}
+                      <span className="text-sm">
                         {doc.status === "rejected" ||
-                          docRejectedApps.includes(selectedApplication.id) ? (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                        )}
-                        <span className="text-sm">
-                          {doc.status === "rejected" ||
-                            docRejectedApps.includes(selectedApplication.id)
-                            ? "ไม่ต้องการให้กองงานเซ็นเอกสาร"
-                            : "ต้องการให้กองงานเซ็นเอกสาร"}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </>
-              )}
+                        docRejectedApps.includes(selectedApplication.id)
+                          ? "ไม่ต้องการให้กองงานเซ็นเอกสาร"
+                          : "ต้องการให้กองงานเซ็นเอกสาร"}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
 
-              {/* Request analysis document button - always show */}
-              <button
-                onClick={() => {
-                  if (
-                    !isWaitingAnalysisDoc ||
-                    docUploadedApps.includes(selectedApplication.id)
-                  ) {
-                    setShowDocumentPopup(true);
-                  }
-                }}
-                disabled={
-                  isWaitingAnalysisDoc &&
-                  !docUploadedApps.includes(selectedApplication.id)
+            {/* Request analysis document button - always show */}
+            <button
+              onClick={() => {
+                if (
+                  !isWaitingAnalysisDoc ||
+                  docUploadedApps.includes(selectedApplication.id)
+                ) {
+                  setShowDocumentPopup(true);
                 }
-                className={`
+              }}
+              disabled={
+                isWaitingAnalysisDoc &&
+                !docUploadedApps.includes(selectedApplication.id)
+              }
+              className={`
         flex items-center gap-2 px-4 py-2.5 rounded-lg w-full justify-center text-sm font-medium transition-colors
-        ${isWaitingAnalysisDoc &&
-                    !docUploadedApps.includes(selectedApplication.id)
-                    ? "bg-primary-600 text-white border border-gray-300 cursor-not-allowed opacity-50"
-                    : "bg-primary-600 text-white border border-primary-600 hover:bg-white hover:text-primary-600 cursor-pointer"
-                  }
+        ${
+          isWaitingAnalysisDoc &&
+          !docUploadedApps.includes(selectedApplication.id)
+            ? "bg-primary-600 text-white border border-gray-300 cursor-not-allowed opacity-50"
+            : "bg-primary-600 text-white border border-primary-600 hover:bg-white hover:text-primary-600 cursor-pointer"
+        }
     `}
+            >
+              <svg
+                width="11"
+                height="14"
+                viewBox="0 0 11 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <svg
-                  width="11"
-                  height="14"
-                  viewBox="0 0 11 14"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M3.33333 10.6667H7.33333C7.52222 10.6667 7.68056 10.6028 7.80833 10.475C7.93611 10.3472 8 10.1889 8 10C8 9.81111 7.93611 9.65278 7.80833 9.525C7.68056 9.39722 7.52222 9.33333 7.33333 9.33333H3.33333C3.14444 9.33333 2.98611 9.39722 2.85833 9.525C2.73056 9.65278 2.66667 9.81111 2.66667 10C2.66667 10.1889 2.73056 10.3472 2.85833 10.475C2.98611 10.6028 3.14444 10.6667 3.33333 10.6667ZM3.33333 8H7.33333C7.52222 8 7.68056 7.93611 7.80833 7.80833C7.93611 7.68056 8 7.52222 8 7.33333C8 7.14444 7.93611 6.98611 7.80833 6.85833C7.68056 6.73056 7.52222 6.66667 7.33333 6.66667H3.33333C3.14444 6.66667 2.98611 6.73056 2.85833 6.85833C2.73056 6.98611 2.66667 7.14444 2.66667 7.33333C2.66667 7.52222 2.73056 7.68056 2.85833 7.80833C2.98611 7.93611 3.14444 8 3.33333 8ZM1.33333 13.3333C0.966667 13.3333 0.652778 13.2028 0.391667 12.9417C0.130556 12.6806 0 12.3667 0 12V1.33333C0 0.966667 0.130556 0.652778 0.391667 0.391667C0.652778 0.130556 0.966667 0 1.33333 0H6.11667C6.29444 0 6.46389 0.0333333 6.625 0.1C6.78611 0.166667 6.92778 0.261111 7.05 0.383333L10.2833 3.61667C10.4056 3.73889 10.5 3.88056 10.5667 4.04167C10.6333 4.20278 10.6667 4.37222 10.6667 4.55V12C10.6667 12.3667 10.5361 12.6806 10.275 12.9417C10.0139 13.2028 9.7 13.3333 9.33333 13.3333H1.33333ZM6 4V1.33333H1.33333V12H9.33333V4.66667H6.66667C6.47778 4.66667 6.31944 4.60278 6.19167 4.475C6.06389 4.34722 6 4.18889 6 4Z"
-                    fill="currentColor"
-                  />
-                </svg>
-                เอกสารขอความอนุเคราะห์
-              </button>
+                <path
+                  d="M3.33333 10.6667H7.33333C7.52222 10.6667 7.68056 10.6028 7.80833 10.475C7.93611 10.3472 8 10.1889 8 10C8 9.81111 7.93611 9.65278 7.80833 9.525C7.68056 9.39722 7.52222 9.33333 7.33333 9.33333H3.33333C3.14444 9.33333 2.98611 9.39722 2.85833 9.525C2.73056 9.65278 2.66667 9.81111 2.66667 10C2.66667 10.1889 2.73056 10.3472 2.85833 10.475C2.98611 10.6028 3.14444 10.6667 3.33333 10.6667ZM3.33333 8H7.33333C7.52222 8 7.68056 7.93611 7.80833 7.80833C7.93611 7.68056 8 7.52222 8 7.33333C8 7.14444 7.93611 6.98611 7.80833 6.85833C7.68056 6.73056 7.52222 6.66667 7.33333 6.66667H3.33333C3.14444 6.66667 2.98611 6.73056 2.85833 6.85833C2.73056 6.98611 2.66667 7.14444 2.66667 7.33333C2.66667 7.52222 2.73056 7.68056 2.85833 7.80833C2.98611 7.93611 3.14444 8 3.33333 8ZM1.33333 13.3333C0.966667 13.3333 0.652778 13.2028 0.391667 12.9417C0.130556 12.6806 0 12.3667 0 12V1.33333C0 0.966667 0.130556 0.652778 0.391667 0.391667C0.652778 0.130556 0.966667 0 1.33333 0H6.11667C6.29444 0 6.46389 0.0333333 6.625 0.1C6.78611 0.166667 6.92778 0.261111 7.05 0.383333L10.2833 3.61667C10.4056 3.73889 10.5 3.88056 10.5667 4.04167C10.6333 4.20278 10.6667 4.37222 10.6667 4.55V12C10.6667 12.3667 10.5361 12.6806 10.275 12.9417C10.0139 13.2028 9.7 13.3333 9.33333 13.3333H1.33333ZM6 4V1.33333H1.33333V12H9.33333V4.66667H6.66667C6.47778 4.66667 6.31944 4.60278 6.19167 4.475C6.06389 4.34722 6 4.18889 6 4Z"
+                  fill="currentColor"
+                />
+              </svg>
+              เอกสารขอความอนุเคราะห์
+            </button>
 
-              {/* Document Request Popup */}
-              {showDocumentPopup && selectedApplication && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 relative">
-                    {/* Close Button */}
-                    <button
-                      onClick={() => {
-                        setShowDocumentPopup(false);
-                        setUploadedFileName("");
-                        setShowUploadSuccess(false);
-                      }}
-                      className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            {/* Document Request Popup */}
+            {showDocumentPopup && selectedApplication && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 relative">
+                  {/* Close Button */}
+                  <button
+                    onClick={() => {
+                      setShowDocumentPopup(false);
+                      setUploadedFileName("");
+                      setShowUploadSuccess(false);
+                    }}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Upload Success Toast */}
+                  {showUploadSuccess && (
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 z-10">
+                      <div className="flex flex-col items-center">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                          <svg
+                            className="w-6 h-6 text-green-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-gray-900 font-medium">
+                          อัปโหลดเอกสารเสร็จสิ้น
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Header */}
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 text-primary-600 mb-1">
                       <svg
-                        className="w-6 h-6"
+                        width="20"
+                        height="24"
+                        viewBox="0 0 20 24"
                         fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
+                          d="M6 16H14C14.2833 16 14.5208 15.9042 14.7125 15.7125C14.9042 15.5208 15 15.2833 15 15C15 14.7167 14.9042 14.4792 14.7125 14.2875C14.5208 14.0958 14.2833 14 14 14H6C5.71667 14 5.47917 14.0958 5.2875 14.2875C5.09583 14.4792 5 14.7167 5 15C5 15.2833 5.09583 15.5208 5.2875 15.7125C5.47917 15.9042 5.71667 16 6 16ZM6 12H14C14.2833 12 14.5208 11.9042 14.7125 11.7125C14.9042 11.5208 15 11.2833 15 11C15 10.7167 14.9042 10.4792 14.7125 10.2875C14.5208 10.0958 14.2833 10 14 10H6C5.71667 10 5.47917 10.0958 5.2875 10.2875C5.09583 10.4792 5 10.7167 5 11C5 11.2833 5.09583 11.5208 5.2875 11.7125C5.47917 11.9042 5.71667 12 6 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H11.175C11.4417 0 11.6958 0.05 11.9375 0.15C12.1792 0.25 12.3917 0.391667 12.575 0.575L17.425 5.425C17.6083 5.60833 17.75 5.82083 17.85 6.0625C17.95 6.30417 18 6.55833 18 6.825V18C18 18.55 17.8042 19.0208 17.4125 19.4125C17.0208 19.8042 16.55 20 16 20H2ZM11 6V2H2V18H16V7H12C11.7167 7 11.4792 6.90417 11.2875 6.7125C11.0958 6.52083 11 6.28333 11 6Z"
+                          fill="#A80689"
                         />
                       </svg>
-                    </button>
+                      <h3 className="text-lg font-semibold">
+                        เอกสารขอความอนุเคราะห์
+                      </h3>
+                    </div>
+                    <p className="text-gray-600 text-sm">
+                      ดาวน์โหลดเอกสารขอความอนุเคราะห์ เซ็นลายเซ็น แล้วอัปโหลดให้
+                      HR
+                    </p>
+                  </div>
 
-                    {/* Upload Success Toast */}
-                    {showUploadSuccess && (
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 z-10">
-                        <div className="flex flex-col items-center">
-                          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
-                            <svg
-                              className="w-6 h-6 text-green-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
-                          <p className="text-gray-900 font-medium">
-                            อัปโหลดเอกสารเสร็จสิ้น
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                  {/* User Info Box */}
+                  <div className="bg-primary-50 rounded-lg p-4 mb-6">
+                    <p className="font-semibold text-gray-900">
+                      {selectedApplication.firstName}{" "}
+                      {selectedApplication.lastName}
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      {selectedApplication.position ||
+                        selectedApplication.department ||
+                        "-"}
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      {selectedApplication.institution}
+                    </p>
+                  </div>
 
-                    {/* Header */}
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 text-primary-600 mb-1">
+                  {/* Step 1: Download */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                        1
+                      </span>
+                      <h4 className="font-medium text-gray-900">
+                        ดาวน์โหลดเอกสารขอความอนุเคราะห์
+                      </h4>
+                    </div>
+                    <div className="group flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:bg-primary-50 hover:border-primary-600 transition-colors">
+                      <div className="flex items-center gap-3">
                         <svg
-                          width="20"
+                          width="24"
                           height="24"
-                          viewBox="0 0 20 24"
+                          viewBox="0 0 24 24"
                           fill="none"
                           xmlns="http://www.w3.org/2000/svg"
                         >
@@ -2978,40 +3945,86 @@ function ApplicationsContent() {
                             fill="#A80689"
                           />
                         </svg>
-                        <h3 className="text-lg font-semibold">
-                          เอกสารขอความอนุเคราะห์
-                        </h3>
-                      </div>
-                      <p className="text-gray-600 text-sm">
-                        ดาวน์โหลดเอกสารขอความอนุเคราะห์ เซ็นลายเซ็น แล้วอัปโหลดให้
-                        HR
-                      </p>
-                    </div>
-
-                    {/* User Info Box */}
-                    <div className="bg-primary-50 rounded-lg p-4 mb-6">
-                      <p className="font-semibold text-gray-900">
-                        {selectedApplication.firstName}{" "}
-                        {selectedApplication.lastName}
-                      </p>
-                      <p className="text-gray-600 text-sm">
-                        {selectedApplication.position || selectedApplication.department || "-"}
-                      </p>
-                      <p className="text-gray-600 text-sm">
-                        {selectedApplication.institution}
-                      </p>
-                    </div>
-
-                    {/* Step 1: Download */}
-                    <div className="mb-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                          1
+                        <span className="text-gray-700">
+                          เอกสารขอความอนุเคราะห์.PDF
                         </span>
-                        <h4 className="font-medium text-gray-900">
-                          ดาวน์โหลดเอกสารขอความอนุเคราะห์
-                        </h4>
                       </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() =>
+                            handleDownloadDocument(
+                              selectedApplication.analysisDocuments?.[0]
+                                ?.docFile,
+                            )
+                          }
+                          className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                          title="ดาวน์โหลด"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handlePreviewDocument(
+                              selectedApplication.analysisDocuments?.[0]
+                                ?.docFile,
+                            )
+                          }
+                          className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
+                          title="ดูเอกสาร"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 2: Upload */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                        2
+                      </span>
+                      <h4 className="font-medium text-gray-900">
+                        อัปโหลดเอกสารที่เซ็นแล้ว
+                      </h4>
+                    </div>
+
+                    {/* Show uploaded file if already uploaded in localStorage OR if mock data has doc_sent/doc_rejected/doc_passed status */}
+                    {(docUploadedApps.includes(selectedApplication.id) &&
+                      uploadedFilenames[selectedApplication.id]) ||
+                    selectedApplication.detailedStatus === "doc_sent" ||
+                    selectedApplication.detailedStatus === "doc_rejected" ||
+                    selectedApplication.detailedStatus === "doc_passed" ? (
                       <div className="group flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:bg-primary-50 hover:border-primary-600 transition-colors">
                         <div className="flex items-center gap-3">
                           <svg
@@ -3027,297 +4040,204 @@ function ApplicationsContent() {
                             />
                           </svg>
                           <span className="text-gray-700">
-                            เอกสารขอความอนุเคราะห์.PDF
+                            {uploadedFilenames[selectedApplication.id] ||
+                              "เอกสารขอความอนุเคราะห์.PDF"}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() =>
-                              handleDownloadDocument(
-                                selectedApplication.analysisDocuments?.[0]
-                                  ?.docFile,
-                              )
-                            }
-                            className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
-                            title="ดาวน์โหลด"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() =>
-                              handlePreviewDocument(
-                                selectedApplication.analysisDocuments?.[0]
-                                  ?.docFile,
-                              )
-                            }
-                            className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
-                            title="ดูเอกสาร"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Step 2: Upload */}
-                    <div className="mb-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                          2
-                        </span>
-                        <h4 className="font-medium text-gray-900">
-                          อัปโหลดเอกสารที่เซ็นแล้ว
-                        </h4>
-                      </div>
-
-                      {/* Show uploaded file if already uploaded in localStorage OR if mock data has doc_sent/doc_rejected/doc_passed status */}
-                      {(docUploadedApps.includes(selectedApplication.id) &&
-                        uploadedFilenames[selectedApplication.id]) ||
-                        selectedApplication.detailedStatus === "doc_sent" ||
-                        selectedApplication.detailedStatus === "doc_rejected" ||
-                        selectedApplication.detailedStatus === "doc_passed" ? (
-                        <div className="group flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:bg-primary-50 hover:border-primary-600 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M6 16H14C14.2833 16 14.5208 15.9042 14.7125 15.7125C14.9042 15.5208 15 15.2833 15 15C15 14.7167 14.9042 14.4792 14.7125 14.2875C14.5208 14.0958 14.2833 14 14 14H6C5.71667 14 5.47917 14.0958 5.2875 14.2875C5.09583 14.4792 5 14.7167 5 15C5 15.2833 5.09583 15.5208 5.2875 15.7125C5.47917 15.9042 5.71667 16 6 16ZM6 12H14C14.2833 12 14.5208 11.9042 14.7125 11.7125C14.9042 11.5208 15 11.2833 15 11C15 10.7167 14.9042 10.4792 14.7125 10.2875C14.5208 10.0958 14.2833 10 14 10H6C5.71667 10 5.47917 10.0958 5.2875 10.2875C5.09583 10.4792 5 10.7167 5 11C5 11.2833 5.09583 11.5208 5.2875 11.7125C5.47917 11.9042 5.71667 12 6 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H11.175C11.4417 0 11.6958 0.05 11.9375 0.15C12.1792 0.25 12.3917 0.391667 12.575 0.575L17.425 5.425C17.6083 5.60833 17.75 5.82083 17.85 6.0625C17.95 6.30417 18 6.55833 18 6.825V18C18 18.55 17.8042 19.0208 17.4125 19.4125C17.0208 19.8042 16.55 20 16 20H2ZM11 6V2H2V18H16V7H12C11.7167 7 11.4792 6.90417 11.2875 6.7125C11.0958 6.52083 11 6.28333 11 6Z"
-                                fill="#A80689"
-                              />
-                            </svg>
-                            <span className="text-gray-700">
-                              {uploadedFilenames[selectedApplication.id] ||
-                                "เอกสารขอความอนุเคราะห์.PDF"}
-                            </span>
-                          </div>
-                          <button className="text-gray-500 hover:text-primary-600 transition-colors">
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M6 19.9998C5.45 19.9998 4.97917 19.804 4.5875 19.4123C4.19583 19.0206 4 18.5498 4 17.9998V15.9998C4 15.7165 4.09583 15.479 4.2875 15.2873C4.47917 15.0956 4.71667 14.9998 5 14.9998C5.28333 14.9998 5.52083 15.0956 5.7125 15.2873C5.90417 15.479 6 15.7165 6 15.9998V17.9998H18V15.9998C18 15.7165 18.0958 15.479 18.2875 15.2873C18.4792 15.0956 18.7167 14.9998 19 14.9998C19.2833 14.9998 19.5208 15.0956 19.7125 15.2873C19.9042 15.479 20 15.7165 20 15.9998V17.9998C20 18.5498 19.8042 19.0206 19.4125 19.4123C19.0208 19.804 18.55 19.9998 18 19.9998H6ZM11 7.8498L9.125 9.7248C8.925 9.9248 8.6875 10.0206 8.4125 10.0123C8.1375 10.004 7.9 9.8998 7.7 9.6998C7.51667 9.4998 7.42083 9.26647 7.4125 8.9998C7.40417 8.73314 7.5 8.4998 7.7 8.2998L11.3 4.6998C11.4 4.5998 11.5083 4.52897 11.625 4.4873C11.7417 4.44564 11.8667 4.4248 12 4.4248C12.1333 4.4248 12.2583 4.44564 12.375 4.4873C12.4917 4.52897 12.6 4.5998 12.7 4.6998L16.3 8.2998C16.5 8.4998 16.5958 8.73314 16.5875 8.9998C16.5792 9.26647 16.4833 9.4998 16.3 9.6998C16.1 9.8998 15.8625 10.004 15.5875 10.0123C15.3125 10.0206 15.075 9.9248 14.875 9.7248L13 7.8498V14.9998C13 15.2831 12.9042 15.5206 12.7125 15.7123C12.5208 15.904 12.2833 15.9998 12 15.9998C11.7167 15.9998 11.4792 15.904 11.2875 15.7123C11.0958 15.5206 11 15.2831 11 14.9998V7.8498Z"
-                                fill="currentColor"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      ) : (
-                        <label className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:bg-primary-50 hover:border-primary-600 transition-colors cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M6 16H14C14.2833 16 14.5208 15.9042 14.7125 15.7125C14.9042 15.5208 15 15.2833 15 15C15 14.7167 14.9042 14.4792 14.7125 14.2875C14.5208 14.0958 14.2833 14 14 14H6C5.71667 14 5.47917 14.0958 5.2875 14.2875C5.09583 14.4792 5 14.7167 5 15C5 15.2833 5.09583 15.5208 5.2875 15.7125C5.47917 15.9042 5.71667 16 6 16ZM6 12H14C14.2833 12 14.5208 11.9042 14.7125 11.7125C14.9042 11.5208 15 11.2833 15 11C15 10.7167 14.9042 10.4792 14.7125 10.2875C14.5208 10.0958 14.2833 10 14 10H6C5.71667 10 5.47917 10.0958 5.2875 10.2875C5.09583 10.4792 5 10.7167 5 11C5 11.2833 5.09583 11.5208 5.2875 11.7125C5.47917 11.9042 5.71667 12 6 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H11.175C11.4417 0 11.6958 0.05 11.9375 0.15C12.1792 0.25 12.3917 0.391667 12.575 0.575L17.425 5.425C17.6083 5.60833 17.75 5.82083 17.85 6.0625C17.95 6.30417 18 6.55833 18 6.825V18C18 18.55 17.8042 19.0208 17.4125 19.4125C17.0208 19.8042 16.55 20 16 20H2ZM11 6V2H2V18H16V7H12C11.7167 7 11.4792 6.90417 11.2875 6.7125C11.0958 6.52083 11 6.28333 11 6Z"
-                                fill="#A80689"
-                              />
-                            </svg>
-                            <span className="text-gray-700">
-                              {uploadedFileName || "Choose File"}
-                            </span>
-                          </div>
+                        <button className="text-gray-500 hover:text-primary-600 transition-colors">
                           <svg
                             width="24"
                             height="24"
                             viewBox="0 0 24 24"
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg"
-                            className="text-gray-400"
                           >
                             <path
                               d="M6 19.9998C5.45 19.9998 4.97917 19.804 4.5875 19.4123C4.19583 19.0206 4 18.5498 4 17.9998V15.9998C4 15.7165 4.09583 15.479 4.2875 15.2873C4.47917 15.0956 4.71667 14.9998 5 14.9998C5.28333 14.9998 5.52083 15.0956 5.7125 15.2873C5.90417 15.479 6 15.7165 6 15.9998V17.9998H18V15.9998C18 15.7165 18.0958 15.479 18.2875 15.2873C18.4792 15.0956 18.7167 14.9998 19 14.9998C19.2833 14.9998 19.5208 15.0956 19.7125 15.2873C19.9042 15.479 20 15.7165 20 15.9998V17.9998C20 18.5498 19.8042 19.0206 19.4125 19.4123C19.0208 19.804 18.55 19.9998 18 19.9998H6ZM11 7.8498L9.125 9.7248C8.925 9.9248 8.6875 10.0206 8.4125 10.0123C8.1375 10.004 7.9 9.8998 7.7 9.6998C7.51667 9.4998 7.42083 9.26647 7.4125 8.9998C7.40417 8.73314 7.5 8.4998 7.7 8.2998L11.3 4.6998C11.4 4.5998 11.5083 4.52897 11.625 4.4873C11.7417 4.44564 11.8667 4.4248 12 4.4248C12.1333 4.4248 12.2583 4.44564 12.375 4.4873C12.4917 4.52897 12.6 4.5998 12.7 4.6998L16.3 8.2998C16.5 8.4998 16.5958 8.73314 16.5875 8.9998C16.5792 9.26647 16.4833 9.4998 16.3 9.6998C16.1 9.8998 15.8625 10.004 15.5875 10.0123C15.3125 10.0206 15.075 9.9248 14.875 9.7248L13 7.8498V14.9998C13 15.2831 12.9042 15.5206 12.7125 15.7123C12.5208 15.904 12.2833 15.9998 12 15.9998C11.7167 15.9998 11.4792 15.904 11.2875 15.7123C11.0958 15.5206 11 15.2831 11 14.9998V7.8498Z"
                               fill="currentColor"
                             />
                           </svg>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept=".pdf"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setUploadedFileName(file.name);
-                                setShowUploadSuccess(true);
-                                setTimeout(
-                                  () => setShowUploadSuccess(false),
-                                  2000,
-                                );
-                              }
-                            }}
-                          />
-                        </label>
-                      )}
-                    </div>
-
-                    {/* Upload and Send Button - only show if not already uploaded */}
-                    {!docUploadedApps.includes(selectedApplication.id) && (
-                      <button
-                        onClick={() => {
-                          if (uploadedFileName) {
-                            setShowUploadConfirm(true);
-                          }
-                        }}
-                        disabled={!uploadedFileName}
-                        className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${uploadedFileName
-                          ? "bg-primary-600 text-white hover:bg-primary-700 cursor-pointer"
-                          : "bg-primary-200 text-white cursor-not-allowed"
-                          }`}
-                      >
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:bg-primary-50 hover:border-primary-600 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M6 16H14C14.2833 16 14.5208 15.9042 14.7125 15.7125C14.9042 15.5208 15 15.2833 15 15C15 14.7167 14.9042 14.4792 14.7125 14.2875C14.5208 14.0958 14.2833 14 14 14H6C5.71667 14 5.47917 14.0958 5.2875 14.2875C5.09583 14.4792 5 14.7167 5 15C5 15.2833 5.09583 15.5208 5.2875 15.7125C5.47917 15.9042 5.71667 16 6 16ZM6 12H14C14.2833 12 14.5208 11.9042 14.7125 11.7125C14.9042 11.5208 15 11.2833 15 11C15 10.7167 14.9042 10.4792 14.7125 10.2875C14.5208 10.0958 14.2833 10 14 10H6C5.71667 10 5.47917 10.0958 5.2875 10.2875C5.09583 10.4792 5 10.7167 5 11C5 11.2833 5.09583 11.5208 5.2875 11.7125C5.47917 11.9042 5.71667 12 6 12ZM2 20C1.45 20 0.979167 19.8042 0.5875 19.4125C0.195833 19.0208 0 18.55 0 18V2C0 1.45 0.195833 0.979167 0.5875 0.5875C0.979167 0.195833 1.45 0 2 0H11.175C11.4417 0 11.6958 0.05 11.9375 0.15C12.1792 0.25 12.3917 0.391667 12.575 0.575L17.425 5.425C17.6083 5.60833 17.75 5.82083 17.85 6.0625C17.95 6.30417 18 6.55833 18 6.825V18C18 18.55 17.8042 19.0208 17.4125 19.4125C17.0208 19.8042 16.55 20 16 20H2ZM11 6V2H2V18H16V7H12C11.7167 7 11.4792 6.90417 11.2875 6.7125C11.0958 6.52083 11 6.28333 11 6Z"
+                              fill="#A80689"
+                            />
+                          </svg>
+                          <span className="text-gray-700">
+                            {uploadedFileName || "Choose File"}
+                          </span>
+                        </div>
                         <svg
-                          width="20"
-                          height="20"
+                          width="24"
+                          height="24"
                           viewBox="0 0 24 24"
                           fill="none"
                           xmlns="http://www.w3.org/2000/svg"
+                          className="text-gray-400"
                         >
                           <path
                             d="M6 19.9998C5.45 19.9998 4.97917 19.804 4.5875 19.4123C4.19583 19.0206 4 18.5498 4 17.9998V15.9998C4 15.7165 4.09583 15.479 4.2875 15.2873C4.47917 15.0956 4.71667 14.9998 5 14.9998C5.28333 14.9998 5.52083 15.0956 5.7125 15.2873C5.90417 15.479 6 15.7165 6 15.9998V17.9998H18V15.9998C18 15.7165 18.0958 15.479 18.2875 15.2873C18.4792 15.0956 18.7167 14.9998 19 14.9998C19.2833 14.9998 19.5208 15.0956 19.7125 15.2873C19.9042 15.479 20 15.7165 20 15.9998V17.9998C20 18.5498 19.8042 19.0206 19.4125 19.4123C19.0208 19.804 18.55 19.9998 18 19.9998H6ZM11 7.8498L9.125 9.7248C8.925 9.9248 8.6875 10.0206 8.4125 10.0123C8.1375 10.004 7.9 9.8998 7.7 9.6998C7.51667 9.4998 7.42083 9.26647 7.4125 8.9998C7.40417 8.73314 7.5 8.4998 7.7 8.2998L11.3 4.6998C11.4 4.5998 11.5083 4.52897 11.625 4.4873C11.7417 4.44564 11.8667 4.4248 12 4.4248C12.1333 4.4248 12.2583 4.44564 12.375 4.4873C12.4917 4.52897 12.6 4.5998 12.7 4.6998L16.3 8.2998C16.5 8.4998 16.5958 8.73314 16.5875 8.9998C16.5792 9.26647 16.4833 9.4998 16.3 9.6998C16.1 9.8998 15.8625 10.004 15.5875 10.0123C15.3125 10.0206 15.075 9.9248 14.875 9.7248L13 7.8498V14.9998C13 15.2831 12.9042 15.5206 12.7125 15.7123C12.5208 15.904 12.2833 15.9998 12 15.9998C11.7167 15.9998 11.4792 15.904 11.2875 15.7123C11.0958 15.5206 11 15.2831 11 14.9998V7.8498Z"
                             fill="currentColor"
                           />
                         </svg>
-                        อัปโหลดและส่งให้ HR
-                      </button>
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setUploadedFileName(file.name);
+                              setShowUploadSuccess(true);
+                              setTimeout(
+                                () => setShowUploadSuccess(false),
+                                2000,
+                              );
+                            }
+                          }}
+                        />
+                      </label>
                     )}
                   </div>
-                </div>
-              )}
 
-              {/* Upload Confirm Modal */}
-              {showUploadConfirm && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
-                  <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg
-                        className="w-8 h-8 text-green-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                      ยืนยันการอัปโหลด
-                    </h3>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setShowUploadConfirm(false)}
-                        className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-                      >
-                        ย้อนกลับ
-                      </button>
-                      <button
-                        onClick={handleDocUploadAndSend}
-                        className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
-                      >
-                        ยืนยัน
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Final Success Modal */}
-              {showFinalSuccess && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
-                  <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg
-                        className="w-8 h-8 text-green-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      อัปโหลดเอกสารเรียบร้อยแล้ว
-                    </h3>
+                  {/* Upload and Send Button - only show if not already uploaded */}
+                  {!docUploadedApps.includes(selectedApplication.id) && (
                     <button
                       onClick={() => {
-                        setShowFinalSuccess(false);
-                        setShowDocumentPopup(false);
+                        if (uploadedFileName) {
+                          setShowUploadConfirm(true);
+                        }
                       }}
-                      className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                      disabled={!uploadedFileName}
+                      className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
+                        uploadedFileName
+                          ? "bg-primary-600 text-white hover:bg-primary-700 cursor-pointer"
+                          : "bg-primary-200 text-white cursor-not-allowed"
+                      }`}
                     >
-                      ตกลง
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M6 19.9998C5.45 19.9998 4.97917 19.804 4.5875 19.4123C4.19583 19.0206 4 18.5498 4 17.9998V15.9998C4 15.7165 4.09583 15.479 4.2875 15.2873C4.47917 15.0956 4.71667 14.9998 5 14.9998C5.28333 14.9998 5.52083 15.0956 5.7125 15.2873C5.90417 15.479 6 15.7165 6 15.9998V17.9998H18V15.9998C18 15.7165 18.0958 15.479 18.2875 15.2873C18.4792 15.0956 18.7167 14.9998 19 14.9998C19.2833 14.9998 19.5208 15.0956 19.7125 15.2873C19.9042 15.479 20 15.7165 20 15.9998V17.9998C20 18.5498 19.8042 19.0206 19.4125 19.4123C19.0208 19.804 18.55 19.9998 18 19.9998H6ZM11 7.8498L9.125 9.7248C8.925 9.9248 8.6875 10.0206 8.4125 10.0123C8.1375 10.004 7.9 9.8998 7.7 9.6998C7.51667 9.4998 7.42083 9.26647 7.4125 8.9998C7.40417 8.73314 7.5 8.4998 7.7 8.2998L11.3 4.6998C11.4 4.5998 11.5083 4.52897 11.625 4.4873C11.7417 4.44564 11.8667 4.4248 12 4.4248C12.1333 4.4248 12.2583 4.44564 12.375 4.4873C12.4917 4.52897 12.6 4.5998 12.7 4.6998L16.3 8.2998C16.5 8.4998 16.5958 8.73314 16.5875 8.9998C16.5792 9.26647 16.4833 9.4998 16.3 9.6998C16.1 9.8998 15.8625 10.004 15.5875 10.0123C15.3125 10.0206 15.075 9.9248 14.875 9.7248L13 7.8498V14.9998C13 15.2831 12.9042 15.5206 12.7125 15.7123C12.5208 15.904 12.2833 15.9998 12 15.9998C11.7167 15.9998 11.4792 15.904 11.2875 15.7123C11.0958 15.5206 11 15.2831 11 14.9998V7.8498Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      อัปโหลดและส่งให้ HR
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Upload Confirm Modal */}
+            {showUploadConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
+                <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-green-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                    ยืนยันการอัปโหลด
+                  </h3>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowUploadConfirm(false)}
+                      className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                    >
+                      ย้อนกลับ
+                    </button>
+                    <button
+                      onClick={handleDocUploadAndSend}
+                      className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                    >
+                      ยืนยัน
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Rejection reason if doc rejected */}
-              {(selectedApplication.step === 6 ||
-                docRejectedApps.includes(selectedApplication.id)) &&
-                selectedApplication.rejectionReason && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-900 mb-2">
-                      เอกสารไม่ผ่านเพราะ:
-                    </p>
-
-                    <div className="bg-white border border-gray-300 rounded-lg p-4 min-h-28 hover:border-primary-600 transition-colors">
-                      <p className="text-sm font-medium text-red-600">
-                        {selectedApplication.rejectionReason}
-                      </p>
-                    </div>
+            {/* Final Success Modal */}
+            {showFinalSuccess && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
+                <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-green-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
                   </div>
-                )}
-            </div>
-          )}
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    อัปโหลดเอกสารเรียบร้อยแล้ว
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowFinalSuccess(false);
+                      setShowDocumentPopup(false);
+                    }}
+                    className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                  >
+                    ตกลง
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Rejection reason if doc rejected */}
+            {(selectedApplication.step === 6 ||
+              docRejectedApps.includes(selectedApplication.id)) &&
+              selectedApplication.rejectionReason && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">
+                    เอกสารไม่ผ่านเพราะ:
+                  </p>
+
+                  <div className="bg-white border border-gray-300 rounded-lg p-4 min-h-28 hover:border-primary-600 transition-colors">
+                    <p className="text-sm font-medium text-red-600">
+                      {selectedApplication.rejectionReason}
+                    </p>
+                  </div>
+                </div>
+              )}
+          </div>
+        )}
 
         {/* Additional Info Dropdown */}
         {/* <div className="border-t border-gray-100 mt-6">
@@ -3431,9 +4351,7 @@ function ApplicationsContent() {
                   </svg>
                   <div>
                     <p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p>
-                    <p className=" text-gray-900 text-sm">
-                      {getMentor().name}
-                    </p>
+                    <p className=" text-gray-900 text-sm">{getMentor().name}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -3452,7 +4370,7 @@ function ApplicationsContent() {
                   </svg>
                   <div>
                     <p className="text-gray-400 text-sm">อีเมล</p>
-                    <p className="font-medium text-gray-900 text-sm">
+                    <p className=" text-gray-900 text-sm">
                       {getMentor().email}
                     </p>
                   </div>
@@ -3473,7 +4391,7 @@ function ApplicationsContent() {
                   </svg>
                   <div>
                     <p className="text-gray-400 text-sm">เบอร์โทร</p>
-                    <p className="font-medium text-gray-900 text-sm">
+                    <p className=" text-gray-900 text-sm">
                       {getMentor().phone}
                     </p>
                   </div>
@@ -3534,7 +4452,7 @@ function ApplicationsContent() {
         {/* Status Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <Link
-            href={`/owner/dashboard/applications${positionId ? `?positionId=${positionId}` : ''}`}
+            href={`/owner/dashboard/applications${positionId ? `?positionId=${positionId}` : ""}`}
             className="bg-primary-50 rounded-xl border border-l-5 border-primary-600 p-4 cursor-pointer hover:shadow-md transition-all"
           >
             <div className="text-primary-600 mb-2">
@@ -3557,7 +4475,7 @@ function ApplicationsContent() {
             <p className="text-gray-500 text-sm">ใบสมัครทั้งหมด</p>
           </Link>
           <Link
-            href={`/owner/dashboard/pending${positionId ? `?positionId=${positionId}` : ''}`}
+            href={`/owner/dashboard/pending${positionId ? `?positionId=${positionId}` : ""}`}
             className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:border-primary-600 hover:shadow-md transition-all"
           >
             <div className="text-primary-600 mb-2">
@@ -3582,7 +4500,7 @@ function ApplicationsContent() {
             <p className="text-gray-500 text-sm">สถานะรอ</p>
           </Link>
           <Link
-            href={`/owner/dashboard/accepted${positionId ? `?positionId=${positionId}` : ''}`}
+            href={`/owner/dashboard/accepted${positionId ? `?positionId=${positionId}` : ""}`}
             className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:border-primary-600 hover:shadow-md transition-all"
           >
             <div className="text-primary-600 mb-2">
@@ -3606,7 +4524,7 @@ function ApplicationsContent() {
             <p className="text-gray-500 text-sm">สถานะรับเข้าฝึกงาน</p>
           </Link>
           <Link
-            href={`/owner/dashboard/rejected${positionId ? `?positionId=${positionId}` : ''}`}
+            href={`/owner/dashboard/rejected${positionId ? `?positionId=${positionId}` : ""}`}
             className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:border-primary-600 hover:shadow-md transition-all"
           >
             <div className="text-primary-600 mb-2">
@@ -3629,7 +4547,7 @@ function ApplicationsContent() {
             <p className="text-gray-500 text-sm">สถานะไม่ผ่าน</p>
           </Link>
           <Link
-            href={`/owner/dashboard/cancelled${positionId ? `?positionId=${positionId}` : ''}`}
+            href={`/owner/dashboard/cancelled${positionId ? `?positionId=${positionId}` : ""}`}
             className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:border-primary-600 hover:shadow-md transition-all"
           >
             <div className="text-primary-600 mb-2">
@@ -3656,65 +4574,100 @@ function ApplicationsContent() {
         {/* Tabs */}
         <div className="flex flex-wrap gap-0 mb-6 border-b border-gray-200">
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("all"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "all"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("all");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "all"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             ทั้งหมด ({tabCounts.all})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("waiting_document"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "waiting_document"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("waiting_document");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "waiting_document"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             รอยื่นเอกสาร ({tabCounts.waiting_document})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("waiting_interview"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "waiting_interview"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("waiting_interview");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "waiting_interview"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             รอสัมภาษณ์ ({tabCounts.waiting_interview})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("waiting_confirm"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "waiting_confirm"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("waiting_confirm");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "waiting_confirm"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             รอการยืนยัน ({tabCounts.waiting_confirm})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("accepted"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "accepted"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("accepted");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "accepted"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             รับเข้าฝึกงาน ({tabCounts.accepted})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("rejected"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "rejected"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("rejected");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "rejected"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             ไม่ผ่าน ({tabCounts.rejected})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("cancelled"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "cancelled"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("cancelled");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "cancelled"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             ยกเลิกฝึกงาน ({tabCounts.cancelled})
           </button>
@@ -3830,28 +4783,29 @@ function ApplicationsContent() {
                     }}
                   >
                     <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedInstitutions.length ===
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        selectedInstitutions.length ===
                         institutionCategories.length
-                        ? "bg-primary-600 border-primary-600"
-                        : "border-gray-400"
-                        }`}
+                          ? "bg-primary-600 border-primary-600"
+                          : "border-gray-400"
+                      }`}
                     >
                       {selectedInstitutions.length ===
                         institutionCategories.length && (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        )}
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      )}
                     </div>
                     <span className="text-gray-700 text-sm">
                       ทั้งหมด ({institutionCategories.length})
@@ -3873,10 +4827,10 @@ function ApplicationsContent() {
                       const schools = getSchoolsByCategory(cat.id);
                       const filteredSchools = institutionSearch.trim()
                         ? schools.filter((s) =>
-                          s
-                            .toLowerCase()
-                            .includes(institutionSearch.trim().toLowerCase()),
-                        )
+                            s
+                              .toLowerCase()
+                              .includes(institutionSearch.trim().toLowerCase()),
+                          )
                         : schools;
                       const isExpanded = expandedCategories.includes(cat.id);
 
@@ -3888,10 +4842,11 @@ function ApplicationsContent() {
                               onClick={() => handleInstitutionToggle(cat.id)}
                             >
                               <div
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedInstitutions.includes(cat.id)
-                                  ? "bg-primary-600 border-primary-600"
-                                  : "border-gray-400"
-                                  }`}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                  selectedInstitutions.includes(cat.id)
+                                    ? "bg-primary-600 border-primary-600"
+                                    : "border-gray-400"
+                                }`}
                               >
                                 {selectedInstitutions.includes(cat.id) && (
                                   <svg
@@ -3946,10 +4901,11 @@ function ApplicationsContent() {
                                   onClick={() => handleSchoolToggle(school)}
                                 >
                                   <div
-                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedSchools.includes(school)
-                                      ? "bg-primary-600 border-primary-600"
-                                      : "border-gray-400"
-                                      }`}
+                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                      selectedSchools.includes(school)
+                                        ? "bg-primary-600 border-primary-600"
+                                        : "border-gray-400"
+                                    }`}
                                   >
                                     {selectedSchools.includes(school) && (
                                       <svg
@@ -4003,10 +4959,11 @@ function ApplicationsContent() {
                       <div
                         key={app.id}
                         onClick={() => setSelectedApplication(app)}
-                        className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all ${selectedApplication?.id === app.id
-                          ? "border-primary-600"
-                          : "border-gray-200 hover:border-gray-300"
-                          }`}
+                        className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all ${
+                          selectedApplication?.id === app.id
+                            ? "border-primary-600"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
                       >
                         <div className="mb-1">
                           <span className="font-semibold text-gray-900">
@@ -4083,8 +5040,8 @@ function ApplicationsContent() {
                             </svg>
 
                             <span>
-                              ระยะเวลาการฝึกงาน: {formatDateThai(app.startDate)} -{" "}
-                              {formatDateThai(app.endDate)}
+                              ระยะเวลาการฝึกงาน: {formatDateThai(app.startDate)}{" "}
+                              - {formatDateThai(app.endDate)}
                             </span>
                           </div>
                         </div>
@@ -4097,10 +5054,11 @@ function ApplicationsContent() {
                     <div
                       key={app.id}
                       onClick={() => setSelectedApplication(app)}
-                      className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all ${selectedApplication?.id === app.id
-                        ? "border-primary-600 shadow-md"
-                        : "border-gray-100 hover:border-gray-300"
-                        }`}
+                      className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all ${
+                        selectedApplication?.id === app.id
+                          ? "border-primary-600 shadow-md"
+                          : "border-gray-100 hover:border-gray-300"
+                      }`}
                     >
                       <div className="mb-1">
                         <span className="font-semibold text-gray-900">
@@ -4228,8 +5186,14 @@ function ApplicationsContent() {
                       alt="ไม่พบใบสมัคร"
                       className="w-40 h-40 object-contain opacity-80"
                     />
-                    <p className="text-gray-700 font-semibold text-base mt-2">ไม่พบใบสมัคร</p>
-                    <p className="text-gray-400 text-sm">ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้<br />กรุณาตรวจสอบอีกครั้งภายหลัง</p>
+                    <p className="text-gray-700 font-semibold text-base mt-2">
+                      ไม่พบใบสมัคร
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้
+                      <br />
+                      กรุณาตรวจสอบอีกครั้งภายหลัง
+                    </p>
                   </div>
                 </div>
               )}
@@ -4247,7 +5211,9 @@ function ApplicationsContent() {
                   </p>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      onClick={() =>
+                        setCurrentPage(Math.max(1, currentPage - 1))
+                      }
                       disabled={currentPage === 1}
                       className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                     >
@@ -4273,10 +5239,11 @@ function ApplicationsContent() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg text-sm font-medium ${currentPage === page
-                          ? "bg-primary-600 text-white"
-                          : "border border-gray-300 hover:bg-gray-100"
-                          }`}
+                        className={`w-8 h-8 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? "bg-primary-600 text-white"
+                            : "border border-gray-300 hover:bg-gray-100"
+                        }`}
                       >
                         {page}
                       </button>
@@ -4322,9 +5289,18 @@ function ApplicationsContent() {
           <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
             {/* Green Checkmark Icon */}
             <div className="flex items-center justify-center mx-auto mb-6">
-              <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="70"
+                height="70"
+                viewBox="0 0 45 45"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                <path
+                  d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                  fill="#17B26A"
+                />
               </svg>
             </div>
 
@@ -4356,9 +5332,18 @@ function ApplicationsContent() {
           <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
             {/* Green Checkmark Icon */}
             <div className="rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="70"
+                height="70"
+                viewBox="0 0 45 45"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                <path
+                  d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                  fill="#17B26A"
+                />
               </svg>
             </div>
 
@@ -4382,21 +5367,30 @@ function ApplicationsContent() {
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 text-center">
             {/* Green Checkmark Icon */}
             <div className="flex justify-center mb-4">
-              <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="70"
+                height="70"
+                viewBox="0 0 45 45"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                <path
+                  d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                  fill="#17B26A"
+                />
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               ยืนยันการรับเข้าฝึกงาน
             </h3>
             <p className="text-gray-600 mb-6">
-                คุณต้องการรับ{" "}
-                <span className="font-semibold">
-                  {selectedApplication?.firstName} {selectedApplication?.lastName}
-                </span>{" "}
-                เข้าฝึกงานใช่หรือไม่?
-              </p>
+              คุณต้องการรับ{" "}
+              <span className="font-semibold">
+                {selectedApplication?.firstName} {selectedApplication?.lastName}
+              </span>{" "}
+              เข้าฝึกงานใช่หรือไม่?
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowApproveConfirm(false)}
@@ -4842,11 +5836,13 @@ function ApplicationsContent() {
                 </div>
 
                 {/* History list */}
-                <div className="overflow-y-auto flex-1 space-y-4">
+                <div className="overflow-y-auto flex-1">
                   {historyLoading ? (
                     <div className="flex flex-col items-center justify-center py-16">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
-                      <p className="text-gray-500 text-sm">กำลังโหลดประวัติ...</p>
+                      <p className="text-gray-500 text-sm">
+                        กำลังโหลดประวัติ...
+                      </p>
                     </div>
                   ) : historyData.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16">
@@ -4865,63 +5861,85 @@ function ApplicationsContent() {
                       </p>
                     </div>
                   ) : (
-                    historyData.map((item) => {
-                      const statusInfo = getHistoryStatusInfo(item.applicationStatus);
-                      return (
-                        <div
-                          key={item.applicationId}
-                          className="border border-gray-200 rounded-xl overflow-hidden"
-                        >
-                          <div className="p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M3.75 6H14.25V4.5H3.75V6ZM3.75 16.5C3.3375 16.5 2.98438 16.3531 2.69063 16.0594C2.39688 15.7656 2.25 15.4125 2.25 15V4.5C2.25 4.0875 2.39688 3.73438 2.69063 3.44063C2.98438 3.14688 3.3375 3 3.75 3H4.5V2.25C4.5 2.0375 4.57188 1.85938 4.71563 1.71562C4.85938 1.57187 5.0375 1.5 5.25 1.5C5.4625 1.5 5.64062 1.57187 5.78438 1.71562C5.92813 1.85938 6 2.0375 6 2.25V3H12V2.25C12 2.0375 12.0719 1.85938 12.2156 1.71562C12.3594 1.57187 12.5375 1.5 12.75 1.5C12.9625 1.5 13.1406 1.57187 13.2844 1.71562C13.4281 1.85938 13.5 2.0375 13.5 2.25V3H14.25C14.6625 3 15.0156 3.14688 15.3094 3.44063C15.6031 3.73438 15.75 4.0875 15.75 4.5V8.00625C15.75 8.21875 15.6781 8.39687 15.5344 8.54062C15.3906 8.68437 15.2125 8.75625 15 8.75625C14.7875 8.75625 14.6094 8.68437 14.4656 8.54062C14.3219 8.39687 14.25 8.21875 14.25 8.00625V7.5H3.75V15H8.1C8.3125 15 8.49062 15.0719 8.63437 15.2156C8.77812 15.3594 8.85 15.5375 8.85 15.75C8.85 15.9625 8.77812 16.1406 8.63437 16.2844C8.49062 16.4281 8.3125 16.5 8.1 16.5H3.75ZM13.5 17.25C12.4625 17.25 11.5781 16.8844 10.8469 16.1531C10.1156 15.4219 9.75 14.5375 9.75 13.5C9.75 12.4625 10.1156 11.5781 10.8469 10.8469C11.5781 10.1156 12.4625 9.75 13.5 9.75C14.5375 9.75 15.4219 10.1156 16.1531 10.8469C16.8844 11.5781 17.25 12.4625 17.25 13.5C17.25 14.5375 16.8844 15.4219 16.1531 16.1531C15.4219 16.8844 14.5375 17.25 13.5 17.25ZM13.875 13.35V11.625C13.875 11.525 13.8375 11.4375 13.7625 11.3625C13.6875 11.2875 13.6 11.25 13.5 11.25C13.4 11.25 13.3125 11.2875 13.2375 11.3625C13.1625 11.4375 13.125 11.525 13.125 11.625V13.3313C13.125 13.4313 13.1438 13.5281 13.1812 13.6219C13.2188 13.7156 13.275 13.8 13.35 13.875L14.4938 15.0187C14.5688 15.0938 14.6563 15.1313 14.7563 15.1313C14.8563 15.1313 14.9437 15.0938 15.0187 15.0187C15.0938 14.9437 15.1313 14.8563 15.1313 14.7563C15.1313 14.6563 15.0938 14.5688 15.0187 14.4938L13.875 13.35Z" fill="#98A2B3" />
-                                </svg>
-                                <span>{formatHistoryDate(item.createdAt)}</span>
-                              </div>
-                              <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusInfo.color}`}>
-                                {statusInfo.label}
-                              </span>
-                            </div>
-                            <h4 className="font-semibold text-gray-900 mb-1">
-                              {item.positionName || "ตำแหน่งไม่ระบุ"}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              รอบที่ {item.internshipRound}
-                            </p>
-                          </div>
-
-                          {item.statusNote && (
-                            <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
-                              <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20Z" fill="#D92D20" />
-                                </svg>
-                                <span className="text-sm font-semibold text-red-500">
-                                  {item.applicationStatus === "CANCEL"
-                                    ? "เหตุผลประกอบการยกเลิกฝึกงาน"
-                                    : "หมายเหตุ"}
+                    <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
+                      {historyData.map((item) => {
+                        const statusInfo = getHistoryStatusInfo(
+                          item.applicationStatus,
+                        );
+                        return (
+                          <div key={item.applicationId}>
+                            <div className="p-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                  <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 18 18"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M3.75 6H14.25V4.5H3.75V6ZM3.75 16.5C3.3375 16.5 2.98438 16.3531 2.69063 16.0594C2.39688 15.7656 2.25 15.4125 2.25 15V4.5C2.25 4.0875 2.39688 3.73438 2.69063 3.44063C2.98438 3.14688 3.3375 3 3.75 3H4.5V2.25C4.5 2.0375 4.57188 1.85938 4.71563 1.71562C4.85938 1.57187 5.0375 1.5 5.25 1.5C5.4625 1.5 5.64062 1.57187 5.78438 1.71562C5.92813 1.85938 6 2.0375 6 2.25V3H12V2.25C12 2.0375 12.0719 1.85938 12.2156 1.71562C12.3594 1.57187 12.5375 1.5 12.75 1.5C12.9625 1.5 13.1406 1.57187 13.2844 1.71562C13.4281 1.85938 13.5 2.0375 13.5 2.25V3H14.25C14.6625 3 15.0156 3.14688 15.3094 3.44063C15.6031 3.73438 15.75 4.0875 15.75 4.5V8.00625C15.75 8.21875 15.6781 8.39687 15.5344 8.54062C15.3906 8.68437 15.2125 8.75625 15 8.75625C14.7875 8.75625 14.6094 8.68437 14.4656 8.54062C14.3219 8.39687 14.25 8.21875 14.25 8.00625V7.5H3.75V15H8.1C8.3125 15 8.49062 15.0719 8.63437 15.2156C8.77812 15.3594 8.85 15.5375 8.85 15.75C8.85 15.9625 8.77812 16.1406 8.63437 16.2844C8.49062 16.4281 8.3125 16.5 8.1 16.5H3.75ZM13.5 17.25C12.4625 17.25 11.5781 16.8844 10.8469 16.1531C10.1156 15.4219 9.75 14.5375 9.75 13.5C9.75 12.4625 10.1156 11.5781 10.8469 10.8469C11.5781 10.1156 12.4625 9.75 13.5 9.75C14.5375 9.75 15.4219 10.1156 16.1531 10.8469C16.8844 11.5781 17.25 12.4625 17.25 13.5C17.25 14.5375 16.8844 15.4219 16.1531 16.1531C15.4219 16.8844 14.5375 17.25 13.5 17.25ZM13.875 13.35V11.625C13.875 11.525 13.8375 11.4375 13.7625 11.3625C13.6875 11.2875 13.6 11.25 13.5 11.25C13.4 11.25 13.3125 11.2875 13.2375 11.3625C13.1625 11.4375 13.125 11.525 13.125 11.625V13.3313C13.125 13.4313 13.1438 13.5281 13.1812 13.6219C13.2188 13.7156 13.275 13.8 13.35 13.875L14.4938 15.0187C14.5688 15.0938 14.6563 15.1313 14.7563 15.1313C14.8563 15.1313 14.9437 15.0938 15.0187 15.0187C15.0938 14.9437 15.1313 14.8563 15.1313 14.7563C15.1313 14.6563 15.0938 14.5688 15.0187 14.4938L13.875 13.35Z"
+                                      fill="#98A2B3"
+                                    />
+                                  </svg>
+                                  <span>
+                                    {formatHistoryDate(item.createdAt)}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusInfo.color}`}
+                                >
+                                  {statusInfo.label}
                                 </span>
                               </div>
-                              <div className="mx-4 border-t border-red-200" />
-                              <div className="px-4 pt-3 pb-4">
-                                <p className="text-sm text-gray-700 leading-relaxed">
-                                  {item.statusNote}
-                                </p>
-                              </div>
+                              <h4 className="font-semibold text-gray-900 mb-1">
+                                {item.positionName || "ตำแหน่งไม่ระบุ"}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                รอบที่ {item.internshipRound}
+                              </p>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })
+
+                            {item.statusNote && (
+                              <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                                  <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 20 20"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20Z"
+                                      fill="#D92D20"
+                                    />
+                                  </svg>
+                                  <span className="text-sm font-semibold text-red-500">
+                                    {item.applicationStatus === "CANCEL"
+                                      ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                      : "หมายเหตุ"}
+                                  </span>
+                                </div>
+                                <div className="mx-4 border-t border-red-200" />
+                                <div className="px-4 pt-3 pb-4">
+                                  <p className="text-sm text-gray-700 leading-relaxed">
+                                    {item.statusNote}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           );
         })()}
-
     </div>
   );
 }
