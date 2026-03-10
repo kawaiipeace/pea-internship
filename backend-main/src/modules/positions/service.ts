@@ -219,7 +219,6 @@ export class PositionService {
             )
         : [];
 
-    // department info
     const departmentData =
       departmentIds.length > 0
         ? await db
@@ -235,7 +234,6 @@ export class PositionService {
             .where(or(...departmentIds.map((dId) => eq(departments.id, dId))))
         : [];
 
-    // office info
     const officeData =
       officeIds.length > 0
         ? await db
@@ -392,16 +390,19 @@ export class PositionService {
         .from(internshipPositions)
         .where(eq(internshipPositions.id, id));
 
-      if (!existing) throw new NotFoundError(`ไม่พบใบประกาศงรหัส ${id}`);
-      if (existing.departmentId !== departmentId)
+      if (!existing) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
+      if (existing.departmentId !== departmentId) {
         throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขใบประกาศของกองอื่น");
+      }
 
-      if (data.positionCount !== undefined) {
-        if (data.positionCount !== null) {
+      if ("positionCount" in data) {
+        if (data.positionCount !== null && data.positionCount !== undefined) {
           const nextCount = Number(data.positionCount);
+
           if (!Number.isFinite(nextCount) || nextCount < 0) {
             throw new BadRequestError("positionCount ไม่ถูกต้อง");
           }
+
           const accepted = Number(existing.acceptedCount ?? 0);
           if (nextCount < accepted) {
             throw new BadRequestError(
@@ -411,15 +412,21 @@ export class PositionService {
         }
       }
 
-      const newRecruitStart = data.recruitStart ?? existing.recruitStart;
-      const newRecruitEnd = data.recruitEnd ?? existing.recruitEnd;
+      const newRecruitStart =
+        "recruitStart" in data
+          ? (data.recruitStart ?? null)
+          : (existing.recruitStart ?? null);
+
+      const newRecruitEnd =
+        "recruitEnd" in data
+          ? (data.recruitEnd ?? null)
+          : (existing.recruitEnd ?? null);
 
       const autoStatus = computeAutoStatus(newRecruitStart, newRecruitEnd);
 
       let finalStatus: "NOT_OPEN_YET" | "OPEN" | "CLOSE" | "EXPIRED" =
         autoStatus;
 
-      // manual close/open only allowed when auto is OPEN
       if (data.recruitmentStatus === "CLOSE") {
         if (autoStatus !== "OPEN") {
           throw new ForbiddenError(
@@ -442,30 +449,33 @@ export class PositionService {
         }
       }
 
+      const updateData: Partial<typeof internshipPositions.$inferInsert> = {
+        updatedAt: new Date(),
+        recruitmentStatus: finalStatus,
+      };
+
+      if ("name" in data) updateData.name = data.name;
+      if ("location" in data) updateData.location = data.location;
+      if ("positionCount" in data)
+        updateData.positionCount = data.positionCount;
+      if ("major" in data) updateData.major = data.major;
+
+      if ("recruitStart" in data) updateData.recruitStart = data.recruitStart;
+      if ("recruitEnd" in data) updateData.recruitEnd = data.recruitEnd;
+
+      if ("applyStart" in data) updateData.applyStart = data.applyStart;
+      if ("applyEnd" in data) updateData.applyEnd = data.applyEnd;
+
+      if ("resumeRq" in data) updateData.resumeRq = data.resumeRq;
+      if ("portfolioRq" in data) updateData.portfolioRq = data.portfolioRq;
+
+      if ("jobDetails" in data) updateData.jobDetails = data.jobDetails;
+      if ("requirement" in data) updateData.requirement = data.requirement;
+      if ("benefits" in data) updateData.benefits = data.benefits;
+
       const [updated] = await tx
         .update(internshipPositions)
-        .set({
-          // อัปเดตเฉพาะ field ที่มีจริงในตาราง
-          name: data.name ?? undefined,
-          location: data.location ?? undefined,
-          positionCount: data.positionCount ?? undefined,
-          major: data.major ?? undefined,
-
-          recruitStart: data.recruitStart ?? undefined,
-          recruitEnd: data.recruitEnd ?? undefined,
-          applyStart: data.applyStart ?? undefined,
-          applyEnd: data.applyEnd ?? undefined,
-
-          resumeRq: data.resumeRq ?? undefined,
-          portfolioRq: data.portfolioRq ?? undefined,
-
-          jobDetails: data.jobDetails ?? undefined,
-          requirement: data.requirement ?? undefined,
-          benefits: data.benefits ?? undefined,
-
-          recruitmentStatus: finalStatus,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(
           and(
             eq(internshipPositions.id, id),
@@ -518,8 +528,9 @@ export class PositionService {
         .where(eq(internshipPositions.id, id));
 
       if (!pos) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
-      if (pos.departmentId !== departmentId)
+      if (pos.departmentId !== departmentId) {
         throw new ForbiddenError("ไม่มีสิทธิ์ลบใบประกาศของกองอื่น");
+      }
 
       const [hasApplication] = await tx
         .select({ id: applicationStatuses.id })

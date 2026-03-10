@@ -2,6 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { logger } from "elysia-logger";
 import swagger from "@/config/swagger";
+import { applicationTimeoutCron } from "@/cron/application-timeout";
 import { auth } from "@/lib/auth";
 import { errorMiddleware } from "@/middlewares/error.middleware";
 import modules from "@/modules";
@@ -10,7 +11,7 @@ const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
 const app = new Elysia()
   .use(
     cors({
-      origin: ["http://localhost:3000"],
+      origin: ["http://localhost:2700", "http://localhost:2701"],
       credentials: true,
       allowedHeaders: ["Content-Type", "Authorization"],
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -21,6 +22,7 @@ const app = new Elysia()
   .use(swagger)
   .use(errorMiddleware)
   .use(modules)
+  .use(applicationTimeoutCron)
   .listen(PORT);
 
 console.log(
