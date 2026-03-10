@@ -66,7 +66,8 @@ const STATUS_MAP: Record<AppStatusEnum, { label: string; color: string }> = {
   PENDING_REQUEST: { label: "รอเอกสารขอความอนุเคราะห์", color: "#8B5CF6" },
   PENDING_REVIEW: { label: "รอตรวจเอกสาร", color: "#14B8A6" },
   COMPLETE: { label: "รับเข้าฝึกงาน", color: "#22C55E" },
-  CANCEL: { label: "ยกเลิก/ไม่ผ่าน", color: "#9CA3AF" },
+  CANCEL: { label: "ไม่ผ่าน", color: "#EF4444" },
+  ABORT: { label: "ยกเลิกการสมัคร", color: "#9CA3AF" },
 };
 
 export default function OwnerDashboard() {
