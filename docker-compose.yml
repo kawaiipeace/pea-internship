@@ -52,6 +52,8 @@ services:
       context: ./backend-main
       dockerfile: dockerfile
     container_name: pea-internship-backend
+    env_file:
+      - backend-main/.env
     environment:
       PORT: 2702
       NODE_ENV: ${NODE_ENV:-production}
