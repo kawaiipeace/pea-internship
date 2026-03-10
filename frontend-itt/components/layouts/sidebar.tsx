@@ -69,24 +69,22 @@ const Sidebar = () => {
                         <button
                             type="button"
                             onClick={() => dispatch(toggleSidebar())}
-                            className="flex flex-col justify-center gap-[5px] border-none bg-transparent p-1 cursor-pointer"
+                            className="flex flex-col justify-center gap-[3px] border-none bg-transparent p-1 cursor-pointer"
                         >
-                            <span className="block h-[2.5px] w-6 rounded-sm bg-gray-500" />
-                            <span className="block h-[2.5px] w-6 rounded-sm bg-gray-500" />
-                            <span className="block h-[2.5px] w-6 rounded-sm bg-gray-500" />
+                            <span className="block h-[2.5px] w-4 rounded-sm bg-gray-500" />
+                            <span className="block h-[2.5px] w-4 rounded-sm bg-gray-500" />
+                            <span className="block h-[2.5px] w-4 rounded-sm bg-gray-500" />
                         </button>
 
                         {/* PEATT Logo */}
                         <Link href="/" className="no-underline">
-                            <span className="text-[28px] font-extrabold tracking-wide text-[#510E49]">
-                                PEAiTT
-                            </span>
+                           <img className="inline w-32 ltr:-ml-1 rtl:-mr-1" src="/assets/images/LogoiTT.svg" alt="logo" />
                         </Link>
                     </div>
 
                     {/* ===== Role Label Bar ===== */}
                     <div className="mb-2 bg-[#F8F9FB] px-5 py-4">
-                        <span className="text-[15.5px] font-bold text-[#222]">ผู้สมัครฝึกงาน</span>
+                        <span className="text-[15.5px] font-bold text-[#222]">นักศึกษาฝึกงาน</span>
                     </div>
 
                     {/* ===== Scrollable Menu ===== */}
