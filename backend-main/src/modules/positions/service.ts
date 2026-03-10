@@ -395,17 +395,20 @@ export class PositionService {
         throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขใบประกาศของกองอื่น");
       }
 
-      if (data.positionCount !== undefined && data.positionCount !== null) {
-        const nextCount = Number(data.positionCount);
-        if (!Number.isFinite(nextCount) || nextCount < 0) {
-          throw new BadRequestError("positionCount ไม่ถูกต้อง");
-        }
+      if ("positionCount" in data) {
+        if (data.positionCount !== null && data.positionCount !== undefined) {
+          const nextCount = Number(data.positionCount);
 
-        const accepted = Number(existing.acceptedCount ?? 0);
-        if (nextCount < accepted) {
-          throw new BadRequestError(
-            `ไม่สามารถลด positionCount ให้ต่ำกว่า acceptedCount (acceptedCount=${accepted})`
-          );
+          if (!Number.isFinite(nextCount) || nextCount < 0) {
+            throw new BadRequestError("positionCount ไม่ถูกต้อง");
+          }
+
+          const accepted = Number(existing.acceptedCount ?? 0);
+          if (nextCount < accepted) {
+            throw new BadRequestError(
+              `ไม่สามารถลด positionCount ให้ต่ำกว่า acceptedCount (acceptedCount=${accepted})`
+            );
+          }
         }
       }
 

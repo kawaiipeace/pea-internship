@@ -11,7 +11,7 @@ export const GetPositionsQuery = t.Object({
 export const CreatePositionBody = t.Object({
   name: t.String({ minLength: 2 }),
   location: t.Optional(t.String()),
-  positionCount: t.Optional(t.Numeric()),
+  positionCount: t.Optional(t.Union([t.Numeric(), t.Null()])),
   major: t.Optional(t.String()),
 
   recruitStart: t.Optional(t.String()),
@@ -38,7 +38,7 @@ export const params = t.Object({
 export const UpdatePositionBody = t.Object({
   name: t.Optional(t.String({ minLength: 2 })),
   location: t.Optional(t.String()),
-  positionCount: t.Optional(t.Numeric()),
+  positionCount: t.Optional(t.Union([t.Numeric(), t.Null()])),
   major: t.Optional(t.String()),
 
   recruitStart: t.Optional(t.Union([t.String(), t.Null()])),
