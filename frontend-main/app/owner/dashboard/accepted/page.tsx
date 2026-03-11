@@ -482,7 +482,10 @@ function AcceptedStatusPage() {
     }
   };
 
-  const getHistoryStatusInfo = (status: AppStatusEnum) => {
+  const getHistoryStatusInfo = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+  ) => {
     switch (status) {
       case "COMPLETE":
         return {
@@ -490,6 +493,12 @@ function AcceptedStatusPage() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (statusNote) {
+          return {
+            label: "ไม่ผ่าน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         return {
           label: "ยกเลิกฝึกงาน",
           color: "bg-red-50 text-red-600 border-red-200",
@@ -1817,11 +1826,29 @@ function AcceptedStatusPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column: Applications List */}
-          <div className="space-y-4">
-            {paginatedApplications.length > 0 ? (
-              paginatedApplications.map((app) => {
+        {filteredApplications.length === 0 ? (
+          <div className="col-span-full bg-white rounded-xl border border-gray-200 p-8">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <img
+                src="/images/NoFound.png"
+                alt="ไม่พบใบสมัคร"
+                className="w-40 h-40 object-contain opacity-80"
+              />
+              <p className="text-gray-700 font-semibold text-base mt-2">
+                ไม่พบใบสมัคร
+              </p>
+              <p className="text-gray-400 text-sm text-center">
+                ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้
+                <br />
+                กรุณาตรวจสอบอีกครั้งภายหลัง
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column: Applications List */}
+            <div className="space-y-4">
+              {paginatedApplications.map((app) => {
                 const badge = getStatusBadge(app);
                 const effectiveStep = getEffectiveStep(app);
                 return (
@@ -1942,107 +1969,91 @@ function AcceptedStatusPage() {
                     </div>
                   </div>
                 );
-              })
-            ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <img
-                    src="/images/NoFound.png"
-                    alt="ไม่พบใบสมัคร"
-                    className="w-40 h-40 object-contain opacity-80"
-                  />
-                  <p className="text-gray-700 font-semibold text-base mt-2">
-                    ไม่พบใบสมัคร
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้
-                    <br />
-                    กรุณาตรวจสอบอีกครั้งภายหลัง
-                  </p>
-                </div>
-              </div>
-            )}
+              })}
 
-            {/* Pagination */}
-            {filteredApplications.length > 0 && (
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-gray-600">
-                  แสดง {(currentPage - 1) * itemsPerPage + 1}-
-                  {Math.min(
-                    currentPage * itemsPerPage,
-                    filteredApplications.length,
-                  )}{" "}
-                  จากทั้งหมด {filteredApplications.length}
-                </p>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  {Array.from(
-                    { length: Math.min(10, totalPages) },
-                    (_, i) => i + 1,
-                  ).map((page) => (
+              {/* Pagination */}
+              {filteredApplications.length > 0 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-gray-600">
+                    แสดง {(currentPage - 1) * itemsPerPage + 1}-
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      filteredApplications.length,
+                    )}{" "}
+                    จากทั้งหมด {filteredApplications.length}
+                  </p>
+                  <div className="flex items-center gap-1">
                     <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg text-sm font-medium ${
-                        currentPage === page
-                          ? "bg-primary-600 text-white"
-                          : "border border-gray-300 hover:bg-gray-100"
-                      }`}
+                      onClick={() =>
+                        setCurrentPage(Math.max(1, currentPage - 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                     >
-                      {page}
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
                     </button>
-                  ))}
 
-                  <button
-                    onClick={() =>
-                      setCurrentPage(Math.min(totalPages, currentPage + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                    {Array.from(
+                      { length: Math.min(10, totalPages) },
+                      (_, i) => i + 1,
+                    ).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? "bg-primary-600 text-white"
+                            : "border border-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() =>
+                        setCurrentPage(Math.min(totalPages, currentPage + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Right Column: Application Detail Panel */}
-          <div className="lg:sticky lg:top-[5rem] h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
-            {renderRightPanelContent()}
+            {/* Right Column: Application Detail Panel */}
+            <div className="lg:sticky lg:top-[5rem] h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
+              {renderRightPanelContent()}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       {/* Cancel Internship Modal */}
       {showCancelModal && selectedApplication && (
@@ -2265,6 +2276,7 @@ function AcceptedStatusPage() {
                   {historyData.map((item) => {
                     const statusInfo = getHistoryStatusInfo(
                       item.applicationStatus,
+                      item.statusNote,
                     );
                     return (
                       <div key={item.applicationId}>
@@ -2294,9 +2306,6 @@ function AcceptedStatusPage() {
                           <h4 className="font-semibold text-gray-900 mb-1">
                             {item.positionName || "-"}
                           </h4>
-                          <p className="text-sm text-gray-500">
-                            {item.internshipRound || "-"}
-                          </p>
                         </div>
                         {item.statusNote && (
                           <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
@@ -2314,9 +2323,12 @@ function AcceptedStatusPage() {
                                 />
                               </svg>
                               <span className="text-sm font-semibold text-red-500">
-                                {item.applicationStatus === "CANCEL"
-                                  ? "เหตุผลประกอบการยกเลิกฝึกงาน"
-                                  : "เหตุผลที่ไม่ผ่านการคัดเลือก"}
+                                {item.applicationStatus === "CANCEL" &&
+                                item.statusNote
+                                  ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
+                                  : item.applicationStatus === "CANCEL"
+                                    ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                    : "เหตุผลที่ไม่ผ่านการคัดเลือก"}
                               </span>
                             </div>
                             <div className="mx-4 border-t border-red-200" />

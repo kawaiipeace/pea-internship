@@ -388,7 +388,10 @@ function NearStartApplicationsContent() {
     }
   };
 
-  const getHistoryStatusInfo = (status: AppStatusEnum) => {
+  const getHistoryStatusInfo = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+  ) => {
     switch (status) {
       case "COMPLETE":
         return {
@@ -396,6 +399,12 @@ function NearStartApplicationsContent() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (statusNote) {
+          return {
+            label: "ไม่ผ่าน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         return {
           label: "ยกเลิกฝึกงาน",
           color: "bg-red-50 text-red-600 border-red-200",
@@ -1660,7 +1669,7 @@ function NearStartApplicationsContent() {
                 );
               })
             ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <div className="col-span-full bg-white rounded-xl border border-gray-200 p-8">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <img
                     src="/images/NoFound.png"
@@ -1670,10 +1679,10 @@ function NearStartApplicationsContent() {
                   <p className="text-gray-700 font-semibold text-base mt-2">
                     ไม่พบใบสมัคร
                   </p>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-400 text-sm text-center">
                     ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้
                     <br />
-                    กรุณาตรวจสอบอีกครั้งภายหลัง
+                    กรุณาตรวจสอบอีกครั้งภายครั้ง
                   </p>
                 </div>
               </div>
@@ -2034,6 +2043,7 @@ function NearStartApplicationsContent() {
                       {historyData.map((item) => {
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
+                          item.statusNote,
                         );
                         return (
                           <div key={item.applicationId}>
@@ -2085,9 +2095,12 @@ function NearStartApplicationsContent() {
                                     />
                                   </svg>
                                   <span className="text-sm font-semibold text-red-500">
-                                    {item.applicationStatus === "CANCEL"
-                                      ? "เหตุผลประกอบการยกเลิกฝึกงาน"
-                                      : "หมายเหตุ"}
+                                    {item.applicationStatus === "CANCEL" &&
+                                    item.statusNote
+                                      ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
+                                      : item.applicationStatus === "CANCEL"
+                                        ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                        : "หมายเหตุ"}
                                   </span>
                                 </div>
                                 <div className="mx-4 border-t border-red-200" />
