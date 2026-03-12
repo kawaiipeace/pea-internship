@@ -251,7 +251,6 @@ export interface UpdateUserData {
 // ข้อมูลสำหรับอัปเดต Student Profile
 export interface UpdateStudentProfileData {
   hours?: number;
-  institutionId?: number;
   faculty?: string;
   major?: string;
   studentNote?: string;
@@ -1337,6 +1336,15 @@ export const applicationApi = {
     const params: Record<string, string | boolean> = {};
     if (includeCanceled !== undefined) params.includeCanceled = includeCanceled;
     const response = await api.get<MyApplicationData[]>(`/applications/history/${studentUserId}`, { params });
+    return response.data;
+  },
+
+  // นักศึกษาแก้ไข hours / startDate / endDate ของใบสมัคร
+  updateApplicationInformation: async (
+    applicationId: number,
+    data: { hours?: number | null; startDate?: string | null; endDate?: string | null }
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.put<{ success: boolean; message: string }>(`/applications/${applicationId}/information`, data);
     return response.data;
   },
 };

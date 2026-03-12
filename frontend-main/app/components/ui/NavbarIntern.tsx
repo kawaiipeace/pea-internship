@@ -4,45 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { authApi, authStorage } from "../../services/api";
-
-// Types for Notification System - Ready for API integration
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  createdAt: Date;
-  isRead: boolean;
-  type: "status_update" | "new_position" | "reminder" | "system";
-  link?: string;
-}
-
-// Mock notifications data - Replace with API call in production
-const getMockNotifications = (): Notification[] => [
-  {
-    id: "1",
-    title: "อัปเดตสถานะ",
-    message: "มีการอัปเดตสถานะการสมัครของคุณ",
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    isRead: false,
-    type: "status_update",
-    link: "/application-status",
-  },
-  {
-    id: "2",
-    title: "ตำแหน่งใหม่",
-    message: "ตำแหน่งใหม่ที่คุณอาจจะสนใจ",
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    isRead: false,
-    type: "new_position",
-    link: "/intern-home",
-  },
-];
+import { authApi, authStorage, notificationApi, type NotificationItem } from "../../services/api";
 
 // Helper function to format relative time
-const formatRelativeTime = (date: Date): string => {
+const formatRelativeTime = (date: string | Date): string => {
+  const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -51,7 +19,7 @@ const formatRelativeTime = (date: Date): string => {
   if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`;
   if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`;
   if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
-  return date.toLocaleDateString("th-TH");
+  return d.toLocaleDateString("th-TH");
 };
 
 interface NavbarInternProps {
@@ -73,111 +41,66 @@ export default function NavbarIntern({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  // Notification state - Ready for API integration
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Notification state
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Load notifications from localStorage or API
-  const loadNotifications = useCallback(() => {
-    // Check localStorage for read notification IDs
-    const readIdsJson = localStorage.getItem('readNotificationIds');
-    const readIds: string[] = readIdsJson ? JSON.parse(readIdsJson) : [];
-
-    // Get mock data and merge with read state from localStorage
-    const mockData = getMockNotifications();
-    const notificationsWithReadState = mockData.map(n => ({
-      ...n,
-      isRead: readIds.includes(n.id)
-    }));
-
-    setNotifications(notificationsWithReadState);
-    setUnreadCount(notificationsWithReadState.filter(n => !n.isRead).length);
-  }, []);
-
-  // Mark all notifications as read
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => {
-      const readIds = prev.map(n => n.id);
-      localStorage.setItem('readNotificationIds', JSON.stringify(readIds));
-      return prev.map(n => ({ ...n, isRead: true }));
-    });
-    setUnreadCount(0);
-  }, []);
-
-  // Mark single notification as read
-  const markAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => {
-      const notification = prev.find(n => n.id === notificationId);
-      if (!notification || notification.isRead) return prev;
-
-      const readIdsJson = localStorage.getItem('readNotificationIds');
-      const readIds: string[] = readIdsJson ? JSON.parse(readIdsJson) : [];
-      if (!readIds.includes(notificationId)) {
-        readIds.push(notificationId);
-        localStorage.setItem('readNotificationIds', JSON.stringify(readIds));
-      }
-
-      return prev.map(n =>
-        n.id === notificationId ? { ...n, isRead: true } : n
-      );
-    });
-    setUnreadCount(prev => Math.max(0, prev - 1));
-  }, []);
-
-  // Add new notification (for real-time updates via WebSocket in production)
-  const addNotification = useCallback((notification: Notification) => {
-    setNotifications((prev) => {
-      const updated = [notification, ...prev];
-      localStorage.setItem("notifications", JSON.stringify(updated));
-      return updated;
-    });
-    if (!notification.isRead) {
-      setUnreadCount((prev) => prev + 1);
+  // Load notifications from API
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await notificationApi.getMyNotifications();
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.isRead).length);
+    } catch (error) {
+      console.error("Failed to load notifications:", error);
     }
   }, []);
 
-  // Load notifications on mount
+  // Mark all notifications as read
+  const markAllAsRead = useCallback(async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
+  }, []);
+
+  // Mark single notification as read
+  const markAsRead = useCallback(async (notificationId: number) => {
+    try {
+      await notificationApi.markAsRead(notificationId, true);
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, isRead: true } : n
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  }, []);
+
+  // Load notifications on mount and poll every 30 seconds
   useEffect(() => {
     loadNotifications();
 
-    // Listen for notification updates from other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "notifications") {
-        loadNotifications();
-      }
-    };
-
-    // Listen for custom notification events (for same-tab updates)
-    const handleNewNotification = (e: CustomEvent<Notification>) => {
-      addNotification(e.detail);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener(
-      "newNotification",
-      handleNewNotification as EventListener,
-    );
+    const interval = setInterval(loadNotifications, 30000);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener(
-        "newNotification",
-        handleNewNotification as EventListener,
-      );
+      clearInterval(interval);
     };
-  }, [loadNotifications, addNotification]);
+  }, [loadNotifications]);
 
-  // Toggle notification panel and mark as read
+  // Toggle notification panel
   const handleOpenNotifications = useCallback(
     (isMobile: boolean) => {
       if (isMobile) {
-        // Toggle for mobile
         setIsMobileNotificationOpen(prev => !prev);
       } else {
-        // Toggle for desktop
         setIsNotificationOpen(prev => !prev);
       }
-      // Mark all as read when opening (not closing)
       if (unreadCount > 0) {
         markAllAsRead();
       }
@@ -368,11 +291,11 @@ export default function NavbarIntern({
                     <span className="font-semibold text-gray-900">
                       การแจ้งเตือน
                     </span>
-                    {notifications.length > 0 && (
+                    {/* {notifications.length > 0 && (
                       <span className="ml-auto bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
                         {notifications.length}
                       </span>
-                    )}
+                    )} */}
                   </div>
 
                   {/* Notification Items */}
@@ -383,14 +306,15 @@ export default function NavbarIntern({
                           key={notification.id}
                           onClick={() => {
                             markAsRead(notification.id);
-                            if (notification.link) {
-                              router.push(notification.link);
-                            }
                             setIsNotificationOpen(false);
+                            router.push("/application-status");
                           }}
                           className={`px-4 py-3 hover:bg-primary-50 cursor-pointer ${!notification.isRead ? 'bg-primary-50/50' : ''}`}
                         >
-                          <p className="text-gray-900 text-sm">
+                          <p className="text-gray-900 text-sm font-medium">
+                            {notification.title}
+                          </p>
+                          <p className="text-gray-600 text-sm mt-0.5">
                             {notification.message}
                           </p>
                           <p className="text-gray-500 text-xs mt-1">
@@ -1075,14 +999,15 @@ export default function NavbarIntern({
                     key={notification.id}
                     onClick={() => {
                       markAsRead(notification.id);
-                      if (notification.link) {
-                        router.push(notification.link);
-                      }
                       setIsMobileNotificationOpen(false);
+                      router.push("/application-status");
                     }}
                     className={`rounded-lg px-4 py-3 cursor-pointer transition-colors ${!notification.isRead ? 'bg-primary-100 hover:bg-primary-150' : 'bg-primary-50 hover:bg-primary-100'}`}
                   >
-                    <p className="text-gray-900 text-sm">
+                    <p className="text-gray-900 text-sm font-medium">
+                      {notification.title}
+                    </p>
+                    <p className="text-gray-600 text-sm mt-0.5">
                       {notification.message}
                     </p>
                     <p className="text-gray-500 text-xs mt-1">

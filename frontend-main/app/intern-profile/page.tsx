@@ -338,7 +338,7 @@ export default function InternProfilePage() {
                 ? (studentProfile?.studentNote || "-")
                 : (studentProfile?.major || "-"),
               internshipPeriod: internshipPeriod,
-              totalHours: studentProfile?.hours ? `${studentProfile.hours} ชั่วโมง` : "-",
+              totalHours: studentProfile?.hours ? `${parseFloat(studentProfile.hours)} ชั่วโมง` : "-",
               department: defaultInternData.department,
               supervisor: defaultInternData.supervisor,
               supervisorEmail: defaultInternData.supervisorEmail,
@@ -448,7 +448,7 @@ export default function InternProfilePage() {
                 ? (studentProfile?.studentNote || "-")
                 : (studentProfile?.major || "-"),
               internshipPeriod: internshipPeriod,
-              totalHours: studentProfile?.hours ? `${studentProfile.hours} ชั่วโมง` : "-",
+              totalHours: studentProfile?.hours ? `${Number(studentProfile.hours)} ชั่วโมง` : "-",
               department: department?.name || defaultInternData.department,
               supervisor: supervisor?.name || defaultInternData.supervisor,
               supervisorEmail: supervisor?.email || defaultInternData.supervisorEmail,
@@ -504,7 +504,7 @@ export default function InternProfilePage() {
             if (sp.startDate && sp.endDate) {
               internshipPeriod = `${formatDateThai(sp.startDate)} - ${formatDateThai(sp.endDate)}`;
             }
-            totalHours = sp.hours ? `${sp.hours} ชั่วโมง` : "-";
+            totalHours = sp.hours ? `${Number(sp.hours)} ชั่วโมง` : "-";
             institution = studentData.institution?.name || "-";
             faculty = sp.faculty || "-";
 
@@ -535,7 +535,7 @@ export default function InternProfilePage() {
             if (sp.startDate && sp.endDate) {
               internshipPeriod = `${formatDateThai(sp.startDate)} - ${formatDateThai(sp.endDate)}`;
             }
-            totalHours = sp.hours ? `${sp.hours} ชั่วโมง` : "-";
+            totalHours = sp.hours ? `${Number(sp.hours)} ชั่วโมง` : "-";
             faculty = sp.faculty || "-";
 
             // ดึง institution จาก API
@@ -811,8 +811,8 @@ export default function InternProfilePage() {
               />
             </div>
 
-            {/* Internship - only show if has application */}
-            {hasApplication && (
+            {/* Internship - show if student has period/hours data */}
+            {(internData.internshipPeriod !== "-" || internData.totalHours !== "-") && (
               <>
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-6 sm:mt-8 mb-3 sm:mb-4">
                   ข้อมูลการฝึกงาน
