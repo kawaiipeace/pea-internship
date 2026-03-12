@@ -236,13 +236,7 @@ export class ApplicationService {
       .where(inArray(studentProfiles.userId, userIds));
 
     for (const app of pendingApps) {
-      await this.logAppStatusAction(
-        tx,
-        app.id,
-        actionBy,
-        app.status,
-        "ABORT"
-      );
+      await this.logAppStatusAction(tx, app.id, actionBy, app.status, "ABORT");
     }
 
     await tx.insert(notifications).values(
@@ -1151,7 +1145,10 @@ export class ApplicationService {
         )
         .leftJoin(
           applicationInformations,
-          eq(applicationInformations.applicationStatusId, applicationStatuses.id)
+          eq(
+            applicationInformations.applicationStatusId,
+            applicationStatuses.id
+          )
         )
         .where(whereClause)
         .orderBy(desc(applicationStatuses.internshipRound));
@@ -1328,9 +1325,9 @@ export class ApplicationService {
           institutionId: studentProfiles.institutionId,
           faculty: studentProfiles.faculty,
           major: studentProfiles.major,
-          profileHours: studentProfiles.hours,
-          profileStartDate: studentProfiles.startDate,
-          profileEndDate: studentProfiles.endDate,
+          profileHours: applicationInformations.hours,
+          profileStartDate: applicationInformations.startDate,
+          profileEndDate: applicationInformations.endDate,
           studentNote: studentProfiles.studentNote,
 
           institutionName: institutions.name,
@@ -1434,9 +1431,9 @@ export class ApplicationService {
         institutionType: row.institutionType,
         faculty: row.faculty,
         major: row.major,
-        profileHours: row.profileHours,
-        profileStartDate: row.profileStartDate,
-        profileEndDate: row.profileEndDate,
+        profileHours: row.infoHours,
+        profileStartDate: row.infoStartDate,
+        profileEndDate: row.infoEndDate,
         studentNote: row.studentNote,
         infoSkill: row.infoSkill,
         infoExpectation: row.infoExpectation,
