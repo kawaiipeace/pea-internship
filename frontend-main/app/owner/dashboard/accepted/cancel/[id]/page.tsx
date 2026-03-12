@@ -462,7 +462,10 @@ export default function CancelInternshipPage() {
                       <div>
                         <p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p>
                         <p className="font-medium text-gray-900">
-                          {application.mentors?.[0] ? `${application.mentors[0].fname || ""} ${application.mentors[0].lname || ""}`.trim() || "-" : "-"}
+                          {application.mentors?.[0]
+                            ? `${application.mentors[0].fname || ""} ${application.mentors[0].lname || ""}`.trim() ||
+                              "-"
+                            : "-"}
                         </p>
                       </div>
                     </div>

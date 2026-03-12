@@ -286,7 +286,7 @@ function AcceptedStatusPage() {
         waiting_review++;
       } else if (status === "doc_rejected") {
         doc_rejected++;
-      } else if (status === "doc_passed") {
+      } else if (status === "doc_passed" || status === "completed") {
         doc_passed++;
       }
     });
@@ -320,7 +320,10 @@ function AcceptedStatusPage() {
         case "doc_rejected":
           return app.detailedStatus === "doc_rejected";
         case "doc_passed":
-          return app.detailedStatus === "doc_passed";
+          return (
+            app.detailedStatus === "doc_passed" ||
+            app.detailedStatus === "completed"
+          );
         default:
           return true;
       }
@@ -431,6 +434,7 @@ function AcceptedStatusPage() {
             "bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA]",
         };
       case "doc_passed":
+      case "completed":
         return {
           text: "เอกสารผ่าน",
           color:
@@ -541,7 +545,8 @@ function AcceptedStatusPage() {
     const hasAnalysisDocuments =
       selectedApplication.analysisDocuments &&
       selectedApplication.analysisDocuments.length > 0;
-    const isDocPassed = effectiveStatus === "doc_passed";
+    const isDocPassed =
+      effectiveStatus === "doc_passed" || effectiveStatus === "completed";
     const isDocRejected = effectiveStatus === "doc_rejected";
 
     // Document icon SVG component

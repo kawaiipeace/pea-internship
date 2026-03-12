@@ -95,8 +95,10 @@ function PendingStatusContent() {
   const [showInterviewSuccess, setShowInterviewSuccess] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [showRejectSuccess, setShowRejectSuccess] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showApproveSuccess, setShowApproveSuccess] = useState(false);
   const [interviewedApps, setInterviewedApps] = useState<string[]>([]);
   const [approvedApps, setApprovedApps] = useState<string[]>([]);
   const [rejectedApps, setRejectedApps] = useState<string[]>([]);
@@ -549,39 +551,87 @@ function PendingStatusContent() {
     } catch {}
   };
 
-  // Handle interview confirmation
-  const handleConfirmInterview = () => {
+  // Handle interview confirmation (Owner approves interview → PENDING_INTERVIEW → PENDING_CONFIRMATION)
+  const handleConfirmInterview = async () => {
     if (selectedApplication) {
-      const newInterviewed = [...interviewedApps, selectedApplication.id];
-      setInterviewedApps(newInterviewed);
-      saveToStorage("pea_interviewed_apps", newInterviewed);
-      setShowInterviewConfirm(false);
-      setShowInterviewSuccess(true);
-      setTimeout(() => {
-        setShowInterviewSuccess(false);
-      }, 500);
+      try {
+        await applicationApi.approveInterview(Number(selectedApplication.id));
+        const newInterviewed = [...interviewedApps, selectedApplication.id];
+        setInterviewedApps(newInterviewed);
+        saveToStorage("pea_interviewed_apps", newInterviewed);
+        setShowInterviewConfirm(false);
+        setShowInterviewSuccess(true);
+        setTimeout(() => {
+          setShowInterviewSuccess(false);
+        }, 500);
+        // Re-fetch to get updated statuses
+        const apps = await fetchAllApplications(
+          positionId ? Number(positionId) : undefined,
+        );
+        setAllApps(apps);
+      } catch (err) {
+        console.error("Failed to approve interview:", err);
+        setShowInterviewConfirm(false);
+      }
     }
   };
 
-  // Handle approve application
-  const handleApprove = () => {
+  // Handle approve application (Owner confirms accept → PENDING_CONFIRMATION → PENDING_REQUEST)
+  const handleApprove = async () => {
     if (selectedApplication) {
-      const newApproved = [...approvedApps, selectedApplication.id];
-      setApprovedApps(newApproved);
-      saveToStorage("pea_approved_apps", newApproved);
-      setShowApproveConfirm(false);
+      try {
+        await applicationApi.confirmAccept(Number(selectedApplication.id));
+        const newApproved = [...approvedApps, selectedApplication.id];
+        setApprovedApps(newApproved);
+        saveToStorage("pea_approved_apps", newApproved);
+        setShowApproveConfirm(false);
+        // Show success popup
+        setShowApproveSuccess(true);
+        setTimeout(() => {
+          setShowApproveSuccess(false);
+        }, 500);
+        // Re-fetch to get updated statuses
+        const apps = await fetchAllApplications(
+          positionId ? Number(positionId) : undefined,
+        );
+        setAllApps(apps);
+      } catch (err) {
+        console.error("Failed to confirm accept:", err);
+        setShowApproveConfirm(false);
+      }
     }
   };
 
-  // Handle reject application
-  const handleReject = () => {
+  // Handle reject application (Owner rejects → CANCEL)
+  const handleReject = async () => {
     if (selectedApplication) {
-      const newRejected = [...rejectedApps, selectedApplication.id];
-      setRejectedApps(newRejected);
-      saveToStorage("pea_rejected_apps", newRejected);
-      setShowRejectConfirm(false);
-      setShowRejectModal(false);
-      setRejectReason("");
+      try {
+        await applicationApi.rejectApplication(
+          Number(selectedApplication.id),
+          rejectReason,
+        );
+        const newRejected = [...rejectedApps, selectedApplication.id];
+        setRejectedApps(newRejected);
+        saveToStorage("pea_rejected_apps", newRejected);
+        setShowRejectConfirm(false);
+        setShowRejectModal(false);
+        setRejectReason("");
+        // Show success popup
+        setShowRejectSuccess(true);
+        setTimeout(() => {
+          setShowRejectSuccess(false);
+        }, 500);
+        // Re-fetch to get updated statuses
+        const apps = await fetchAllApplications(
+          positionId ? Number(positionId) : undefined,
+        );
+        setAllApps(apps);
+      } catch (err) {
+        console.error("Failed to reject application:", err);
+        setShowRejectConfirm(false);
+        setShowRejectModal(false);
+        setRejectReason("");
+      }
     }
   };
 
@@ -2323,6 +2373,35 @@ function PendingStatusContent() {
         </div>
       )}
 
+      {/* Approve Success Popup */}
+      {showApproveSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              ยืนยันรับเข้าฝึกงาน
+            </h3>
+            <p className="text-lg font-semibold text-gray-900">เรียบร้อยแล้ว</p>
+          </div>
+        </div>
+      )}
+
       {/* Reject Reason Modal (Step 1) */}
       {showRejectModal && selectedApplication && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -2396,7 +2475,7 @@ function PendingStatusContent() {
               </button>
               <button
                 onClick={() => {
-                  if (rejectReason.trim()) setShowRejectConfirm(true);
+                  if (rejectReason.trim()) handleReject();
                 }}
                 disabled={!rejectReason.trim()}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -2550,17 +2629,17 @@ function PendingStatusContent() {
                               <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                  fill="#D92D20"
-                                />
-                              </svg>
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 20 20"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
+                                      fill="#D92D20"
+                                    />
+                                  </svg>
                                   <span className="text-sm font-semibold text-red-500">
                                     {item.applicationStatus === "CANCEL" &&
                                     item.statusNote
@@ -2589,40 +2668,31 @@ function PendingStatusContent() {
           );
         })()}
 
-      {showRejectConfirm && selectedApplication && (
+      {/* Reject Success Popup */}
+      {showRejectSuccess && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 text-center">
+          <div className="bg-white rounded-xl p-8 max-w-sm w-full mx-4 text-center">
             <div className="flex justify-center mb-4">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 34 34"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M16.6667 19L21.5 23.8333C21.8056 24.1389 22.1944 24.2917 22.6667 24.2917C23.1389 24.2917 23.5278 24.1389 23.8333 23.8333C24.1389 23.5278 24.2917 23.1389 24.2917 22.6667C24.2917 22.1944 24.1389 21.8056 23.8333 21.5L19 16.6667L23.8333 11.8333C24.1389 11.5278 24.2917 11.1389 24.2917 10.6667C24.2917 10.1944 24.1389 9.80556 23.8333 9.5C23.5278 9.19444 23.1389 9.04167 22.6667 9.04167C22.1944 9.04167 21.8056 9.19444 21.5 9.5L16.6667 14.3333L11.8333 9.5C11.5278 9.19444 11.1389 9.04167 10.6667 9.04167C10.1944 9.04167 9.80556 9.19444 9.5 9.5C9.19444 9.80556 9.04167 10.1944 9.04167 10.6667C9.04167 11.1389 9.19444 11.5278 9.5 11.8333L14.3333 16.6667L9.5 21.5C9.19444 21.8056 9.04167 22.1944 9.04167 22.6667C9.04167 23.1389 9.19444 23.5278 9.5 23.8333C9.80556 24.1389 10.1944 24.2917 10.6667 24.2917C11.1389 24.2917 11.5278 24.1389 11.8333 23.8333L16.6667 19ZM16.6667 33.3333C14.3611 33.3333 12.1944 32.8958 10.1667 32.0208C8.13889 31.1458 6.375 29.9583 4.875 28.4583C3.375 26.9583 2.1875 25.1944 1.3125 23.1667C0.4375 21.1389 0 18.9722 0 16.6667C0 14.3611 0.4375 12.1944 1.3125 10.1667C2.1875 8.13889 3.375 6.375 4.875 4.875C6.375 3.375 8.13889 2.1875 10.1667 1.3125C12.1944 0.4375 14.3611 0 16.6667 0C18.9722 0 21.1389 0.4375 23.1667 1.3125C25.1944 2.1875 26.9583 3.375 28.4583 4.875C29.9583 6.375 31.1458 8.13889 32.0208 10.1667C32.8958 12.1944 33.3333 14.3611 33.3333 16.6667C33.3333 18.9722 32.8958 21.1389 32.0208 23.1667C31.1458 25.1944 29.9583 26.9583 28.4583 28.4583C26.9583 29.9583 25.1944 31.1458 23.1667 32.0208C21.1389 32.8958 18.9722 33.3333 16.6667 33.3333Z"
-                  fill="#F04438"
-                />
-              </svg>
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
+                </svg>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
               ปฏิเสธรับเข้าฝึกงาน
             </h3>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowRejectConfirm(false)}
-                className="flex-1 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 cursor-pointer font-medium"
-              >
-                ย้อนกลับ
-              </button>
-              <button
-                onClick={handleReject}
-                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer font-medium"
-              >
-                ยืนยัน
-              </button>
-            </div>
+            <p className="text-lg font-semibold text-gray-900">เรียบร้อยแล้ว</p>
           </div>
         </div>
       )}
