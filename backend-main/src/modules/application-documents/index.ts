@@ -1,5 +1,4 @@
 import { Elysia, t } from "elysia";
-
 import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
 import { ApplicationDocumentsService } from "./service";

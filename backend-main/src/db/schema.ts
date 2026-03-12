@@ -1,12 +1,14 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  date,
   doublePrecision,
   foreignKey,
   integer,
   numeric,
   pgEnum,
   pgTable,
+  pgView,
   serial,
   text,
   timestamp,
@@ -67,6 +69,19 @@ export const institutionsTypesEnum = pgEnum("institutions_types", [
   "VOCATIONAL",
   "SCHOOL",
   "OTHERS",
+]);
+
+export const checkTimeStatusType = pgEnum("check_time_status_type", [
+  "PRESENT",
+  "LATE",
+  "ABSENT",
+  "LEAVE",
+]);
+
+export const leavePeriodEnum = pgEnum("leave_period_enum", [
+  "FULL_DAY",
+  "MORNING",
+  "AFTERNOON",
 ]);
 
 export const docTypes = pgTable(
@@ -470,6 +485,7 @@ export const leaveRequests = pgTable(
     id: serial().primaryKey().notNull(),
     leaveRequestType: leaveRequestEnum("leave_request_type").notNull(),
     userId: varchar("user_id", { length: 50 }).notNull(),
+    leavePeriod: leavePeriodEnum("leave_period").default("FULL_DAY"),
     leaveDatetime: timestamp("leave_datetime", { mode: "string" }),
     reason: text(),
     file: varchar({ length: 255 }),
@@ -855,3 +871,76 @@ export const dailyWorkLogs = pgTable(
     }),
   ]
 );
+
+export const attendanceLogs = pgTable(
+  "attendance_logs",
+  {
+    id: serial().primaryKey().notNull(),
+    studentProfileId: integer("student_profile_id").notNull(),
+    workDate: date("work_date").defaultNow().notNull(),
+    checkInId: integer("check_in_id"),
+    checkOutId: integer("check_out_id"),
+    actualHoursWorked: numeric("actual_hours_worked", {
+      precision: 5,
+      scale: 2,
+    }).default("0.00"),
+    approvedLeaveHours: numeric("approved_leave_hours", {
+      precision: 5,
+      scale: 2,
+    }).default("0.00"),
+    lateMinutes: integer("late_minutes").default(0),
+    dailyStatus: checkTimeStatusType("daily_status").notNull(),
+    dailyTaskNote: text("daily_task_note"),
+    isVerified: boolean("is_verified").default(false),
+    verifiedBy: integer("verified_by"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.studentProfileId],
+      foreignColumns: [studentProfiles.id],
+      name: "attendance_logs_student_profile_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.checkInId],
+      foreignColumns: [checkTimes.id],
+      name: "attendance_logs_check_in_id_fkey",
+    }).onDelete("set null"),
+    foreignKey({
+      columns: [table.checkOutId],
+      foreignColumns: [checkTimes.id],
+      name: "attendance_logs_check_out_id_fkey",
+    }).onDelete("set null"),
+    foreignKey({
+      columns: [table.verifiedBy],
+      foreignColumns: [staffProfiles.id],
+      name: "attendance_logs_verified_by_fkey",
+    }),
+    unique("attendance_logs_student_profile_id_work_date_key").on(
+      table.studentProfileId,
+      table.workDate
+    ),
+  ]
+);
+
+export const studentAttendanceSummary = pgView("student_attendance_summary", {
+  studentProfileId: integer("student_profile_id"),
+  userId: varchar("user_id", { length: 50 }),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  totalHoursGoal: numeric("total_hours_goal", { precision: 10, scale: 2 }),
+  totalAccumulatedHours: numeric("total_accumulated_hours", {
+    precision: 10,
+    scale: 2,
+  }),
+  totalDaysLogged: integer("total_days_logged"),
+  countPresentDays: integer("count_present_days"),
+  countLateDays: integer("count_late_days"),
+  countLeaveDays: integer("count_leave_days"),
+  countAbsentDays: integer("count_absent_days"),
+  sumActualWorkHours: numeric("sum_actual_work_hours", {
+    precision: 10,
+    scale: 2,
+  }),
+  sumLeaveHours: numeric("sum_leave_hours", { precision: 10, scale: 2 }),
+  totalLateMinutes: integer("total_late_minutes"),
+}).existing();
