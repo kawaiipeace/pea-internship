@@ -97,30 +97,37 @@ function ApplicationDetailContent() {
   const applicationId = params.id as string;
   const fromPage = searchParams.get("from") || "";
   const positionId = searchParams.get("positionId");
-  const positionQuery = positionId ? `?positionId=${positionId}` : '';
-  const positionQueryAmp = positionId ? `&positionId=${positionId}` : '';
+  const positionQuery = positionId ? `?positionId=${positionId}` : "";
+  const positionQueryAmp = positionId ? `&positionId=${positionId}` : "";
 
   // Find the application from API
   const [application, setApplication] = useState<Application | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     setIsLoading(true);
-    fetchAllApplications().then((apps) => {
-      const found = apps.find((app) => app.id === applicationId);
-      setApplication(found || null);
-    }).finally(() => setIsLoading(false));
+    fetchAllApplications()
+      .then((apps) => {
+        const found = apps.find((app) => app.id === applicationId);
+        setApplication(found || null);
+      })
+      .finally(() => setIsLoading(false));
   }, [applicationId]);
 
   // Position info for mentor data
   const [positionInfo, setPositionInfo] = useState<Position | null>(null);
   useEffect(() => {
     if (positionId) {
-      positionApi.getPositionById(Number(positionId)).then(setPositionInfo).catch(console.error);
+      positionApi
+        .getPositionById(Number(positionId))
+        .then(setPositionInfo)
+        .catch(console.error);
     }
   }, [positionId]);
 
   // Timeline actions state (real data from API)
-  const [timelineActions, setTimelineActions] = useState<ApplicationStatusAction[]>([]);
+  const [timelineActions, setTimelineActions] = useState<
+    ApplicationStatusAction[]
+  >([]);
   useEffect(() => {
     if (!applicationId) return;
     const appId = Number(applicationId);
@@ -155,7 +162,9 @@ function ApplicationDetailContent() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyData, setHistoryData] = useState<MyApplicationData[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [expandedHistoryItems, setExpandedHistoryItems] = useState<string[]>([]);
+  const [expandedHistoryItems, setExpandedHistoryItems] = useState<string[]>(
+    [],
+  );
   const [pendingMentorSaveAction, setPendingMentorSaveAction] = useState<
     (() => void) | null
   >(null);
@@ -268,7 +277,13 @@ function ApplicationDetailContent() {
     setHistoryData([]);
     try {
       const data = await applicationApi.getStudentHistory(app.internId, true);
-      setHistoryData(data.filter((h) => String(h.applicationId) !== String(app.id)));
+      setHistoryData(
+        data.filter(
+          (h) =>
+            h.applicationStatus === "COMPLETE" ||
+            h.applicationStatus === "CANCEL",
+        ),
+      );
     } catch (error) {
       console.error("Failed to fetch student history:", error);
       setHistoryData([]);
@@ -278,21 +293,52 @@ function ApplicationDetailContent() {
   };
 
   // Helper: format API status to display status
-  const getHistoryStatusInfo = (status: AppStatusEnum) => {
+  const getHistoryStatusInfo = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+  ) => {
     switch (status) {
       case "COMPLETE":
-        return { label: "ฝึกงานเสร็จสิ้น", color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]" };
+        return {
+          label: "ฝึกงานเสร็จสิ้น",
+          color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
+        };
       case "CANCEL":
-        return { label: "ยกเลิกฝึกงาน", color: "bg-red-50 text-red-600 border-red-200" };
+        if (statusNote) {
+          return {
+            label: "ไม่ผ่าน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
+        return {
+          label: "ยกเลิกฝึกงาน",
+          color: "bg-red-50 text-red-600 border-red-200",
+        };
       default:
-        return { label: "กำลังดำเนินการ", color: "bg-yellow-50 text-yellow-700 border-yellow-200" };
+        return {
+          label: "กำลังดำเนินการ",
+          color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+        };
     }
   };
 
   // Helper: format date to Thai short format
   const formatHistoryDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    const thaiShortMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    const thaiShortMonths = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
     return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
@@ -339,7 +385,10 @@ function ApplicationDetailContent() {
     if (!application || actionLoading) return;
     setActionLoading(true);
     try {
-      await applicationApi.rejectApplication(Number(application.id), rejectReason);
+      await applicationApi.rejectApplication(
+        Number(application.id),
+        rejectReason,
+      );
       setShowRejectConfirm(false);
       setShowRejectModal(false);
       setRejectReason("");
@@ -521,6 +570,24 @@ function ApplicationDetailContent() {
       step: application.step,
       stepDescription: application.stepDescription,
     };
+  };
+
+  // Get student internship lifecycle badge (ฝึกงานเสร็จสิ้น / อยู่ระหว่างฝึกงาน / ยกเลิกฝึกงาน)
+  const getStudentInternshipBadge = (): { text: string; dotColor: string; textColor: string } | null => {
+    if (!application) return null;
+    const internStatus = application.studentInternshipStatus;
+    const isActive = application.isActive;
+
+    if (internStatus === "COMPLETE" && !isActive) {
+      return { text: "ฝึกงานเสร็จสิ้น", dotColor: "bg-green-500", textColor: "text-green-600" };
+    }
+    if (internStatus === "ACTIVE" || isActive) {
+      return { text: "อยู่ระหว่างฝึกงาน", dotColor: "bg-orange-500", textColor: "text-orange-500" };
+    }
+    if (internStatus === "CANCEL" || application.status === "cancelled" || isCancelledViaStorage) {
+      return { text: "ยกเลิกฝึกงาน", dotColor: "bg-red-500", textColor: "text-red-500" };
+    }
+    return null;
   };
 
   // Get effective status badge based on localStorage state
@@ -706,6 +773,7 @@ function ApplicationDetailContent() {
 
   const effectiveStep = getEffectiveStep();
   const statusBadge = getStatusBadge();
+  const studentInternshipBadge = getStudentInternshipBadge();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -723,36 +791,36 @@ function ApplicationDetailContent() {
           {fromPage &&
             (() => {
               const statusMap: Record<string, { label: string; href: string }> =
-              {
-                pending: {
-                  label: "สถานะรอ",
-                  href: `/owner/dashboard/pending${positionQuery}`,
-                },
-                accepted: {
-                  label: "สถานะรับเข้าฝึกงาน",
-                  href: `/owner/dashboard/accepted${positionQuery}`,
-                },
-                rejected: {
-                  label: "สถานะไม่ผ่าน",
-                  href: `/owner/dashboard/rejected${positionQuery}`,
-                },
-                cancelled: {
-                  label: "สถานะยกเลิกฝึกงาน",
-                  href: `/owner/dashboard/cancelled${positionQuery}`,
-                },
-                "near-start": {
-                  label: "ใกล้เริ่มฝึกงาน",
-                  href: `/owner/dashboard/near-start${positionQuery}`,
-                },
-                applications: {
-                  label: "ใบสมัครทั้งหมด",
-                  href: `/owner/dashboard/applications${positionQuery}`,
-                },
-                announcements: {
-                  label: "รายละเอียดประกาศ",
-                  href: "/owner/announcements",
-                },
-              };
+                {
+                  pending: {
+                    label: "สถานะรอ",
+                    href: `/owner/dashboard/pending${positionQuery}`,
+                  },
+                  accepted: {
+                    label: "สถานะรับเข้าฝึกงาน",
+                    href: `/owner/dashboard/accepted${positionQuery}`,
+                  },
+                  rejected: {
+                    label: "สถานะไม่ผ่าน",
+                    href: `/owner/dashboard/rejected${positionQuery}`,
+                  },
+                  cancelled: {
+                    label: "สถานะยกเลิกฝึกงาน",
+                    href: `/owner/dashboard/cancelled${positionQuery}`,
+                  },
+                  "near-start": {
+                    label: "ใกล้เริ่มฝึกงาน",
+                    href: `/owner/dashboard/near-start${positionQuery}`,
+                  },
+                  applications: {
+                    label: "ใบสมัครทั้งหมด",
+                    href: `/owner/dashboard/applications${positionQuery}`,
+                  },
+                  announcements: {
+                    label: "รายละเอียดประกาศ",
+                    href: "/owner/announcements",
+                  },
+                };
               const info = statusMap[fromPage];
               if (!info) return null;
               return (
@@ -789,14 +857,31 @@ function ApplicationDetailContent() {
                     setShowHistoryModal(true);
                     fetchApplicationHistory(application);
                   }}
-                  className="p-2 text-gray-500 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
-                  title="ประวัติการสมัคร"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                 >
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z" fill="currentColor" />
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z"
+                      fill="currentColor"
+                    />
                   </svg>
+                  ประวัติผู้สมัคร
                 </button>
               </div>
+              {studentInternshipBadge && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`w-2.5 h-2.5 rounded-full ${studentInternshipBadge.dotColor}`}></span>
+                  <span className={`text-sm font-semibold ${studentInternshipBadge.textColor}`}>
+                    {studentInternshipBadge.text}
+                  </span>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2 mb-4">
                 <span
                   className={`${statusBadge.bgColor} ${statusBadge.textColor} text-sm px-3 py-1 rounded-full`}
@@ -1053,14 +1138,29 @@ function ApplicationDetailContent() {
 
                 const formatActionDate = (dateStr: string): string => {
                   const d = new Date(dateStr);
-                  const thaiShortMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                  const thaiShortMonths = [
+                    "ม.ค.",
+                    "ก.พ.",
+                    "มี.ค.",
+                    "เม.ย.",
+                    "พ.ค.",
+                    "มิ.ย.",
+                    "ก.ค.",
+                    "ส.ค.",
+                    "ก.ย.",
+                    "ต.ค.",
+                    "พ.ย.",
+                    "ธ.ค.",
+                  ];
                   const beYear = d.getFullYear() + 543;
                   const hours = String(d.getHours()).padStart(2, "0");
                   const minutes = String(d.getMinutes()).padStart(2, "0");
                   return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${beYear} ${hours}:${minutes}`;
                 };
 
-                const getActorLabel = (action: ApplicationStatusAction): string | undefined => {
+                const getActorLabel = (
+                  action: ApplicationStatusAction,
+                ): string | undefined => {
                   if (!action.actor) return undefined;
                   const { fname, lname, roleId } = action.actor;
                   if (roleId === 3 || (!fname && !lname)) return undefined;
@@ -1068,14 +1168,17 @@ function ApplicationDetailContent() {
                   return `พนักงาน : ${name}`;
                 };
 
-                const stepCompletedInfo: { date: string; operator?: string }[] = stepStatusMap.map((targetStatus) => {
-                  const action = timelineActions.find((a) => a.newStatus === targetStatus);
-                  if (!action) return { date: "" };
-                  return {
-                    date: formatActionDate(action.createdAt),
-                    operator: getActorLabel(action),
-                  };
-                });
+                const stepCompletedInfo: { date: string; operator?: string }[] =
+                  stepStatusMap.map((targetStatus) => {
+                    const action = timelineActions.find(
+                      (a) => a.newStatus === targetStatus,
+                    );
+                    if (!action) return { date: "" };
+                    return {
+                      date: formatActionDate(action.createdAt),
+                      operator: getActorLabel(action),
+                    };
+                  });
                 const isAllCompleted = completedUpTo >= totalSteps;
                 const currentStepIndex = isAllCompleted
                   ? totalSteps - 1
@@ -1168,9 +1271,13 @@ function ApplicationDetailContent() {
                                 {stepCompletedInfo[currentStepIndex - 1].date}
                               </p>
                             )}
-                            {stepCompletedInfo[currentStepIndex - 1]?.operator && (
+                            {stepCompletedInfo[currentStepIndex - 1]
+                              ?.operator && (
                               <p className="text-gray-400 text-sm">
-                                {stepCompletedInfo[currentStepIndex - 1].operator}
+                                {
+                                  stepCompletedInfo[currentStepIndex - 1]
+                                    .operator
+                                }
                               </p>
                             )}
                             <p className="text-gray-400 text-sm">
@@ -1238,13 +1345,13 @@ function ApplicationDetailContent() {
                                         <div className="mt-1 space-y-0.5">
                                           {stepCompletedInfo[index]
                                             .operator && (
-                                              <p className="text-gray-500 text-xs">
-                                                {
-                                                  stepCompletedInfo[index]
-                                                    .operator
-                                                }
-                                              </p>
-                                            )}
+                                            <p className="text-gray-500 text-xs">
+                                              {
+                                                stepCompletedInfo[index]
+                                                  .operator
+                                              }
+                                            </p>
+                                          )}
                                           <p className="text-gray-500 text-xs">
                                             {stepCompletedInfo[index].date}
                                           </p>
@@ -1303,7 +1410,13 @@ function ApplicationDetailContent() {
                             <span className="text-gray-700">{doc.name}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <button onClick={() => handleDownloadDocument(doc.docFile)} className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer" title="ดาวน์โหลด">
+                            <button
+                              onClick={() =>
+                                handleDownloadDocument(doc.docFile)
+                              }
+                              className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer"
+                              title="ดาวน์โหลด"
+                            >
                               <svg
                                 className="w-5 h-5"
                                 fill="none"
@@ -1318,7 +1431,11 @@ function ApplicationDetailContent() {
                                 />
                               </svg>
                             </button>
-                            <button onClick={() => handlePreviewDocument(doc.docFile)} className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer" title="ดูเอกสาร">
+                            <button
+                              onClick={() => handlePreviewDocument(doc.docFile)}
+                              className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer"
+                              title="ดูเอกสาร"
+                            >
                               <svg
                                 className="w-5 h-5"
                                 fill="none"
@@ -1391,7 +1508,13 @@ function ApplicationDetailContent() {
                           </span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <button onClick={() => handleDownloadDocument(analysisDoc.docFile)} className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer" title="ดาวน์โหลด">
+                          <button
+                            onClick={() =>
+                              handleDownloadDocument(analysisDoc.docFile)
+                            }
+                            className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer"
+                            title="ดาวน์โหลด"
+                          >
                             <svg
                               className="w-5 h-5"
                               fill="none"
@@ -1406,7 +1529,13 @@ function ApplicationDetailContent() {
                               />
                             </svg>
                           </button>
-                          <button onClick={() => handlePreviewDocument(analysisDoc.docFile)} className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer" title="ดูเอกสาร">
+                          <button
+                            onClick={() =>
+                              handlePreviewDocument(analysisDoc.docFile)
+                            }
+                            className="p-2 text-gray-400 group-hover:text-primary-600 transition-colors cursor-pointer"
+                            title="ดูเอกสาร"
+                          >
                             <svg
                               className="w-5 h-5"
                               fill="none"
@@ -1475,7 +1604,9 @@ function ApplicationDetailContent() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-gray-400 text-sm mb-1">ระยะเวลาการฝึกงาน</p>
+                  <p className="text-gray-400 text-sm mb-1">
+                    ระยะเวลาการฝึกงาน
+                  </p>
                   <p className="font-medium text-gray-900">
                     {formatDateThai(application.startDate)} -{" "}
                     {formatDateThai(application.endDate)}
@@ -1505,9 +1636,7 @@ function ApplicationDetailContent() {
 
               <div className="mt-6">
                 <p className="text-gray-400 text-sm mb-1">เบอร์โทร</p>
-                <p className="font-medium text-gray-900">
-                  {application.phone}
-                </p>
+                <p className="font-medium text-gray-900">{application.phone}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-6 mt-6">
@@ -1598,7 +1727,10 @@ function ApplicationDetailContent() {
                         <div>
                           <p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p>
                           <p className="text-sm text-gray-900">
-                            {positionInfo?.mentors?.[0]?.name || (application?.mentors?.[0] ? `${application.mentors[0].fname || ""} ${application.mentors[0].lname || ""}`.trim() : "-")}
+                            {positionInfo?.mentors?.[0]?.name ||
+                              (application?.mentors?.[0]
+                                ? `${application.mentors[0].fname || ""} ${application.mentors[0].lname || ""}`.trim()
+                                : "-")}
                           </p>
                         </div>
                       </div>
@@ -1619,7 +1751,9 @@ function ApplicationDetailContent() {
                         <div>
                           <p className="text-gray-400 text-sm">อีเมล</p>
                           <p className="text-sm text-gray-900">
-                            {positionInfo?.mentors?.[0]?.email || application?.mentors?.[0]?.email || "-"}
+                            {positionInfo?.mentors?.[0]?.email ||
+                              application?.mentors?.[0]?.email ||
+                              "-"}
                           </p>
                         </div>
                       </div>
@@ -1640,7 +1774,9 @@ function ApplicationDetailContent() {
                         <div>
                           <p className="text-gray-400 text-sm">เบอร์โทร</p>
                           <p className="text-sm text-gray-900">
-                            {positionInfo?.mentors?.[0]?.phoneNumber || application?.mentors?.[0]?.phone || "-"}
+                            {positionInfo?.mentors?.[0]?.phoneNumber ||
+                              application?.mentors?.[0]?.phone ||
+                              "-"}
                           </p>
                         </div>
                       </div>
@@ -1663,9 +1799,18 @@ function ApplicationDetailContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
             <div className="flex items-center justify-center mx-auto mb-6">
-              <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="70"
+                height="70"
+                viewBox="0 0 45 45"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                <path
+                  d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                  fill="#17B26A"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-8">
@@ -1704,9 +1849,18 @@ function ApplicationDetailContent() {
           <div className="bg-white rounded-2xl p-8 max-w-xs w-full mx-4 text-center shadow-2xl">
             <div className="flex justify-center mb-4">
               <div className="rounded-full flex items-center justify-center">
-                <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                  <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
                 </svg>
               </div>
             </div>
@@ -1724,9 +1878,18 @@ function ApplicationDetailContent() {
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 text-center">
             {/* Green Checkmark Icon */}
             <div className="flex justify-center mb-4">
-              <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                width="70"
+                height="70"
+                viewBox="0 0 45 45"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                <path
+                  d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                  fill="#17B26A"
+                />
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -2052,100 +2215,172 @@ function ApplicationDetailContent() {
       )}
 
       {/* Application History Modal */}
-      {showHistoryModal && application && (() => {
-        return (
-          <div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]"
-            onClick={() => setShowHistoryModal(false)}
-          >
+      {showHistoryModal &&
+        application &&
+        (() => {
+          return (
             <div
-              className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]"
+              onClick={() => setShowHistoryModal(false)}
             >
-              {/* Modal header */}
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary-50 rounded-full">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z" fill="#A80689" />
+              <div
+                className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal header */}
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary-50 rounded-full">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 18 18"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M9 18C6.9 18 5.04167 17.3625 3.425 16.0875C1.80833 14.8125 0.758333 13.1833 0.275 11.2C0.208333 10.95 0.258333 10.7208 0.425 10.5125C0.591667 10.3042 0.816667 10.1833 1.1 10.15C1.36667 10.1167 1.60833 10.1667 1.825 10.3C2.04167 10.4333 2.19167 10.6333 2.275 10.9C2.675 12.4 3.5 13.625 4.75 14.575C6 15.525 7.41667 16 9 16C10.95 16 12.6042 15.3208 13.9625 13.9625C15.3208 12.6042 16 10.95 16 9C16 7.05 15.3208 5.39583 13.9625 4.0375C12.6042 2.67917 10.95 2 9 2C7.85 2 6.775 2.26667 5.775 2.8C4.775 3.33333 3.93333 4.06667 3.25 5H5C5.28333 5 5.52083 5.09583 5.7125 5.2875C5.90417 5.47917 6 5.71667 6 6C6 6.28333 5.90417 6.52083 5.7125 6.7125C5.52083 6.90417 5.28333 7 5 7H1C0.716667 7 0.479167 6.90417 0.2875 6.7125C0.0958333 6.52083 0 6.28333 0 6V2C0 1.71667 0.0958333 1.47917 0.2875 1.2875C0.479167 1.09583 0.716667 1 1 1C1.28333 1 1.52083 1.09583 1.7125 1.2875C1.90417 1.47917 2 1.71667 2 2V3.35C2.85 2.28333 3.8875 1.45833 5.1125 0.875C6.3375 0.291667 7.63333 0 9 0C10.25 0 11.4208 0.2375 12.5125 0.7125C13.6042 1.1875 14.5542 1.82917 15.3625 2.6375C16.1708 3.44583 16.8125 4.39583 17.2875 5.4875C17.7625 6.57917 18 7.75 18 9C18 10.25 17.7625 11.4208 17.2875 12.5125C16.8125 13.6042 16.1708 14.5542 15.3625 15.3625C14.5542 16.1708 13.6042 16.8125 12.5125 17.2875C11.4208 17.7625 10.25 18 9 18ZM10 8.6L12.5 11.1C12.6833 11.2833 12.775 11.5167 12.775 11.8C12.775 12.0833 12.6833 12.3167 12.5 12.5C12.3167 12.6833 12.0833 12.775 11.8 12.775C11.5167 12.775 11.2833 12.6833 11.1 12.5L8.3 9.7C8.2 9.6 8.125 9.4875 8.075 9.3625C8.025 9.2375 8 9.10833 8 8.975V5C8 4.71667 8.09583 4.47917 8.2875 4.2875C8.47917 4.09583 8.71667 4 9 4C9.28333 4 9.52083 4.09583 9.7125 4.2875C9.90417 4.47917 10 4.71667 10 5V8.6Z"
+                          fill="#A80689"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        ประวัติการสมัคร
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {application.firstName} {application.lastName}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowHistoryModal(false)}
+                    className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">ประวัติการสมัคร</h3>
-                    <p className="text-sm text-gray-500">{application.firstName} {application.lastName}</p>
-                  </div>
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowHistoryModal(false)}
-                  className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
 
-              {/* History list */}
-              <div className="overflow-y-auto flex-1 space-y-4">
-                {historyLoading ? (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
-                    <p className="text-gray-500 text-sm">กำลังโหลดประวัติ...</p>
-                  </div>
-                ) : historyData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <img src="/images/NoFound.png" alt="ไม่มีประวัติการสมัคร" className="w-40 h-40 object-contain opacity-80 mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-500 mb-1">ไม่มีประวัติการสมัคร</h3>
-                    <p className="text-gray-400 text-center text-sm leading-relaxed">
-                      ผู้สมัครรายนี้ยังไม่เคย<br />สมัครฝึกงานผ่านระบบนี้
-                    </p>
-                  </div>
-                ) : (
-                  historyData.map((item) => {
-                    const statusInfo = getHistoryStatusInfo(item.applicationStatus);
-                    return (
-                      <div key={item.applicationId} className="border border-gray-200 rounded-xl overflow-hidden">
-                        <div className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2 text-gray-400 text-sm">
-                              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3.75 6H14.25V4.5H3.75V6ZM3.75 16.5C3.3375 16.5 2.98438 16.3531 2.69063 16.0594C2.39688 15.7656 2.25 15.4125 2.25 15V4.5C2.25 4.0875 2.39688 3.73438 2.69063 3.44063C2.98438 3.14688 3.3375 3 3.75 3H4.5V2.25C4.5 2.0375 4.57188 1.85938 4.71563 1.71562C4.85938 1.57187 5.0375 1.5 5.25 1.5C5.4625 1.5 5.64062 1.57187 5.78438 1.71562C5.92813 1.85938 6 2.0375 6 2.25V3H12V2.25C12 2.0375 12.0719 1.85938 12.2156 1.71562C12.3594 1.57187 12.5375 1.5 12.75 1.5C12.9625 1.5 13.1406 1.57187 13.2844 1.71562C13.4281 1.85938 13.5 2.0375 13.5 2.25V3H14.25C14.6625 3 15.0156 3.14688 15.3094 3.44063C15.6031 3.73438 15.75 4.0875 15.75 4.5V8.00625C15.75 8.21875 15.6781 8.39687 15.5344 8.54062C15.3906 8.68437 15.2125 8.75625 15 8.75625C14.7875 8.75625 14.6094 8.68437 14.4656 8.54062C14.3219 8.39687 14.25 8.21875 14.25 8.00625V7.5H3.75V15H8.1C8.3125 15 8.49062 15.0719 8.63437 15.2156C8.77812 15.3594 8.85 15.5375 8.85 15.75C8.85 15.9625 8.77812 16.1406 8.63437 16.2844C8.49062 16.4281 8.3125 16.5 8.1 16.5H3.75ZM13.5 17.25C12.4625 17.25 11.5781 16.8844 10.8469 16.1531C10.1156 15.4219 9.75 14.5375 9.75 13.5C9.75 12.4625 10.1156 11.5781 10.8469 10.8469C11.5781 10.1156 12.4625 9.75 13.5 9.75C14.5375 9.75 15.4219 10.1156 16.1531 10.8469C16.8844 11.5781 17.25 12.4625 17.25 13.5C17.25 14.5375 16.8844 15.4219 16.1531 16.1531C15.4219 16.8844 14.5375 17.25 13.5 17.25ZM13.875 13.35V11.625C13.875 11.525 13.8375 11.4375 13.7625 11.3625C13.6875 11.2875 13.6 11.25 13.5 11.25C13.4 11.25 13.3125 11.2875 13.2375 11.3625C13.1625 11.4375 13.125 11.525 13.125 11.625V13.3313C13.125 13.4313 13.1438 13.5281 13.1812 13.6219C13.2188 13.7156 13.275 13.8 13.35 13.875L14.4938 15.0187C14.5688 15.0938 14.6563 15.1313 14.7563 15.1313C14.8563 15.1313 14.9437 15.0938 15.0187 15.0187C15.0938 14.9437 15.1313 14.8563 15.1313 14.7563C15.1313 14.6563 15.0938 14.5688 15.0187 14.4938L13.875 13.35Z" fill="#98A2B3" />
+                {/* History list */}
+                <div className="overflow-y-auto flex-1">
+                  {historyLoading ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
+                      <p className="text-gray-500 text-sm">
+                        กำลังโหลดประวัติ...
+                      </p>
+                    </div>
+                  ) : historyData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <img
+                        src="/images/NoFound.png"
+                        alt="ไม่มีประวัติการสมัคร"
+                        className="w-40 h-40 object-contain opacity-80 mb-4"
+                      />
+                      <h3 className="text-lg font-semibold text-gray-500 mb-1">
+                        ไม่มีประวัติการสมัคร
+                      </h3>
+                      <p className="text-gray-400 text-center text-sm leading-relaxed">
+                        ผู้สมัครรายนี้ยังไม่เคย
+                        <br />
+                        สมัครฝึกงานผ่านระบบนี้
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
+                      {historyData.map((item) => {
+                        const statusInfo = getHistoryStatusInfo(
+                          item.applicationStatus,
+                          item.statusNote,
+                        );
+                        return (
+                          <div key={item.applicationId}>
+                            <div className="p-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                  <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 18 18"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M3.75 6H14.25V4.5H3.75V6ZM3.75 16.5C3.3375 16.5 2.98438 16.3531 2.69063 16.0594C2.39688 15.7656 2.25 15.4125 2.25 15V4.5C2.25 4.0875 2.39688 3.73438 2.69063 3.44063C2.98438 3.14688 3.3375 3 3.75 3H4.5V2.25C4.5 2.0375 4.57188 1.85938 4.71563 1.71562C4.85938 1.57187 5.0375 1.5 5.25 1.5C5.4625 1.5 5.64062 1.57187 5.78438 1.71562C5.92813 1.85938 6 2.0375 6 2.25V3H12V2.25C12 2.0375 12.0719 1.85938 12.2156 1.71562C12.3594 1.57187 12.5375 1.5 12.75 1.5C12.9625 1.5 13.1406 1.57187 13.2844 1.71562C13.4281 1.85938 13.5 2.0375 13.5 2.25V3H14.25C14.6625 3 15.0156 3.14688 15.3094 3.44063C15.6031 3.73438 15.75 4.0875 15.75 4.5V8.00625C15.75 8.21875 15.6781 8.39687 15.5344 8.54062C15.3906 8.68437 15.2125 8.75625 15 8.75625C14.7875 8.75625 14.6094 8.68437 14.4656 8.54062C14.3219 8.39687 14.25 8.21875 14.25 8.00625V7.5H3.75V15H8.1C8.3125 15 8.49062 15.0719 8.63437 15.2156C8.77812 15.3594 8.85 15.5375 8.85 15.75C8.85 15.9625 8.77812 16.1406 8.63437 16.2844C8.49062 16.4281 8.3125 16.5 8.1 16.5H3.75ZM13.5 17.25C12.4625 17.25 11.5781 16.8844 10.8469 16.1531C10.1156 15.4219 9.75 14.5375 9.75 13.5C9.75 12.4625 10.1156 11.5781 10.8469 10.8469C11.5781 10.1156 12.4625 9.75 13.5 9.75C14.5375 9.75 15.4219 10.1156 16.1531 10.8469C16.8844 11.5781 17.25 12.4625 17.25 13.5C17.25 14.5375 16.8844 15.4219 16.1531 16.1531C15.4219 16.8844 14.5375 17.25 13.5 17.25ZM13.875 13.35V11.625C13.875 11.525 13.8375 11.4375 13.7625 11.3625C13.6875 11.2875 13.6 11.25 13.5 11.25C13.4 11.25 13.3125 11.2875 13.2375 11.3625C13.1625 11.4375 13.125 11.525 13.125 11.625V13.3313C13.125 13.4313 13.1438 13.5281 13.1812 13.6219C13.2188 13.7156 13.275 13.8 13.35 13.875L14.4938 15.0187C14.5688 15.0938 14.6563 15.1313 14.7563 15.1313C14.8563 15.1313 14.9437 15.0938 15.0187 15.0187C15.0938 14.9437 15.1313 14.8563 15.1313 14.7563C15.1313 14.6563 15.0938 14.5688 15.0187 14.4938L13.875 13.35Z"
+                                      fill="#98A2B3"
+                                    />
+                                  </svg>
+                                  <span>
+                                    {formatHistoryDate(item.createdAt)}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusInfo.color}`}
+                                >
+                                  {statusInfo.label}
+                                </span>
+                              </div>
+                              <h4 className="font-semibold text-gray-900 mb-1">
+                                {item.positionName || "ตำแหน่งไม่ระบุ"}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                รอบที่ {item.internshipRound}
+                              </p>
+                            </div>
+                            {item.statusNote && (
+                              <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                                  <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
+                                  fill="#D92D20"
+                                />
                               </svg>
-                              <span>{formatHistoryDate(item.createdAt)}</span>
-                            </div>
-                            <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusInfo.color}`}>
-                              {statusInfo.label}
-                            </span>
+                                  <span className="text-sm font-semibold text-red-500">
+                                    {item.applicationStatus === "CANCEL" &&
+                                    item.statusNote
+                                      ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
+                                      : item.applicationStatus === "CANCEL"
+                                        ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                        : "หมายเหตุ"}
+                                  </span>
+                                </div>
+                                <div className="mx-4 border-t border-red-200" />
+                                <div className="px-4 pt-3 pb-4">
+                                  <p className="text-sm text-gray-700 leading-relaxed">
+                                    {item.statusNote}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <h4 className="font-semibold text-gray-900 mb-1">{item.positionName || "ตำแหน่งไม่ระบุ"}</h4>
-                          <p className="text-sm text-gray-500">รอบที่ {item.internshipRound}</p>
-                        </div>
-                        {item.statusNote && (
-                          <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
-                            <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-                              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20Z" fill="#D92D20" />
-                              </svg>
-                              <span className="text-sm font-semibold text-red-500">
-                                {item.applicationStatus === "CANCEL" ? "เหตุผลประกอบการยกเลิกฝึกงาน" : "หมายเหตุ"}
-                              </span>
-                            </div>
-                            <div className="mx-4 border-t border-red-200" />
-                            <div className="px-4 pt-3 pb-4">
-                              <p className="text-sm text-gray-700 leading-relaxed">{item.statusNote}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
-
+          );
+        })()}
     </div>
   );
 }

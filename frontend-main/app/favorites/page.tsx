@@ -43,8 +43,8 @@ export default function FavoritesPage() {
         const activeItems = response.data.filter((item: FavoriteItem) => {
           const p = item.position;
           if (p.recruitmentStatus !== "OPEN") return false;
-          const start = safeDate(p.applyStart);
-          const end = safeDate(p.applyEnd);
+          const start = safeDate(p.recruitStart);
+          const end = safeDate(p.recruitEnd);
           if (start && now < start) return false;
           if (end) {
             const endOfDay = new Date(end);
@@ -237,7 +237,7 @@ export default function FavoritesPage() {
                     />
                   </svg>
                   <span>
-                    {job.currentApplicants}/{job.maxApplicants} ตำแหน่ง
+                    {job.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
                   </span>
                 </div>
 

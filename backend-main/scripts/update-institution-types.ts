@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
-// docker run: docker compose exec backend bun run scripts/update-institution-types.ts
+// docker run: docker compose exec backend-main bun run scripts/update-institution-types.ts
 
 async function main() {
   console.log("Start updating institution_type...");

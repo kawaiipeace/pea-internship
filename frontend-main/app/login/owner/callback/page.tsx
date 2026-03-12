@@ -21,8 +21,9 @@ export default function KeycloakCallbackPage() {
           return;
         }
 
-        // ตรวจสอบ role - ต้องเป็น owner (role_id = 2)
-        if (session.user.roleId !== 2) {
+        // ตรวจสอบ role - ต้องเป็น admin (role_id = 1) หรือ owner (role_id = 2)
+        const allowedRoleIds = [1, 2];
+        if (!allowedRoleIds.includes(session.user.roleId)) {
           try {
             await authApi.signOut();
           } catch {
@@ -36,12 +37,19 @@ export default function KeycloakCallbackPage() {
         // บันทึก user ลง storage
         authStorage.setUser(session.user);
 
+        // กำหนด role และ redirect ตาม roleId
+        const roleMap: Record<number, { role: string; redirect: string }> = {
+          1: { role: "admin", redirect: "/admin/applications" },
+          2: { role: "owner", redirect: "/owner/announcements" },
+        };
+        const { role, redirect } = roleMap[session.user.roleId];
+
         // Set auth cookies สำหรับ middleware
         document.cookie = `auth_token=${session.user.id}; path=/; max-age=86400`;
-        document.cookie = `user_role=owner; path=/; max-age=86400`;
+        document.cookie = `user_role=${role}; path=/; max-age=86400`;
 
-        // Redirect ไปหน้า owner dashboard
-        router.push("/owner/announcements");
+        // Redirect ไปหน้า dashboard ตาม role
+        router.push(redirect);
       } catch (err) {
         console.error("Keycloak callback error:", err);
         setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง");

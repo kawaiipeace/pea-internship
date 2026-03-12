@@ -18,6 +18,7 @@ COPY scripts ./scripts
 COPY drizzle.config.ts ./
 COPY tsconfig.json ./
 COPY biome.json ./
+COPY xlsx_files ./xlsx_files
 
 # Set environment
 ENV NODE_ENV=production

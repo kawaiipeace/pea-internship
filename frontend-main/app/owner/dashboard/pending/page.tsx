@@ -63,7 +63,7 @@ type PendingTab =
 function PendingStatusContent() {
   const searchParams = useSearchParams();
   const positionId = searchParams.get("positionId");
-  const positionQuery = positionId ? `?positionId=${positionId}` : '';
+  const positionQuery = positionId ? `?positionId=${positionId}` : "";
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,7 +80,9 @@ function PendingStatusContent() {
   useEffect(() => {
     Promise.all([
       fetchAllApplications(positionId ? Number(positionId) : undefined),
-      positionId ? positionApi.getPositionById(Number(positionId)) : Promise.resolve(null),
+      positionId
+        ? positionApi.getPositionById(Number(positionId))
+        : Promise.resolve(null),
     ]).then(([apps, posData]) => {
       setAllApps(apps);
       setPositionInfo(posData);
@@ -116,7 +118,7 @@ function PendingStatusContent() {
       if (storedApproved) setApprovedApps(JSON.parse(storedApproved));
       if (storedRejected) setRejectedApps(JSON.parse(storedRejected));
       if (storedCancelled) setCancelledAppsData(JSON.parse(storedCancelled));
-    } catch { }
+    } catch {}
   }, []);
 
   // Document request popup state
@@ -134,7 +136,9 @@ function PendingStatusContent() {
   const [tabLoading, setTabLoading] = useState(false);
 
   // Timeline actions state (real data from API)
-  const [timelineActions, setTimelineActions] = useState<ApplicationStatusAction[]>([]);
+  const [timelineActions, setTimelineActions] = useState<
+    ApplicationStatusAction[]
+  >([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
 
   // Additional info dropdown state
@@ -542,7 +546,7 @@ function PendingStatusContent() {
   const saveToStorage = (key: string, value: string[]) => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch { }
+    } catch {}
   };
 
   // Handle interview confirmation
@@ -605,7 +609,13 @@ function PendingStatusContent() {
     try {
       const data = await applicationApi.getStudentHistory(app.internId, true);
       // Exclude the current application from history
-      setHistoryData(data.filter((h) => String(h.applicationId) !== String(app.id)));
+      setHistoryData(
+        data.filter(
+          (h) =>
+            h.applicationStatus === "COMPLETE" ||
+            h.applicationStatus === "CANCEL",
+        ),
+      );
     } catch (error) {
       console.error("Failed to fetch student history:", error);
       setHistoryData([]);
@@ -615,21 +625,52 @@ function PendingStatusContent() {
   };
 
   // Helper: format API status to display status
-  const getHistoryStatusInfo = (status: AppStatusEnum) => {
+  const getHistoryStatusInfo = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+  ) => {
     switch (status) {
       case "COMPLETE":
-        return { label: "ฝึกงานเสร็จสิ้น", color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]" };
+        return {
+          label: "ฝึกงานเสร็จสิ้น",
+          color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
+        };
       case "CANCEL":
-        return { label: "ยกเลิกฝึกงาน", color: "bg-red-50 text-red-600 border-red-200" };
+        if (statusNote) {
+          return {
+            label: "ไม่ผ่าน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
+        return {
+          label: "ยกเลิกฝึกงาน",
+          color: "bg-red-50 text-red-600 border-red-200",
+        };
       default:
-        return { label: "กำลังดำเนินการ", color: "bg-yellow-50 text-yellow-700 border-yellow-200" };
+        return {
+          label: "กำลังดำเนินการ",
+          color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+        };
     }
   };
 
   // Helper: format date to Thai short format
   const formatHistoryDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    const thaiShortMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    const thaiShortMonths = [
+      "ม.ค.",
+      "ก.พ.",
+      "มี.ค.",
+      "เม.ย.",
+      "พ.ค.",
+      "มิ.ย.",
+      "ก.ค.",
+      "ส.ค.",
+      "ก.ย.",
+      "ต.ค.",
+      "พ.ย.",
+      "ธ.ค.",
+    ];
     return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
@@ -655,18 +696,18 @@ function PendingStatusContent() {
             {selectedApplication.firstName} {selectedApplication.lastName}
           </h3>
           <div className="flex items-center gap-2">
-            {/* History icon */}
+            {/* History button */}
             <button
               onClick={() => {
                 setExpandedHistoryItems([]);
                 setShowHistoryModal(true);
                 fetchApplicationHistory(selectedApplication);
               }}
-              className="p-2 text-gray-500   rounded-4xl hover:bg-gray-200 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
             >
               <svg
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 18 18"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -676,10 +717,11 @@ function PendingStatusContent() {
                   fill="currentColor"
                 />
               </svg>
+              ประวัติผู้สมัคร
             </button>
             {/* External link icon */}
             <Link
-              href={`/owner/dashboard/${selectedApplication.id}?from=pending${positionId ? `&positionId=${positionId}` : ''}`}
+              href={`/owner/dashboard/${selectedApplication.id}?from=pending${positionId ? `&positionId=${positionId}` : ""}`}
               className="p-2 text-gray-500  rounded-4xl hover:bg-gray-200  transition-colors"
             >
               <svg
@@ -719,7 +761,9 @@ function PendingStatusContent() {
               fill="#A80689"
             />
           </svg>
-          <span className="text-sm">{selectedApplication?.position || "ตำแหน่งงาน"}</span>
+          <span className="text-sm">
+            {selectedApplication?.position || "ตำแหน่งงาน"}
+          </span>
         </div>
 
         {/* Action buttons based on step */}
@@ -876,20 +920,41 @@ function PendingStatusContent() {
             ];
             const fmtDate = (dateStr: string): string => {
               const d = new Date(dateStr);
-              const mo = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+              const mo = [
+                "ม.ค.",
+                "ก.พ.",
+                "มี.ค.",
+                "เม.ย.",
+                "พ.ค.",
+                "มิ.ย.",
+                "ก.ค.",
+                "ส.ค.",
+                "ก.ย.",
+                "ต.ค.",
+                "พ.ย.",
+                "ธ.ค.",
+              ];
               return `${d.getDate()} ${mo[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
             };
-            const fmtActor = (action: ApplicationStatusAction): string | undefined => {
+            const fmtActor = (
+              action: ApplicationStatusAction,
+            ): string | undefined => {
               if (!action.actor) return undefined;
               const { fname, lname, roleId } = action.actor;
               if (roleId === 3 || (!fname && !lname)) return undefined;
               return `พนักงาน : ${[fname, lname].filter(Boolean).join(" ")}`;
             };
-            const stepCompletedInfo: { date: string; operator?: string }[] = summaryStepStatusMap.map((targetStatus) => {
-              const action = timelineActions.find((a) => a.newStatus === targetStatus);
-              if (!action) return { date: "" };
-              return { date: fmtDate(action.createdAt), operator: fmtActor(action) };
-            });
+            const stepCompletedInfo: { date: string; operator?: string }[] =
+              summaryStepStatusMap.map((targetStatus) => {
+                const action = timelineActions.find(
+                  (a) => a.newStatus === targetStatus,
+                );
+                if (!action) return { date: "" };
+                return {
+                  date: fmtDate(action.createdAt),
+                  operator: fmtActor(action),
+                };
+              });
 
             return (
               <div className="flex items-center gap-5 mb-4">
@@ -989,7 +1054,10 @@ function PendingStatusContent() {
                         <button
                           className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
                           title="ดาวน์โหลด"
-                          onClick={() => uploadedDoc.docFile && handleDownloadDocument(uploadedDoc.docFile)}
+                          onClick={() =>
+                            uploadedDoc.docFile &&
+                            handleDownloadDocument(uploadedDoc.docFile)
+                          }
                         >
                           <svg
                             className="w-5 h-5"
@@ -1008,7 +1076,10 @@ function PendingStatusContent() {
                         <button
                           className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
                           title="ดูเอกสาร"
-                          onClick={() => uploadedDoc.docFile && handlePreviewDocument(uploadedDoc.docFile)}
+                          onClick={() =>
+                            uploadedDoc.docFile &&
+                            handlePreviewDocument(uploadedDoc.docFile)
+                          }
                         >
                           <svg
                             className="w-5 h-5"
@@ -1188,7 +1259,12 @@ function PendingStatusContent() {
                   <div>
                     <p className="text-gray-400 text-sm">ชื่อพี่เลี้ยง</p>
                     <p className=" text-gray-900 text-sm">
-                      {positionInfo?.mentors?.[0] ? positionInfo.mentors[0].name || "-" : selectedApplication?.mentors?.[0] ? `${selectedApplication.mentors[0].fname || ""} ${selectedApplication.mentors[0].lname || ""}`.trim() || "-" : "-"}
+                      {positionInfo?.mentors?.[0]
+                        ? positionInfo.mentors[0].name || "-"
+                        : selectedApplication?.mentors?.[0]
+                          ? `${selectedApplication.mentors[0].fname || ""} ${selectedApplication.mentors[0].lname || ""}`.trim() ||
+                            "-"
+                          : "-"}
                     </p>
                   </div>
                 </div>
@@ -1208,8 +1284,10 @@ function PendingStatusContent() {
                   </svg>
                   <div>
                     <p className="text-gray-400 text-sm">อีเมล</p>
-                    <p className="font-medium text-gray-900 text-sm">
-                      {positionInfo?.mentors?.[0]?.email || selectedApplication?.mentors?.[0]?.email || "-"}
+                    <p className=" text-gray-900 text-sm">
+                      {positionInfo?.mentors?.[0]?.email ||
+                        selectedApplication?.mentors?.[0]?.email ||
+                        "-"}
                     </p>
                   </div>
                 </div>
@@ -1229,8 +1307,10 @@ function PendingStatusContent() {
                   </svg>
                   <div>
                     <p className="text-gray-400 text-sm">เบอร์โทร</p>
-                    <p className="font-medium text-gray-900 text-sm">
-                      {positionInfo?.mentors?.[0]?.phoneNumber || selectedApplication?.mentors?.[0]?.phone || "-"}
+                    <p className=" text-gray-900 text-sm">
+                      {positionInfo?.mentors?.[0]?.phoneNumber ||
+                        selectedApplication?.mentors?.[0]?.phone ||
+                        "-"}
                     </p>
                   </div>
                 </div>
@@ -1288,14 +1368,29 @@ function PendingStatusContent() {
 
     const formatActionDate = (dateStr: string): string => {
       const d = new Date(dateStr);
-      const thaiShortMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      const thaiShortMonths = [
+        "ม.ค.",
+        "ก.พ.",
+        "มี.ค.",
+        "เม.ย.",
+        "พ.ค.",
+        "มิ.ย.",
+        "ก.ค.",
+        "ส.ค.",
+        "ก.ย.",
+        "ต.ค.",
+        "พ.ย.",
+        "ธ.ค.",
+      ];
       const beYear = d.getFullYear() + 543;
       const hours = String(d.getHours()).padStart(2, "0");
       const minutes = String(d.getMinutes()).padStart(2, "0");
       return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${beYear} ${hours}:${minutes}`;
     };
 
-    const getActorLabel = (action: ApplicationStatusAction): string | undefined => {
+    const getActorLabel = (
+      action: ApplicationStatusAction,
+    ): string | undefined => {
       if (!action.actor) return undefined;
       const { fname, lname, roleId } = action.actor;
       // roleId 3 = student → no operator label
@@ -1304,14 +1399,17 @@ function PendingStatusContent() {
       return `พนักงาน : ${name}`;
     };
 
-    const stepCompletedInfo: { date: string; operator?: string }[] = stepStatusMap.map((targetStatus) => {
-      const action = timelineActions.find((a) => a.newStatus === targetStatus);
-      if (!action) return { date: "" };
-      return {
-        date: formatActionDate(action.createdAt),
-        operator: getActorLabel(action),
-      };
-    });
+    const stepCompletedInfo: { date: string; operator?: string }[] =
+      stepStatusMap.map((targetStatus) => {
+        const action = timelineActions.find(
+          (a) => a.newStatus === targetStatus,
+        );
+        if (!action) return { date: "" };
+        return {
+          date: formatActionDate(action.createdAt),
+          operator: getActorLabel(action),
+        };
+      });
 
     return (
       <div className="py-2">
@@ -1549,38 +1647,58 @@ function PendingStatusContent() {
         {/* Tabs */}
         <div className="flex flex-wrap gap-0 mb-6 border-b border-gray-200">
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("all"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "all"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("all");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "all"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             ทั้งหมด ({tabCounts.all})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("waiting_document"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "waiting_document"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("waiting_document");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "waiting_document"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             รอยื่นเอกสาร ({tabCounts.waiting_document})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("waiting_interview"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "waiting_interview"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("waiting_interview");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "waiting_interview"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             รอสัมภาษณ์ ({tabCounts.waiting_interview})
           </button>
           <button
-            onClick={() => { setTabLoading(true); setActiveTab("waiting_confirm"); setTimeout(() => setTabLoading(false), 300); }}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === "waiting_confirm"
-              ? "border-primary-600 text-primary-600 bg-primary-50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("waiting_confirm");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "waiting_confirm"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             รอการยืนยัน ({tabCounts.waiting_confirm})
           </button>
@@ -1696,28 +1814,29 @@ function PendingStatusContent() {
                     }}
                   >
                     <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedInstitutions.length ===
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        selectedInstitutions.length ===
                         institutionCategories.length
-                        ? "bg-primary-600 border-primary-600"
-                        : "border-gray-400"
-                        }`}
+                          ? "bg-primary-600 border-primary-600"
+                          : "border-gray-400"
+                      }`}
                     >
                       {selectedInstitutions.length ===
                         institutionCategories.length && (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        )}
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      )}
                     </div>
                     <span className="text-gray-700 text-sm">
                       ทั้งหมด ({institutionCategories.length})
@@ -1738,10 +1857,10 @@ function PendingStatusContent() {
                       const schools = getSchoolsByCategory(cat.id);
                       const filteredSchools = institutionSearch.trim()
                         ? schools.filter((s) =>
-                          s
-                            .toLowerCase()
-                            .includes(institutionSearch.trim().toLowerCase()),
-                        )
+                            s
+                              .toLowerCase()
+                              .includes(institutionSearch.trim().toLowerCase()),
+                          )
                         : schools;
                       const isExpanded = expandedCategories.includes(cat.id);
 
@@ -1753,10 +1872,11 @@ function PendingStatusContent() {
                               onClick={() => handleInstitutionToggle(cat.id)}
                             >
                               <div
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedInstitutions.includes(cat.id)
-                                  ? "bg-primary-600 border-primary-600"
-                                  : "border-gray-400"
-                                  }`}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                  selectedInstitutions.includes(cat.id)
+                                    ? "bg-primary-600 border-primary-600"
+                                    : "border-gray-400"
+                                }`}
                               >
                                 {selectedInstitutions.includes(cat.id) && (
                                   <svg
@@ -1811,10 +1931,11 @@ function PendingStatusContent() {
                                   onClick={() => handleSchoolToggle(school)}
                                 >
                                   <div
-                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selectedSchools.includes(school)
-                                      ? "bg-primary-600 border-primary-600"
-                                      : "border-gray-400"
-                                      }`}
+                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                      selectedSchools.includes(school)
+                                        ? "bg-primary-600 border-primary-600"
+                                        : "border-gray-400"
+                                    }`}
                                   >
                                     {selectedSchools.includes(school) && (
                                       <svg
@@ -1853,52 +1974,70 @@ function PendingStatusContent() {
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
           </div>
+        ) : filteredApplications.length === 0 ? (
+          <div className="col-span-full bg-white rounded-xl border border-gray-200 p-8">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <img
+                src="/images/NoFound.png"
+                alt="ไม่พบใบสมัคร"
+                className="w-40 h-40 object-contain opacity-80"
+              />
+              <p className="text-gray-700 font-semibold text-base mt-2">
+                ไม่พบใบสมัคร
+              </p>
+              <p className="text-gray-400 text-sm text-center">
+                ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้
+                <br />
+                กรุณาตรวจสอบอีกครั้งภายหลัง
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column: Applications List */}
             <div className="space-y-4">
-              {paginatedApplications.length > 0 ? (
-                paginatedApplications.map((app) => {
-                  const badge = getStatusBadge(app);
-                  return (
-                    <div
-                      key={app.id}
-                      onClick={() => setSelectedApplication(app)}
-                      className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all ${selectedApplication?.id === app.id
+              {paginatedApplications.map((app) => {
+                const badge = getStatusBadge(app);
+                return (
+                  <div
+                    key={app.id}
+                    onClick={() => setSelectedApplication(app)}
+                    className={`bg-white rounded-xl border-2 p-4 cursor-pointer transition-all ${
+                      selectedApplication?.id === app.id
                         ? "border-primary-600 shadow-md"
                         : "border-gray-100 hover:border-gray-300"
-                        }`}
-                    >
-                      <div className="flex items-start justify-between mb-1">
-                        <span className="font-semibold text-gray-900">
-                          {app.firstName} {app.lastName}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        <span
-                          className={`text-sm px-3 py-1 rounded-full ${badge.color}`}
-                        >
-                          {badge.text}
-                        </span>
-                      </div>
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <span className="font-semibold text-gray-900">
+                        {app.firstName} {app.lastName}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      <span
+                        className={`text-sm px-3 py-1 rounded-full ${badge.color}`}
+                      >
+                        {badge.text}
+                      </span>
+                    </div>
 
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <svg
-                            width="14"
-                            height="13"
-                            viewBox="0 0 14 13"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M1.33333 12.6667C0.966667 12.6667 0.652778 12.5361 0.391667 12.275C0.130556 12.0139 0 11.7 0 11.3333V4C0 3.63333 0.130556 3.31944 0.391667 3.05833C0.652778 2.79722 0.966667 2.66667 1.33333 2.66667H4V1.33333C4 0.966667 4.13056 0.652778 4.39167 0.391667C4.65278 0.130556 4.96667 0 5.33333 0H8C8.36667 0 8.68056 0.130556 8.94167 0.391667C9.20278 0.652778 9.33333 0.966667 9.33333 1.33333V2.66667H12C12.3667 2.66667 12.6806 2.79722 12.9417 3.05833C13.2028 3.31944 13.3333 3.63333 13.3333 4V11.3333C13.3333 11.7 13.2028 12.0139 12.9417 12.275C12.6806 12.5361 12.3667 12.6667 12 12.6667H1.33333ZM1.33333 11.3333H12V4H1.33333V11.3333ZM5.33333 2.66667H8V1.33333H5.33333V2.66667Z"
-                              fill="#A80689"
-                            />
-                          </svg>
-                          {app.position || "ตำแหน่งงาน"}
-                        </div>
-                        {/* <div className="flex items-center gap-2">
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <svg
+                          width="14"
+                          height="13"
+                          viewBox="0 0 14 13"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M1.33333 12.6667C0.966667 12.6667 0.652778 12.5361 0.391667 12.275C0.130556 12.0139 0 11.7 0 11.3333V4C0 3.63333 0.130556 3.31944 0.391667 3.05833C0.652778 2.79722 0.966667 2.66667 1.33333 2.66667H4V1.33333C4 0.966667 4.13056 0.652778 4.39167 0.391667C4.65278 0.130556 4.96667 0 5.33333 0H8C8.36667 0 8.68056 0.130556 8.94167 0.391667C9.20278 0.652778 9.33333 0.966667 9.33333 1.33333V2.66667H12C12.3667 2.66667 12.6806 2.79722 12.9417 3.05833C13.2028 3.31944 13.3333 3.63333 13.3333 4V11.3333C13.3333 11.7 13.2028 12.0139 12.9417 12.275C12.6806 12.5361 12.3667 12.6667 12 12.6667H1.33333ZM1.33333 11.3333H12V4H1.33333V11.3333ZM5.33333 2.66667H8V1.33333H5.33333V2.66667Z"
+                            fill="#A80689"
+                          />
+                        </svg>
+                        {app.position || "ตำแหน่งงาน"}
+                      </div>
+                      {/* <div className="flex items-center gap-2">
                         <svg
                           width="12"
                           height="12"
@@ -1914,89 +2053,70 @@ function PendingStatusContent() {
 
                         {app.department}
                       </div> */}
-                        <div className="flex items-center gap-2">
-                          <svg
-                            width="14"
-                            height="12"
-                            viewBox="0 0 14 12"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M2.65 9.66667C2.42778 9.54445 2.25556 9.38056 2.13333 9.175C2.01111 8.96944 1.95 8.73889 1.95 8.48333V5.28333L0.35 4.4C0.227778 4.33333 0.138889 4.25 0.0833333 4.15C0.0277778 4.05 0 3.93889 0 3.81667C0 3.69444 0.0277778 3.58333 0.0833333 3.48333C0.138889 3.38333 0.227778 3.3 0.35 3.23333L5.98333 0.166667C6.08333 0.111111 6.18611 0.0694444 6.29167 0.0416667C6.39722 0.0138889 6.50556 0 6.61667 0C6.72778 0 6.83611 0.0138889 6.94167 0.0416667C7.04722 0.0694444 7.15 0.111111 7.25 0.166667L13.6 3.63333C13.7111 3.68889 13.7972 3.76944 13.8583 3.875C13.9194 3.98056 13.95 4.09444 13.95 4.21667V8.48333C13.95 8.67222 13.8861 8.83056 13.7583 8.95833C13.6306 9.08611 13.4722 9.15 13.2833 9.15C13.0944 9.15 12.9361 9.08611 12.8083 8.95833C12.6806 8.83056 12.6167 8.67222 12.6167 8.48333V4.55L11.2833 5.28333V8.48333C11.2833 8.73889 11.2222 8.96944 11.1 9.175C10.9778 9.38056 10.8056 9.54445 10.5833 9.66667L7.25 11.4667C7.15 11.5222 7.04722 11.5639 6.94167 11.5917C6.83611 11.6194 6.72778 11.6333 6.61667 11.6333C6.50556 11.6333 6.39722 11.6194 6.29167 11.5917C6.18611 11.5639 6.08333 11.5222 5.98333 11.4667L2.65 9.66667ZM6.61667 6.28333L11.1833 3.81667L6.61667 1.35L2.05 3.81667L6.61667 6.28333ZM6.61667 10.3L9.95 8.5V5.98333L7.26667 7.46667C7.16667 7.52222 7.06111 7.56389 6.95 7.59167C6.83889 7.61944 6.72778 7.63333 6.61667 7.63333C6.50556 7.63333 6.39445 7.61944 6.28333 7.59167C6.17222 7.56389 6.06667 7.52222 5.96667 7.46667L3.28333 5.98333V8.5L6.61667 10.3Z"
-                              fill="#A80689"
-                            />
-                          </svg>
+                      <div className="flex items-center gap-2">
+                        <svg
+                          width="14"
+                          height="12"
+                          viewBox="0 0 14 12"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M2.65 9.66667C2.42778 9.54445 2.25556 9.38056 2.13333 9.175C2.01111 8.96944 1.95 8.73889 1.95 8.48333V5.28333L0.35 4.4C0.227778 4.33333 0.138889 4.25 0.0833333 4.15C0.0277778 4.05 0 3.93889 0 3.81667C0 3.69444 0.0277778 3.58333 0.0833333 3.48333C0.138889 3.38333 0.227778 3.3 0.35 3.23333L5.98333 0.166667C6.08333 0.111111 6.18611 0.0694444 6.29167 0.0416667C6.39722 0.0138889 6.50556 0 6.61667 0C6.72778 0 6.83611 0.0138889 6.94167 0.0416667C7.04722 0.0694444 7.15 0.111111 7.25 0.166667L13.6 3.63333C13.7111 3.68889 13.7972 3.76944 13.8583 3.875C13.9194 3.98056 13.95 4.09444 13.95 4.21667V8.48333C13.95 8.67222 13.8861 8.83056 13.7583 8.95833C13.6306 9.08611 13.4722 9.15 13.2833 9.15C13.0944 9.15 12.9361 9.08611 12.8083 8.95833C12.6806 8.83056 12.6167 8.67222 12.6167 8.48333V4.55L11.2833 5.28333V8.48333C11.2833 8.73889 11.2222 8.96944 11.1 9.175C10.9778 9.38056 10.8056 9.54445 10.5833 9.66667L7.25 11.4667C7.15 11.5222 7.04722 11.5639 6.94167 11.5917C6.83611 11.6194 6.72778 11.6333 6.61667 11.6333C6.50556 11.6333 6.39722 11.6194 6.29167 11.5917C6.18611 11.5639 6.08333 11.5222 5.98333 11.4667L2.65 9.66667ZM6.61667 6.28333L11.1833 3.81667L6.61667 1.35L2.05 3.81667L6.61667 6.28333ZM6.61667 10.3L9.95 8.5V5.98333L7.26667 7.46667C7.16667 7.52222 7.06111 7.56389 6.95 7.59167C6.83889 7.61944 6.72778 7.63333 6.61667 7.63333C6.50556 7.63333 6.39445 7.61944 6.28333 7.59167C6.17222 7.56389 6.06667 7.52222 5.96667 7.46667L3.28333 5.98333V8.5L6.61667 10.3Z"
+                            fill="#A80689"
+                          />
+                        </svg>
 
-                          {app.institution}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M7.33333 6.4V4C7.33333 3.81111 7.26944 3.65278 7.14167 3.525C7.01389 3.39722 6.85556 3.33333 6.66667 3.33333C6.47778 3.33333 6.31944 3.39722 6.19167 3.525C6.06389 3.65278 6 3.81111 6 4V6.65C6 6.73889 6.01667 6.825 6.05 6.90833C6.08333 6.99167 6.13333 7.06667 6.2 7.13333L8.4 9.33333C8.52222 9.45555 8.67778 9.51667 8.86667 9.51667C9.05556 9.51667 9.21111 9.45555 9.33333 9.33333C9.45555 9.21111 9.51667 9.05556 9.51667 8.86667C9.51667 8.67778 9.45555 8.52222 9.33333 8.4L7.33333 6.4ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0C7.58889 0 8.45555 0.175 9.26667 0.525C10.0778 0.875 10.7833 1.35 11.3833 1.95C11.9833 2.55 12.4583 3.25556 12.8083 4.06667C13.1583 4.87778 13.3333 5.74444 13.3333 6.66667C13.3333 7.58889 13.1583 8.45555 12.8083 9.26667C12.4583 10.0778 11.9833 10.7833 11.3833 11.3833C10.7833 11.9833 10.0778 12.4583 9.26667 12.8083C8.45555 13.1583 7.58889 13.3333 6.66667 13.3333ZM6.66667 12C8.14444 12 9.40278 11.4806 10.4417 10.4417C11.4806 9.40278 12 8.14444 12 6.66667C12 5.18889 11.4806 3.93056 10.4417 2.89167C9.40278 1.85278 8.14444 1.33333 6.66667 1.33333C5.18889 1.33333 3.93056 1.85278 2.89167 2.89167C1.85278 3.93056 1.33333 5.18889 1.33333 6.66667C1.33333 8.14444 1.85278 9.40278 2.89167 10.4417C3.93056 11.4806 5.18889 12 6.66667 12Z"
-                              fill="#A80689"
-                            />
-                          </svg>
-                          ระยะเวลาที่ต้องฝึก: {formatDateThai(app.startDate)} -{" "}
-                          {formatDateThai(app.endDate)}
-                        </div>
+                        {app.institution}
                       </div>
-
-                      {/* Step Progress */}
-                      {!rejectedApps.includes(app.id) &&
-                        !approvedApps.includes(app.id) && (
-                          <div className="mt-2 pt-2">
-                            <div className="flex items-center gap-2 bg-primary-50  rounded-lg px-3 py-2">
-                              <svg
-                                className="w-4 h-4 text-primary-600"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
-                              <span className="text-primary-600 text-sm">
-                                ขั้นตอนที่ {getEffectiveStep(app).step} -
-                              </span>
-                              <span className="text-primary-600 text-sm">
-                                {getEffectiveStep(app).stepDescription}
-                              </span>
-                            </div>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M7.33333 6.4V4C7.33333 3.81111 7.26944 3.65278 7.14167 3.525C7.01389 3.39722 6.85556 3.33333 6.66667 3.33333C6.47778 3.33333 6.31944 3.39722 6.19167 3.525C6.06389 3.65278 6 3.81111 6 4V6.65C6 6.73889 6.01667 6.825 6.05 6.90833C6.08333 6.99167 6.13333 7.06667 6.2 7.13333L8.4 9.33333C8.52222 9.45555 8.67778 9.51667 8.86667 9.51667C9.05556 9.51667 9.21111 9.45555 9.33333 9.33333C9.45555 9.21111 9.51667 9.05556 9.51667 8.86667C9.51667 8.67778 9.45555 8.52222 9.33333 8.4L7.33333 6.4ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0C7.58889 0 8.45555 0.175 9.26667 0.525C10.0778 0.875 10.7833 1.35 11.3833 1.95C11.9833 2.55 12.4583 3.25556 12.8083 4.06667C13.1583 4.87778 13.3333 5.74444 13.3333 6.66667C13.3333 7.58889 13.1583 8.45555 12.8083 9.26667C12.4583 10.0778 11.9833 10.7833 11.3833 11.3833C10.7833 11.9833 10.0778 12.4583 9.26667 12.8083C8.45555 13.1583 7.58889 13.3333 6.66667 13.3333ZM6.66667 12C8.14444 12 9.40278 11.4806 10.4417 10.4417C11.4806 9.40278 12 8.14444 12 6.66667C12 5.18889 11.4806 3.93056 10.4417 2.89167C9.40278 1.85278 8.14444 1.33333 6.66667 1.33333C5.18889 1.33333 3.93056 1.85278 2.89167 2.89167C1.85278 3.93056 1.33333 5.18889 1.33333 6.66667C1.33333 8.14444 1.85278 9.40278 2.89167 10.4417C3.93056 11.4806 5.18889 12 6.66667 12Z"
+                            fill="#A80689"
+                          />
+                        </svg>
+                        ระยะเวลาที่ต้องฝึก: {formatDateThai(app.startDate)} -{" "}
+                        {formatDateThai(app.endDate)}
+                      </div>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <img
-                      src="/images/NoFound.png"
-                      alt="ไม่พบใบสมัคร"
-                      className="w-40 h-40 object-contain opacity-80"
-                    />
-                    <p className="text-gray-700 font-semibold text-base mt-2">
-                      ไม่พบใบสมัคร
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้
-                      <br />
-                      กรุณาตรวจสอบอีกครั้งภายหลัง
-                    </p>
+
+                    {/* Step Progress */}
+                    {!rejectedApps.includes(app.id) &&
+                      !approvedApps.includes(app.id) && (
+                        <div className="mt-2 pt-2">
+                          <div className="flex items-center gap-2 bg-primary-50  rounded-lg px-3 py-2">
+                            <svg
+                              className="w-4 h-4 text-primary-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <span className="text-primary-600 text-sm">
+                              ขั้นตอนที่ {getEffectiveStep(app).step} -
+                            </span>
+                            <span className="text-primary-600 text-sm">
+                              {getEffectiveStep(app).stepDescription}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                   </div>
-                </div>
-              )}
+                );
+              })}
 
               {/* Pagination */}
               {filteredApplications.length > 0 && (
@@ -2011,7 +2131,9 @@ function PendingStatusContent() {
                   </p>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      onClick={() =>
+                        setCurrentPage(Math.max(1, currentPage - 1))
+                      }
                       disabled={currentPage === 1}
                       className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                     >
@@ -2037,10 +2159,11 @@ function PendingStatusContent() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg text-sm font-medium ${currentPage === page
-                          ? "bg-primary-600 text-white"
-                          : "border border-gray-300 hover:bg-gray-100"
-                          }`}
+                        className={`w-8 h-8 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? "bg-primary-600 text-white"
+                            : "border border-gray-300 hover:bg-gray-100"
+                        }`}
                       >
                         {page}
                       </button>
@@ -2086,9 +2209,18 @@ function PendingStatusContent() {
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 text-center shadow-xl">
             <div className="flex justify-center mb-4">
               <div className="flex items-center justify-center">
-                <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                  <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
                 </svg>
               </div>
             </div>
@@ -2119,9 +2251,18 @@ function PendingStatusContent() {
           <div className="bg-white rounded-2xl p-8 max-w-xs w-full mx-4 text-center shadow-2xl">
             <div className="flex justify-center mb-4">
               <div className="flex items-center justify-center">
-                <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                  <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
                 </svg>
               </div>
             </div>
@@ -2139,9 +2280,18 @@ function PendingStatusContent() {
           <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
             <div className="text-center">
               <div className="flex items-center justify-center mx-auto mb-4">
-                <svg width="70" height="70" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                  <path d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z" fill="#17B26A" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -2333,11 +2483,13 @@ function PendingStatusContent() {
                 </div>
 
                 {/* History list */}
-                <div className="overflow-y-auto flex-1 space-y-4">
+                <div className="overflow-y-auto flex-1">
                   {historyLoading ? (
                     <div className="flex flex-col items-center justify-center py-16">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
-                      <p className="text-gray-500 text-sm">กำลังโหลดประวัติ...</p>
+                      <p className="text-gray-500 text-sm">
+                        กำลังโหลดประวัติ...
+                      </p>
                     </div>
                   ) : historyData.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16">
@@ -2356,56 +2508,80 @@ function PendingStatusContent() {
                       </p>
                     </div>
                   ) : (
-                    historyData.map((item) => {
-                      const statusInfo = getHistoryStatusInfo(item.applicationStatus);
-                      return (
-                        <div
-                          key={item.applicationId}
-                          className="border border-gray-200 rounded-xl overflow-hidden"
-                        >
-                          <div className="p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M3.75 6H14.25V4.5H3.75V6ZM3.75 16.5C3.3375 16.5 2.98438 16.3531 2.69063 16.0594C2.39688 15.7656 2.25 15.4125 2.25 15V4.5C2.25 4.0875 2.39688 3.73438 2.69063 3.44063C2.98438 3.14688 3.3375 3 3.75 3H4.5V2.25C4.5 2.0375 4.57188 1.85938 4.71563 1.71562C4.85938 1.57187 5.0375 1.5 5.25 1.5C5.4625 1.5 5.64062 1.57187 5.78438 1.71562C5.92813 1.85938 6 2.0375 6 2.25V3H12V2.25C12 2.0375 12.0719 1.85938 12.2156 1.71562C12.3594 1.57187 12.5375 1.5 12.75 1.5C12.9625 1.5 13.1406 1.57187 13.2844 1.71562C13.4281 1.85938 13.5 2.0375 13.5 2.25V3H14.25C14.6625 3 15.0156 3.14688 15.3094 3.44063C15.6031 3.73438 15.75 4.0875 15.75 4.5V8.00625C15.75 8.21875 15.6781 8.39687 15.5344 8.54062C15.3906 8.68437 15.2125 8.75625 15 8.75625C14.7875 8.75625 14.6094 8.68437 14.4656 8.54062C14.3219 8.39687 14.25 8.21875 14.25 8.00625V7.5H3.75V15H8.1C8.3125 15 8.49062 15.0719 8.63437 15.2156C8.77812 15.3594 8.85 15.5375 8.85 15.75C8.85 15.9625 8.77812 16.1406 8.63437 16.2844C8.49062 16.4281 8.3125 16.5 8.1 16.5H3.75ZM13.5 17.25C12.4625 17.25 11.5781 16.8844 10.8469 16.1531C10.1156 15.4219 9.75 14.5375 9.75 13.5C9.75 12.4625 10.1156 11.5781 10.8469 10.8469C11.5781 10.1156 12.4625 9.75 13.5 9.75C14.5375 9.75 15.4219 10.1156 16.1531 10.8469C16.8844 11.5781 17.25 12.4625 17.25 13.5C17.25 14.5375 16.8844 15.4219 16.1531 16.1531C15.4219 16.8844 14.5375 17.25 13.5 17.25ZM13.875 13.35V11.625C13.875 11.525 13.8375 11.4375 13.7625 11.3625C13.6875 11.2875 13.6 11.25 13.5 11.25C13.4 11.25 13.3125 11.2875 13.2375 11.3625C13.1625 11.4375 13.125 11.525 13.125 11.625V13.3313C13.125 13.4313 13.1438 13.5281 13.1812 13.6219C13.2188 13.7156 13.275 13.8 13.35 13.875L14.4938 15.0187C14.5688 15.0938 14.6563 15.1313 14.7563 15.1313C14.8563 15.1313 14.9437 15.0938 15.0187 15.0187C15.0938 14.9437 15.1313 14.8563 15.1313 14.7563C15.1313 14.6563 15.0938 14.5688 15.0187 14.4938L13.875 13.35Z" fill="#98A2B3" />
-                                </svg>
-                                <span>{formatHistoryDate(item.createdAt)}</span>
-                              </div>
-                              <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusInfo.color}`}>
-                                {statusInfo.label}
-                              </span>
-                            </div>
-                            <h4 className="font-semibold text-gray-900 mb-1">
-                              {item.positionName || "ตำแหน่งไม่ระบุ"}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              รอบที่ {item.internshipRound}
-                            </p>
-                          </div>
-
-                          {item.statusNote && (
-                            <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
-                              <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20Z" fill="#D92D20" />
-                                </svg>
-                                <span className="text-sm font-semibold text-red-500">
-                                  {item.applicationStatus === "CANCEL"
-                                    ? "เหตุผลประกอบการยกเลิกฝึกงาน"
-                                    : "หมายเหตุ"}
+                    <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
+                      {historyData.map((item) => {
+                        const statusInfo = getHistoryStatusInfo(
+                          item.applicationStatus,
+                          item.statusNote,
+                        );
+                        return (
+                          <div key={item.applicationId}>
+                            <div className="p-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                  <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 18 18"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M3.75 6H14.25V4.5H3.75V6ZM3.75 16.5C3.3375 16.5 2.98438 16.3531 2.69063 16.0594C2.39688 15.7656 2.25 15.4125 2.25 15V4.5C2.25 4.0875 2.39688 3.73438 2.69063 3.44063C2.98438 3.14688 3.3375 3 3.75 3H4.5V2.25C4.5 2.0375 4.57188 1.85938 4.71563 1.71562C4.85938 1.57187 5.0375 1.5 5.25 1.5C5.4625 1.5 5.64062 1.57187 5.78438 1.71562C5.92813 1.85938 6 2.0375 6 2.25V3H12V2.25C12 2.0375 12.0719 1.85938 12.2156 1.71562C12.3594 1.57187 12.5375 1.5 12.75 1.5C12.9625 1.5 13.1406 1.57187 13.2844 1.71562C13.4281 1.85938 13.5 2.0375 13.5 2.25V3H14.25C14.6625 3 15.0156 3.14688 15.3094 3.44063C15.6031 3.73438 15.75 4.0875 15.75 4.5V8.00625C15.75 8.21875 15.6781 8.39687 15.5344 8.54062C15.3906 8.68437 15.2125 8.75625 15 8.75625C14.7875 8.75625 14.6094 8.68437 14.4656 8.54062C14.3219 8.39687 14.25 8.21875 14.25 8.00625V7.5H3.75V15H8.1C8.3125 15 8.49062 15.0719 8.63437 15.2156C8.77812 15.3594 8.85 15.5375 8.85 15.75C8.85 15.9625 8.77812 16.1406 8.63437 16.2844C8.49062 16.4281 8.3125 16.5 8.1 16.5H3.75ZM13.5 17.25C12.4625 17.25 11.5781 16.8844 10.8469 16.1531C10.1156 15.4219 9.75 14.5375 9.75 13.5C9.75 12.4625 10.1156 11.5781 10.8469 10.8469C11.5781 10.1156 12.4625 9.75 13.5 9.75C14.5375 9.75 15.4219 10.1156 16.1531 10.8469C16.8844 11.5781 17.25 12.4625 17.25 13.5C17.25 14.5375 16.8844 15.4219 16.1531 16.1531C15.4219 16.8844 14.5375 17.25 13.5 17.25ZM13.875 13.35V11.625C13.875 11.525 13.8375 11.4375 13.7625 11.3625C13.6875 11.2875 13.6 11.25 13.5 11.25C13.4 11.25 13.3125 11.2875 13.2375 11.3625C13.1625 11.4375 13.125 11.525 13.125 11.625V13.3313C13.125 13.4313 13.1438 13.5281 13.1812 13.6219C13.2188 13.7156 13.275 13.8 13.35 13.875L14.4938 15.0187C14.5688 15.0938 14.6563 15.1313 14.7563 15.1313C14.8563 15.1313 14.9437 15.0938 15.0187 15.0187C15.0938 14.9437 15.1313 14.8563 15.1313 14.7563C15.1313 14.6563 15.0938 14.5688 15.0187 14.4938L13.875 13.35Z"
+                                      fill="#98A2B3"
+                                    />
+                                  </svg>
+                                  <span>
+                                    {formatHistoryDate(item.createdAt)}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`text-xs font-semibold px-3 py-1 rounded-full border ${statusInfo.color}`}
+                                >
+                                  {statusInfo.label}
                                 </span>
                               </div>
-                              <div className="mx-4 border-t border-red-200" />
-                              <div className="px-4 pt-3 pb-4">
-                                <p className="text-sm text-gray-700 leading-relaxed">
-                                  {item.statusNote}
-                                </p>
-                              </div>
+                              <h4 className="font-semibold text-gray-900 mb-1">
+                                {item.positionName || "ตำแหน่งไม่ระบุ"}
+                              </h4>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })
+
+                            {item.statusNote && (
+                              <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                                  <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
+                                  fill="#D92D20"
+                                />
+                              </svg>
+                                  <span className="text-sm font-semibold text-red-500">
+                                    {item.applicationStatus === "CANCEL" &&
+                                    item.statusNote
+                                      ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
+                                      : item.applicationStatus === "CANCEL"
+                                        ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                        : "หมายเหตุ"}
+                                  </span>
+                                </div>
+                                <div className="mx-4 border-t border-red-200" />
+                                <div className="px-4 pt-3 pb-4">
+                                  <p className="text-sm text-gray-700 leading-relaxed">
+                                    {item.statusNote}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               </div>

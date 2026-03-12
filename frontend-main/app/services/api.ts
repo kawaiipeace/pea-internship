@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2702/api";
 
 // สร้าง axios instance
 const api = axios.create({
@@ -636,12 +636,10 @@ export interface Position {
   officeId?: number;
   departmentId: number;
   location: string;
-  positionCount: number;
+  positionCount: number | null;
   major: string;
   recruitStart: string | null;
   recruitEnd: string | null;
-  applyStart: string | null;
-  applyEnd: string | null;
   jobDetails: string;
   requirement: string;
   benefits: string;
@@ -761,8 +759,6 @@ export const positionToJob = (position: Position): {
   endDate: string;
   recruitStartDate: string;
   recruitEndDate: string;
-  applyStartDate: string;
-  applyEndDate: string;
   requiredDocuments: string[];
   responsibilities: string[];
   qualifications: string[];
@@ -803,14 +799,12 @@ export const positionToJob = (position: Position): {
     location: position.location || position.department?.location || "-",
     department: departmentName,
     currentApplicants: position.applicantCount ?? position.acceptedCount ?? 0,
-    maxApplicants: position.positionCount || 1,
+    maxApplicants: position.positionCount ?? 0,
     tags: position.major ? position.major.split(",").map(m => m.trim()).filter(m => m) : [],
-    startDate: formatDateToThai(position.recruitStart || position.applyStart || ""),
-    endDate: formatDateToThai(position.recruitEnd || position.applyEnd || ""),
+    startDate: formatDateToThai(position.recruitStart || ""),
+    endDate: formatDateToThai(position.recruitEnd || ""),
     recruitStartDate: formatDateToThai(position.recruitStart || ""),
     recruitEndDate: formatDateToThai(position.recruitEnd || ""),
-    applyStartDate: formatDateToThai(position.applyStart || ""),
-    applyEndDate: formatDateToThai(position.applyEnd || ""),
     requiredDocuments: requiredDocs,
     responsibilities: position.jobDetails ? position.jobDetails.split(/\r?\n/).filter(d => d.trim()) : [],
     qualifications: position.requirement ? position.requirement.split(/\r?\n/).filter(r => r.trim()) : [],
@@ -913,8 +907,8 @@ export const positionToAnnouncement = (position: Position): {
   let status: 'draft' | 'open' | 'closed' | 'expired' = 'open';
   if (position.recruitmentStatus === 'CLOSE') {
     status = 'closed';
-  } else if (position.applyEnd) {
-    const endDate = new Date(position.applyEnd);
+  } else if (position.recruitEnd) {
+    const endDate = new Date(position.recruitEnd);
     if (endDate < new Date()) {
       status = 'expired';
     }
@@ -925,12 +919,12 @@ export const positionToAnnouncement = (position: Position): {
     title: position.name,
     department: departmentName,
     location: position.location || departmentLocation || "-",
-    maxApplicants: position.positionCount || 1,
+    maxApplicants: position.positionCount ?? 0,
     currentApplicants: position.applicantCount ?? position.acceptedCount ?? 0,
     recruitStartDate: position.recruitStart || "",
     recruitEndDate: position.recruitEnd || "",
-    startDate: position.applyStart || "",
-    endDate: position.applyEnd || "",
+    startDate: position.recruitStart || "",
+    endDate: position.recruitEnd || "",
     relatedFields: position.major ? position.major.split(",").map(m => m.trim()).filter(m => m) : [],
     requiredDocuments: [
       ...(position.resumeRq ? ['resume' as const] : []),
@@ -955,12 +949,10 @@ export const positionToAnnouncement = (position: Position): {
 export interface CreatePositionData {
   name: string;
   location?: string;
-  positionCount?: number;
+  positionCount?: number | null;
   major?: string;
-  recruitStart?: string;
-  recruitEnd?: string;
-  applyStart?: string;
-  applyEnd?: string;
+  recruitStart?: string | null;
+  recruitEnd?: string | null;
   jobDetails?: string;
   requirement?: string;
   benefits?: string;
@@ -1070,7 +1062,8 @@ export type AppStatusEnum =
   | "PENDING_REQUEST"
   | "PENDING_REVIEW"
   | "COMPLETE"
-  | "CANCEL";
+  | "CANCEL"
+  | "ABORT";
 
 // ข้อมูลใบสมัครจาก GET /applications/history/me
 export interface MyApplicationData {
@@ -1085,6 +1078,8 @@ export interface MyApplicationData {
   positionName: string | null;
   positionDepartmentId: number | null;
   positionOfficeId: number | null;
+  infoEndDate: string | null;
+  documents: { docTypeId: number; docFile: string }[];
 }
 
 // Mapping: backend status → frontend step name (Thai)
@@ -1095,14 +1090,15 @@ export const APP_STATUS_TO_STEP: Record<AppStatusEnum, string> = {
   PENDING_REQUEST: "รอยื่นเอกสารขอความอนุเคราะห์",
   PENDING_REVIEW: "รอการตรวจสอบ",
   COMPLETE: "เสร็จสิ้น",
-  CANCEL: "ยกเลิก",
+  CANCEL: "ไม่ผ่าน",
+  ABORT: "ยกเลิกการสมัคร",
 };
 
 // ตรวจสอบว่าสมัครใหม่ได้หรือไม่ (ไม่มี active application)
 export function canApplyForNewJob(app: MyApplicationData | null): boolean {
   if (!app) return true;
-  // สมัครได้เฉพาะเมื่อยกเลิกหรือเสร็จสิ้นแล้ว
-  return app.applicationStatus === "CANCEL" || app.applicationStatus === "COMPLETE";
+  // สมัครได้เมื่อ ยกเลิก/ไม่ผ่าน หรือ application ไม่ active แล้ว (ฝึกงานเสร็จสิ้น)
+  return app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || !app.isActive;
 }
 
 // ประเภทข้อมูล Application (ใบสมัคร)
@@ -1188,6 +1184,15 @@ export interface AllStudentsHistoryQuery {
 
 // ==================== Application API Functions ====================
 
+// Response type from backend document upload
+export interface UploadDocResponse {
+  key: string;
+  filename: string;
+  docTypeId: number;
+  validationStatus: string;
+  applicationStatus: string;
+}
+
 // Application API functions
 export const applicationApi = {
   // ดึงประวัติการสมัครทั้งหมดของฉัน
@@ -1216,30 +1221,30 @@ export const applicationApi = {
   },
 
   // อัปโหลดเอกสาร Transcript
-  uploadTranscript: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadTranscript: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/transcript`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/transcript`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
 
   // อัปโหลดเอกสาร Resume
-  uploadResume: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadResume: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/resume`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/resume`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
 
   // อัปโหลดเอกสาร Portfolio
-  uploadPortfolio: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadPortfolio: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/portfolio`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/portfolio`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
@@ -1270,10 +1275,10 @@ export const applicationApi = {
   },
 
   // อัปโหลดเอกสาร Request Letter (ขอความอนุเคราะห์)
-  uploadRequestLetter: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadRequestLetter: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/request-letter`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/request-letter`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;

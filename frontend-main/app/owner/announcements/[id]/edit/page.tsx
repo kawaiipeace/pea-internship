@@ -91,11 +91,11 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     if (!formData) return "NOT_YET";
     if (formData.status === "closed") return "CLOSE";
     const now = new Date();
-    const applyStart = formData.startDate ? new Date(formData.startDate) : null;
-    const applyEnd = formData.endDate ? new Date(formData.endDate) : null;
-    if (isNoTimeLimit || (!applyStart && !applyEnd)) return "OPEN";
-    if (applyStart && now < applyStart) return "NOT_YET";
-    if (applyEnd && now > applyEnd) return "EXPIRED";
+    const recruitStart = formData.startDate ? new Date(formData.startDate) : null;
+    const recruitEnd = formData.endDate ? new Date(formData.endDate) : null;
+    if (isNoTimeLimit || (!recruitStart && !recruitEnd)) return "OPEN";
+    if (recruitStart && now < recruitStart) return "NOT_YET";
+    if (recruitEnd && now > recruitEnd) return "EXPIRED";
     return "OPEN";
   })();
   const isNotYetStatus = computedStatus === "NOT_YET";
@@ -265,8 +265,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           };
 
           // Detect unlimited count and no time limit from loaded data
-          const loadedUnlimited = !position.positionCount || position.positionCount === 0;
-          const loadedNoTimeLimit = !position.applyStart && !position.applyEnd;
+          const loadedUnlimited = position.positionCount === null || position.positionCount === 0;
+          const loadedNoTimeLimit = !position.recruitStart && !position.recruitEnd;
           setIsUnlimitedCount(loadedUnlimited);
           setIsNoTimeLimit(loadedNoTimeLimit);
 
@@ -275,8 +275,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
             department: announcement.department,
             location: announcement.location,
             maxApplicants: announcement.maxApplicants,
-            startDate: formatDateForInput(position.applyStart),
-            endDate: formatDateForInput(position.applyEnd),
+            startDate: formatDateForInput(position.recruitStart),
+            endDate: formatDateForInput(position.recruitEnd),
             relatedFields: announcement.relatedFields,
             requiredDocuments: announcement.requiredDocuments,
             status: announcement.status === "expired" ? "closed" : announcement.status,
@@ -457,10 +457,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
       const updateData: UpdatePositionData = {
         name: formData.title,
         location: formData.location,
-        positionCount: isUnlimitedCount ? 0 : formData.maxApplicants,
+        positionCount: isUnlimitedCount ? null : formData.maxApplicants,
         major: formData.relatedFields.join(", "),
-        applyStart: isNoTimeLimit ? undefined : (formData.startDate || undefined),
-        applyEnd: isNoTimeLimit ? undefined : (formData.endDate || undefined),
+        recruitStart: isNoTimeLimit ? null : (formData.startDate ? new Date(formData.startDate).toISOString() : null),
+        recruitEnd: isNoTimeLimit ? null : (formData.endDate ? new Date(formData.endDate).toISOString() : null),
         jobDetails: jobDetailsList.filter(d => d.trim()).join("\n"),
         requirement: requirementsList.filter(r => r.trim()).join("\n"),
         benefits: benefitsList.filter(b => b.trim()).join("\n"),

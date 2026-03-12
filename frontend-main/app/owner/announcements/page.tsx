@@ -198,18 +198,18 @@ export default function AnnouncementsPage() {
     if (announcement.recruitmentStatus === "CLOSE") return "CLOSE";
 
     const now = new Date();
-    const applyStart = announcement.applyStart ? new Date(announcement.applyStart) : null;
-    const applyEnd = announcement.applyEnd ? new Date(announcement.applyEnd) : null;
+    const recruitStart = announcement.recruitStart ? new Date(announcement.recruitStart) : null;
+    const recruitEnd = announcement.recruitEnd ? new Date(announcement.recruitEnd) : null;
 
     // No time limit (both null) → always open if OPEN
-    if (!applyStart && !applyEnd) return "OPEN";
+    if (!recruitStart && !recruitEnd) return "OPEN";
 
     // Before start date
-    if (applyStart && now < applyStart) return "NOT_YET";
+    if (recruitStart && now < recruitStart) return "NOT_YET";
 
     // After end date (position expires at end of the last day 23:59:59)
-    if (applyEnd) {
-      const endOfDay = new Date(applyEnd);
+    if (recruitEnd) {
+      const endOfDay = new Date(recruitEnd);
       endOfDay.setHours(23, 59, 59, 999);
       if (now > endOfDay) return "EXPIRED";
     }
@@ -554,8 +554,8 @@ export default function AnnouncementsPage() {
                         </td>
                         <td className="px-4 py-4 text-center">
                           <p className="text-sm text-gray-600 whitespace-nowrap">
-                            {announcement.applyStart && announcement.applyEnd ? (
-                              <>{formatDateThai(announcement.applyStart)} - {formatDateThai(announcement.applyEnd)}</>
+                            {announcement.recruitStart && announcement.recruitEnd ? (
+                              <>{formatDateThai(announcement.recruitStart)} - {formatDateThai(announcement.recruitEnd)}</>
                             ) : (
                               <>ไม่กำหนดระยะเวลา</>
                             )}
@@ -772,9 +772,9 @@ export default function AnnouncementsPage() {
                   <div>
                     <p className="text-xs text-gray-500">ระยะเวลาที่เปิดรับสมัคร</p>
                     <p className="text-sm font-medium text-gray-800">
-                      {previewPosition.applyStart && previewPosition.applyEnd
-                        ? `${formatDateThai(previewPosition.applyStart)} - ${formatDateThai(previewPosition.applyEnd)}`
-                        : "ไม่ระบุ"}
+                      {previewPosition.recruitStart && previewPosition.recruitEnd
+                        ? `${formatDateThai(previewPosition.recruitStart)} - ${formatDateThai(previewPosition.recruitEnd)}`
+                        : "ไม่กำหนดระยะเวลา"}
                     </p>
                   </div>
                 </div>

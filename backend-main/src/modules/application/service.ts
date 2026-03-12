@@ -8,6 +8,7 @@ import {
   inArray,
   isNull,
   lt,
+  lte,
   ne,
   or,
   sql,
@@ -53,6 +54,119 @@ export class ApplicationService {
       oldStatus,
       newStatus,
     });
+  }
+
+  private async autoCompleteInternships(tx: DbTx, userId: string) {
+    const now = new Date();
+
+    // Find this user's active internship where end date has passed
+    const expired = await tx
+      .select({
+        applicationId: applicationStatuses.id,
+        positionId: applicationStatuses.positionId,
+      })
+      .from(applicationStatuses)
+      .innerJoin(
+        applicationInformations,
+        eq(applicationInformations.applicationStatusId, applicationStatuses.id)
+      )
+      .innerJoin(
+        studentProfiles,
+        eq(studentProfiles.userId, applicationStatuses.userId)
+      )
+      .where(
+        and(
+          eq(applicationStatuses.userId, userId),
+          eq(applicationStatuses.applicationStatus, "COMPLETE"),
+          eq(applicationStatuses.isActive, true),
+          eq(studentProfiles.internshipStatus, "ACTIVE"),
+          lte(applicationInformations.endDate, now)
+        )
+      );
+
+    for (const app of expired) {
+      await tx
+        .update(applicationStatuses)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(applicationStatuses.id, app.applicationId));
+
+      await tx
+        .update(studentProfiles)
+        .set({ internshipStatus: "COMPLETE" })
+        .where(eq(studentProfiles.userId, userId));
+
+      if (app.positionId) {
+        await tx
+          .update(internshipPositions)
+          .set({
+            acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
+          })
+          .where(eq(internshipPositions.id, app.positionId));
+      }
+
+      await tx.insert(applicationStatusActions).values({
+        applicationStatusId: app.applicationId,
+        actionBy: "system",
+        oldStatus: "COMPLETE",
+        newStatus: "COMPLETE",
+      });
+    }
+  }
+
+  private async updateCompletedInternshipsStatus(tx: DbTx) {
+    const now = new Date();
+
+    const expired = await tx
+      .select({
+        applicationId: applicationStatuses.id,
+        userId: applicationStatuses.userId,
+        positionId: applicationStatuses.positionId,
+      })
+      .from(applicationStatuses)
+      .innerJoin(
+        applicationInformations,
+        eq(applicationInformations.applicationStatusId, applicationStatuses.id)
+      )
+      .innerJoin(
+        studentProfiles,
+        eq(studentProfiles.userId, applicationStatuses.userId)
+      )
+      .where(
+        and(
+          eq(applicationStatuses.applicationStatus, "COMPLETE"),
+          eq(applicationStatuses.isActive, true),
+          eq(studentProfiles.internshipStatus, "ACTIVE"),
+          lte(applicationInformations.endDate, now)
+        )
+      );
+
+    for (const app of expired) {
+      await tx
+        .update(applicationStatuses)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(applicationStatuses.id, app.applicationId));
+
+      await tx
+        .update(studentProfiles)
+        .set({ internshipStatus: "COMPLETE" })
+        .where(eq(studentProfiles.userId, app.userId));
+
+      if (app.positionId) {
+        await tx
+          .update(internshipPositions)
+          .set({
+            acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
+          })
+          .where(eq(internshipPositions.id, app.positionId));
+      }
+
+      await tx.insert(applicationStatusActions).values({
+        applicationStatusId: app.applicationId,
+        actionBy: "system",
+        oldStatus: "COMPLETE",
+        newStatus: "COMPLETE",
+      });
+    }
   }
 
   private async cancelPendingApplicationsWhenPositionFilled(
@@ -107,7 +221,7 @@ export class ApplicationService {
     await tx
       .update(applicationStatuses)
       .set({
-        applicationStatus: "IS_FULL",
+        applicationStatus: "ABORT",
         statusNote: "ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
         updatedAt: new Date(),
       })
@@ -127,7 +241,7 @@ export class ApplicationService {
         app.id,
         actionBy,
         app.status,
-        "IS_FULL"
+        "ABORT"
       );
     }
 
@@ -907,6 +1021,7 @@ export class ApplicationService {
             .update(applicationStatuses)
             .set({
               applicationStatus: "PENDING_REQUEST",
+              statusNote: note ?? null,
               updatedAt: new Date(),
             })
             .where(eq(applicationStatuses.id, applicationId));
@@ -1002,6 +1117,9 @@ export class ApplicationService {
 
       if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
 
+      // Auto-complete expired internships for this user
+      await this.autoCompleteInternships(tx, userId);
+
       const whereClause = includeCanceled
         ? eq(applicationStatuses.userId, userId)
         : and(
@@ -1023,16 +1141,48 @@ export class ApplicationService {
           positionName: internshipPositions.name,
           positionDepartmentId: internshipPositions.departmentId,
           positionOfficeId: internshipPositions.officeId,
+
+          infoEndDate: applicationInformations.endDate,
         })
         .from(applicationStatuses)
         .leftJoin(
           internshipPositions,
           eq(internshipPositions.id, applicationStatuses.positionId)
         )
+        .leftJoin(
+          applicationInformations,
+          eq(applicationInformations.applicationStatusId, applicationStatuses.id)
+        )
         .where(whereClause)
         .orderBy(desc(applicationStatuses.internshipRound));
 
-      return rows;
+      // Fetch documents for all applications
+      const appIds = rows.map((r) => r.applicationId);
+      const allDocs = appIds.length
+        ? await tx
+            .select({
+              applicationStatusId: applicationDocuments.applicationStatusId,
+              docTypeId: applicationDocuments.docTypeId,
+              docFile: applicationDocuments.docFile,
+            })
+            .from(applicationDocuments)
+            .where(inArray(applicationDocuments.applicationStatusId, appIds))
+        : [];
+
+      const docsMap = new Map<number, typeof allDocs>();
+      for (const doc of allDocs) {
+        const arr = docsMap.get(doc.applicationStatusId) ?? [];
+        arr.push(doc);
+        docsMap.set(doc.applicationStatusId, arr);
+      }
+
+      return rows.map((row) => ({
+        ...row,
+        documents: (docsMap.get(row.applicationId) ?? []).map((d) => ({
+          docTypeId: d.docTypeId,
+          docFile: d.docFile,
+        })),
+      }));
     });
   }
 
@@ -1066,6 +1216,9 @@ export class ApplicationService {
       ) {
         throw new ForbiddenError("ไม่ใช่กองของตน");
       }
+
+      // Auto-complete expired internships for this student
+      await this.autoCompleteInternships(tx, studentUserId);
 
       const rows = await tx
         .select({
@@ -1111,6 +1264,9 @@ export class ApplicationService {
       if (!req) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
       if (req.roleId !== 1 && req.roleId !== 2)
         throw new ForbiddenError("อนุญาตเฉพาะ Admin/Owner");
+
+      // Auto-complete expired internships for all active students
+      await this.updateCompletedInternshipsStatus(tx);
 
       const page = query.page ?? 1;
       const limit = query.limit ?? 20;
@@ -1374,7 +1530,7 @@ export class ApplicationService {
       await tx
         .update(applicationStatuses)
         .set({
-          applicationStatus: "CANCEL",
+          applicationStatus: "ABORT",
           statusNote: null,
           updatedAt: new Date(),
         })
@@ -1385,15 +1541,15 @@ export class ApplicationService {
         applicationId,
         userId,
         "PENDING_DOCUMENT",
-        "CANCEL"
+        "ABORT"
       );
 
       await tx
         .update(studentProfiles)
-        .set({ internshipStatus: "CANCEL" })
+        .set({ internshipStatus: "IDLE" })
         .where(eq(studentProfiles.userId, userId));
 
-      return { applicationStatus: "CANCEL" };
+      return { applicationStatus: "ABORT" };
     });
   }
 
