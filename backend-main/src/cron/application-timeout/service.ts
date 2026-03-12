@@ -12,10 +12,7 @@ const TIMEOUT_SECONDS = 30 * 24 * 60 * 60;
 export class ApplicationTimeoutService {
   async cancelExpiredApplications() {
     try {
-      console.log("[CRON] Application timeout job started");
-
       const expireTime = new Date(Date.now() - TIMEOUT_SECONDS * 1000);
-      console.log("[CRON] expireTime:", expireTime);
 
       const expired = await db
         .select({
@@ -31,11 +28,7 @@ export class ApplicationTimeoutService {
           )
         );
 
-      console.log("[CRON] expired applications found:", expired.length);
-
       for (const app of expired) {
-        console.log("[CRON] cancelling application:", app.id);
-
         await db.transaction(async (tx) => {
           await tx
             .update(applicationStatuses)
@@ -63,8 +56,6 @@ export class ApplicationTimeoutService {
           console.log("[CRON] application cancelled:", app.id);
         });
       }
-
-      console.log("[CRON] Application timeout job finished");
     } catch (error) {
       console.error("[CRON ERROR] cancelExpiredApplications failed:", error);
     }

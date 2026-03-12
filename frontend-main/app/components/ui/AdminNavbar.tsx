@@ -3,16 +3,52 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
-import { authApi, authStorage } from "../../services/api";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { authApi, authStorage, notificationApi, type NotificationItem } from "../../services/api";
+
+// Helper: relative time in Thai
+function relativeTime(dateString: string): string {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "เมื่อสักครู่";
+  if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} ชั่วโมงที่แล้ว`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 30) return `${diffDay} วันที่แล้ว`;
+  const diffMonth = Math.floor(diffDay / 30);
+  return `${diffMonth} เดือนที่แล้ว`;
+}
 
 export default function AdminNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Load notifications
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await notificationApi.getMyNotifications();
+      setNotifications(data);
+      setUnreadCount(data.filter((n) => !n.isRead).length);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    }
+  }, []);
+
+  // Load notifications on mount + poll every 30s
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [loadNotifications]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -82,9 +118,18 @@ export default function AdminNavbar() {
             {/* Notification Bell */}
             <div className="relative" ref={notificationRef}>
               <button
-                onClick={() => {
+                onClick={async () => {
                   setShowNotifications(!showNotifications);
                   setShowProfile(false);
+                  if (unreadCount > 0) {
+                    try {
+                      await notificationApi.markAllAsRead();
+                      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+                      setUnreadCount(0);
+                    } catch (err) {
+                      console.error("Failed to mark all as read:", err);
+                    }
+                  }
                 }}
                 className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors"
               >
@@ -101,9 +146,11 @@ export default function AdminNavbar() {
                     d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                   />
                 </svg>
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                  2
-                </span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </button>
 
               {/* Notification Dropdown */}
@@ -124,29 +171,55 @@ export default function AdminNavbar() {
                         d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                       />
                     </svg>
-                    <span className="font-medium text-gray-800">
+                    <span className="font-semibold text-gray-900">
                       การแจ้งเตือน
                     </span>
+                    {notifications.length > 0 && (
+                      <span className="ml-auto bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
+                        {notifications.length}
+                      </span>
+                    )}
                   </div>
 
                   {/* Notifications List */}
-                  <div className="max-h-80 overflow-y-auto">
-                    <div className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer">
-                      <p className="text-sm text-gray-800">
-                        มีเอกสารใหม่รอตรวจสอบ
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        5 นาทีที่แล้ว
-                      </p>
-                    </div>
-                    <div className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer">
-                      <p className="text-sm text-gray-800">
-                        ผู้สมัครใหม่ส่งเอกสารเข้ามา
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        1 ชั่วโมงที่แล้ว
-                      </p>
-                    </div>
+                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                    {notifications.length > 0 ? (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          onClick={async () => {
+                            if (!notif.isRead) {
+                              try {
+                                await notificationApi.markAsRead(notif.id, true);
+                                setNotifications((prev) =>
+                                  prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+                                );
+                                setUnreadCount((prev) => Math.max(0, prev - 1));
+                              } catch (err) {
+                                console.error("Failed to mark as read:", err);
+                              }
+                            }
+                            setShowNotifications(false);
+                            router.push("/admin/applications");
+                          }}
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${!notif.isRead ? "bg-primary-50/50" : ""}`}
+                        >
+                          <p className="text-sm font-medium text-gray-800">
+                            {notif.title}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-0.5">
+                            {notif.message}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {relativeTime(notif.createdAt)}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-center text-gray-400 text-sm">
+                        ไม่มีการแจ้งเตือน
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

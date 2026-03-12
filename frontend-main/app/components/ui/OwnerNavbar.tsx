@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { authApi, authStorage, userApi, notificationApi, type NotificationItem } from "../../services/api";
 
 // Helper: relative time in Thai
@@ -51,19 +51,23 @@ export default function OwnerNavbar() {
     loadUser();
   }, []);
 
-  // Load notifications on mount
-  useEffect(() => {
-    const loadNotifications = async () => {
-      try {
-        const data = await notificationApi.getMyNotifications({ limit: 20 });
-        setNotifications(data);
-        setUnreadCount(data.filter((n) => !n.isRead).length);
-      } catch (err) {
-        console.error("Failed to load notifications:", err);
-      }
-    };
-    loadNotifications();
+  // Load notifications
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await notificationApi.getMyNotifications();
+      setNotifications(data);
+      setUnreadCount(data.filter((n) => !n.isRead).length);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    }
   }, []);
+
+  // Load notifications on mount + poll every 30s
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [loadNotifications]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -86,12 +90,11 @@ export default function OwnerNavbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle bell click — mark all as read
+  // Handle bell click — toggle dropdown and mark all as read
   const handleBellClick = async () => {
-    const next = !showNotifications;
-    setShowNotifications(next);
+    setShowNotifications((prev) => !prev);
     setShowProfile(false);
-    if (next && unreadCount > 0) {
+    if (unreadCount > 0) {
       try {
         await notificationApi.markAllAsRead();
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
@@ -100,6 +103,23 @@ export default function OwnerNavbar() {
         console.error("Failed to mark all as read:", err);
       }
     }
+  };
+
+  // Mark single notification as read
+  const handleNotificationClick = async (notif: NotificationItem) => {
+    if (!notif.isRead) {
+      try {
+        await notificationApi.markAsRead(notif.id, true);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      } catch (err) {
+        console.error("Failed to mark as read:", err);
+      }
+    }
+    setShowNotifications(false);
+    router.push("/owner/announcements");
   };
 
   return (
@@ -215,6 +235,7 @@ export default function OwnerNavbar() {
                       notifications.map((notif) => (
                         <div
                           key={notif.id}
+                          onClick={() => handleNotificationClick(notif)}
                           className={`px-4 py-3 hover:bg-primary-50 cursor-pointer ${!notif.isRead ? "bg-primary-50/50" : ""
                             }`}
                         >

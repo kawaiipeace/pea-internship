@@ -67,6 +67,29 @@ export const application = new Elysia({
     }
   )
 
+  .put(
+    "/:id/information",
+    async ({ session, params: { id }, body, set }) => {
+      const res = await applicationService.updateApplicationInformation(
+        session.userId,
+        Number(id),
+        body
+      );
+
+      set.status = 200;
+      return res;
+    },
+    {
+      role: [3],
+      params: model.params,
+      body: model.UpdateApplicationInformationBody,
+      detail: {
+        summary: "นักศึกษาแก้ไข hours / startDate / endDate ของใบสมัครตัวเอง",
+        description: "แก้ไขได้เฉพาะใบสมัครของตนเองเท่านั้น",
+      },
+    }
+  )
+
   .post(
     "/:id/documents/transcript",
     async ({ session, params: { id }, body, set }) => {

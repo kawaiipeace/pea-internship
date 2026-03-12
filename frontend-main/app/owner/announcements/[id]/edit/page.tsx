@@ -418,12 +418,20 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     }
     if (!formData.contactPhone.trim()) {
       newErrors.contactPhone = "ระบุเบอร์โทรกองงาน";
+    } else if (formData.contactPhone.replace(/\D/g, "").length !== 10) {
+      newErrors.contactPhone = "เบอร์โทรต้องมี 10 หลัก";
     }
     // Validate mentor selection
     const hasAtLeastOneMentor = mentors.some(m => m.staffProfileId !== null);
     if (!hasAtLeastOneMentor) {
       newErrors.mentorName = "กรุณาเลือกพี่เลี้ยงอย่างน้อย 1 คน";
     }
+    // Validate mentor phones (10 digits)
+    mentors.forEach((m, i) => {
+      if (m.staffProfileId !== null && m.phone.replace(/\D/g, "").length !== 10) {
+        newErrors[`mentorPhone_${i}` as keyof AnnouncementFormErrors] = "เบอร์โทรพี่เลี้ยงต้องมี 10 หลัก";
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -1191,9 +1199,13 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <input
                       type="tel"
                       value={formData.contactPhone}
-                      onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setFormData({ ...formData, contactPhone: digits });
+                      }}
+                      maxLength={10}
                       placeholder="เบอร์โทรผู้ประกาศรับสมัคร"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"
+                      className={`w-full px-4 py-3 rounded-lg border ${errors.contactPhone ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
                     {errors.contactPhone && <p className="text-red-500 text-xs mt-1">{errors.contactPhone}</p>}
                   </div>
@@ -1280,9 +1292,14 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <input
                       type="email"
                       value={mentor.email}
-                      disabled
+                      onChange={(e) => {
+                        const newMentors = [...mentors];
+                        newMentors[index] = { ...newMentors[index], email: e.target.value };
+                        setMentors(newMentors);
+                      }}
+                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
                       placeholder="อีเมลพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
+                      className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
                   </div>
                   <div>
@@ -1293,13 +1310,17 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       type="tel"
                       value={mentor.phone}
                       onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                         const newMentors = [...mentors];
-                        newMentors[index] = { ...newMentors[index], phone: e.target.value };
+                        newMentors[index] = { ...newMentors[index], phone: digits };
                         setMentors(newMentors);
                       }}
+                      maxLength={10}
+                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
                       placeholder="เบอร์โทรพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"
+                      className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : (errors as Record<string, string>)[`mentorPhone_${index}`] ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
+                    {(errors as Record<string, string>)[`mentorPhone_${index}`] && <p className="text-red-500 text-xs mt-1">{(errors as Record<string, string>)[`mentorPhone_${index}`]}</p>}
                   </div>
                 </div>
 
