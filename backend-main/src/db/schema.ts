@@ -298,14 +298,9 @@ export const studentProfiles = pgTable(
     id: serial("id").primaryKey().notNull(),
     userId: varchar("user_id", { length: 50 }).notNull().unique(),
     image: varchar("image", { length: 255 }).unique(),
-    hours: numeric("hours", { precision: 10, scale: 2 }),
     institutionId: integer("institution_id").notNull(),
-
     faculty: varchar("faculty"),
     major: varchar("major"),
-
-    startDate: timestamp("start_date", { mode: "string" }),
-    endDate: timestamp("end_date", { mode: "string" }),
     isActive: boolean("is_active"),
     studentNote: text("student_note"),
     internshipStatus: internshipStatusEnum("internship_status").notNull(),
@@ -463,7 +458,7 @@ export const checkTimes = pgTable(
     userId: varchar("user_id", { length: 50 }).notNull(),
     time: timestamp({ mode: "string" }),
     typeCheck: varchar("type_check", { length: 20 }).notNull(),
-    isLate: boolean("is_late"),
+    isOnsite: boolean("is_onsite"), 
     ip: varchar({ length: 100 }),
     note: text(),
     location: varchar({ length: 255 }),
