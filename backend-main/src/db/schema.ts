@@ -458,7 +458,7 @@ export const checkTimes = pgTable(
     userId: varchar("user_id", { length: 50 }).notNull(),
     time: timestamp({ mode: "string" }),
     typeCheck: varchar("type_check", { length: 20 }).notNull(),
-    isOnsite: boolean("is_onsite"), 
+    isOnsite: boolean("is_onsite"),
     ip: varchar({ length: 100 }),
     note: text(),
     location: varchar({ length: 255 }),

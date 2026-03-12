@@ -1,7 +1,8 @@
 import { Elysia } from "elysia";
 import { isAuthenticated } from "@/middlewares/auth.middleware";
+import * as checkSchema from "./model";
 import { CheckTimeService } from "./service";
-import * as checkShcema from "./model"
+
 const checkTimeService = new CheckTimeService();
 
 export const checkTime = new Elysia({
@@ -13,20 +14,22 @@ export const checkTime = new Elysia({
     "/in",
     async ({ set, headers, user, body }) => {
       const userId = user.id;
-      const ipAddress =
+      const ipHeader =
         headers["x-forwarded-for"] || headers["x-real-ip"] || "unknown";
-      const result = checkTimeService.in(userId, ipAddress, body);
+      const ipAddress = Array.isArray(ipHeader) ? ipHeader[0] : ipHeader;
+
+      const result = await checkTimeService.in(userId, ipAddress, body);
 
       set.status = 201;
       return result;
     },
     {
       role: [1],
-      body: checkShcema.CheckTimeSchema,
+      body: checkSchema.CheckTimeSchema,
       detail: {
         summary: "บันทึกเวลาเข้างาน (Check-in)",
-        description: "รับพิกัด Latitude, Longitude เพื่อบันทึกเวลาเข้างาน",
-      }
+        description:
+          "รับพิกัด Latitude, Longitude เพื่อบันทึกเวลาเข้างาน และคำนวณระยะทาง",
+      },
     }
-  )
-
+  );
