@@ -20,6 +20,10 @@ COPY tsconfig.json ./
 COPY postcss.config.mjs ./
 COPY eslint.config.mjs ./
 
+# Set API URL for build
+ARG NEXT_PUBLIC_API_URL=http://localhost:2702/api
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the application
 RUN pnpm build
 
