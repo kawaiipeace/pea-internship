@@ -8,7 +8,7 @@ import { favorite } from "./favorite";
 import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
 import { notification } from "./notification";
-import { ownerStudents } from "./owner-students";
+import { ownerStudents } from "./manualEndInternships";
 import { position } from "./positions";
 import { role } from "./role";
 import { staffLogs } from "./staff-logs";

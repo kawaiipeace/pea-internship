@@ -38,16 +38,28 @@ interface AppliedJob {
 }
 
 // Map backend status to frontend ApplicationStatus
-function mapBackendStatus(status: AppStatusEnum): ApplicationStatus {
-  switch (status) {
+function mapBackendStatus(app: { applicationStatus: AppStatusEnum; isActive: boolean; infoEndDate: string | null; statusNote: string | null }): ApplicationStatus {
+  switch (app.applicationStatus) {
     case "CANCEL":
       return "rejected";
     case "ABORT":
       return "cancelled";
     case "COMPLETE":
+      // applicationStatus=COMPLETE + isActive=true means student is still interning
+      if (app.isActive) {
+        // Check if end date has passed (frontend fallback)
+        if (app.infoEndDate && new Date(app.infoEndDate) <= new Date()) {
+          return "completed";
+        }
+        return "in-training";
+      }
       return "completed";
+    case "PENDING_REQUEST":
+      // If statusNote exists, docs were rejected by HR
+      if (app.statusNote) return "accepted-doc-failed";
+      return "active";
     default:
-      // All PENDING_* statuses are "active"
+      // All other PENDING_* statuses are "active"
       return "active";
   }
 }
@@ -71,13 +83,14 @@ export default function ApplicationHistoryPage() {
 
         // Build all job cards in parallel
         const jobPromises = allApps.map(async (app, index) => {
-          const appStatus = mapBackendStatus(app.applicationStatus);
+          const appStatus = mapBackendStatus(app);
           const appStep = APP_STATUS_TO_STEP[app.applicationStatus];
-          const reason = ((app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT") && app.statusNote) ? app.statusNote : "";
+          const reason = app.statusNote || "";
 
           // Determine if this is the "current" application:
-          // Only the first active (non-CANCEL/COMPLETE) application is considered current
-          const isCurrent = app.isActive && app.applicationStatus !== "CANCEL" && app.applicationStatus !== "ABORT" && app.applicationStatus !== "COMPLETE";
+          // Active (non-CANCEL/ABORT) or in-training (COMPLETE + isActive)
+          const isCurrent = app.isActive && app.applicationStatus !== "CANCEL" && app.applicationStatus !== "ABORT"
+            && !(app.applicationStatus === "COMPLETE" && !app.isActive);
 
           let department = "";
           let location = "";
@@ -151,7 +164,7 @@ export default function ApplicationHistoryPage() {
     } else if (applicationStatus === "accepted-doc-failed") {
       router.push("/application-status?step=รอการตรวจสอบ&docStatus=failed");
     } else if (applicationStatus === "in-training") {
-      router.push("/application-history/evaluation-result?status=in-training");
+      router.push("/application-status");
     } else if (applicationStatus === "active") {
       if (applicationStep) {
         router.push(`/application-status?step=${encodeURIComponent(applicationStep)}`);
@@ -188,8 +201,8 @@ export default function ApplicationHistoryPage() {
     if (applicationStatus === "active") {
       return (
         <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm">
-            กำลังดำเนินการ
+          <span className="px-3 py-2 bg-green-100 text-green-500 rounded-full font-bold text-sm">
+            รับเข้าฝึกงาน
           </span>
           {applicationStep && (
             <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm">
@@ -260,7 +273,7 @@ export default function ApplicationHistoryPage() {
 
   const getButtonText = (job: AppliedJob) => {
     if (job.applicationStatus === "completed") return "ดูผลการประเมิน";
-    if (job.applicationStatus === "active") return "ดูสถานะการสมัคร";
+    if (job.applicationStatus === "active" || job.applicationStatus === "in-training") return "ดูสถานะการสมัคร";
     return "ดูรายละเอียด";
   };
 
@@ -468,6 +481,18 @@ export default function ApplicationHistoryPage() {
                     <div className="mt-3">
                       <h4 className="font-bold text-gray-800 text-sm mb-1.5">
                         เหตุผลที่ไม่ผ่าน
+                      </h4>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p className="text-red-700 text-sm">
+                          {job.rejectionReason}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {job.applicationStatus === "accepted-doc-failed" && job.rejectionReason && (
+                    <div className="mt-3">
+                      <h4 className="font-bold text-gray-800 text-sm mb-1.5">
+                        เหตุผลที่เอกสารไม่ผ่าน
                       </h4>
                       <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                         <p className="text-red-700 text-sm">

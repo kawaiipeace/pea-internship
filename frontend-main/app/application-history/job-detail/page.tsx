@@ -19,6 +19,7 @@ interface JobDetailData {
   department: string;
   location: string;
   positions: number;
+  currentApplicants: number;
   tags: string[];
   applicationPeriod: string;
   responsibilities: string[];
@@ -33,16 +34,21 @@ interface JobDetailData {
 }
 
 // Map backend status to display status
-function mapBackendStatusToDisplay(status: AppStatusEnum): string {
-  switch (status) {
+function mapBackendStatusToDisplay(app: { applicationStatus: AppStatusEnum; isActive: boolean; infoEndDate: string | null; statusNote?: string | null }): string {
+  switch (app.applicationStatus) {
     case "PENDING_DOCUMENT":
     case "PENDING_INTERVIEW":
     case "PENDING_CONFIRMATION":
       return "active";
     case "PENDING_REQUEST":
+      if (app.statusNote) return "accepted-doc-failed";
+      return "active";
     case "PENDING_REVIEW":
-      return "accepted";
+      return "active";
     case "COMPLETE":
+      // Check if student is still actively training
+      if (app.isActive) return "in-training";
+      if (app.infoEndDate && new Date(app.infoEndDate) > new Date()) return "in-training";
       return "completed";
     case "CANCEL":
       return "rejected";
@@ -105,11 +111,11 @@ function JobDetailContent() {
         }
 
         // Set actual status from the matched application
-        setDisplayStatus(mapBackendStatusToDisplay(matchedApp.applicationStatus));
+        setDisplayStatus(mapBackendStatusToDisplay(matchedApp));
         setApplicationStep(APP_STATUS_TO_STEP[matchedApp.applicationStatus] || null);
 
-        // Store rejection reason if cancelled/rejected
-        if ((matchedApp.applicationStatus === "CANCEL" || matchedApp.applicationStatus === "ABORT") && matchedApp.statusNote) {
+        // Store rejection reason if cancelled/rejected/doc-failed
+        if (matchedApp.statusNote) {
           setRejectionReason(matchedApp.statusNote);
         }
 
@@ -121,6 +127,7 @@ function JobDetailContent() {
             department: job.department,
             location: job.location,
             positions: job.maxApplicants,
+            currentApplicants: job.currentApplicants,
             tags: job.tags,
             applicationPeriod: job.recruitStartDate && job.recruitEndDate && job.recruitStartDate !== "-" && job.recruitEndDate !== "-" ? `${job.recruitStartDate} - ${job.recruitEndDate}` : "ไม่กำหนดระยะเวลา",
             responsibilities: job.responsibilities,
@@ -185,8 +192,8 @@ function JobDetailContent() {
       case "active":
         return (
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm transition-transform">
-              กำลังดำเนินการ
+            <span className="px-3 py-2 bg-green-100 text-green-500 rounded-full font-bold text-sm transition-transform">
+              รับเข้าฝึกงาน
             </span>
             {applicationStep && (
               <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm transition-transform">
@@ -327,7 +334,7 @@ function JobDetailContent() {
                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                   />
                 </svg>
-                <span>{jobDetail.positions === 0 ? "ไม่จำกัดจำนวน" : `${jobDetail.positions} คน`}</span>
+                <span>{jobDetail.positions === 0 ? "ไม่จำกัดจำนวน" : `${jobDetail.currentApplicants}/${jobDetail.positions} ตำแหน่ง`}</span>
               </div>
 
               {/* Tags */}
@@ -369,21 +376,20 @@ function JobDetailContent() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Rejection Reason */}
-      {(status === "rejected" || status === "cancelled") && rejectionReason && (
-        <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6 mb-6">
+              {/* Rejection Reason */}
+      {(status === "rejected" || status === "cancelled" || status === "accepted-doc-failed") && rejectionReason && (
+        <div className="mt-4">
           <h4 className="font-bold text-gray-800 text-sm mb-1.5">
-            {status === "rejected" ? "เหตุผลที่ไม่ผ่าน" : "เหตุผลที่ยกเลิก"}
+            {status === "accepted-doc-failed" ? "เหตุผลที่เอกสารไม่ผ่าน" : status === "rejected" ? "เหตุผลที่ไม่ผ่าน" : "เหตุผลที่ยกเลิก"}
           </h4>
-          <div className={`${status === "rejected" ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"} border rounded-lg p-3`}>
-            <p className={`${status === "rejected" ? "text-red-700" : "text-gray-600"} text-sm`}>
+          <div className={`${status === "rejected" || status === "accepted-doc-failed" ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"} border rounded-lg p-3`}>
+            <p className={`${status === "rejected" || status === "accepted-doc-failed" ? "text-red-700" : "text-gray-600"} text-sm`}>
               {rejectionReason}
             </p>
           </div>
         </div>
       )}
+      </div>
 
       {/* Job Details Card */}
       <div className="bg-white rounded-2xl shadow-sm p-4 md:p-6">

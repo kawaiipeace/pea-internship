@@ -47,13 +47,13 @@ export default function ProfileSetup() {
     const handleSubmit = () => {
         if (!nickname.trim()) return;
         // TODO: save profile data to API
-        router.push('/student/check-in');
+        router.push('/analytics');
     };
 
     const isFormValid = nickname.trim().length > 0;
 
     return (
-        <div 
+        <div
             className="flex min-h-screen items-center justify-center font-nunito"
             style={{ background: 'linear-gradient(135deg, #fcca6b 0%, #c465f0 40%, #b1078c 75%, #ffffff 100%)' }}
         >
@@ -74,13 +74,12 @@ export default function ProfileSetup() {
                     {/* Profile Image Upload */}
                     <div className="mb-6 flex flex-col items-center">
                         <div
-                            className={`group relative mb-3 h-32 w-32 cursor-pointer overflow-hidden rounded-full border-2 border-dashed transition-all duration-300 ${
-                                isDragging
+                            className={`group relative mb-3 h-32 w-32 cursor-pointer overflow-hidden rounded-full border-2 border-dashed transition-all duration-300 ${isDragging
                                     ? 'border-primary bg-primary/5 scale-105'
                                     : profileImage
-                                      ? 'border-primary/40 hover:border-primary'
-                                      : 'border-gray-300 hover:border-primary dark:border-gray-600'
-                            }`}
+                                        ? 'border-primary/40 hover:border-primary'
+                                        : 'border-gray-300 hover:border-primary dark:border-gray-600'
+                                }`}
                             onClick={() => fileInputRef.current?.click()}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
@@ -143,11 +142,10 @@ export default function ProfileSetup() {
                         type="button"
                         onClick={handleSubmit}
                         disabled={!isFormValid}
-                        className={`w-full rounded-xl py-3 text-sm font-bold tracking-wide text-white shadow-lg transition-all duration-300 ${
-                            isFormValid
+                        className={`w-full rounded-xl py-3 text-sm font-bold tracking-wide text-white shadow-lg transition-all duration-300 ${isFormValid
                                 ? 'bg-[#b1078c] hover:bg-[#b1078c]/90 hover:shadow-[#b1078c]/30 active:scale-[0.98]'
                                 : 'cursor-not-allowed bg-gray-300 shadow-none dark:bg-gray-700'
-                        }`}
+                            }`}
                     >
                         เริ่มต้นใช้งาน
                     </button>

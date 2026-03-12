@@ -1078,6 +1078,8 @@ export interface MyApplicationData {
   positionName: string | null;
   positionDepartmentId: number | null;
   positionOfficeId: number | null;
+  infoEndDate: string | null;
+  documents: { docTypeId: number; docFile: string }[];
 }
 
 // Mapping: backend status → frontend step name (Thai)
@@ -1095,8 +1097,8 @@ export const APP_STATUS_TO_STEP: Record<AppStatusEnum, string> = {
 // ตรวจสอบว่าสมัครใหม่ได้หรือไม่ (ไม่มี active application)
 export function canApplyForNewJob(app: MyApplicationData | null): boolean {
   if (!app) return true;
-  // สมัครได้เฉพาะเมื่อยกเลิกหรือเสร็จสิ้นแล้ว
-  return app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || app.applicationStatus === "COMPLETE";
+  // สมัครได้เมื่อ ยกเลิก/ไม่ผ่าน หรือ application ไม่ active แล้ว (ฝึกงานเสร็จสิ้น)
+  return app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || !app.isActive;
 }
 
 // ประเภทข้อมูล Application (ใบสมัคร)
@@ -1182,6 +1184,15 @@ export interface AllStudentsHistoryQuery {
 
 // ==================== Application API Functions ====================
 
+// Response type from backend document upload
+export interface UploadDocResponse {
+  key: string;
+  filename: string;
+  docTypeId: number;
+  validationStatus: string;
+  applicationStatus: string;
+}
+
 // Application API functions
 export const applicationApi = {
   // ดึงประวัติการสมัครทั้งหมดของฉัน
@@ -1210,30 +1221,30 @@ export const applicationApi = {
   },
 
   // อัปโหลดเอกสาร Transcript
-  uploadTranscript: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadTranscript: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/transcript`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/transcript`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
 
   // อัปโหลดเอกสาร Resume
-  uploadResume: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadResume: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/resume`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/resume`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
 
   // อัปโหลดเอกสาร Portfolio
-  uploadPortfolio: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadPortfolio: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/portfolio`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/portfolio`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
@@ -1264,10 +1275,10 @@ export const applicationApi = {
   },
 
   // อัปโหลดเอกสาร Request Letter (ขอความอนุเคราะห์)
-  uploadRequestLetter: async (applicationId: number, file: File): Promise<unknown> => {
+  uploadRequestLetter: async (applicationId: number, file: File): Promise<UploadDocResponse> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await api.post(`/applications/${applicationId}/documents/request-letter`, formData, {
+    const response = await api.post<UploadDocResponse>(`/applications/${applicationId}/documents/request-letter`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;

@@ -104,7 +104,7 @@ export default function InternJobDetailPage() {
             (parsedJob.startDate && parsedJob.endDate
               ? `${parsedJob.startDate} - ${parsedJob.endDate}`
               : defaultJobDetail.applicationPeriod),
-          positions: parsedJob.positions || ((parsedJob.maxApplicants || 0) === 0 ? "ไม่จำกัดจำนวน" : `0/${parsedJob.maxApplicants || 1} ตำแหน่ง`),
+          positions: parsedJob.positions || ((parsedJob.maxApplicants || 0) === 0 ? "ไม่จำกัดจำนวน" : `${parsedJob.currentApplicants ?? 0}/${parsedJob.maxApplicants || 1} ตำแหน่ง`),
           responsibilities: parsedJob.responsibilities || defaultJobDetail.responsibilities,
           qualifications: parsedJob.qualifications || defaultJobDetail.qualifications,
           benefits: parsedJob.benefits || defaultJobDetail.benefits,

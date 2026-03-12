@@ -373,9 +373,9 @@ export default function InternProfilePage() {
             // Status logic based on internshipStatus
             if (studentProfile?.internshipStatus) {
               const statusMap: { [key: string]: string } = {
-                "IN_PROGRESS": "อยู่ระหว่างการฝึกงาน",
-                "COMPLETED": "ฝึกงานเสร็จสิ้น",
-                "CANCELLED": "ยกเลิกฝึกงาน",
+                "ACTIVE": "อยู่ระหว่างฝึกงาน",
+                "COMPLETE": "ฝึกงานเสร็จสิ้น",
+                "CANCEL": "ยกเลิกฝึกงาน",
               };
               const mappedStatus = statusMap[studentProfile.internshipStatus];
               if (mappedStatus) {
@@ -461,9 +461,9 @@ export default function InternProfilePage() {
 
             if (studentProfile?.internshipStatus) {
               const statusMap: { [key: string]: string } = {
-                "IN_PROGRESS": "อยู่ระหว่างการฝึกงาน",
-                "COMPLETED": "ฝึกงานเสร็จสิ้น",
-                "CANCELLED": "ยกเลิกฝึกงาน",
+                "ACTIVE": "อยู่ระหว่างฝึกงาน",
+                "COMPLETE": "ฝึกงานเสร็จสิ้น",
+                "CANCEL": "ยกเลิกฝึกงาน",
               };
               const mappedStatus = statusMap[studentProfile.internshipStatus];
               if (mappedStatus) {
@@ -671,19 +671,19 @@ export default function InternProfilePage() {
             {/* Mobile: Status badge - only show if status exists */}
             {currentStatus && (
               <div className="flex items-center gap-2 mt-2 sm:hidden">
-                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full ${currentStatus === "อยู่ระหว่างการฝึกงาน" ? "bg-green-100 border border-green-300" :
+                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-100 border border-orange-300" :
                     currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-100 border border-red-300" :
-                      currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-blue-100 border border-blue-300" :
+                      currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-100 border border-green-300" :
                         "bg-yellow-100 border border-yellow-300"
                   }`}>
-                  <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างการฝึกงาน" ? "bg-green-500" :
+                  <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-500" :
                       currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-500" :
-                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-blue-500" :
+                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-500" :
                           "bg-yellow-500"
                     }`}></span>
-                  <span className={`text-xs font-medium ${currentStatus === "อยู่ระหว่างการฝึกงาน" ? "text-green-700" :
+                  <span className={`text-xs font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-orange-700" :
                       currentStatus === "ยกเลิกฝึกงาน" ? "text-red-700" :
-                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-blue-700" :
+                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-green-700" :
                           "text-yellow-700"
                     }`}>
                     {currentStatus}
@@ -700,19 +700,19 @@ export default function InternProfilePage() {
                 </h1>
                 {currentStatus && (
                   <div className="flex items-center gap-2 mt-3">
-                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${currentStatus === "อยู่ระหว่างการฝึกงาน" ? "bg-green-100 border border-green-300" :
+                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-100 border border-orange-300" :
                         currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-100 border border-red-300" :
-                          currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-blue-100 border border-blue-300" :
+                          currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-100 border border-green-300" :
                             "bg-yellow-100 border border-yellow-300"
                       }`}>
-                      <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างการฝึกงาน" ? "bg-green-500" :
+                      <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-500" :
                           currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-500" :
-                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-blue-500" :
+                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-500" :
                               "bg-yellow-500"
                         }`}></span>
-                      <span className={`text-sm font-medium ${currentStatus === "อยู่ระหว่างการฝึกงาน" ? "text-green-700" :
+                      <span className={`text-sm font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-orange-700" :
                           currentStatus === "ยกเลิกฝึกงาน" ? "text-red-700" :
-                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-blue-700" :
+                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-green-700" :
                               "text-yellow-700"
                         }`}>
                         {currentStatus}

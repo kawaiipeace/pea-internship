@@ -39,7 +39,7 @@ export default function KeycloakCallbackPage() {
 
         // กำหนด role และ redirect ตาม roleId
         const roleMap: Record<number, { role: string; redirect: string }> = {
-          1: { role: "admin", redirect: "/admin/dashboard" },
+          1: { role: "admin", redirect: "/admin/applications" },
           2: { role: "owner", redirect: "/owner/announcements" },
         };
         const { role, redirect } = roleMap[session.user.roleId];

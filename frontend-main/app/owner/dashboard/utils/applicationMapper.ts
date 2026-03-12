@@ -174,6 +174,8 @@ export function mapApiToApplication(
       item.mentors && item.mentors.length > 0 ? item.mentors : undefined,
     skill: item.infoSkill || undefined,
     actionDate: formatDate(item.updatedAt),
+    studentInternshipStatus: item.studentInternshipStatus,
+    isActive: item.isActive,
   };
 }
 

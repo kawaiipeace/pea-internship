@@ -268,7 +268,10 @@ function CancelledApplicationsContent() {
     }
   };
 
-  const getHistoryStatusInfo = (status: AppStatusEnum) => {
+  const getHistoryStatusInfo = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+  ) => {
     switch (status) {
       case "COMPLETE":
         return {
@@ -276,6 +279,12 @@ function CancelledApplicationsContent() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (statusNote) {
+          return {
+            label: "ไม่ผ่าน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         return {
           label: "ยกเลิกฝึกงาน",
           color: "bg-red-50 text-red-600 border-red-200",
@@ -950,21 +959,22 @@ function CancelledApplicationsContent() {
         </div>
 
         {cancelledApplications.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center">
-            <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          <div className="col-span-full bg-white rounded-xl border border-gray-200 p-8">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <img
+                src="/images/NoFound.png"
+                alt="ไม่พบใบสมัคร"
+                className="w-40 h-40 object-contain opacity-80"
               />
-            </svg>
-            <p className="text-gray-500">ไม่มีใบสมัครที่ยกเลิกฝึกงาน</p>
+              <p className="text-gray-700 font-semibold text-base mt-2">
+                ไม่พบใบสมัคร
+              </p>
+              <p className="text-gray-400 text-sm text-center">
+                ขณะนี้ยังไม่มีผู้สมัครสำหรับประกาศนี้
+                <br />
+                กรุณาตรวจสอบอีกครั้งภายหลัง
+              </p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1953,6 +1963,7 @@ function CancelledApplicationsContent() {
                       {historyData.map((item) => {
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
+                          item.statusNote,
                         );
                         return (
                           <div key={item.applicationId}>
@@ -1984,29 +1995,29 @@ function CancelledApplicationsContent() {
                               <h4 className="font-semibold text-gray-900 mb-1">
                                 {item.positionName || "ตำแหน่งไม่ระบุ"}
                               </h4>
-                              <p className="text-sm text-gray-500">
-                                รอบที่ {item.internshipRound}
-                              </p>
                             </div>
                             {item.statusNote && (
                               <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 20 20"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path
-                                      d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20Z"
-                                      fill="#D92D20"
-                                    />
-                                  </svg>
+                                width="20"
+                                height="20"
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
+                                  fill="#D92D20"
+                                />
+                              </svg>
                                   <span className="text-sm font-semibold text-red-500">
-                                    {item.applicationStatus === "CANCEL"
-                                      ? "เหตุผลประกอบการยกเลิกฝึกงาน"
-                                      : "หมายเหตุ"}
+                                    {item.applicationStatus === "CANCEL" &&
+                                    item.statusNote
+                                      ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
+                                      : item.applicationStatus === "CANCEL"
+                                        ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                        : "หมายเหตุ"}
                                   </span>
                                 </div>
                                 <div className="mx-4 border-t border-red-200" />
