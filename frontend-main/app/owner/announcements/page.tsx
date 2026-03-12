@@ -774,7 +774,7 @@ export default function AnnouncementsPage() {
                     <p className="text-sm font-medium text-gray-800">
                       {previewPosition.recruitStart && previewPosition.recruitEnd
                         ? `${formatDateThai(previewPosition.recruitStart)} - ${formatDateThai(previewPosition.recruitEnd)}`
-                        : "ไม่ระบุ"}
+                        : "ไม่กำหนดระยะเวลา"}
                     </p>
                   </div>
                 </div>

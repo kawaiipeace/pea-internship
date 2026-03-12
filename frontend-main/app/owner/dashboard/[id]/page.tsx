@@ -572,6 +572,24 @@ function ApplicationDetailContent() {
     };
   };
 
+  // Get student internship lifecycle badge (ฝึกงานเสร็จสิ้น / อยู่ระหว่างฝึกงาน / ยกเลิกฝึกงาน)
+  const getStudentInternshipBadge = (): { text: string; dotColor: string; textColor: string } | null => {
+    if (!application) return null;
+    const internStatus = application.studentInternshipStatus;
+    const isActive = application.isActive;
+
+    if (internStatus === "COMPLETE" && !isActive) {
+      return { text: "ฝึกงานเสร็จสิ้น", dotColor: "bg-green-500", textColor: "text-green-600" };
+    }
+    if (internStatus === "ACTIVE" || isActive) {
+      return { text: "อยู่ระหว่างฝึกงาน", dotColor: "bg-orange-500", textColor: "text-orange-500" };
+    }
+    if (internStatus === "CANCEL" || application.status === "cancelled" || isCancelledViaStorage) {
+      return { text: "ยกเลิกฝึกงาน", dotColor: "bg-red-500", textColor: "text-red-500" };
+    }
+    return null;
+  };
+
   // Get effective status badge based on localStorage state
   const getStatusBadge = (): {
     text: string;
@@ -755,6 +773,7 @@ function ApplicationDetailContent() {
 
   const effectiveStep = getEffectiveStep();
   const statusBadge = getStatusBadge();
+  const studentInternshipBadge = getStudentInternshipBadge();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -855,6 +874,14 @@ function ApplicationDetailContent() {
                   ประวัติผู้สมัคร
                 </button>
               </div>
+              {studentInternshipBadge && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`w-2.5 h-2.5 rounded-full ${studentInternshipBadge.dotColor}`}></span>
+                  <span className={`text-sm font-semibold ${studentInternshipBadge.textColor}`}>
+                    {studentInternshipBadge.text}
+                  </span>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2 mb-4">
                 <span
                   className={`${statusBadge.bgColor} ${statusBadge.textColor} text-sm px-3 py-1 rounded-full`}

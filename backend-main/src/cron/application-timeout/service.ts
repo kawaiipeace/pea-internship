@@ -6,8 +6,8 @@ import {
   studentProfiles,
 } from "@/db/schema";
 
-// const TIMEOUT_SECONDS = 30 * 24 * 60 * 60;
-const TIMEOUT_SECONDS = 10; // test
+const TIMEOUT_SECONDS = 30 * 24 * 60 * 60;
+// const TIMEOUT_SECONDS = 10; // test
 
 export class ApplicationTimeoutService {
   async cancelExpiredApplications() {

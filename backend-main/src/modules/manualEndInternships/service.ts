@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
@@ -67,10 +67,16 @@ export class OwnerStudentStatusService {
 
       const [app] = await tx
         .select({
+          id: applicationStatuses.id,
           positionId: applicationStatuses.positionId,
         })
         .from(applicationStatuses)
-        .where(eq(applicationStatuses.userId, studentUserId))
+        .where(
+          and(
+            eq(applicationStatuses.userId, studentUserId),
+            eq(applicationStatuses.isActive, true)
+          )
+        )
         .limit(1);
 
       if (!app) throw new NotFoundError("ไม่พบข้อมูลการสมัครของนักศึกษา");
@@ -96,6 +102,11 @@ export class OwnerStudentStatusService {
           })
           .where(eq(studentProfiles.userId, studentUserId));
 
+        await tx
+          .update(applicationStatuses)
+          .set({ isActive: false, updatedAt: new Date() })
+          .where(eq(applicationStatuses.id, app.id));
+
         return { studentUserId, internshipStatus: "CANCEL" };
       }
 
@@ -112,6 +123,11 @@ export class OwnerStudentStatusService {
           internshipStatus: "COMPLETE",
         })
         .where(eq(studentProfiles.userId, studentUserId));
+
+      await tx
+        .update(applicationStatuses)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(applicationStatuses.id, app.id));
 
       return { studentUserId, internshipStatus: "COMPLETE" };
     });

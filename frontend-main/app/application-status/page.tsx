@@ -82,19 +82,9 @@ function ApplicationStatusContent() {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Save original file names for display persistence across page reloads
-  const [transcriptName, setTranscriptName] = useState<string>(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("uploadedTranscriptName") || "";
-    return "";
-  });
-  const [resumeName, setResumeName] = useState<string>(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("uploadedResumeName") || "";
-    return "";
-  });
-  const [portfolioName, setPortfolioName] = useState<string>(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("uploadedPortfolioName") || "";
-    return "";
-  });
+  const [transcriptName, setTranscriptName] = useState<string>("");
+  const [resumeName, setResumeName] = useState<string>("");
+  const [portfolioName, setPortfolioName] = useState<string>("");
   const [hasApplication, setHasApplication] = useState(false);
 
   // Load application data from API on mount
@@ -107,15 +97,42 @@ function ApplicationStatusContent() {
           setApplicationId(app.applicationId);
 
           // Check if application is active (not cancelled or completed without stepParam)
-          if (app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || app.applicationStatus === "COMPLETE") {
+          if (app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT") {
             if (!stepParam) {
               // No active application, show empty state
               setHasApplication(false);
             } else {
               setHasApplication(true);
+              if (stepParam === "รอการตรวจสอบ" || stepParam === "เสร็จสิ้น") {
+                setIsCourtesySubmitted(true);
+              }
             }
+          } else if (app.applicationStatus === "COMPLETE") {
+            setHasApplication(true);
+            setCurrentStep("รอการตรวจสอบ");
+            setDocumentStatus("เอกสารผ่าน");
+            setIsCourtesySubmitted(true);
           } else {
             setHasApplication(true);
+
+            // When docs are rejected, status goes back to PENDING_REQUEST with a statusNote
+            if (app.applicationStatus === "PENDING_REQUEST" && app.statusNote) {
+              setDocumentStatus("เอกสารไม่ผ่าน");
+              setDocumentError(app.statusNote);
+              setIsCourtesySubmitted(false);
+              setCurrentStep("รอยื่นเอกสารขอความอนุเคราะห์");
+            }
+          }
+
+          // Populate document names from backend
+          if (app.documents && app.documents.length > 0) {
+            for (const doc of app.documents) {
+              const fileName = doc.docFile.split("/").pop() || "";
+              if (doc.docTypeId === 1) setTranscriptName(fileName);
+              else if (doc.docTypeId === 2) setResumeName(fileName);
+              else if (doc.docTypeId === 3) setPortfolioName(fileName);
+              else if (doc.docTypeId === 4) setCourtesyDocName(fileName);
+            }
           }
 
           // Fetch full position data for required docs, mentor info, etc.
@@ -199,13 +216,20 @@ function ApplicationStatusContent() {
             if (!stepParam) {
               setHasApplication(false);
             }
-          } else {
+          } else if (app.applicationStatus !== "COMPLETE" && !(app.applicationStatus === "PENDING_REQUEST" && app.statusNote)) {
             // Set step from backend status if no stepParam override
+            // Skip for COMPLETE (already handled above) and rejected PENDING_REQUEST (already handled above)
             if (!stepParam) {
               const backendStep = APP_STATUS_TO_STEP[app.applicationStatus];
               if (backendStep && steps.includes(backendStep as ApplicationStep)) {
                 setCurrentStep(backendStep as ApplicationStep);
               }
+            }
+
+            // If status is PENDING_REVIEW, the courtesy doc was already uploaded
+            if (app.applicationStatus === "PENDING_REVIEW") {
+              setIsCourtesySubmitted(true);
+              setDocumentStatus("รอการตรวจสอบ");
             }
           }
         }
@@ -244,6 +268,7 @@ function ApplicationStatusContent() {
   const [signatureOption, setSignatureOption] = useState<string>("");
   const [courtesyDocument, setCourtesyDocument] = useState<File | null>(null);
   const [isCourtesySubmitted, setIsCourtesySubmitted] = useState(false);
+  const [courtesyDocName, setCourtesyDocName] = useState<string>("");
   const [documentStatus, _setDocumentStatus] = useState<
     "รอการดำเนินการ" | "รอการตรวจสอบ" | "เอกสารผ่าน" | "เอกสารไม่ผ่าน"
   >(getInitialDocumentStatus());
@@ -278,9 +303,7 @@ function ApplicationStatusContent() {
   const handleTranscriptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setTranscript(e.target.files[0]);
-      const name = e.target.files[0].name;
-      setTranscriptName(name);
-      localStorage.setItem("uploadedTranscriptName", name);
+      setTranscriptName(e.target.files[0].name);
       setShowSuccessModal(true);
     }
   };
@@ -288,9 +311,7 @@ function ApplicationStatusContent() {
   const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setResume(e.target.files[0]);
-      const name = e.target.files[0].name;
-      setResumeName(name);
-      localStorage.setItem("uploadedResumeName", name);
+      setResumeName(e.target.files[0].name);
       setShowSuccessModal(true);
     }
   };
@@ -298,9 +319,7 @@ function ApplicationStatusContent() {
   const handlePortfolioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setPortfolio(e.target.files[0]);
-      const name = e.target.files[0].name;
-      setPortfolioName(name);
-      localStorage.setItem("uploadedPortfolioName", name);
+      setPortfolioName(e.target.files[0].name);
       setShowSuccessModal(true);
     }
   };
@@ -320,16 +339,32 @@ function ApplicationStatusContent() {
     setShowConfirmModal(true);
   };
 
-  const handleFinalReuploadConfirm = () => {
+  const handleFinalReuploadConfirm = async () => {
     setShowConfirmModal(false);
-    setShowConfirmSuccessModal(true);
-    setDocumentStatus("รอการตรวจสอบ");
-    setDocumentError("");
-    setIsReuploadReady(false);
-    // Move to เสร็จสิ้น step after successful reupload
-    setTimeout(() => {
-      setShowConfirmSuccessModal(false);
-    }, 800);
+    if (!courtesyDocument || !applicationId) return;
+    setIsUploading(true);
+    try {
+      const res = await applicationApi.uploadRequestLetter(applicationId, courtesyDocument);
+      setShowConfirmSuccessModal(true);
+      setDocumentStatus("รอการตรวจสอบ");
+      setDocumentError("");
+      setIsReuploadReady(false);
+      setCurrentStep("รอการตรวจสอบ");
+      const realName = res.filename || courtesyDocument.name;
+      setCourtesyDocName(realName);
+      setTimeout(() => {
+        setShowConfirmSuccessModal(false);
+      }, 800);
+    } catch (err) {
+      console.error("Failed to reupload request letter:", err);
+      const error = err as { response?: { data?: { message?: string } } };
+      setUploadErrorMessage(
+        error?.response?.data?.message || "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง"
+      );
+      setShowUploadErrorModal(true);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleConfirmCourtesyUpload = () => {
@@ -338,15 +373,31 @@ function ApplicationStatusContent() {
     }
   };
 
-  const handleFinalCourtesyConfirm = () => {
+  const handleFinalCourtesyConfirm = async () => {
     setShowConfirmModal(false);
-    setShowConfirmSuccessModal(true);
-    setIsCourtesySubmitted(true);
-    // Set document status to "รอการตรวจสอบ" after upload confirmation
-    setDocumentStatus("รอการตรวจสอบ");
-    setTimeout(() => {
-      setShowConfirmSuccessModal(false);
-    }, 800);
+    if (!courtesyDocument || !applicationId) return;
+    setIsUploading(true);
+    try {
+      const res = await applicationApi.uploadRequestLetter(applicationId, courtesyDocument);
+      setShowConfirmSuccessModal(true);
+      setIsCourtesySubmitted(true);
+      setDocumentStatus("รอการตรวจสอบ");
+      setCurrentStep("รอการตรวจสอบ");
+      const realName = res.filename || courtesyDocument.name;
+      setCourtesyDocName(realName);
+      setTimeout(() => {
+        setShowConfirmSuccessModal(false);
+      }, 800);
+    } catch (err) {
+      console.error("Failed to upload request letter:", err);
+      const error = err as { response?: { data?: { message?: string } } };
+      setUploadErrorMessage(
+        error?.response?.data?.message || "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง"
+      );
+      setShowUploadErrorModal(true);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleConfirmApplication = () => {
@@ -361,15 +412,24 @@ function ApplicationStatusContent() {
 
     try {
       if (applicationId) {
-        // Upload all documents via API
+        // Upload all documents via API and save real MinIO filenames
         if (transcript) {
-          await applicationApi.uploadTranscript(applicationId, transcript);
+          const res = await applicationApi.uploadTranscript(applicationId, transcript);
+          if (res.filename) {
+            setTranscriptName(res.filename);
+          }
         }
         if (resume && requiredDocuments.includes("Resume")) {
-          await applicationApi.uploadResume(applicationId, resume);
+          const res = await applicationApi.uploadResume(applicationId, resume);
+          if (res.filename) {
+            setResumeName(res.filename);
+          }
         }
         if (portfolio && requiredDocuments.includes("Portfolio")) {
-          await applicationApi.uploadPortfolio(applicationId, portfolio);
+          const res = await applicationApi.uploadPortfolio(applicationId, portfolio);
+          if (res.filename) {
+            setPortfolioName(res.filename);
+          }
         }
       }
     } catch (err) {
@@ -601,13 +661,15 @@ function ApplicationStatusContent() {
             {(() => {
               // Calculate which step to show progress to
               const isDocumentFullyApproved = documentStatus === "เอกสารผ่าน";
-              const isDocumentPendingReview =
-                documentStatus === "รอการตรวจสอบ" ||
-                documentStatus === "เอกสารไม่ผ่าน";
+              const isDocumentPendingReview = documentStatus === "รอการตรวจสอบ";
+              const isDocumentRejected = documentStatus === "เอกสารไม่ผ่าน";
 
               let progressToStep = currentStepIndex;
               if (currentStep === "รอยื่นเอกสารขอความอนุเคราะห์") {
-                if (isDocumentPendingReview) {
+                if (isDocumentRejected) {
+                  // Document rejected - progress stays at step 3
+                  progressToStep = 3;
+                } else if (isDocumentPendingReview) {
                   // Document uploaded but pending review - progress line goes to step 4 (รอการตรวจสอบ)
                   progressToStep = 4;
                 } else if (isDocumentFullyApproved) {
@@ -640,25 +702,20 @@ function ApplicationStatusContent() {
               {steps.map((step, index) => {
                 // Determine completion state based on document verification status
                 const isDocumentFullyApproved = documentStatus === "เอกสารผ่าน";
-                const isDocumentPendingReview =
-                  documentStatus === "รอการตรวจสอบ" ||
-                  documentStatus === "เอกสารไม่ผ่าน";
+                const isDocumentPendingReview = documentStatus === "รอการตรวจสอบ";
+                const isDocumentRejected = documentStatus === "เอกสารไม่ผ่าน";
 
-                // Step is completed if:
-                // 1. It's before current step index
-                // 2. Document is fully approved (เอกสารผ่าน) - all steps complete
-                // 3. When at รอยื่นเอกสารขอความอนุเคราะห์ and document is uploaded:
-                //    - Mark steps 0-3 as completed
-                //    - Mark step 4 (รอการตรวจสอบ) as completed ONLY if document is fully approved
                 let isCompleted =
                   index < currentStepIndex || isDocumentFullyApproved;
 
                 if (currentStep === "รอยื่นเอกสารขอความอนุเคราะห์") {
-                  if (isDocumentPendingReview) {
-                    // Document uploaded but pending review - mark steps 0-3 as completed, not step 4
+                  if (isDocumentRejected) {
+                    // Rejected - steps 0-2 completed, step 3 on hold
+                    isCompleted = index < 3;
+                  } else if (isDocumentPendingReview) {
+                    // Pending review - mark steps 0-3 as completed
                     isCompleted = index <= 3;
                   } else if (isDocumentFullyApproved) {
-                    // Document fully approved - mark all steps as completed
                     isCompleted = true;
                   }
                 } else if (
@@ -668,20 +725,19 @@ function ApplicationStatusContent() {
                   isCompleted = true;
                 }
 
-                // Check if this is the current step that's "on hold" (waiting for action)
-                // This is the step where the user needs to take action
                 let isOnHold = false;
 
                 if (currentStep === "รอยื่นเอกสารขอความอนุเคราะห์") {
-                  if (isDocumentPendingReview) {
-                    // Document is pending review - รอการตรวจสอบ (index 4) should be on hold
+                  if (isDocumentRejected) {
+                    // Rejected - step 3 is on hold (need to reupload)
+                    isOnHold = index === 3;
+                  } else if (isDocumentPendingReview) {
+                    // Pending review - step 4 is on hold
                     isOnHold = index === 4;
                   } else if (!isDocumentFullyApproved) {
-                    // No document uploaded yet - current step is on hold
                     isOnHold = index === currentStepIndex;
                   }
                 } else if (!isDocumentFullyApproved) {
-                  // For other steps, the current step is on hold (unless all completed)
                   isOnHold = index === currentStepIndex;
                 }
 
@@ -834,7 +890,7 @@ function ApplicationStatusContent() {
                   {documentStatus === "เอกสารไม่ผ่าน" && documentError && (
                     <div className="mt-3 md:mt-4">
                       <h3 className="font-bold text-gray-800 text-sm md:text-base mb-2">
-                        ข้อผิดพลาดของเอกสาร
+                        เหตุผลที่เอกสารไม่ผ่าน
                       </h3>
                       <div className="bg-red-50 border border-red-200 rounded-lg p-2 md:p-3">
                         <p className="text-red-700 text-xs md:text-sm">
@@ -1326,13 +1382,13 @@ function ApplicationStatusContent() {
                       </svg>
                       ตัวอย่าง
                     </a>
-                    {documentStatus === "เอกสารผ่าน" ? (
-                      /* Read-only display for completed step */
+                    {documentStatus === "เอกสารผ่าน" || (isCourtesySubmitted && documentStatus === "รอการตรวจสอบ") ? (
+                      /* Read-only display for completed/submitted step */
                       <div className="flex items-center justify-between px-4 py-3 border-2 border-primary-600 rounded-xl bg-gray-50">
                         <span className="text-black">
                           {courtesyDocument
                             ? courtesyDocument.name
-                            : "courtesy_document.pdf"}
+                            : courtesyDocName || "courtesy_document.pdf"}
                         </span>
                         <svg
                           width="24"
@@ -1352,21 +1408,23 @@ function ApplicationStatusContent() {
                       <>
                         <div
                           onClick={() => courtesyDocInputRef.current?.click()}
-                          className={`flex items-center justify-between px-4 py-3 border-2 rounded-xl cursor-pointer transition-colors hover:bg-gray-50 ${courtesyDocument
+                          className={`flex items-center justify-between px-4 py-3 border-2 rounded-xl cursor-pointer transition-colors hover:bg-gray-50 ${(courtesyDocument || (documentStatus === "เอกสารไม่ผ่าน" && courtesyDocName))
                             ? "border-primary-600"
                             : "border-gray-200 hover:border-primary-600"
                             }`}
                         >
                           <span
                             className={
-                              courtesyDocument ? "text-black" : "text-black/60"
+                              (courtesyDocument || (documentStatus === "เอกสารไม่ผ่าน" && courtesyDocName)) ? "text-black" : "text-black/60"
                             }
                           >
                             {courtesyDocument
                               ? courtesyDocument.name
-                              : "Choose File"}
+                              : (documentStatus === "เอกสารไม่ผ่าน" && courtesyDocName)
+                                ? courtesyDocName
+                                : "Choose File"}
                           </span>
-                          {courtesyDocument ? (
+                          {(courtesyDocument || (documentStatus === "เอกสารไม่ผ่าน" && courtesyDocName && !isReuploadReady)) ? (
                             documentStatus === "เอกสารไม่ผ่าน" &&
                               !isReuploadReady ? (
                               <svg
