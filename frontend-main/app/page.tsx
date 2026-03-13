@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Navbar from "./components/ui/Navbar";
-import SearchSection from "./components/ui/SearchSection";
-import JobCard, { Job } from "./components/ui/JobCard";
-import JobDetailPanel from "./components/ui/JobDetailPanel";
-import Pagination from "./components/ui/Pagination";
-import LoginModal from "./components/ui/LoginModal";
-import { VideoLoading } from "./components";
+import Navbar from "@/components/ui/Navbar";
+import SearchSection from "@/components/ui/SearchSection";
+import JobCard, { Job } from "@/components/ui/JobCard";
+import JobDetailPanel from "@/components/ui/JobDetailPanel";
+import Pagination from "@/components/ui/Pagination";
+import LoginModal from "@/components/ui/LoginModal";
+import { VideoLoading } from "@/components";
 import {
   positionApi,
   positionToJobWithStaff,
   userApi,
   StaffUser,
-} from "./services/api";
+} from "@/services/api";
 
 export default function Home() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);

@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -13,18 +13,20 @@ import {
 import {
   applicationApi,
   applicationStatusActionsApi,
+  positionApi,
   type ApplicationStatusAction,
   type AppStatusEnum,
   type MyApplicationData,
-} from "../../../services/api";
-import VideoLoading from "../../../components/ui/VideoLoading";
+  type Position,
+} from "@/services/api";
+import VideoLoading from "@/components/ui/VideoLoading";
 import {
   highSchools,
   vocationalSchools,
   highVocationalSchools,
   universities,
 } from "../../../data/institutions";
-import { Pagination } from "../../../components/ui";
+import { Pagination } from "@/components/ui";
 
 // Thai month names
 const thaiMonths = [
@@ -51,6 +53,15 @@ const formatDateThai = (dateString: string): string => {
   const month = parseInt(parts[1]) - 1;
   const day = parseInt(parts[2]);
   return `${day} ${thaiMonths[month]} ${year}`;
+};
+
+// Format ISO datetime to Thai format with time (e.g. "12 มี.ค. 2569 15:00")
+const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+const formatDateTimeThai = (dateString: string): string => {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return formatDateThai(dateString);
+  return `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
 // Get education type label
@@ -88,13 +99,18 @@ function CancelledApplicationsContent() {
   // All applications fetched from API (replaces mockApplications)
   const [allApps, setAllApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [positionInfo, setPositionInfo] = useState<Position | null>(null);
   useEffect(() => {
-    fetchAllApplications(positionId ? Number(positionId) : undefined).then(
-      (apps) => {
-        setAllApps(apps);
-        setLoading(false);
-      },
-    );
+    Promise.all([
+      fetchAllApplications(positionId ? Number(positionId) : undefined),
+      positionId
+        ? positionApi.getPositionById(Number(positionId))
+        : Promise.resolve(null),
+    ]).then(([apps, posData]) => {
+      setAllApps(apps);
+      setPositionInfo(posData);
+      setLoading(false);
+    });
   }, [positionId]);
 
   // Dynamic summary stats computed from API data
@@ -271,6 +287,7 @@ function CancelledApplicationsContent() {
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
   ) => {
     switch (status) {
       case "COMPLETE":
@@ -279,6 +296,12 @@ function CancelledApplicationsContent() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (!isActive) {
+          return {
+            label: "ยกเลิกฝึกงาน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         if (statusNote) {
           return {
             label: "ไม่ผ่าน",
@@ -1214,13 +1237,17 @@ function CancelledApplicationsContent() {
                         <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                         <p className="text-gray-900 text-sm">
                           {(() => {
-                            const cancelData = getCancellationData(
-                              selectedApplication.id,
-                            );
+                            const od =
+                              positionInfo?.owner ||
+                              (positionInfo?.owners && positionInfo.owners.length > 0
+                                ? positionInfo.owners[0]
+                                : null);
+                            const ownerName = od
+                              ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
+                              : "-";
                             return (
-                              cancelData?.cancelledBy ||
                               selectedApplication.cancelledBy ||
-                              "นายมั่นคง ทรงดี (พี่เลี้ยง)"
+                              ownerName
                             );
                           })()}
                         </p>
@@ -1228,17 +1255,10 @@ function CancelledApplicationsContent() {
                       <div>
                         <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
                         <p className="text-gray-900 text-sm">
-                          {formatDateThai(
-                            (() => {
-                              const cancelData = getCancellationData(
-                                selectedApplication.id,
-                              );
-                              return (
-                                cancelData?.cancelledDate ||
-                                selectedApplication.cancelledDate ||
-                                "2568-11-15"
-                              );
-                            })(),
+                          {formatDateTimeThai(
+                            selectedApplication.cancelledDate ||
+                            selectedApplication.actionDate ||
+                            ""
                           )}
                         </p>
                       </div>
@@ -1274,8 +1294,11 @@ function CancelledApplicationsContent() {
                     {(() => {
                       const totalSteps = 5;
                       const detailed = selectedApplication.detailedStatus;
+                      const isCancelledInternship = selectedApplication.status === "cancelled" && selectedApplication.step >= 6;
                       let completedSteps = 0;
-                      if (
+                      if (isCancelledInternship) {
+                        completedSteps = 5;
+                      } else if (
                         detailed === "doc_passed" ||
                         detailed === "completed"
                       ) {
@@ -1387,15 +1410,45 @@ function CancelledApplicationsContent() {
                             {isAllCompleted ? (
                               <>
                                 <p className="font-bold text-gray-900">
-                                  การตรวจสอบเสร็จสิ้น
+                                  {isCancelledInternship ? "ยกเลิกฝึกงาน" : "การตรวจสอบเสร็จสิ้น"}
                                 </p>
-                                {stepCompletedInfo[4]?.operator && (
-                                  <p className="text-gray-400 text-sm">
-                                    {stepCompletedInfo[4].operator}
-                                  </p>
+                                {isCancelledInternship ? (
+                                  <>
+                                    {(() => {
+                                      const od =
+                                        positionInfo?.owner ||
+                                        (positionInfo?.owners && positionInfo.owners.length > 0
+                                          ? positionInfo.owners[0]
+                                          : null);
+                                      const ownerName = od
+                                        ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
+                                        : null;
+                                      return ownerName ? (
+                                        <p className="text-gray-400 text-sm">
+                                          {ownerName}
+                                        </p>
+                                      ) : null;
+                                    })()}
+                                    {selectedApplication.cancelledDate && (
+                                      <p className="text-gray-400 text-sm">
+                                        {formatDateTimeThai(selectedApplication.cancelledDate)}
+                                      </p>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {stepCompletedInfo[4]?.operator && (
+                                      <p className="text-gray-400 text-sm">
+                                        {stepCompletedInfo[4].operator}
+                                      </p>
+                                    )}
+                                    <p className="text-gray-400 text-sm">
+                                      {stepCompletedInfo[4]?.date}
+                                    </p>
+                                  </>
                                 )}
                                 <p className="text-gray-400 text-sm">
-                                  {stepCompletedInfo[4]?.date}
+                                  กระบวนการสมัครสิ้นสุดแล้ว
                                 </p>
                               </>
                             ) : (
@@ -1964,6 +2017,7 @@ function CancelledApplicationsContent() {
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
+                          item.isActive,
                         );
                         return (
                           <div key={item.applicationId}>

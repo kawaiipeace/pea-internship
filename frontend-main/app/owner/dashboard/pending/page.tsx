@@ -3,13 +3,13 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
   computeApplicationStats,
 } from "../utils/applicationMapper";
-import VideoLoading from "../../../components/ui/VideoLoading";
+import VideoLoading from "@/components/ui/VideoLoading";
 import {
   applicationApi,
   applicationStatusActionsApi,
@@ -18,7 +18,7 @@ import {
   type Position,
   type MyApplicationData,
   type AppStatusEnum,
-} from "../../../services/api";
+} from "@/services/api";
 import {
   highSchools,
   vocationalSchools,
@@ -678,6 +678,7 @@ function PendingStatusContent() {
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
   ) => {
     switch (status) {
       case "COMPLETE":
@@ -686,6 +687,12 @@ function PendingStatusContent() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (!isActive) {
+          return {
+            label: "ยกเลิกฝึกงาน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         if (statusNote) {
           return {
             label: "ไม่ผ่าน",
@@ -2592,6 +2599,7 @@ function PendingStatusContent() {
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
+                          item.isActive,
                         );
                         return (
                           <div key={item.applicationId}>

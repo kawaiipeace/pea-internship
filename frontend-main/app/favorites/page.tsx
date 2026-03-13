@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import { Job } from "../components/ui/JobCard";
-import { favoriteApi, positionIdToJobId, jobIdToPositionId, FavoriteItem, positionToJob, applicationApi, canApplyForNewJob, MyApplicationData } from "../services/api";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { Job } from "@/components/ui/JobCard";
+import { favoriteApi, positionIdToJobId, jobIdToPositionId, FavoriteItem, positionToJob, applicationApi, canApplyForNewJob, MyApplicationData } from "@/services/api";
 
 export default function FavoritesPage() {
   const router = useRouter();

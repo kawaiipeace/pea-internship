@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import AdminNavbar from "../../components/ui/AdminNavbar";
+import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
   applicationApi,
   AllStudentsHistoryItem,
   AppStatusEnum,
-} from "../../services/api";
+} from "@/services/api";
 
 type ActiveTab = "pending" | "approved" | "rejected";
 

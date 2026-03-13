@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Navbar from "../../components/ui/Navbar";
+import Navbar from "@/components/ui/Navbar";
 import { validateLoginByEmployeeId, setCurrentUser } from "../../data/mockUsers";
 
 export default function AdminLoginPage() {

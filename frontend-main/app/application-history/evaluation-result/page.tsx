@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { NavbarIntern } from "../../components";
+import { NavbarIntern } from "@/components";
 import {
   applicationApi,
   studentProfileApi,
   userApi,
   applicationDocumentsApi,
   MyApplicationData,
-} from "../../services/api";
+} from "@/services/api";
 
 // Institution type label mapping
 const INST_TYPE_LABELS: Record<string, string> = {

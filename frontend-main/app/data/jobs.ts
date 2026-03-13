@@ -1,4 +1,4 @@
-import { Job } from '@/app/components/ui/JobCard';
+import { Job } from '@/components/ui/JobCard';
 
 // Mock data for jobs
 export const mockJobs: Job[] = [

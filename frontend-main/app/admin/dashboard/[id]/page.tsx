@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import AdminNavbar from "../../../components/ui/AdminNavbar";
+import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
   applicationApi,
   positionApi,
   AllStudentsHistoryItem,
   Position,
-} from "../../../services/api";
+} from "@/services/api";
 
 type DocTypeName = "transcript" | "resume" | "portfolio" | "request-letter";
 

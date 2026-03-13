@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import { applicationApi, MyApplicationData, APP_STATUS_TO_STEP, AppStatusEnum, positionApi, positionToJob } from "../services/api";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { applicationApi, MyApplicationData, APP_STATUS_TO_STEP, AppStatusEnum, positionApi, positionToJob } from "@/services/api";
 
 type ApplicationStatus =
   | "active"
@@ -13,6 +13,7 @@ type ApplicationStatus =
   | "cancelled"
   | "rejected"
   | "completed"
+  | "intern-cancelled"
   | "in-training";
 
 interface AppliedJob {
@@ -41,6 +42,9 @@ interface AppliedJob {
 function mapBackendStatus(app: { applicationStatus: AppStatusEnum; isActive: boolean; infoEndDate: string | null; statusNote: string | null }): ApplicationStatus {
   switch (app.applicationStatus) {
     case "CANCEL":
+      if (!app.isActive) {
+        return "intern-cancelled";
+      }
       return "rejected";
     case "ABORT":
       return "cancelled";
@@ -161,6 +165,8 @@ export default function ApplicationHistoryPage() {
       setShowEvaluationModal(true);
     } else if (applicationStatus === "cancelled") {
       router.push("/application-history/evaluation-result");
+    } else if (applicationStatus === "intern-cancelled") {
+      router.push(`/application-history/job-detail?positionId=${job.positionId}&applicationId=${job.applicationId}&status=intern-cancelled`);
     } else if (applicationStatus === "accepted-doc-failed") {
       router.push("/application-status?step=รอการตรวจสอบ&docStatus=failed");
     } else if (applicationStatus === "in-training") {
@@ -187,6 +193,8 @@ export default function ApplicationHistoryPage() {
       params.set("status", "completed");
     } else if (applicationStatus === "cancelled") {
       params.set("status", "cancelled");
+    } else if (applicationStatus === "intern-cancelled") {
+      params.set("status", "intern-cancelled");
     } else if (applicationStatus === "accepted-doc-failed") {
       params.set("status", "accepted-doc-failed");
     } else if (applicationStatus === "in-training") {
@@ -238,6 +246,14 @@ export default function ApplicationHistoryPage() {
             </span>
           </div>
         );
+      case "intern-cancelled":
+        return (
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm">
+              ยกเลิกฝึกงาน
+            </span>
+          </div>
+        );
       case "in-training":
         return (
           <div className="flex flex-wrap gap-2">
@@ -274,6 +290,7 @@ export default function ApplicationHistoryPage() {
   const getButtonText = (job: AppliedJob) => {
     if (job.applicationStatus === "completed") return "ดูผลการประเมิน";
     if (job.applicationStatus === "active" || job.applicationStatus === "in-training") return "ดูสถานะการสมัคร";
+    if (job.applicationStatus === "intern-cancelled") return "ดูรายละเอียด";
     return "ดูรายละเอียด";
   };
 

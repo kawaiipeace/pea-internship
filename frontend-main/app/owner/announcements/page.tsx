@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "../../components/ui/OwnerNavbar";
-import VideoLoading from "../../components/ui/VideoLoading";
-import { AnnouncementStats } from "../../types/announcement";
-import { positionApi, Position, userApi, applicationApi } from "../../services/api";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { AnnouncementStats } from "@/types/announcement";
+import { positionApi, Position, userApi, applicationApi } from "@/services/api";
 
 // Helper function to format date in Thai
 const formatDateThai = (dateString: string): string => {
@@ -47,6 +47,10 @@ export default function AnnouncementsPage() {
   const [selectedDuration, setSelectedDuration] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteErrorModal, setDeleteErrorModal] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
 
   // Preview modal state
   const [previewPosition, setPreviewPosition] = useState<Position | null>(null);
@@ -186,7 +190,25 @@ export default function AnnouncementsPage() {
       setDeleteTargetId(null);
     } catch (error) {
       console.error("Error deleting announcement:", error);
-      alert("เกิดข้อผิดพลาดในการลบประกาศ");
+      const apiError = error as {
+        response?: { data?: { message?: string } };
+      };
+      const apiMessage = apiError.response?.data?.message || "";
+      const isBlockedDelete =
+        apiMessage.includes("ไม่สามารถลบประกาศตำแหน่งงานได้") ||
+        apiMessage.includes("มีผู้สมัคร") ||
+        apiMessage.includes("ประวัติการสมัคร");
+
+      setShowDeleteModal(false);
+      setDeleteTargetId(null);
+      setDeleteErrorModal({
+        title: isBlockedDelete
+          ? "ไม่สามารถลบประกาศตำแหน่งงานได้"
+          : "ไม่สามารถลบประกาศตำแหน่งงานได้",
+        message: isBlockedDelete
+          ? "เนื่องจากประกาศนี้มีผู้สมัครอยู่ในระบบแล้วจึงไม่สามารถลบประกาศนี้ได้"
+          : apiMessage || "ไม่สามารถลบประกาศได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง",
+      });
     }
   };
 
@@ -691,6 +713,36 @@ export default function AnnouncementsPage() {
                 >
                   ลบประกาศ
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteErrorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl p-8 w-full max-w-lg">
+            <div className="flex items-start gap-5">
+              <div className="shrink-0 mt-1">
+                <svg width="30" height="30" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2.38444 18.375C2.22402 18.375 2.07819 18.3349 1.94694 18.2547C1.81569 18.1745 1.7136 18.0688 1.64069 17.9375C1.56777 17.8062 1.52766 17.6641 1.52037 17.5109C1.51308 17.3578 1.55319 17.2083 1.64069 17.0625L9.73444 3.0625C9.82194 2.91667 9.93496 2.80729 10.0735 2.73438C10.212 2.66146 10.3542 2.625 10.5001 2.625C10.6459 2.625 10.7881 2.66146 10.9266 2.73438C11.0652 2.80729 11.1782 2.91667 11.2657 3.0625L19.3594 17.0625C19.4469 17.2083 19.487 17.3578 19.4797 17.5109C19.4725 17.6641 19.4324 17.8062 19.3594 17.9375C19.2865 18.0688 19.1844 18.1745 19.0532 18.2547C18.9219 18.3349 18.7761 18.375 18.6157 18.375H2.38444ZM3.89381 16.625H17.1063L10.5001 5.25L3.89381 16.625ZM11.1235 15.4984C11.2912 15.3307 11.3751 15.1229 11.3751 14.875C11.3751 14.6271 11.2912 14.4193 11.1235 14.2516C10.9558 14.0839 10.748 14 10.5001 14C10.2521 14 10.0443 14.0839 9.87662 14.2516C9.70891 14.4193 9.62506 14.6271 9.62506 14.875C9.62506 15.1229 9.70891 15.3307 9.87662 15.4984C10.0443 15.6661 10.2521 15.75 10.5001 15.75C10.748 15.75 10.9558 15.6661 11.1235 15.4984ZM11.1235 12.8734C11.2912 12.7057 11.3751 12.4979 11.3751 12.25V9.625C11.3751 9.37708 11.2912 9.16927 11.1235 9.00156C10.9558 8.83385 10.748 8.75 10.5001 8.75C10.2521 8.75 10.0443 8.83385 9.87662 9.00156C9.70891 9.16927 9.62506 9.37708 9.62506 9.625V12.25C9.62506 12.4979 9.70891 12.7057 9.87662 12.8734C10.0443 13.0411 10.2521 13.125 10.5001 13.125C10.748 13.125 10.9558 13.0411 11.1235 12.8734Z" fill="#F04438" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-semibold text-gray-800 leading-tight mb-4">
+                  {deleteErrorModal.title}
+                </h3>
+                <p className="text-lg text-gray-500 leading-relaxed whitespace-pre-line mb-8">
+                  {deleteErrorModal.message}
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setDeleteErrorModal(null)}
+                    className="px-6 py-4 bg-gray-100 text-gray-700 rounded-3xl hover:bg-gray-200 transition-colors text-lg font-medium"
+                  >
+                    เข้าใจแล้ว
+                  </button>
+                </div>
               </div>
             </div>
           </div>

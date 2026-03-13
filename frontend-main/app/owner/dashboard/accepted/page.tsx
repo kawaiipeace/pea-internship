@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -12,11 +12,12 @@ import {
 import {
   applicationApi,
   applicationStatusActionsApi,
+  ownerStudentsApi,
   type ApplicationStatusAction,
   type AppStatusEnum,
   type MyApplicationData,
-} from "../../../services/api";
-import VideoLoading from "../../../components/ui/VideoLoading";
+} from "@/services/api";
+import VideoLoading from "@/components/ui/VideoLoading";
 import {
   highSchools,
   vocationalSchools,
@@ -489,6 +490,7 @@ function AcceptedStatusPage() {
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
   ) => {
     switch (status) {
       case "COMPLETE":
@@ -497,6 +499,12 @@ function AcceptedStatusPage() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (!isActive) {
+          return {
+            label: "ยกเลิกฝึกงาน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         if (statusNote) {
           return {
             label: "ไม่ผ่าน",
@@ -2132,45 +2140,28 @@ function AcceptedStatusPage() {
                 ยกเลิก
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (cancelReason.trim() && selectedApplication) {
-                    const existingCancelled = (() => {
-                      try {
-                        const stored =
-                          localStorage.getItem("pea_cancelled_apps");
-                        return stored ? JSON.parse(stored) : [];
-                      } catch {
-                        return [];
-                      }
-                    })();
-                    const today = new Date();
-                    const buddhistYear = today.getFullYear() + 543;
-                    const month = String(today.getMonth() + 1).padStart(2, "0");
-                    const day = String(today.getDate()).padStart(2, "0");
-                    const cancelDate = `${buddhistYear}-${month}-${day}`;
-                    if (
-                      !existingCancelled.find(
-                        (c: { id: string }) => c.id === selectedApplication.id,
-                      )
-                    ) {
-                      existingCancelled.push({
-                        id: selectedApplication.id,
-                        reason: cancelReason,
-                        cancelledBy: "เจ้าของหน่วยงาน",
-                        cancelledDate: cancelDate,
-                      });
-                      localStorage.setItem(
-                        "pea_cancelled_apps",
-                        JSON.stringify(existingCancelled),
+                    try {
+                      await ownerStudentsApi.updateInternshipStatus(
+                        selectedApplication.internId,
+                        "CANCEL",
+                        cancelReason
                       );
-                      setCancelledAppsData(existingCancelled);
+                      setShowCancelModal(false);
+                      setCancelReason("");
+                      setShowCancelSuccess(true);
+                      setTimeout(() => {
+                        setShowCancelSuccess(false);
+                      }, 500);
+                      const apps = await fetchAllApplications(
+                        positionId ? Number(positionId) : undefined
+                      );
+                      setAllApps(apps);
+                    } catch (err) {
+                      console.error("Cancel internship failed:", err);
+                      alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
                     }
-                    setShowCancelModal(false);
-                    setCancelReason("");
-                    setShowCancelSuccess(true);
-                    setTimeout(() => {
-                      setShowCancelSuccess(false);
-                    }, 500);
                   }
                 }}
                 disabled={!cancelReason.trim()}
@@ -2282,6 +2273,7 @@ function AcceptedStatusPage() {
                     const statusInfo = getHistoryStatusInfo(
                       item.applicationStatus,
                       item.statusNote,
+                      item.isActive,
                     );
                     return (
                       <div key={item.applicationId}>

@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { NavbarIntern } from "../../components";
-import VideoLoading from "../../components/ui/VideoLoading";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
 import { Suspense } from "react";
 import {
   applicationApi,
   positionApi,
   positionToJob,
-} from "../../services/api";
-import type { AppStatusEnum } from "../../services/api";
-import { APP_STATUS_TO_STEP } from "../../services/api";
+} from "@/services/api";
+import type { AppStatusEnum } from "@/services/api";
+import { APP_STATUS_TO_STEP } from "@/services/api";
 
 interface JobDetailData {
   title: string;
@@ -51,6 +51,7 @@ function mapBackendStatusToDisplay(app: { applicationStatus: AppStatusEnum; isAc
       if (app.infoEndDate && new Date(app.infoEndDate) > new Date()) return "in-training";
       return "completed";
     case "CANCEL":
+      if (!app.isActive) return "intern-cancelled";
       return "rejected";
     case "ABORT":
       return "cancelled";
@@ -175,6 +176,14 @@ function JobDetailContent() {
           <div className="flex flex-wrap gap-2">
             <button className="px-3 py-2 bg-gray-100 text-gray-500 rounded-full font-bold text-sm  transition-transform ">
               ยกเลิกการสมัคร
+            </button>
+          </div>
+        );
+      case "intern-cancelled":
+        return (
+          <div className="flex flex-wrap gap-2">
+            <button className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm  transition-transform ">
+              ยกเลิกฝึกงาน
             </button>
           </div>
         );

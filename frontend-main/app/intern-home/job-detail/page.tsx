@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../../components";
-import Toast from "../../components/ui/Toast";
-import VideoLoading from "../../components/ui/VideoLoading";
-import { applicationApi, favoriteApi, jobIdToPositionId } from "../../services/api";
+import { NavbarIntern } from "@/components";
+import Toast from "@/components/ui/Toast";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { applicationApi, favoriteApi, jobIdToPositionId } from "@/services/api";
 
 // Helper function to format date to Thai format
 const formatDateToThai = (dateString: string): string => {

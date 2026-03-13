@@ -3,10 +3,10 @@
 import { useState, useRef, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import { applicationApi, MyApplicationData, APP_STATUS_TO_STEP, positionApi, positionToJob } from "../services/api";
-import type { Job } from "../components/ui/JobCard";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { applicationApi, MyApplicationData, APP_STATUS_TO_STEP, positionApi, positionToJob } from "@/services/api";
+import type { Job } from "@/components/ui/JobCard";
 
 type ApplicationStep =
   | "รอยื่นเอกสาร"

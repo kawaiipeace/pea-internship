@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import AdminNavbar from "../../components/ui/AdminNavbar";
+import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
   applicationApi,
   AllStudentsHistoryItem,
-} from "../../services/api";
+} from "@/services/api";
 
 type AdminDocStatus = "pending" | "approved" | "rejected";
 

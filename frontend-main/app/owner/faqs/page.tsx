@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import OwnerNavbar from "../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 
 // FAQ Item Component
 interface FAQItemProps {

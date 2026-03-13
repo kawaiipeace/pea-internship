@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "../components/ui/Navbar";
-import { authApi, RegisterInternData, institutionApi, Institution } from "../services/api";
+import Navbar from "@/components/ui/Navbar";
+import { authApi, RegisterInternData, institutionApi, Institution } from "@/services/api";
 
 interface FormData {
   firstName: string;

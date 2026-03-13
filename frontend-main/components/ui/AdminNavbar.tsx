@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { authApi, authStorage, notificationApi, type NotificationItem } from "../../services/api";
+import { authApi, authStorage, notificationApi, type NotificationItem } from "@/services/api";
 
 // Helper: relative time in Thai
 function relativeTime(dateString: string): string {

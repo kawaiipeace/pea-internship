@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
-import OwnerNavbar from "../../components/ui/OwnerNavbar";
-import VideoLoading from "../../components/ui/VideoLoading";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
 import {
   positionApi,
   userApi,
@@ -10,8 +10,8 @@ import {
   applicationApi,
   AllStudentsHistoryItem,
   AppStatusEnum,
-} from "../../services/api";
-import { AnnouncementStats } from "../../types/announcement";
+} from "@/services/api";
+import { AnnouncementStats } from "@/types/announcement";
 
 // Thai month names (short)
 const thaiMonthsShort = [
