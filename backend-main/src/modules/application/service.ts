@@ -538,28 +538,6 @@ export class ApplicationService {
     docTypeId: 1 | 2 | 3,
     file: File
   ) {
-    const formatDateYYYYMMDD = (date = new Date()) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}${m}${d}`;
-    };
-
-    const normalizeName = (name: string) => name.trim().replace(/\s+/g, "_");
-
-    const docTypeLabel = (id: number) => {
-      switch (id) {
-        case 1:
-          return "TRANSCRIPT";
-        case 2:
-          return "RESUME";
-        case 3:
-          return "PORTFOLIO";
-        default:
-          return "DOCUMENT";
-      }
-    };
-
     return await db.transaction(async (tx) => {
       const [app] = await tx
         .select({
@@ -615,13 +593,7 @@ export class ApplicationService {
         throw new BadRequestError("ข้อมูลชื่อผู้ใช้งานไม่ครบ");
       }
 
-      const ext = file.name.split(".").pop() || "bin";
-      const fname = normalizeName(student.fname);
-      const lname = normalizeName(student.lname);
-      const docType = docTypeLabel(docTypeId);
-      const dateStr = formatDateYYYYMMDD();
-
-      const filename = `${fname}_${lname}_${docType}_${dateStr}.${ext}`;
+      const filename = file.name.trim();
       const s3Key = `applications/${applicationId}/${docTypeId}/${filename}`;
 
       const arrayBuffer = await file.arrayBuffer();
@@ -937,15 +909,6 @@ export class ApplicationService {
   }
 
   async uploadRequestLetter(userId: string, applicationId: number, file: File) {
-    const formatDateYYYYMMDD = (date = new Date()) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}${m}${d}`;
-    };
-
-    const normalizeName = (name: string) => name.trim().replace(/\s+/g, "_");
-
     return await db.transaction(async (tx) => {
       const [app] = await tx
         .select({
@@ -976,12 +939,7 @@ export class ApplicationService {
         throw new BadRequestError("ข้อมูลชื่อผู้ใช้งานไม่ครบ");
       }
 
-      const ext = file.name.split(".").pop() || "bin";
-      const fname = normalizeName(student.fname);
-      const lname = normalizeName(student.lname);
-      const dateStr = formatDateYYYYMMDD();
-
-      const filename = `${fname}_${lname}_REQUEST_LETTER_${dateStr}.${ext}`;
+      const filename = file.name.trim();
       const s3Key = `applications/${applicationId}/4/${filename}`;
 
       const arrayBuffer = await file.arrayBuffer();
