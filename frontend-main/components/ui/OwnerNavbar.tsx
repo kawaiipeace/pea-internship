@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { authApi, authStorage, userApi, notificationApi, type NotificationItem } from "@/services/api";
+import Toast from "@/components/ui/Toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 // Helper: relative time in Thai
 function relativeTime(dateString: string): string {
@@ -30,6 +32,12 @@ export default function OwnerNavbar() {
   const [displayName, setDisplayName] = useState("");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isClearAllConfirm, setIsClearAllConfirm] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -120,6 +128,85 @@ export default function OwnerNavbar() {
     }
     setShowNotifications(false);
     router.push("/owner/announcements");
+  };
+
+  const handleDeleteNotification = async () => {
+    if (pendingDeleteId === null) return;
+
+    try {
+      await notificationApi.deleteNotification(pendingDeleteId);
+      setNotifications((prev) => {
+        const removed = prev.find((n) => n.id === pendingDeleteId);
+        if (removed && !removed.isRead) {
+          setUnreadCount((count) => Math.max(0, count - 1));
+        }
+        return prev.filter((n) => n.id !== pendingDeleteId);
+      });
+      setToastMessage("ลบการแจ้งเตือนสำเร็จ");
+      setToastType("success");
+      setShowToast(true);
+    } catch (err) {
+      setToastMessage("ลบการแจ้งเตือนไม่สำเร็จ");
+      setToastType("error");
+      setShowToast(true);
+    } finally {
+      setShowDeleteConfirm(false);
+      setPendingDeleteId(null);
+    }
+  };
+
+  const requestDeleteNotification = (notificationId: number) => {
+    setIsClearAllConfirm(false);
+    setPendingDeleteId(notificationId);
+    setShowDeleteConfirm(true);
+  };
+
+  const requestClearAllNotifications = () => {
+    if (notifications.length === 0) return;
+    setIsClearAllConfirm(true);
+    setPendingDeleteId(null);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleClearAllNotifications = async () => {
+    const ids = notifications.map((n) => n.id);
+    if (ids.length === 0) {
+      setShowDeleteConfirm(false);
+      setIsClearAllConfirm(false);
+      return;
+    }
+
+    const results = await Promise.allSettled(
+      ids.map(async (id) => {
+        await notificationApi.deleteNotification(id);
+        return id;
+      })
+    );
+
+    const failedIds = results
+      .map((result, index) => (result.status === "rejected" ? ids[index] : null))
+      .filter((id): id is number => id !== null);
+
+    const successCount = ids.length - failedIds.length;
+
+    setNotifications((prev) => prev.filter((n) => failedIds.includes(n.id)));
+    setUnreadCount((prev) => Math.max(0, prev - successCount));
+
+    if (failedIds.length === 0) {
+      setToastMessage("ลบการแจ้งเตือนทั้งหมดสำเร็จ");
+      setToastType("success");
+    } else if (successCount > 0) {
+      setToastMessage("ลบบางรายการสำเร็จ แต่บางรายการไม่สำเร็จ");
+      setToastType("info");
+    } else {
+      setToastMessage("ลบการแจ้งเตือนทั้งหมดไม่สำเร็จ");
+      setToastType("error");
+    }
+
+    setShowToast(true);
+    setShowDeleteConfirm(false);
+    setIsClearAllConfirm(false);
+    setPendingDeleteId(null);
   };
 
   return (
@@ -218,11 +305,21 @@ export default function OwnerNavbar() {
                     <span className="font-semibold text-gray-900">
                       การแจ้งเตือน
                     </span>
-                    {unreadCount > 0 && (
-                      <span className="ml-auto bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    )}
+                    <div className="ml-auto flex items-center gap-2">
+                      {notifications.length > 0 && (
+                        <button
+                          onClick={requestClearAllNotifications}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          ลบทั้งหมด
+                        </button>
+                      )}
+                      {unreadCount > 0 && (
+                        <span className="bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Notification Items */}
@@ -236,9 +333,19 @@ export default function OwnerNavbar() {
                         <div
                           key={notif.id}
                           onClick={() => handleNotificationClick(notif)}
-                          className={`px-4 py-3 hover:bg-primary-50 cursor-pointer ${!notif.isRead ? "bg-primary-50/50" : ""
+                          className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${!notif.isRead ? "bg-primary-50/50" : ""
                             }`}
                         >
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              requestDeleteNotification(notif.id);
+                            }}
+                            aria-label="ลบการแจ้งเตือน"
+                            className="absolute right-3 top-3 h-5 w-5 rounded-full text-xs font-semibold text-gray-600 hover:bg-red-50 hover:text-red-600"
+                          >
+                            X
+                          </button>
                           <p className="text-gray-900 text-sm font-medium">
                             {notif.title}
                           </p>
@@ -345,6 +452,31 @@ export default function OwnerNavbar() {
           </div>
         </div>
       </div>
+
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        type={toastType}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title={isClearAllConfirm ? "ยืนยันการลบทั้งหมด" : "ยืนยันการลบการแจ้งเตือน"}
+        message={
+          isClearAllConfirm
+            ? "คุณต้องการลบการแจ้งเตือนทั้งหมดใช่หรือไม่"
+            : "คุณต้องการลบการแจ้งเตือนนี้ใช่หรือไม่"
+        }
+        confirmText={isClearAllConfirm ? "Clear all" : "ลบ"}
+        cancelText="ยกเลิก"
+        onConfirm={isClearAllConfirm ? handleClearAllNotifications : handleDeleteNotification}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setIsClearAllConfirm(false);
+          setPendingDeleteId(null);
+        }}
+      />
     </nav>
   );
 }

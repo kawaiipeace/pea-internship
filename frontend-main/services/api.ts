@@ -1192,6 +1192,24 @@ export interface UploadDocResponse {
   applicationStatus: string;
 }
 
+const getFilenameFromContentDisposition = (
+  contentDisposition?: string,
+): string | null => {
+  if (!contentDisposition) return null;
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+  return asciiMatch?.[1] ?? null;
+};
+
 // Application API functions
 export const applicationApi = {
   // ดึงประวัติการสมัครทั้งหมดของฉัน
@@ -1260,7 +1278,10 @@ export const applicationApi = {
     });
     const url = window.URL.createObjectURL(blob);
     if (download) {
-      const filename = key.split("/").pop() || "document";
+      const filename =
+        getFilenameFromContentDisposition(response.headers["content-disposition"]) ||
+        key.split("/").pop() ||
+        "document";
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -1458,6 +1479,12 @@ export const notificationApi = {
   // อ่านทั้งหมด
   markAllAsRead: async (): Promise<{ success: boolean }> => {
     const response = await api.put<{ success: boolean }>("/notifications/read-all");
+    return response.data;
+  },
+
+  // ลบ notification ของตัวเอง
+  deleteNotification: async (id: number): Promise<{ success: boolean; message?: string }> => {
+    const response = await api.delete<{ success: boolean; message?: string }>(`/notifications/delete/${id}`);
     return response.data;
   },
 };
