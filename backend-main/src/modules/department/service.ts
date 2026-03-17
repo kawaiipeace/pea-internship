@@ -49,7 +49,7 @@ export class DepartmentService {
       .where(whereClause)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(departments.deptSap), desc(departments.id));
+      .orderBy(desc(departments.deptSap), desc(departments.deptSap));
 
     const [totalResult] = await db
       .select({ count: count() })
@@ -107,7 +107,7 @@ export class DepartmentService {
       const [updatedDept] = await db
         .update(departments)
         .set(payload)
-        .where(eq(departments.id, id))
+        .where(eq(departments.deptSap, id))
         .returning();
 
       if (!updatedDept) {
@@ -130,7 +130,7 @@ export class DepartmentService {
     try {
       const [deletedDept] = await db
         .delete(departments)
-        .where(eq(departments.id, id))
+        .where(eq(departments.deptSap, id))
         .returning();
 
       if (!deletedDept) {

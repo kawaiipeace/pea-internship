@@ -249,7 +249,9 @@ export const departments = pgTable(
       columns: [table.officeId],
       foreignColumns: [offices.id],
       name: "departments_office_id_fkey",
-    }).onUpdate("cascade").onDelete("restrict"),
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
 
     foreignKey({
       columns: [table.deptUpper],
@@ -545,12 +547,16 @@ export const internshipPositions = pgTable(
       columns: [table.officeId],
       foreignColumns: [offices.id],
       name: "internship_positions_office_id_fkey",
-    }).onUpdate("cascade").onDelete("restrict"),
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
     foreignKey({
       columns: [table.departmentId],
       foreignColumns: [departments.deptSap],
       name: "internship_positions_department_id_fkey",
-    }).onUpdate("cascade").onDelete("restrict"),
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
   ]
 );
 
