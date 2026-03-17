@@ -251,7 +251,6 @@ export interface UpdateUserData {
 // ข้อมูลสำหรับอัปเดต Student Profile
 export interface UpdateStudentProfileData {
   hours?: number;
-  institutionId?: number;
   faculty?: string;
   major?: string;
   studentNote?: string;
@@ -1193,6 +1192,24 @@ export interface UploadDocResponse {
   applicationStatus: string;
 }
 
+const getFilenameFromContentDisposition = (
+  contentDisposition?: string,
+): string | null => {
+  if (!contentDisposition) return null;
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+  return asciiMatch?.[1] ?? null;
+};
+
 // Application API functions
 export const applicationApi = {
   // ดึงประวัติการสมัครทั้งหมดของฉัน
@@ -1261,7 +1278,10 @@ export const applicationApi = {
     });
     const url = window.URL.createObjectURL(blob);
     if (download) {
-      const filename = key.split("/").pop() || "document";
+      const filename =
+        getFilenameFromContentDisposition(response.headers["content-disposition"]) ||
+        key.split("/").pop() ||
+        "document";
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -1339,6 +1359,15 @@ export const applicationApi = {
     const response = await api.get<MyApplicationData[]>(`/applications/history/${studentUserId}`, { params });
     return response.data;
   },
+
+  // นักศึกษาแก้ไข hours / startDate / endDate ของใบสมัคร
+  updateApplicationInformation: async (
+    applicationId: number,
+    data: { hours?: number | null; startDate?: string | null; endDate?: string | null }
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.put<{ success: boolean; message: string }>(`/applications/${applicationId}/information`, data);
+    return response.data;
+  },
 };
 
 // Interceptor สำหรับแนบ token ในทุก request
@@ -1366,10 +1395,14 @@ api.interceptors.response.use(
         // ไม่ redirect ถ้าอยู่หน้า public ("/", "/pea-info", "/faqs", "/jobs")
         const publicPaths = ["/", "/pea-info", "/faqs", "/jobs"];
         const currentPath = window.location.pathname;
+        const isAuthPage = currentPath.startsWith("/login") || currentPath.startsWith("/register");
         const isPublicPage = publicPaths.some(p => currentPath === p || currentPath.startsWith("/jobs/"));
 
-        if (!isPublicPage) {
-          window.location.href = "/login/intern";
+        if (!isPublicPage && !isAuthPage) {
+          const loginUrl = new URL("/login/intern", window.location.origin);
+          loginUrl.searchParams.set("forceLogin", "1");
+          loginUrl.searchParams.set("callbackUrl", currentPath);
+          window.location.replace(loginUrl.toString());
         }
       }
     }
@@ -1450,6 +1483,12 @@ export const notificationApi = {
   // อ่านทั้งหมด
   markAllAsRead: async (): Promise<{ success: boolean }> => {
     const response = await api.put<{ success: boolean }>("/notifications/read-all");
+    return response.data;
+  },
+
+  // ลบ notification ของตัวเอง
+  deleteNotification: async (id: number): Promise<{ success: boolean; message?: string }> => {
+    const response = await api.delete<{ success: boolean; message?: string }>(`/notifications/delete/${id}`);
     return response.data;
   },
 };

@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import SearchSection from "../components/ui/SearchSection";
-import JobCard, { Job } from "../components/ui/JobCard";
-import JobDetailPanel from "../components/ui/JobDetailPanel";
-import Pagination from "../components/ui/Pagination";
-import Toast from "../components/ui/Toast";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import SearchSection from "@/components/ui/SearchSection";
+import JobCard, { Job } from "@/components/ui/JobCard";
+import JobDetailPanel from "@/components/ui/JobDetailPanel";
+import Pagination from "@/components/ui/Pagination";
+import Toast from "@/components/ui/Toast";
 import {
   positionApi,
   positionToJobWithStaff,
@@ -18,7 +18,7 @@ import {
   jobIdToPositionId,
   positionIdToJobId,
   applicationApi,
-} from "../services/api";
+} from "@/services/api";
 
 export default function InternHomePage() {
   const router = useRouter();

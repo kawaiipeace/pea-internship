@@ -3,12 +3,13 @@ import { application } from "./application";
 import { applicationStatusActionsModule } from "./application_status_actions";
 import { ApplicationDocuments } from "./application-documents";
 import { auth } from "./auth";
+import { checkTime } from "./check-time";
 import { department } from "./department";
 import { favorite } from "./favorite";
 import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
-import { notification } from "./notification";
 import { ownerStudents } from "./manualEndInternships";
+import { notification } from "./notification";
 import { position } from "./positions";
 import { role } from "./role";
 import { staffLogs } from "./staff-logs";
@@ -28,5 +29,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(ApplicationDocuments)
   .use(ownerStudents)
   .use(staffLogs)
+  .use(checkTime)
   .use(applicationStatusActionsModule);
 export default modules;

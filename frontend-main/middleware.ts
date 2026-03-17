@@ -41,7 +41,8 @@ function getHomeByRole(role: string | undefined): string {
 }
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+  const forceLogin = searchParams.get("forceLogin") === "1";
 
   // ดึง session token จาก Better Auth cookie
   const sessionToken = request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value;
@@ -52,8 +53,12 @@ export function middleware(request: NextRequest) {
   // ดึง role ของ user จาก cookie
   const userRole = request.cookies.get("user_role")?.value; // "intern" | "owner" | "admin"
 
+  // ถือว่า auth จาก Better Auth ได้ต่อเมื่อมี role cookie ด้วย
+  // เพื่อกันกรณี session cookie ค้างหลัง backend restart แต่ role ถูกลบแล้ว
+  const hasBetterAuthSession = !!sessionToken && !!userRole;
+
   // ตรวจสอบว่า user login แล้วหรือยัง
-  const isAuthenticated = !!sessionToken || !!legacyToken;
+  const isAuthenticated = hasBetterAuthSession || !!legacyToken;
 
   // ตรวจสอบประเภท route
   const isInternRoute = internRoutes.some(
@@ -79,6 +84,11 @@ export function middleware(request: NextRequest) {
 
   // ถ้าเป็น OAuth callback → อนุญาตเสมอ
   if (isOAuthCallback) {
+    return NextResponse.next();
+  }
+
+  // ถ้า force login มา ให้เข้า login page ได้ทันที (กัน loop เด้งกลับ home)
+  if (forceLogin && isAuthRoute) {
     return NextResponse.next();
   }
 
@@ -120,7 +130,7 @@ export function middleware(request: NextRequest) {
   }
 
   // ===== 3. ถ้า login แล้วและพยายามเข้า auth route → redirect ตาม role =====
-  if (isAuthenticated && isAuthRoute) {
+  if (isAuthenticated && isAuthRoute && !forceLogin) {
     return NextResponse.redirect(new URL(getHomeByRole(userRole), request.url));
   }
 

@@ -4,45 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { authApi, authStorage } from "../../services/api";
-
-// Types for Notification System - Ready for API integration
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  createdAt: Date;
-  isRead: boolean;
-  type: "status_update" | "new_position" | "reminder" | "system";
-  link?: string;
-}
-
-// Mock notifications data - Replace with API call in production
-const getMockNotifications = (): Notification[] => [
-  {
-    id: "1",
-    title: "อัปเดตสถานะ",
-    message: "มีการอัปเดตสถานะการสมัครของคุณ",
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    isRead: false,
-    type: "status_update",
-    link: "/application-status",
-  },
-  {
-    id: "2",
-    title: "ตำแหน่งใหม่",
-    message: "ตำแหน่งใหม่ที่คุณอาจจะสนใจ",
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    isRead: false,
-    type: "new_position",
-    link: "/intern-home",
-  },
-];
+import { authApi, authStorage, notificationApi, type NotificationItem } from "@/services/api";
+import Toast from "@/components/ui/Toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
 
 // Helper function to format relative time
-const formatRelativeTime = (date: Date): string => {
+const formatRelativeTime = (date: string | Date): string => {
+  const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -51,7 +22,7 @@ const formatRelativeTime = (date: Date): string => {
   if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`;
   if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`;
   if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
-  return date.toLocaleDateString("th-TH");
+  return d.toLocaleDateString("th-TH");
 };
 
 interface NavbarInternProps {
@@ -73,111 +44,152 @@ export default function NavbarIntern({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  // Notification state - Ready for API integration
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Notification state
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isClearAllConfirm, setIsClearAllConfirm] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
-  // Load notifications from localStorage or API
-  const loadNotifications = useCallback(() => {
-    // Check localStorage for read notification IDs
-    const readIdsJson = localStorage.getItem('readNotificationIds');
-    const readIds: string[] = readIdsJson ? JSON.parse(readIdsJson) : [];
-
-    // Get mock data and merge with read state from localStorage
-    const mockData = getMockNotifications();
-    const notificationsWithReadState = mockData.map(n => ({
-      ...n,
-      isRead: readIds.includes(n.id)
-    }));
-
-    setNotifications(notificationsWithReadState);
-    setUnreadCount(notificationsWithReadState.filter(n => !n.isRead).length);
-  }, []);
-
-  // Mark all notifications as read
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => {
-      const readIds = prev.map(n => n.id);
-      localStorage.setItem('readNotificationIds', JSON.stringify(readIds));
-      return prev.map(n => ({ ...n, isRead: true }));
-    });
-    setUnreadCount(0);
-  }, []);
-
-  // Mark single notification as read
-  const markAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => {
-      const notification = prev.find(n => n.id === notificationId);
-      if (!notification || notification.isRead) return prev;
-
-      const readIdsJson = localStorage.getItem('readNotificationIds');
-      const readIds: string[] = readIdsJson ? JSON.parse(readIdsJson) : [];
-      if (!readIds.includes(notificationId)) {
-        readIds.push(notificationId);
-        localStorage.setItem('readNotificationIds', JSON.stringify(readIds));
-      }
-
-      return prev.map(n =>
-        n.id === notificationId ? { ...n, isRead: true } : n
-      );
-    });
-    setUnreadCount(prev => Math.max(0, prev - 1));
-  }, []);
-
-  // Add new notification (for real-time updates via WebSocket in production)
-  const addNotification = useCallback((notification: Notification) => {
-    setNotifications((prev) => {
-      const updated = [notification, ...prev];
-      localStorage.setItem("notifications", JSON.stringify(updated));
-      return updated;
-    });
-    if (!notification.isRead) {
-      setUnreadCount((prev) => prev + 1);
+  // Load notifications from API
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await notificationApi.getMyNotifications();
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.isRead).length);
+    } catch (error) {
+      console.error("Failed to load notifications:", error);
     }
   }, []);
 
-  // Load notifications on mount
+  // Mark all notifications as read
+  const markAllAsRead = useCallback(async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
+  }, []);
+
+  // Mark single notification as read
+  const markAsRead = useCallback(async (notificationId: number) => {
+    try {
+      await notificationApi.markAsRead(notificationId, true);
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, isRead: true } : n
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  }, []);
+
+  // Delete single notification
+  const deleteNotification = useCallback(async () => {
+    if (pendingDeleteId === null) return;
+
+    try {
+      await notificationApi.deleteNotification(pendingDeleteId);
+      setNotifications((prev) => {
+        const removed = prev.find((n) => n.id === pendingDeleteId);
+        if (removed && !removed.isRead) {
+          setUnreadCount((count) => Math.max(0, count - 1));
+        }
+        return prev.filter((n) => n.id !== pendingDeleteId);
+      });
+      setToastMessage("ลบการแจ้งเตือนสำเร็จ");
+      setToastType("success");
+      setShowToast(true);
+    } catch (error) {
+      setToastMessage("ลบการแจ้งเตือนไม่สำเร็จ");
+      setToastType("error");
+      setShowToast(true);
+    } finally {
+      setShowDeleteConfirm(false);
+      setPendingDeleteId(null);
+    }
+  }, [pendingDeleteId]);
+
+  const requestDeleteNotification = useCallback((notificationId: number) => {
+    setIsClearAllConfirm(false);
+    setPendingDeleteId(notificationId);
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const requestClearAllNotifications = useCallback(() => {
+    if (notifications.length === 0) return;
+    setIsClearAllConfirm(true);
+    setPendingDeleteId(null);
+    setShowDeleteConfirm(true);
+  }, [notifications.length]);
+
+  const clearAllNotifications = useCallback(async () => {
+    const ids = notifications.map((n) => n.id);
+    if (ids.length === 0) {
+      setShowDeleteConfirm(false);
+      setIsClearAllConfirm(false);
+      return;
+    }
+
+    const results = await Promise.allSettled(
+      ids.map(async (id) => {
+        await notificationApi.deleteNotification(id);
+        return id;
+      })
+    );
+
+    const failedIds = results
+      .map((result, index) => (result.status === "rejected" ? ids[index] : null))
+      .filter((id): id is number => id !== null);
+
+    const successCount = ids.length - failedIds.length;
+
+    setNotifications((prev) => prev.filter((n) => failedIds.includes(n.id)));
+    setUnreadCount((prev) => Math.max(0, prev - successCount));
+
+    if (failedIds.length === 0) {
+      setToastMessage("ลบการแจ้งเตือนทั้งหมดสำเร็จ");
+      setToastType("success");
+    } else if (successCount > 0) {
+      setToastMessage("ลบบางรายการสำเร็จ แต่บางรายการไม่สำเร็จ");
+      setToastType("info");
+    } else {
+      setToastMessage("ลบการแจ้งเตือนทั้งหมดไม่สำเร็จ");
+      setToastType("error");
+    }
+
+    setShowToast(true);
+    setShowDeleteConfirm(false);
+    setIsClearAllConfirm(false);
+    setPendingDeleteId(null);
+  }, [notifications]);
+
+  // Load notifications on mount and poll every 30 seconds
   useEffect(() => {
     loadNotifications();
 
-    // Listen for notification updates from other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "notifications") {
-        loadNotifications();
-      }
-    };
-
-    // Listen for custom notification events (for same-tab updates)
-    const handleNewNotification = (e: CustomEvent<Notification>) => {
-      addNotification(e.detail);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener(
-      "newNotification",
-      handleNewNotification as EventListener,
-    );
+    const interval = setInterval(loadNotifications, 30000);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener(
-        "newNotification",
-        handleNewNotification as EventListener,
-      );
+      clearInterval(interval);
     };
-  }, [loadNotifications, addNotification]);
+  }, [loadNotifications]);
 
-  // Toggle notification panel and mark as read
+  // Toggle notification panel
   const handleOpenNotifications = useCallback(
     (isMobile: boolean) => {
       if (isMobile) {
-        // Toggle for mobile
         setIsMobileNotificationOpen(prev => !prev);
       } else {
-        // Toggle for desktop
         setIsNotificationOpen(prev => !prev);
       }
-      // Mark all as read when opening (not closing)
       if (unreadCount > 0) {
         markAllAsRead();
       }
@@ -369,10 +381,18 @@ export default function NavbarIntern({
                       การแจ้งเตือน
                     </span>
                     {notifications.length > 0 && (
+                      <button
+                        onClick={requestClearAllNotifications}
+                        className="ml-auto text-xs text-red-600 hover:text-red-700"
+                      >
+                        ลบทั้งหมด
+                      </button>
+                    )}
+                    {/* {notifications.length > 0 && (
                       <span className="ml-auto bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
                         {notifications.length}
                       </span>
-                    )}
+                    )} */}
                   </div>
 
                   {/* Notification Items */}
@@ -383,19 +403,38 @@ export default function NavbarIntern({
                           key={notification.id}
                           onClick={() => {
                             markAsRead(notification.id);
-                            if (notification.link) {
-                              router.push(notification.link);
-                            }
                             setIsNotificationOpen(false);
+                            router.push("/application-status");
                           }}
-                          className={`px-4 py-3 hover:bg-primary-50 cursor-pointer ${!notification.isRead ? 'bg-primary-50/50' : ''}`}
+                          className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${!notification.isRead ? 'bg-primary-50/50' : ''}`}
                         >
-                          <p className="text-gray-900 text-sm">
-                            {notification.message}
-                          </p>
-                          <p className="text-gray-500 text-xs mt-1">
-                            {formatRelativeTime(notification.createdAt)}
-                          </p>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              requestDeleteNotification(notification.id);
+                            }}
+                            aria-label="ลบการแจ้งเตือน"
+                            className="absolute right-3 top-3 h-5 w-5 rounded-full text-xs font-semibold text-gray-600 hover:bg-red-50 hover:text-red-600"
+                          >
+                            X
+                          </button>
+                          <div className="flex items-start gap-2">
+                            <NotificationStatusIcon
+                              tone={detectNotificationTone(notification.title, notification.message)}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <div>
+                              <p className="text-gray-900 text-sm font-medium">
+                                {notification.title}
+                              </p>
+                              <p className="text-gray-600 text-sm mt-0.5">
+                                {notification.message}
+                              </p>
+                              <p className="text-gray-500 text-xs mt-1">
+                                {formatRelativeTime(notification.createdAt)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -1061,6 +1100,14 @@ export default function NavbarIntern({
                 การแจ้งเตือน
               </span>
               {notifications.length > 0 && (
+                <button
+                  onClick={requestClearAllNotifications}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  Clear all
+                </button>
+              )}
+              {notifications.length > 0 && (
                 <span className="bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                   {notifications.length}
                 </span>
@@ -1075,19 +1122,38 @@ export default function NavbarIntern({
                     key={notification.id}
                     onClick={() => {
                       markAsRead(notification.id);
-                      if (notification.link) {
-                        router.push(notification.link);
-                      }
                       setIsMobileNotificationOpen(false);
+                      router.push("/application-status");
                     }}
-                    className={`rounded-lg px-4 py-3 cursor-pointer transition-colors ${!notification.isRead ? 'bg-primary-100 hover:bg-primary-150' : 'bg-primary-50 hover:bg-primary-100'}`}
+                    className={`relative rounded-lg px-4 py-3 pr-14 cursor-pointer transition-colors ${!notification.isRead ? 'bg-primary-100 hover:bg-primary-150' : 'bg-primary-50 hover:bg-primary-100'}`}
                   >
-                    <p className="text-gray-900 text-sm">
-                      {notification.message}
-                    </p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      {formatRelativeTime(notification.createdAt)}
-                    </p>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        requestDeleteNotification(notification.id);
+                      }}
+                      aria-label="ลบการแจ้งเตือน"
+                      className="absolute right-3 top-3 h-5 w-5 rounded-full text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700"
+                    >
+                      X
+                    </button>
+                    <div className="flex items-start gap-2">
+                      <NotificationStatusIcon
+                        tone={detectNotificationTone(notification.title, notification.message)}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <div>
+                        <p className="text-gray-900 text-sm font-medium">
+                          {notification.title}
+                        </p>
+                        <p className="text-gray-600 text-sm mt-0.5">
+                          {notification.message}
+                        </p>
+                        <p className="text-gray-500 text-xs mt-1">
+                          {formatRelativeTime(notification.createdAt)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -1099,6 +1165,31 @@ export default function NavbarIntern({
           </div>
         </div>
       )}
+
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        type={toastType}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title={isClearAllConfirm ? "ยืนยันการลบทั้งหมด" : "ยืนยันการลบการแจ้งเตือน"}
+        message={
+          isClearAllConfirm
+            ? "คุณต้องการลบการแจ้งเตือนทั้งหมดใช่หรือไม่"
+            : "คุณต้องการลบการแจ้งเตือนนี้ใช่หรือไม่"
+        }
+        confirmText={isClearAllConfirm ? "Clear all" : "ลบ"}
+        cancelText="ยกเลิก"
+        onConfirm={isClearAllConfirm ? clearAllNotifications : deleteNotification}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setIsClearAllConfirm(false);
+          setPendingDeleteId(null);
+        }}
+      />
     </nav>
   );
 }

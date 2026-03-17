@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { authApi, authStorage } from "../../services/api";
+import { authApi, authStorage } from "@/services/api";
+import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
 
 // Helper: fetch Keycloak SSO URL and redirect
 const handleKeycloakRedirect = async () => {
@@ -170,20 +171,36 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                       {/* Notification Items */}
                       <div className="py-2">
                         <div className="px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors">
-                          <p className="text-sm text-gray-700">
-                            มีการอัปเดตสถานะการสมัครของคุณ
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            2 ชั่วโมงที่แล้ว
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <NotificationStatusIcon
+                              tone={detectNotificationTone("มีการอัปเดตสถานะการสมัครของคุณ", "2 ชั่วโมงที่แล้ว")}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <div>
+                              <p className="text-sm text-gray-700">
+                                มีการอัปเดตสถานะการสมัครของคุณ
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                2 ชั่วโมงที่แล้ว
+                              </p>
+                            </div>
+                          </div>
                         </div>
                         <div className="px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors">
-                          <p className="text-sm text-gray-700">
-                            ตำแหน่งใหม่ที่คุณอาจจะสนใจ
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            1 วันที่แล้ว
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <NotificationStatusIcon
+                              tone={detectNotificationTone("ตำแหน่งใหม่ที่คุณอาจจะสนใจ", "1 วันที่แล้ว")}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <div>
+                              <p className="text-sm text-gray-700">
+                                ตำแหน่งใหม่ที่คุณอาจจะสนใจ
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                1 วันที่แล้ว
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

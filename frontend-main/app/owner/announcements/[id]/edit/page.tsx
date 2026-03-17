@@ -3,14 +3,14 @@
 import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "../../../../components/ui/OwnerNavbar";
-import VideoLoading from "../../../../components/ui/VideoLoading";
-import ThaiDateInput from "../../../../components/ui/ThaiDateInput";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
+import ThaiDateInput from "@/components/ui/ThaiDateInput";
 import {
   AnnouncementFormErrors,
-} from "../../../../types/announcement";
+} from "@/types/announcement";
 import { relatedFieldOptions } from "../../../../data/mockAnnouncements";
-import { positionApi, positionToAnnouncement, UpdatePositionData, userApi, StaffUser } from "../../../../services/api";
+import { positionApi, positionToAnnouncement, UpdatePositionData, userApi, StaffUser } from "@/services/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +36,7 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
   const [formData, setFormData] = useState<EditFormData | null>(null);
+  const [acceptedCount, setAcceptedCount] = useState(0);
   const [errors, setErrors] = useState<AnnouncementFormErrors>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +80,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   // Edit confirmation modal
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
   const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
+  const [editErrorModal, setEditErrorModal] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
 
   // Figma: radio toggles for position count and apply period
   const [isUnlimitedCount, setIsUnlimitedCount] = useState(false);
@@ -254,6 +259,7 @@ export default function EditAnnouncementPage({ params }: PageProps) {
         const position = await positionApi.getPositionById(positionId);
         if (position) {
           const announcement = positionToAnnouncement(position);
+          setAcceptedCount(position.acceptedCount ?? 0);
 
           const formatDateForInput = (dateStr: string | null | undefined): string => {
             if (!dateStr) return "";
@@ -392,6 +398,11 @@ export default function EditAnnouncementPage({ params }: PageProps) {
       newErrors.maxApplicants = "กรุณาเลือกจำนวนผู้สมัครที่เปิดรับ";
     } else if (!isUnlimitedCount && (!formData.maxApplicants || formData.maxApplicants < 1)) {
       newErrors.maxApplicants = "ระบุจำนวนที่เปิดรับ";
+    } else if (
+      !isUnlimitedCount &&
+      formData.maxApplicants < acceptedCount
+    ) {
+      newErrors.maxApplicants = `จำนวนที่เปิดรับต้องไม่น้อยกว่าจำนวนนักศึกษาที่ตอบรับแล้ว (${acceptedCount} คน)`;
     }
     if (isNoTimeLimit === null) {
       newErrors.startDate = "กรุณาเลือกระยะเวลาที่เปิดรับสมัคร";
@@ -418,12 +429,20 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     }
     if (!formData.contactPhone.trim()) {
       newErrors.contactPhone = "ระบุเบอร์โทรกองงาน";
+    } else if (formData.contactPhone.replace(/\D/g, "").length !== 10) {
+      newErrors.contactPhone = "เบอร์โทรต้องมี 10 หลัก";
     }
     // Validate mentor selection
     const hasAtLeastOneMentor = mentors.some(m => m.staffProfileId !== null);
     if (!hasAtLeastOneMentor) {
       newErrors.mentorName = "กรุณาเลือกพี่เลี้ยงอย่างน้อย 1 คน";
     }
+    // Validate mentor phones (10 digits)
+    mentors.forEach((m, i) => {
+      if (m.staffProfileId !== null && m.phone.replace(/\D/g, "").length !== 10) {
+        newErrors[`mentorPhone_${i}` as keyof AnnouncementFormErrors] = "เบอร์โทรพี่เลี้ยงต้องมี 10 หลัก";
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -477,7 +496,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           await userApi.updateUser({ phoneNumber: formData.contactPhone });
         } catch (phoneErr) {
           console.warn("Failed to update phone number:", phoneErr);
-          alert("ไม่สามารถบันทึกเบอร์โทรได้ เบอร์โทรนี้อาจถูกใช้งานในระบบแล้ว");
+          setEditErrorModal({
+            title: "แก้ไขประกาศไม่สำเร็จ",
+            message: "ไม่สามารถบันทึกเบอร์โทรได้ เบอร์โทรนี้อาจถูกใช้งานในระบบแล้ว",
+          });
         }
       }
       await positionApi.updatePosition(positionId, updateData);
@@ -493,13 +515,27 @@ export default function EditAnnouncementPage({ params }: PageProps) {
       const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
 
       if (axiosError.response?.status === 404) {
-        alert("ไม่พบประกาศนี้ หรือคุณไม่มีสิทธิ์แก้ไข (ต้องอยู่ใน Department เดียวกัน)");
+        setEditErrorModal({
+          title: "แก้ไขประกาศไม่สำเร็จ",
+          message: "ไม่พบประกาศนี้ หรือคุณไม่มีสิทธิ์แก้ไขประกาศนี้",
+        });
       } else if (axiosError.response?.status === 401) {
-        alert("กรุณาเข้าสู่ระบบก่อนแก้ไขประกาศ");
+        setEditErrorModal({
+          title: "แก้ไขประกาศไม่สำเร็จ",
+          message: "กรุณาเข้าสู่ระบบก่อนแก้ไขประกาศ",
+        });
         router.push("/login/owner");
       } else {
         const message = axiosError.response?.data?.message || "เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง";
-        alert(message);
+        const isPositionCountError =
+          message.includes("จำนวนที่เปิดรับต้องไม่น้อยกว่า") ||
+          message.includes("acceptedCount");
+        setEditErrorModal({
+          title: "แก้ไขประกาศไม่สำเร็จ",
+          message: isPositionCountError
+            ? "จำนวนที่เปิดรับต้องไม่น้อยกว่าจำนวนนักศึกษาที่ตอบรับแล้วในประกาศนี้"
+            : message,
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -717,7 +753,7 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     {isUnlimitedCount === false && (
                       <input
                         type="number"
-                        min="1"
+                        min={Math.max(1, acceptedCount)}
                         value={formData.maxApplicants || ""}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -731,6 +767,11 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   </div>
                 </div>
                 {errors.maxApplicants && <p className="text-red-500 text-xs mt-1">{errors.maxApplicants}</p>}
+                {acceptedCount > 0 && isUnlimitedCount === false && (
+                  <p className="text-gray-500 text-xs mt-1">
+                    ปัจจุบันมีนักศึกษาที่ตอบรับแล้ว {acceptedCount} คน จึงไม่สามารถลดจำนวนที่เปิดรับต่ำกว่านี้ได้
+                  </p>
+                )}
               </div>
 
               {/* Related Fields */}
@@ -1191,9 +1232,13 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <input
                       type="tel"
                       value={formData.contactPhone}
-                      onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setFormData({ ...formData, contactPhone: digits });
+                      }}
+                      maxLength={10}
                       placeholder="เบอร์โทรผู้ประกาศรับสมัคร"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"
+                      className={`w-full px-4 py-3 rounded-lg border ${errors.contactPhone ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
                     {errors.contactPhone && <p className="text-red-500 text-xs mt-1">{errors.contactPhone}</p>}
                   </div>
@@ -1280,9 +1325,14 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <input
                       type="email"
                       value={mentor.email}
-                      disabled
+                      onChange={(e) => {
+                        const newMentors = [...mentors];
+                        newMentors[index] = { ...newMentors[index], email: e.target.value };
+                        setMentors(newMentors);
+                      }}
+                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
                       placeholder="อีเมลพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
+                      className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
                   </div>
                   <div>
@@ -1293,13 +1343,17 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       type="tel"
                       value={mentor.phone}
                       onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                         const newMentors = [...mentors];
-                        newMentors[index] = { ...newMentors[index], phone: e.target.value };
+                        newMentors[index] = { ...newMentors[index], phone: digits };
                         setMentors(newMentors);
                       }}
+                      maxLength={10}
+                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
                       placeholder="เบอร์โทรพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"
+                      className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : (errors as Record<string, string>)[`mentorPhone_${index}`] ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
+                    {(errors as Record<string, string>)[`mentorPhone_${index}`] && <p className="text-red-500 text-xs mt-1">{(errors as Record<string, string>)[`mentorPhone_${index}`]}</p>}
                   </div>
                 </div>
 
@@ -1553,6 +1607,30 @@ export default function EditAnnouncementPage({ params }: PageProps) {
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-800">แก้ไขประกาศเรียบร้อยแล้ว</h3>
+          </div>
+        </div>
+      )}
+
+      {editErrorModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] p-8 max-w-2xl w-full">
+            <div className="text-center">
+              <div className="flex justify-center mb-5">
+                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">{editErrorModal.title}</h3>
+              <p className="text-lg text-gray-500 leading-relaxed whitespace-pre-line mb-8">{editErrorModal.message}</p>
+              <button
+                onClick={() => setEditErrorModal(null)}
+                className="px-10 py-4 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors text-lg font-medium"
+              >
+                ตกลง
+              </button>
+            </div>
           </div>
         </div>
       )}

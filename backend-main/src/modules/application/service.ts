@@ -236,13 +236,7 @@ export class ApplicationService {
       .where(inArray(studentProfiles.userId, userIds));
 
     for (const app of pendingApps) {
-      await this.logAppStatusAction(
-        tx,
-        app.id,
-        actionBy,
-        app.status,
-        "ABORT"
-      );
+      await this.logAppStatusAction(tx, app.id, actionBy, app.status, "ABORT");
     }
 
     await tx.insert(notifications).values(
@@ -422,34 +416,128 @@ export class ApplicationService {
     });
   }
 
+  async updateApplicationInformation(
+    userId: string,
+    applicationId: number,
+    data: {
+      hours?: number | null;
+      startDate?: string | null;
+      endDate?: string | null;
+    }
+  ) {
+    return await db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+
+      const [app] = await tx
+        .select({
+          id: applicationStatuses.id,
+          userId: applicationStatuses.userId,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.id, applicationId));
+
+      if (!app) throw new NotFoundError("ไม่พบใบสมัคร");
+
+      if (app.userId !== userId) {
+        throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขใบสมัครของผู้อื่น");
+      }
+
+      const [info] = await tx
+        .select({
+          startDate: applicationInformations.startDate,
+          endDate: applicationInformations.endDate,
+          hours: applicationInformations.hours,
+        })
+        .from(applicationInformations)
+        .where(eq(applicationInformations.applicationStatusId, applicationId));
+
+      if (!info) {
+        throw new NotFoundError("ไม่พบข้อมูล application information");
+      }
+
+      // convert string -> Date
+      const startDate =
+        data.startDate !== undefined
+          ? data.startDate
+            ? new Date(data.startDate)
+            : null
+          : undefined;
+
+      const endDate =
+        data.endDate !== undefined
+          ? data.endDate
+            ? new Date(data.endDate)
+            : null
+          : undefined;
+
+      const nextStartDate =
+        startDate !== undefined ? startDate : (info.startDate ?? null);
+
+      const nextEndDate =
+        endDate !== undefined ? endDate : (info.endDate ?? null);
+
+      if (nextStartDate && nextEndDate && nextEndDate < nextStartDate) {
+        throw new BadRequestError("endDate ต้องมากกว่าหรือเท่ากับ startDate");
+      }
+
+      if ("hours" in data) {
+        if (data.hours !== null && data.hours !== undefined) {
+          if (!Number.isFinite(data.hours) || data.hours < 0) {
+            throw new BadRequestError("hours ต้องมากกว่าหรือเท่ากับ 0");
+          }
+        }
+      }
+
+      const updateData: Partial<typeof applicationInformations.$inferInsert> = {
+        updatedAt: new Date(),
+      };
+
+      if (startDate !== undefined) {
+        updateData.startDate = startDate;
+      }
+
+      if (endDate !== undefined) {
+        updateData.endDate = endDate;
+      }
+
+      if ("hours" in data) {
+        updateData.hours =
+          data.hours === null || data.hours === undefined
+            ? null
+            : String(data.hours);
+      }
+
+      const [updated] = await tx
+        .update(applicationInformations)
+        .set(updateData)
+        .where(eq(applicationInformations.applicationStatusId, applicationId))
+        .returning({
+          id: applicationInformations.id,
+          startDate: applicationInformations.startDate,
+          endDate: applicationInformations.endDate,
+          hours: applicationInformations.hours,
+          updatedAt: applicationInformations.updatedAt,
+        });
+
+      return {
+        success: true,
+        message: "อัปเดตข้อมูลการฝึกงานเรียบร้อยแล้ว",
+        data: updated,
+      };
+    });
+  }
+
   async uploadRequiredDocument(
     userId: string,
     applicationId: number,
     docTypeId: 1 | 2 | 3,
     file: File
   ) {
-    const formatDateYYYYMMDD = (date = new Date()) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}${m}${d}`;
-    };
-
-    const normalizeName = (name: string) => name.trim().replace(/\s+/g, "_");
-
-    const docTypeLabel = (id: number) => {
-      switch (id) {
-        case 1:
-          return "TRANSCRIPT";
-        case 2:
-          return "RESUME";
-        case 3:
-          return "PORTFOLIO";
-        default:
-          return "DOCUMENT";
-      }
-    };
-
     return await db.transaction(async (tx) => {
       const [app] = await tx
         .select({
@@ -505,13 +593,7 @@ export class ApplicationService {
         throw new BadRequestError("ข้อมูลชื่อผู้ใช้งานไม่ครบ");
       }
 
-      const ext = file.name.split(".").pop() || "bin";
-      const fname = normalizeName(student.fname);
-      const lname = normalizeName(student.lname);
-      const docType = docTypeLabel(docTypeId);
-      const dateStr = formatDateYYYYMMDD();
-
-      const filename = `${fname}_${lname}_${docType}_${dateStr}.${ext}`;
+      const filename = file.name.trim();
       const s3Key = `applications/${applicationId}/${docTypeId}/${filename}`;
 
       const arrayBuffer = await file.arrayBuffer();
@@ -827,15 +909,6 @@ export class ApplicationService {
   }
 
   async uploadRequestLetter(userId: string, applicationId: number, file: File) {
-    const formatDateYYYYMMDD = (date = new Date()) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}${m}${d}`;
-    };
-
-    const normalizeName = (name: string) => name.trim().replace(/\s+/g, "_");
-
     return await db.transaction(async (tx) => {
       const [app] = await tx
         .select({
@@ -866,12 +939,7 @@ export class ApplicationService {
         throw new BadRequestError("ข้อมูลชื่อผู้ใช้งานไม่ครบ");
       }
 
-      const ext = file.name.split(".").pop() || "bin";
-      const fname = normalizeName(student.fname);
-      const lname = normalizeName(student.lname);
-      const dateStr = formatDateYYYYMMDD();
-
-      const filename = `${fname}_${lname}_REQUEST_LETTER_${dateStr}.${ext}`;
+      const filename = file.name.trim();
       const s3Key = `applications/${applicationId}/4/${filename}`;
 
       const arrayBuffer = await file.arrayBuffer();
@@ -1151,7 +1219,10 @@ export class ApplicationService {
         )
         .leftJoin(
           applicationInformations,
-          eq(applicationInformations.applicationStatusId, applicationStatuses.id)
+          eq(
+            applicationInformations.applicationStatusId,
+            applicationStatuses.id
+          )
         )
         .where(whereClause)
         .orderBy(desc(applicationStatuses.internshipRound));
@@ -1328,9 +1399,9 @@ export class ApplicationService {
           institutionId: studentProfiles.institutionId,
           faculty: studentProfiles.faculty,
           major: studentProfiles.major,
-          profileHours: studentProfiles.hours,
-          profileStartDate: studentProfiles.startDate,
-          profileEndDate: studentProfiles.endDate,
+          profileHours: applicationInformations.hours,
+          profileStartDate: applicationInformations.startDate,
+          profileEndDate: applicationInformations.endDate,
           studentNote: studentProfiles.studentNote,
 
           institutionName: institutions.name,
@@ -1434,9 +1505,9 @@ export class ApplicationService {
         institutionType: row.institutionType,
         faculty: row.faculty,
         major: row.major,
-        profileHours: row.profileHours,
-        profileStartDate: row.profileStartDate,
-        profileEndDate: row.profileEndDate,
+        profileHours: row.infoHours,
+        profileStartDate: row.infoStartDate,
+        profileEndDate: row.infoEndDate,
         studentNote: row.studentNote,
         infoSkill: row.infoSkill,
         infoExpectation: row.infoExpectation,
