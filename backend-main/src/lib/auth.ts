@@ -48,7 +48,7 @@ export const auth = betterAuth({
             "profile",
             "basic",
             "service_account",
-            "email"
+            "email",
           ],
           mapProfileToUser: async (profile) => {
             const employeeId =

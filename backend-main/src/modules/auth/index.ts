@@ -32,7 +32,6 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
   )
 
   .get("/sign-in/keycloak", async ({ request, redirect }) => {
-
     const response = await authService.loginWithKeycloak(request.headers);
 
     if (response.url) {
