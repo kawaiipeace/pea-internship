@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth, username } from "better-auth/plugins";
-import { type InferSelectModel, eq } from "drizzle-orm";
+import { eq, type InferSelectModel } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
@@ -100,9 +100,7 @@ export const auth = betterAuth({
                   deptSap: schema.employeeIdDeptSap.deptSap,
                 })
                 .from(schema.employeeIdDeptSap)
-                .where(
-                  eq(schema.employeeIdDeptSap.employeeId, employeeId)
-                );
+                .where(eq(schema.employeeIdDeptSap.employeeId, employeeId));
 
               // ถ้าเจอ dept_sap ให้ update users.department_id
               if (mapping?.deptSap) {
@@ -113,7 +111,6 @@ export const auth = betterAuth({
                   })
                   .where(eq(schema.users.id, user.id));
               }
-
             } catch (error) {
               console.error("Failed to sync employee department:", error);
             } finally {
