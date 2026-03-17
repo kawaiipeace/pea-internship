@@ -6,6 +6,7 @@ import {
   applicationMentors,
   applicationStatusActions,
   applicationStatuses,
+  attendanceLogs,
   checkTimes,
   dailyWorkLogs,
   departments,
@@ -86,12 +87,13 @@ export const staffProfilesRelations = relations(
     applicationMentors: many(applicationMentors),
     dailyWorkLogs: many(dailyWorkLogs),
     internshipPositionMentors: many(internshipPositionMentors),
+    verifiedAttendanceLogs: many(attendanceLogs),
   })
 );
 
 export const studentProfilesRelations = relations(
   studentProfiles,
-  ({ one }) => ({
+  ({ one, many }) => ({
     user: one(users, {
       fields: [studentProfiles.userId],
       references: [users.id],
@@ -100,6 +102,7 @@ export const studentProfilesRelations = relations(
       fields: [studentProfiles.institutionId],
       references: [institutions.id],
     }),
+    attendanceLogs: many(attendanceLogs),
   })
 );
 
@@ -135,10 +138,16 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   }),
 }));
 
-export const checkTimesRelations = relations(checkTimes, ({ one }) => ({
+export const checkTimesRelations = relations(checkTimes, ({ one, many }) => ({
   user: one(users, {
     fields: [checkTimes.userId],
     references: [users.id],
+  }),
+  attendanceLogCheckIns: many(attendanceLogs, {
+    relationName: "checkInRelation",
+  }),
+  attendanceLogCheckOuts: many(attendanceLogs, {
+    relationName: "checkOutRelation",
   }),
 }));
 
@@ -307,6 +316,27 @@ export const dailyWorkLogsRelations = relations(dailyWorkLogs, ({ one }) => ({
   }),
   staffProfile: one(staffProfiles, {
     fields: [dailyWorkLogs.approveBy],
+    references: [staffProfiles.id],
+  }),
+}));
+
+export const attendanceLogsRelations = relations(attendanceLogs, ({ one }) => ({
+  studentProfile: one(studentProfiles, {
+    fields: [attendanceLogs.studentProfileId],
+    references: [studentProfiles.id],
+  }),
+  checkIn: one(checkTimes, {
+    fields: [attendanceLogs.checkInId],
+    references: [checkTimes.id],
+    relationName: "checkInRelation",
+  }),
+  checkOut: one(checkTimes, {
+    fields: [attendanceLogs.checkOutId],
+    references: [checkTimes.id],
+    relationName: "checkOutRelation",
+  }),
+  verifiedByStaff: one(staffProfiles, {
+    fields: [attendanceLogs.verifiedBy],
     references: [staffProfiles.id],
   }),
 }));
