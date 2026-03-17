@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Navbar from "../../components/ui/Navbar";
-import { authApi, authStorage } from "../../services/api";
+import Navbar from "@/components/ui/Navbar";
+import { authApi, authStorage } from "@/services/api";
 
 export default function InternLoginPage() {
   const router = useRouter();

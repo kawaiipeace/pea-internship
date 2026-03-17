@@ -3,16 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
-import VideoLoading from "../../../components/ui/VideoLoading";
-import ThaiDateInput from "../../../components/ui/ThaiDateInput";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
+import ThaiDateInput from "@/components/ui/ThaiDateInput";
 import {
   AnnouncementFormErrors,
-} from "../../../types/announcement";
+} from "@/types/announcement";
 import {
   relatedFieldOptions,
 } from "../../../data/mockAnnouncements";
-import { positionApi, CreatePositionData, docTypeApi, DocType, userApi, StaffUser, departmentApi } from "../../../services/api";
+import { positionApi, CreatePositionData, docTypeApi, DocType, userApi, StaffUser, departmentApi } from "@/services/api";
 
 // ประเภทข้อมูลฟอร์มที่ตรงกับ API และ Design
 interface PositionFormData {
@@ -22,8 +22,6 @@ interface PositionFormData {
   positionCount: number;
   recruitStart: string;
   recruitEnd: string;
-  applyStart: string;
-  applyEnd: string;
   jobDetails: string;
   requirement: string;
   benefits: string;
@@ -45,8 +43,6 @@ const initialFormData: PositionFormData = {
   positionCount: 1,
   recruitStart: "",
   recruitEnd: "",
-  applyStart: "",
-  applyEnd: "",
   jobDetails: "",
   requirement: "",
   benefits: "",
@@ -396,10 +392,10 @@ export default function CreateAnnouncementPage() {
     }
     if (isNoTimeLimit === null) {
       newErrors.startDate = "กรุณาเลือกระยะเวลาที่เปิดรับสมัคร";
-    } else if (!isNoTimeLimit && !formData.applyStart) {
+    } else if (!isNoTimeLimit && !formData.recruitStart) {
       newErrors.startDate = "ระบุวันที่เปิดรับสมัคร";
     }
-    if (isNoTimeLimit === false && !formData.applyEnd) {
+    if (isNoTimeLimit === false && !formData.recruitEnd) {
       newErrors.endDate = "ระบุวันที่ปิดรับสมัคร";
     }
     if (selectedMajors.length === 0) {
@@ -416,6 +412,8 @@ export default function CreateAnnouncementPage() {
     }
     if (!formData.contactPhone.trim()) {
       newErrors.contactPhone = "ระบุเบอร์โทรผู้ประกาศรับสมัคร";
+    } else if (formData.contactPhone.replace(/\D/g, "").length !== 10) {
+      newErrors.contactPhone = "เบอร์โทรต้องมี 10 หลัก";
     }
     if (!formData.contactEmail.trim()) {
       newErrors.contactEmail = "ระบุอีเมลผู้ประกาศรับสมัคร";
@@ -425,6 +423,12 @@ export default function CreateAnnouncementPage() {
     if (!hasAtLeastOneMentor) {
       newErrors.mentorName = "กรุณาเลือกพี่เลี้ยงอย่างน้อย 1 คน";
     }
+    // Validate mentor phones (10 digits)
+    mentors.forEach((m, i) => {
+      if (m.staffProfileId !== null && m.phone.replace(/\D/g, "").length !== 10) {
+        newErrors[`mentorPhone_${i}` as keyof AnnouncementFormErrors] = "เบอร์โทรพี่เลี้ยงต้องมี 10 หลัก";
+      }
+    });
 
     setErrors(newErrors);
     console.log("Validation errors:", newErrors);
@@ -461,10 +465,10 @@ export default function CreateAnnouncementPage() {
       const apiData: CreatePositionData = {
         name: formData.name,
         location: formData.location,
-        positionCount: isUnlimitedCount ? 0 : formData.positionCount,
+        positionCount: isUnlimitedCount ? null : formData.positionCount,
         major: selectedMajors.join(", "),
-        applyStart: isNoTimeLimit ? undefined : (formData.applyStart ? new Date(formData.applyStart).toISOString() : undefined),
-        applyEnd: isNoTimeLimit ? undefined : (formData.applyEnd ? new Date(formData.applyEnd).toISOString() : undefined),
+        recruitStart: isNoTimeLimit ? null : (formData.recruitStart ? new Date(formData.recruitStart).toISOString() : null),
+        recruitEnd: isNoTimeLimit ? null : (formData.recruitEnd ? new Date(formData.recruitEnd).toISOString() : null),
         jobDetails: jobDetailsList.filter(d => d.trim()).join("\n"),
         requirement: requirementsList.filter(r => r.trim()).join("\n"),
         benefits: benefitsList.filter(b => b.trim()).join("\n"),
@@ -924,7 +928,7 @@ export default function CreateAnnouncementPage() {
                     checked={isNoTimeLimit === true}
                     onChange={() => {
                       setIsNoTimeLimit(true);
-                      setFormData({ ...formData, applyStart: "", applyEnd: "" });
+                      setFormData({ ...formData, recruitStart: "", recruitEnd: "" });
                     }}
                     className="w-4 h-4 accent-[#9B1F7A] cursor-pointer"
                   />
@@ -954,8 +958,8 @@ export default function CreateAnnouncementPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <ThaiDateInput
-                        value={formData.applyStart}
-                        onChange={(val) => setFormData({ ...formData, applyStart: val })}
+                        value={formData.recruitStart}
+                        onChange={(val) => setFormData({ ...formData, recruitStart: val })}
                         className={`pl-12 pr-4 py-3 rounded-lg border ${errors.startDate ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-primary-600"
                           } focus:outline-none focus:ring-2`}
                       />
@@ -971,9 +975,9 @@ export default function CreateAnnouncementPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <ThaiDateInput
-                        value={formData.applyEnd}
-                        min={formData.applyStart}
-                        onChange={(val) => setFormData({ ...formData, applyEnd: val })}
+                        value={formData.recruitEnd}
+                        min={formData.recruitStart}
+                        onChange={(val) => setFormData({ ...formData, recruitEnd: val })}
                         className={`pl-12 pr-4 py-3 rounded-lg border ${errors.endDate ? "border-red-300 focus:ring-red-600" : "border-gray-200 focus:ring-primary-600"
                           } focus:outline-none focus:ring-2`}
                       />
@@ -1222,11 +1226,16 @@ export default function CreateAnnouncementPage() {
                     <input
                       type="tel"
                       value={loadingUser ? "กำลังโหลด..." : formData.contactPhone}
-                      onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setFormData({ ...formData, contactPhone: digits });
+                      }}
+                      maxLength={10}
                       disabled={loadingUser}
                       placeholder="เบอร์โทรผู้ประกาศรับสมัคร"
-                      className={`w-full px-4 py-3 rounded-lg border ${loadingUser ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
+                      className={`w-full px-4 py-3 rounded-lg border ${loadingUser ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : errors.contactPhone ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
+                    {errors.contactPhone && <p className="text-red-500 text-xs mt-1">{errors.contactPhone}</p>}
                   </div>
                 </div>
               </div>
@@ -1311,9 +1320,14 @@ export default function CreateAnnouncementPage() {
                     <input
                       type="email"
                       value={mentor.email}
-                      disabled
+                      onChange={(e) => {
+                        const newMentors = [...mentors];
+                        newMentors[index] = { ...newMentors[index], email: e.target.value };
+                        setMentors(newMentors);
+                      }}
+                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
                       placeholder="อีเมลพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
+                      className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
                   </div>
                   <div>
@@ -1324,13 +1338,17 @@ export default function CreateAnnouncementPage() {
                       type="tel"
                       value={mentor.phone}
                       onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                         const newMentors = [...mentors];
-                        newMentors[index] = { ...newMentors[index], phone: e.target.value };
+                        newMentors[index] = { ...newMentors[index], phone: digits };
                         setMentors(newMentors);
                       }}
+                      maxLength={10}
+                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
                       placeholder="เบอร์โทรพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"
+                      className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : (errors as Record<string, string>)[`mentorPhone_${index}`] ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
+                    {(errors as Record<string, string>)[`mentorPhone_${index}`] && <p className="text-red-500 text-xs mt-1">{(errors as Record<string, string>)[`mentorPhone_${index}`]}</p>}
                   </div>
                 </div>
                 {/* เพิ่มพี่เลี้ยง button - only on last card, max 5 */}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { NavbarIntern } from "../components";
+import { NavbarIntern } from "@/components";
 
 export default function InternPEAInfoPage() {
   return (

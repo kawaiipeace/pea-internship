@@ -14,9 +14,6 @@ export const RegisterInternBody = t.Object({
   faculty: t.Optional(t.String()),
   major: t.Optional(t.String()),
   studentNote: t.Optional(t.String()),
-  totalHours: t.Optional(t.Number()),
-  startDate: t.Optional(t.String()),
-  endDate: t.Optional(t.String()),
 });
 
 export const LoginInternBody = t.Object({

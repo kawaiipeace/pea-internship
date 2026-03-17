@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
-import OwnerNavbar from "../../components/ui/OwnerNavbar";
-import VideoLoading from "../../components/ui/VideoLoading";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
 import {
   positionApi,
   userApi,
@@ -10,8 +10,9 @@ import {
   applicationApi,
   AllStudentsHistoryItem,
   AppStatusEnum,
-} from "../../services/api";
-import { AnnouncementStats } from "../../types/announcement";
+  type Position,
+} from "@/services/api";
+import { AnnouncementStats } from "@/types/announcement";
 
 // Thai month names (short)
 const thaiMonthsShort = [
@@ -66,7 +67,8 @@ const STATUS_MAP: Record<AppStatusEnum, { label: string; color: string }> = {
   PENDING_REQUEST: { label: "รอเอกสารขอความอนุเคราะห์", color: "#8B5CF6" },
   PENDING_REVIEW: { label: "รอตรวจเอกสาร", color: "#14B8A6" },
   COMPLETE: { label: "รับเข้าฝึกงาน", color: "#22C55E" },
-  CANCEL: { label: "ยกเลิก/ไม่ผ่าน", color: "#9CA3AF" },
+  CANCEL: { label: "ไม่ผ่าน", color: "#EF4444" },
+  ABORT: { label: "ยกเลิกการสมัคร", color: "#9CA3AF" },
 };
 
 export default function OwnerDashboard() {
@@ -82,6 +84,7 @@ export default function OwnerDashboard() {
   const [departmentName, setDepartmentName] = useState("");
   const [positionNames, setPositionNames] = useState<string[]>([]);
   const [allApps, setAllApps] = useState<AllStudentsHistoryItem[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Client-only rendering to avoid hydration mismatch on SVG paths
@@ -115,15 +118,16 @@ export default function OwnerDashboard() {
           limit: 100,
           department: departmentId || undefined,
         });
-        const positions = response.data || [];
+        const positionsList = response.data || [];
+        setPositions(positionsList);
 
-        const totalPositions = positions.reduce(
+        const totalPositions = positionsList.reduce(
           (sum, p) => sum + (p.positionCount || 0),
           0,
         );
 
         // ดึงชื่อตำแหน่ง (position name) จาก API
-        const names = positions.map((p) => p.name || "ตำแหน่งไม่ระบุ");
+        const names = positionsList.map((p) => p.name || "ตำแหน่งไม่ระบุ");
         setPositionNames(names);
 
         // ดึงข้อมูลใบสมัครทั้งหมดจาก API
@@ -132,7 +136,7 @@ export default function OwnerDashboard() {
         setAllApps(apps);
 
         setApiStats({
-          totalAnnouncements: positions.length,
+          totalAnnouncements: positionsList.length,
           totalOpenPositions: totalPositions,
           totalApplicants: apps.length,
         });
@@ -211,22 +215,34 @@ export default function OwnerDashboard() {
 
   // Position acceptance data - from real applications
   const positionData = useMemo(() => {
+    // Build positionCount map from positions state
+    const positionCountMap = new Map<number, number | null>(
+      positions.map(p => [p.id, p.positionCount ?? null])
+    );
     // Group applications by positionId
-    const posMap = new Map<number, { name: string; total: number; accepted: number }>();
+    const posMap = new Map<number, { name: string; total: number; accepted: number; positionCount: number | null }>();
     allApps.forEach((app) => {
       if (!app.positionId) return;
       if (!posMap.has(app.positionId)) {
-        posMap.set(app.positionId, { name: app.positionName || `ตำแหน่ง #${app.positionId}`, total: 0, accepted: 0 });
+        posMap.set(app.positionId, {
+          name: app.positionName || `ตำแหน่ง #${app.positionId}`,
+          total: 0,
+          accepted: 0,
+          positionCount: positionCountMap.get(app.positionId) ?? null,
+        });
       }
       const entry = posMap.get(app.positionId)!;
       entry.total++;
-      if (app.applicationStatus === "COMPLETE") entry.accepted++;
+      // นับว่า "รับแล้ว" ถ้าสถานะอยู่ใน accepted group (เหมือน applicationMapper)
+      if (["PENDING_REQUEST", "PENDING_REVIEW", "COMPLETE"].includes(app.applicationStatus)) {
+        entry.accepted++;
+      }
     });
     const result = Array.from(posMap.values());
-    return result.length > 0 ? result : positionNames.map((name) => ({ name, total: 0, accepted: 0 }));
-  }, [allApps, positionNames]);
+    return result.length > 0 ? result : positionNames.map((name) => ({ name, total: 0, accepted: 0, positionCount: null }));
+  }, [allApps, positionNames, positions]);
 
-  const maxPositionTotal = Math.max(...positionData.map((d) => d.total), 1);
+  const maxAccepted = Math.max(...positionData.map((d) => d.accepted), 1);
 
   // Pagination for position list
   const totalPosPages = Math.ceil(positionData.length / posPerPage);
@@ -575,11 +591,11 @@ export default function OwnerDashboard() {
                   <div className="flex-1 relative h-3 bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className="absolute inset-y-0 left-0 bg-primary-600 rounded-full transition-all"
-                      style={{ width: `${(d.accepted / maxPositionTotal) * 100}%` }}
+                      style={{ width: `${(d.accepted / maxAccepted) * 100}%` }}
                     />
                   </div>
                   <span className="text-sm text-gray-600 w-10 text-right shrink-0">
-                    {d.accepted}/{d.total}
+                    {(d.positionCount === 0 || d.positionCount === null) ? d.accepted : `${d.accepted}/${d.positionCount}`}
                   </span>
                 </div>
               ))}

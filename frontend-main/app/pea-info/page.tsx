@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Navbar from "../components/ui/Navbar";
+import Navbar from "@/components/ui/Navbar";
 
 export default function PEAInfoPage() {
   return (

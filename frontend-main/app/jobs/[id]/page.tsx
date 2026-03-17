@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/app/components/ui/Navbar";
-import VideoLoading from "@/app/components/ui/VideoLoading";
-import LoginModal from "@/app/components/ui/LoginModal";
+import Navbar from "@/components/ui/Navbar";
+import VideoLoading from "@/components/ui/VideoLoading";
+import LoginModal from "@/components/ui/LoginModal";
 import { getJobById } from "@/app/data/jobs";
-import { Job } from "@/app/components/ui/JobCard";
+import { Job } from "@/components/ui/JobCard";
 
 // Default job details for display
 const defaultResponsibilities = [
@@ -176,7 +176,7 @@ export default function JobDetailPage() {
                                         />
                                     </svg>
                                     <span>
-                                        {job.currentApplicants}/{job.maxApplicants} ตำแหน่ง
+                                        {job.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
                                     </span>
                                 </div>
 
@@ -309,7 +309,7 @@ export default function JobDetailPage() {
                                 />
                             </svg>
                             <span>
-                                {job.currentApplicants}/{job.maxApplicants} ตำแหน่ง
+                                {job.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
                             </span>
                         </div>
 

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import { Job } from "../components/ui/JobCard";
-import { favoriteApi, positionIdToJobId, jobIdToPositionId, FavoriteItem, positionToJob, applicationApi, canApplyForNewJob, MyApplicationData } from "../services/api";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { Job } from "@/components/ui/JobCard";
+import { favoriteApi, positionIdToJobId, jobIdToPositionId, FavoriteItem, positionToJob, positionApi, applicationApi, canApplyForNewJob, MyApplicationData } from "@/services/api";
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -31,7 +31,15 @@ export default function FavoritesPage() {
     const loadFavorites = async () => {
       setIsLoading(true);
       try {
-        const response = await favoriteApi.getFavorites();
+        // Fetch favorites and full positions in parallel
+        const [response, allPositionsResponse] = await Promise.all([
+          favoriteApi.getFavorites(),
+          positionApi.getPositions({ limit: 1000 }),
+        ]);
+        // Build map: positionId → full Position data (with department, owner, mentors)
+        const fullPositionMap = new Map(
+          (allPositionsResponse.data || []).map(p => [p.id, p])
+        );
         const now = new Date();
         // Helper: normalize PostgreSQL timestamp → Date
         const safeDate = (d: string | null | undefined): Date | null => {
@@ -43,8 +51,8 @@ export default function FavoritesPage() {
         const activeItems = response.data.filter((item: FavoriteItem) => {
           const p = item.position;
           if (p.recruitmentStatus !== "OPEN") return false;
-          const start = safeDate(p.applyStart);
-          const end = safeDate(p.applyEnd);
+          const start = safeDate(p.recruitStart);
+          const end = safeDate(p.recruitEnd);
           if (start && now < start) return false;
           if (end) {
             const endOfDay = new Date(end);
@@ -54,7 +62,9 @@ export default function FavoritesPage() {
           return true;
         });
         const jobs: Job[] = activeItems.map((item: FavoriteItem) => {
-          return positionToJob(item.position);
+          // Use full position data (with department/owner/mentors) if available
+          const fullPosition = fullPositionMap.get(item.position.id) || item.position;
+          return positionToJob(fullPosition);
         });
         setFavoriteJobs(jobs);
         // Sync localStorage
@@ -237,7 +247,7 @@ export default function FavoritesPage() {
                     />
                   </svg>
                   <span>
-                    {job.currentApplicants}/{job.maxApplicants} ตำแหน่ง
+                    {job.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
                   </span>
                 </div>
 
@@ -280,7 +290,7 @@ export default function FavoritesPage() {
                     />
                   </svg>
                   <span>
-                    รอบที่เปิดรับสมัคร: {job.startDate} - {job.endDate}
+                    รอบที่เปิดรับสมัคร: {job.startDate === "-" && job.endDate === "-" ? "ไม่กำหนดรอบ" : `${job.startDate} - ${job.endDate}`}
                   </span>
                 </div>
               </div>

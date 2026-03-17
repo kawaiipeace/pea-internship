@@ -28,6 +28,7 @@
     "@x1mrdonut1x/nouislider-react": "^3.4.3",
     "apexcharts": "^5.10.3",
     "easymde": "^2.20.0",
+    "flatpickr": "^4.6.13",
     "formik": "^2.4.9",
     "highlight.js": "^11.11.1",
     "i18next": "^25.8.14",

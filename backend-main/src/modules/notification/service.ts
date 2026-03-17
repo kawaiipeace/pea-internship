@@ -118,4 +118,47 @@ export class NotificationService {
       .where(and(eq(users.roleId, 2), eq(users.departmentId, departmentId)));
     return rows.map((r) => r.id);
   }
+
+  async deleteNotification(userId: string, notificationId: number) {
+    return await db.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!user) {
+        throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+      }
+
+      const [notification] = await tx
+        .select({
+          id: notifications.id,
+          userId: notifications.userId,
+        })
+        .from(notifications)
+        .where(eq(notifications.id, notificationId));
+
+      if (!notification) {
+        throw new NotFoundError("ไม่พบการแจ้งเตือน");
+      }
+
+      if (notification.userId !== userId) {
+        throw new ForbiddenError("ไม่มีสิทธิ์ลบการแจ้งเตือนของผู้อื่น");
+      }
+
+      await tx
+        .delete(notifications)
+        .where(
+          and(
+            eq(notifications.id, notificationId),
+            eq(notifications.userId, userId)
+          )
+        );
+
+      return {
+        success: true,
+        message: "ลบการแจ้งเตือนเรียบร้อยแล้ว",
+      };
+    });
+  }
 }

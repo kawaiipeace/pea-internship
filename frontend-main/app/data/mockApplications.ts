@@ -71,6 +71,9 @@ export interface Application {
   skill?: string;
   // Action date (updatedAt from API - when the last status change happened)
   actionDate?: string;
+  // Student internship status from backend
+  studentInternshipStatus?: string | null;
+  isActive?: boolean;
 }
 
 // Mentor type

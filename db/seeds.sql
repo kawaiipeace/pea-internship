@@ -11,6 +11,39 @@ VALUES ('student', 'นักศึกษาฝึกงาน', NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
 
+-- system user for cron jobs
+INSERT INTO public.users (
+  id,
+  role_id,
+  department_id,
+  fname,
+  lname,
+  username,
+  display_username,
+  phone_number,
+  email,
+  gender,
+  email_verified,
+  created_at,
+  updated_at
+)
+VALUES (
+  'system',
+  1,
+  NULL,
+  'System',
+  'Cron',
+  'system',
+  'System Cron',
+  NULL,
+  'system@local.dev',
+  NULL,
+  TRUE,
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP
+)
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO doc_types (name, description)
 VALUES
   ('transcript', 'ใบเกรด'),
@@ -18,7 +51,6 @@ VALUES
   ('portfolio', 'แฟ้มผลงาน'),
   ('request_letter', 'เอกสารขอความอนุเคราะห์')
 ON CONFLICT (name) DO NOTHING;
--- test seeds
 
 INSERT INTO institutions (institutions_type,name,created_at,updated_at)
 VALUES

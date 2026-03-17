@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import { applicationApi, MyApplicationData, APP_STATUS_TO_STEP, AppStatusEnum, positionApi, positionToJob } from "../services/api";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { applicationApi, MyApplicationData, APP_STATUS_TO_STEP, AppStatusEnum, positionApi, positionToJob } from "@/services/api";
 
 type ApplicationStatus =
   | "active"
@@ -13,6 +13,7 @@ type ApplicationStatus =
   | "cancelled"
   | "rejected"
   | "completed"
+  | "intern-cancelled"
   | "in-training";
 
 interface AppliedJob {
@@ -38,14 +39,31 @@ interface AppliedJob {
 }
 
 // Map backend status to frontend ApplicationStatus
-function mapBackendStatus(status: AppStatusEnum): ApplicationStatus {
-  switch (status) {
+function mapBackendStatus(app: { applicationStatus: AppStatusEnum; isActive: boolean; infoEndDate: string | null; statusNote: string | null }): ApplicationStatus {
+  switch (app.applicationStatus) {
     case "CANCEL":
+      if (!app.isActive) {
+        return "intern-cancelled";
+      }
       return "rejected";
+    case "ABORT":
+      return "cancelled";
     case "COMPLETE":
+      // applicationStatus=COMPLETE + isActive=true means student is still interning
+      if (app.isActive) {
+        // Check if end date has passed (frontend fallback)
+        if (app.infoEndDate && new Date(app.infoEndDate) <= new Date()) {
+          return "completed";
+        }
+        return "in-training";
+      }
       return "completed";
+    case "PENDING_REQUEST":
+      // If statusNote exists, docs were rejected by HR
+      if (app.statusNote) return "accepted-doc-failed";
+      return "active";
     default:
-      // All PENDING_* statuses are "active"
+      // All other PENDING_* statuses are "active"
       return "active";
   }
 }
@@ -69,13 +87,14 @@ export default function ApplicationHistoryPage() {
 
         // Build all job cards in parallel
         const jobPromises = allApps.map(async (app, index) => {
-          const appStatus = mapBackendStatus(app.applicationStatus);
+          const appStatus = mapBackendStatus(app);
           const appStep = APP_STATUS_TO_STEP[app.applicationStatus];
-          const reason = (app.applicationStatus === "CANCEL" && app.statusNote) ? app.statusNote : "";
+          const reason = app.statusNote || "";
 
           // Determine if this is the "current" application:
-          // Only the first active (non-CANCEL/COMPLETE) application is considered current
-          const isCurrent = app.isActive && app.applicationStatus !== "CANCEL" && app.applicationStatus !== "COMPLETE";
+          // Active (non-CANCEL/ABORT) or in-training (COMPLETE + isActive)
+          const isCurrent = app.isActive && app.applicationStatus !== "CANCEL" && app.applicationStatus !== "ABORT"
+            && !(app.applicationStatus === "COMPLETE" && !app.isActive);
 
           let department = "";
           let location = "";
@@ -95,12 +114,12 @@ export default function ApplicationHistoryPage() {
                 department = jobData.department;
                 location = jobData.location;
                 tags = jobData.tags;
-                applicationPeriod = `${jobData.applyStartDate} - ${jobData.applyEndDate}`;
+                applicationPeriod = jobData.recruitStartDate && jobData.recruitEndDate && jobData.recruitStartDate !== "-" && jobData.recruitEndDate !== "-" ? `${jobData.recruitStartDate} - ${jobData.recruitEndDate}` : "ไม่กำหนดระยะเวลา";
                 startDate = jobData.startDate;
                 endDate = jobData.endDate;
                 currentApplicants = jobData.currentApplicants;
                 maxApplicants = jobData.maxApplicants;
-                positions = `${currentApplicants}/${maxApplicants} คน`;
+                positions = maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${currentApplicants}/${maxApplicants} คน`;
               }
             } catch { /* fallback to basic data */ }
           }
@@ -146,10 +165,12 @@ export default function ApplicationHistoryPage() {
       setShowEvaluationModal(true);
     } else if (applicationStatus === "cancelled") {
       router.push("/application-history/evaluation-result");
+    } else if (applicationStatus === "intern-cancelled") {
+      router.push(`/application-history/job-detail?positionId=${job.positionId}&applicationId=${job.applicationId}&status=intern-cancelled`);
     } else if (applicationStatus === "accepted-doc-failed") {
       router.push("/application-status?step=รอการตรวจสอบ&docStatus=failed");
     } else if (applicationStatus === "in-training") {
-      router.push("/application-history/evaluation-result?status=in-training");
+      router.push("/application-status");
     } else if (applicationStatus === "active") {
       if (applicationStep) {
         router.push(`/application-status?step=${encodeURIComponent(applicationStep)}`);
@@ -172,6 +193,8 @@ export default function ApplicationHistoryPage() {
       params.set("status", "completed");
     } else if (applicationStatus === "cancelled") {
       params.set("status", "cancelled");
+    } else if (applicationStatus === "intern-cancelled") {
+      params.set("status", "intern-cancelled");
     } else if (applicationStatus === "accepted-doc-failed") {
       params.set("status", "accepted-doc-failed");
     } else if (applicationStatus === "in-training") {
@@ -186,8 +209,8 @@ export default function ApplicationHistoryPage() {
     if (applicationStatus === "active") {
       return (
         <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm">
-            กำลังดำเนินการ
+          <span className="px-3 py-2 bg-green-100 text-green-500 rounded-full font-bold text-sm">
+            รับเข้าฝึกงาน
           </span>
           {applicationStep && (
             <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm">
@@ -216,6 +239,14 @@ export default function ApplicationHistoryPage() {
           </div>
         );
       case "cancelled":
+        return (
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-2 bg-gray-100 text-gray-500 rounded-full font-bold text-sm">
+              ยกเลิกการสมัคร
+            </span>
+          </div>
+        );
+      case "intern-cancelled":
         return (
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm">
@@ -258,7 +289,8 @@ export default function ApplicationHistoryPage() {
 
   const getButtonText = (job: AppliedJob) => {
     if (job.applicationStatus === "completed") return "ดูผลการประเมิน";
-    if (job.applicationStatus === "active") return "ดูสถานะการสมัคร";
+    if (job.applicationStatus === "active" || job.applicationStatus === "in-training") return "ดูสถานะการสมัคร";
+    if (job.applicationStatus === "intern-cancelled") return "ดูรายละเอียด";
     return "ดูรายละเอียด";
   };
 
@@ -418,7 +450,7 @@ export default function ApplicationHistoryPage() {
                           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                         />
                       </svg>
-                      <span>{job.positions || `${job.currentApplicants || 0}/${job.maxApplicants || 0} คน`}</span>
+                      <span>{job.positions || ((job.maxApplicants || 0) === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants || 0}/${job.maxApplicants || 0} คน`)}</span>
                     </div>
 
                     {/* Tags */}
@@ -466,6 +498,18 @@ export default function ApplicationHistoryPage() {
                     <div className="mt-3">
                       <h4 className="font-bold text-gray-800 text-sm mb-1.5">
                         เหตุผลที่ไม่ผ่าน
+                      </h4>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p className="text-red-700 text-sm">
+                          {job.rejectionReason}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {job.applicationStatus === "accepted-doc-failed" && job.rejectionReason && (
+                    <div className="mt-3">
+                      <h4 className="font-bold text-gray-800 text-sm mb-1.5">
+                        เหตุผลที่เอกสารไม่ผ่าน
                       </h4>
                       <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                         <p className="text-red-700 text-sm">

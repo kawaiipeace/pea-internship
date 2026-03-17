@@ -12,6 +12,12 @@ export const CreateApplicationBody = t.Object({
   positionId: t.Integer({ minimum: 1 }),
 });
 
+export const UpdateApplicationInformationBody = t.Object({
+  hours: t.Optional(t.Union([t.Numeric(), t.Null()])),
+  startDate: t.Optional(t.Union([t.String(), t.Null()])),
+  endDate: t.Optional(t.Union([t.String(), t.Null()])),
+});
+
 export const ApplicationInformationBody = t.Object({
   skill: t.String({ minLength: 1 }),
   expectation: t.String({ minLength: 1 }),
@@ -74,6 +80,8 @@ export const AllStudentsHistoryQuery = t.Object({
 
 export type UploadDocumentBodyType = typeof UploadDocumentBody.static;
 export type CreateApplicationBodyType = typeof CreateApplicationBody.static;
+export type UpdateApplicationInformationBodyType =
+  typeof UpdateApplicationInformationBody.static;
 export type ApplicationInformationBodyType =
   typeof ApplicationInformationBody.static;
 export type HistoryQueryType = typeof HistoryQuery.static;
