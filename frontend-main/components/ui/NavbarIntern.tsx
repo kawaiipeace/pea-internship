@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { authApi, authStorage, notificationApi, type NotificationItem } from "@/services/api";
 import Toast from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
 
 // Helper function to format relative time
 const formatRelativeTime = (date: string | Date): string => {
@@ -417,15 +418,23 @@ export default function NavbarIntern({
                           >
                             X
                           </button>
-                          <p className="text-gray-900 text-sm font-medium">
-                            {notification.title}
-                          </p>
-                          <p className="text-gray-600 text-sm mt-0.5">
-                            {notification.message}
-                          </p>
-                          <p className="text-gray-500 text-xs mt-1">
-                            {formatRelativeTime(notification.createdAt)}
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <NotificationStatusIcon
+                              tone={detectNotificationTone(notification.title, notification.message)}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <div>
+                              <p className="text-gray-900 text-sm font-medium">
+                                {notification.title}
+                              </p>
+                              <p className="text-gray-600 text-sm mt-0.5">
+                                {notification.message}
+                              </p>
+                              <p className="text-gray-500 text-xs mt-1">
+                                {formatRelativeTime(notification.createdAt)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -1128,15 +1137,23 @@ export default function NavbarIntern({
                     >
                       X
                     </button>
-                    <p className="text-gray-900 text-sm font-medium">
-                      {notification.title}
-                    </p>
-                    <p className="text-gray-600 text-sm mt-0.5">
-                      {notification.message}
-                    </p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      {formatRelativeTime(notification.createdAt)}
-                    </p>
+                    <div className="flex items-start gap-2">
+                      <NotificationStatusIcon
+                        tone={detectNotificationTone(notification.title, notification.message)}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <div>
+                        <p className="text-gray-900 text-sm font-medium">
+                          {notification.title}
+                        </p>
+                        <p className="text-gray-600 text-sm mt-0.5">
+                          {notification.message}
+                        </p>
+                        <p className="text-gray-500 text-xs mt-1">
+                          {formatRelativeTime(notification.createdAt)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 ))
               ) : (

@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { authApi, authStorage, notificationApi, type NotificationItem } from "@/services/api";
 import Toast from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
 
 // Helper: relative time in Thai
 function relativeTime(dateString: string): string {
@@ -270,11 +271,6 @@ export default function AdminNavbar() {
                           ลบทั้งหมด
                         </button>
                       )}
-                      {notifications.length > 0 && (
-                        <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
-                          {notifications.length}
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -311,15 +307,23 @@ export default function AdminNavbar() {
                           >
                             X
                           </button>
-                          <p className="text-sm font-medium text-gray-800">
-                            {notif.title}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-0.5">
-                            {notif.message}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {relativeTime(notif.createdAt)}
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <NotificationStatusIcon
+                              tone={detectNotificationTone(notif.title, notif.message)}
+                              className="mt-1 shrink-0"
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-gray-800">
+                                {notif.title}
+                              </p>
+                              <p className="text-sm text-gray-600 mt-0.5">
+                                {notif.message}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {relativeTime(notif.createdAt)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ))
                     ) : (
