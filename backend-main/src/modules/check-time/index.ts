@@ -1,14 +1,13 @@
 import { Elysia } from "elysia";
-import { isAuthenticated } from "@/middlewares/auth.middleware";
+import { isAuthenticated,ROLE_IDS } from "@/middlewares/auth.middleware";
 import * as checkSchema from "./model";
 import { CheckTimeService } from "./service";
 
+
 const checkTimeService = new CheckTimeService();
 
-export const checkTime = new Elysia({
-  prefix: "/check-time",
-  tags: ["check-time"],
-})
+export const checkTime = new Elysia({ prefix: "/check-time", tags: ["check-time"], })
+
   .use(isAuthenticated)
   .post(
     "/in",
@@ -24,7 +23,7 @@ export const checkTime = new Elysia({
       return result;
     },
     {
-      role: [1],
+      role: [ROLE_IDS.STUDENT],
       body: checkSchema.CheckTimeSchema,
       detail: {
         summary: "บันทึกเวลาเข้างาน (Check-in)",
