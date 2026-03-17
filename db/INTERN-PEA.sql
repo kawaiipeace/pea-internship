@@ -186,6 +186,11 @@ CREATE TABLE -- all
 
 COMMENT ON TABLE public.staff_profiles IS 'โปรไฟล์พี่เลี้ยง';
 
+CREATE TABLE -- all 
+  public.employee_Id_dept_sap ( 
+    employee_id VARCHAR(50) PRIMARY KEY, 
+    dept_sap INT4 );
+
 CREATE TABLE -- all
   public.student_profiles (
     id SERIAL PRIMARY KEY,

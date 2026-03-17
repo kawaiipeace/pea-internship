@@ -289,6 +289,11 @@ export const staffProfiles = pgTable(
   ]
 );
 
+export const employeeIdDeptSap = pgTable("employee_id_dept_sap", {
+  employeeId: varchar("employee_id", { length: 50 }).primaryKey().notNull(),
+  deptSap: integer("dept_sap"),
+});
+
 export const studentProfiles = pgTable(
   "student_profiles",
   {

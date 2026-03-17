@@ -172,7 +172,7 @@ export const internshipPositionsRelations = relations(
       references: [offices.id],
     }),
     department: one(departments, {
-      fields: [applicationStatuses.departmentId],
+      fields: [internshipPositions.departmentId],
       references: [departments.deptSap],
     }),
     mentors: many(internshipPositionMentors),
@@ -207,7 +207,7 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   }),
 }));
 
-export const applicationStatusesRelations = relations(references: [departments.deptSap]
+export const applicationStatusesRelations = relations(
   applicationStatuses,
   ({ one, many }) => ({
     user: one(users, {
@@ -216,7 +216,7 @@ export const applicationStatusesRelations = relations(references: [departments.d
     }),
     department: one(departments, {
       fields: [applicationStatuses.departmentId],
-      ,
+      references: [departments.deptSap],
     }),
     internshipPosition: one(internshipPositions, {
       fields: [applicationStatuses.positionId],
