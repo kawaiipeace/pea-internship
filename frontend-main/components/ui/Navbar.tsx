@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { authApi, authStorage } from "../../services/api";
+import { authApi, authStorage } from "@/services/api";
 
 // Helper: fetch Keycloak SSO URL and redirect
 const handleKeycloakRedirect = async () => {

@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import ThaiDateInput from "../components/ui/ThaiDateInput";
-import { applicationApi, userApi, canApplyForNewJob, extractStudentProfile } from "../services/api";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import ThaiDateInput from "@/components/ui/ThaiDateInput";
+import { applicationApi, userApi, canApplyForNewJob, extractStudentProfile } from "@/services/api";
 
 // Thai month names
 const thaiMonths = [

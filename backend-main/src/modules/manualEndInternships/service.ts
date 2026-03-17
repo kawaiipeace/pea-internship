@@ -8,6 +8,7 @@ import { db } from "@/db";
 import {
   applicationStatuses,
   internshipPositions,
+  notifications,
   studentProfiles,
   users,
 } from "@/db/schema";
@@ -104,8 +105,20 @@ export class OwnerStudentStatusService {
 
         await tx
           .update(applicationStatuses)
-          .set({ isActive: false, updatedAt: new Date() })
+          .set({
+            applicationStatus: "CANCEL",
+            statusNote: reason,
+            isActive: false,
+            updatedAt: new Date(),
+          })
           .where(eq(applicationStatuses.id, app.id));
+
+        await tx.insert(notifications).values({
+          userId: studentUserId,
+          title: "การฝึกงานถูกยกเลิก",
+          message: `การฝึกงานของคุณถูกยกเลิก เหตุผล: ${reason}`,
+          isRead: false,
+        });
 
         return { studentUserId, internshipStatus: "CANCEL" };
       }
@@ -128,6 +141,13 @@ export class OwnerStudentStatusService {
         .update(applicationStatuses)
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(applicationStatuses.id, app.id));
+
+      await tx.insert(notifications).values({
+        userId: studentUserId,
+        title: "การฝึกงานเสร็จสิ้น",
+        message: "การฝึกงานของคุณเสร็จสิ้นแล้ว",
+        isRead: false,
+      });
 
       return { studentUserId, internshipStatus: "COMPLETE" };
     });

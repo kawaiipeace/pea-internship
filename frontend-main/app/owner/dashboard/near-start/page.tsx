@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -15,7 +15,7 @@ import {
   type ApplicationStatusAction,
   type AppStatusEnum,
   type MyApplicationData,
-} from "../../../services/api";
+} from "@/services/api";
 import {
   highSchools,
   vocationalSchools,
@@ -391,6 +391,7 @@ function NearStartApplicationsContent() {
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
   ) => {
     switch (status) {
       case "COMPLETE":
@@ -399,6 +400,12 @@ function NearStartApplicationsContent() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (!isActive) {
+          return {
+            label: "ยกเลิกฝึกงาน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         if (statusNote) {
           return {
             label: "ไม่ผ่าน",
@@ -2044,6 +2051,7 @@ function NearStartApplicationsContent() {
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
+                          item.isActive,
                         );
                         return (
                           <div key={item.applicationId}>

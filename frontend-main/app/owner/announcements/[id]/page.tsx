@@ -3,13 +3,13 @@
 import { useState, useEffect, use, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
-import VideoLoading from "../../../components/ui/VideoLoading";
-import { JobAnnouncement } from "../../../types/announcement";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { JobAnnouncement } from "@/types/announcement";
 import { formatDateThai } from "../../../data/mockAnnouncements";
 import { mockApplications, Application } from "../../../data/mockApplications";
-import OwnerSearchSection from "../../../components/ui/OwnerSearchSection";
-import { positionApi, positionToAnnouncement } from "../../../services/api";
+import OwnerSearchSection from "@/components/ui/OwnerSearchSection";
+import { positionApi, positionToAnnouncement } from "@/services/api";
 import {
   highSchools,
   vocationalSchools,

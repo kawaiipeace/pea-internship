@@ -12,8 +12,8 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
-import VideoLoading from "../../../components/ui/VideoLoading";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
 import {
   Application,
   FilterTab,
@@ -24,13 +24,14 @@ import {
 import {
   applicationApi,
   applicationStatusActionsApi,
+  ownerStudentsApi,
   positionApi,
   type ApplicationStatusAction,
   type Position,
   type AllStudentsHistoryItem,
   type AppStatusEnum,
   type MyApplicationData,
-} from "../../../services/api";
+} from "@/services/api";
 import {
   highSchools,
   vocationalSchools,
@@ -64,6 +65,15 @@ const formatDateThai = (dateString: string): string => {
   const month = parseInt(parts[1]) - 1; // 0-indexed
   const day = parseInt(parts[2]);
   return `${day} ${thaiMonths[month]} ${year}`;
+};
+
+// Format ISO datetime to Thai format with time (e.g. "12 มี.ค. 2569 15:00")
+const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+const formatDateTimeThai = (dateString: string): string => {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return formatDateThai(dateString);
+  return `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
 // LocalStorage keys
@@ -180,8 +190,17 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
 
   let mapped = statusMap[item.applicationStatus] || statusMap.PENDING_DOCUMENT;
 
-  // CANCEL + statusNote = owner rejected (ไม่ผ่าน), plain CANCEL = actual cancellation (ยกเลิกฝึกงาน)
-  if (item.applicationStatus === "CANCEL" && item.statusNote) {
+  // CANCEL + isActive=false = internship cancelled by owner (ยกเลิกฝึกงาน)
+  // manualEndInternships sets isActive=false; cancelByOwner leaves isActive=true
+  if (item.applicationStatus === "CANCEL" && item.isActive === false) {
+    mapped = {
+      step: 6,
+      status: "cancelled",
+      detailedStatus: "cancelled",
+      stepDescription: "ยกเลิกฝึกงาน",
+    };
+  } else if (item.applicationStatus === "CANCEL" && item.statusNote) {
+    // CANCEL + isActive=true + statusNote = owner rejected during application (ไม่ผ่าน)
     mapped = {
       step: 3,
       status: "rejected",
@@ -300,8 +319,10 @@ function ApplicationsContent() {
   const [showInterviewSuccess, setShowInterviewSuccess] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [showRejectSuccess, setShowRejectSuccess] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showApproveSuccess, setShowApproveSuccess] = useState(false);
   const [showDocRejectModal, setShowDocRejectModal] = useState(false);
   const [showDocumentPopup, setShowDocumentPopup] = useState(false);
   const [docRejectReason, setDocRejectReason] = useState("");
@@ -862,6 +883,11 @@ function ApplicationsContent() {
         setApprovedApps(newApproved);
         saveToStorage(STORAGE_KEYS.APPROVED_APPS, newApproved);
         setShowApproveConfirm(false);
+        // Show success popup
+        setShowApproveSuccess(true);
+        setTimeout(() => {
+          setShowApproveSuccess(false);
+        }, 500);
         // Re-fetch to get updated statuses
         await fetchApplications();
       } catch (err) {
@@ -912,6 +938,11 @@ function ApplicationsContent() {
         setShowRejectConfirm(false);
         setShowRejectModal(false);
         setRejectReason("");
+        // Show success popup
+        setShowRejectSuccess(true);
+        setTimeout(() => {
+          setShowRejectSuccess(false);
+        }, 500);
         // Re-fetch to get updated statuses
         await fetchApplications();
       } catch (err) {
@@ -1036,6 +1067,7 @@ function ApplicationsContent() {
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
   ) => {
     switch (status) {
       case "COMPLETE":
@@ -1044,6 +1076,12 @@ function ApplicationsContent() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (!isActive) {
+          return {
+            label: "ยกเลิกฝึกงาน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         if (statusNote) {
           return {
             label: "ไม่ผ่าน",
@@ -1472,7 +1510,7 @@ function ApplicationsContent() {
               <div>
                 <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
                 <p className="text-gray-900 text-sm">
-                  {formatDateThai(
+                  {formatDateTimeThai(
                     (() => {
                       const cancelData = getCancellationData(
                         selectedApplication.id,
@@ -1514,10 +1552,13 @@ function ApplicationsContent() {
             </button>
             {(() => {
               const totalSteps = 5;
-              const completedSteps = Math.min(
-                selectedApplication.step - 1,
-                totalSteps,
-              );
+              const isCancelledInternship = selectedApplication.status === "cancelled" && selectedApplication.step >= 6;
+              const completedSteps = isCancelledInternship
+                ? totalSteps
+                : Math.min(
+                  selectedApplication.step - 1,
+                  totalSteps,
+                );
               const currentStepLabel = [
                 "รอผู้สมัครยื่นเอกสาร",
                 "รอสัมภาษณ์",
@@ -1525,6 +1566,7 @@ function ApplicationsContent() {
                 "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์",
                 "รอ HR ตรวจสอบ",
               ];
+              const isAllCompleted = completedSteps >= totalSteps;
               const currentStepIndex = Math.min(completedSteps, totalSteps - 1);
               const circumference = 2 * Math.PI * 36;
               const progress = (completedSteps / totalSteps) * circumference;
@@ -1601,22 +1643,55 @@ function ApplicationsContent() {
                     </span>
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">
-                      {currentStepLabel[currentStepIndex]}
-                    </p>
-                    {stepCompletedInfo[currentStepIndex - 1]?.date && (
-                      <p className="text-gray-400 text-sm">
-                        {stepCompletedInfo[currentStepIndex - 1].date}
-                      </p>
+                    {isCancelledInternship ? (
+                      <>
+                        <p className="font-bold text-gray-900">
+                          ยกเลิกฝึกงาน
+                        </p>
+                        {(() => {
+                          const od =
+                            positionInfo?.owner ||
+                            (positionInfo?.owners && positionInfo.owners.length > 0
+                              ? positionInfo.owners[0]
+                              : null);
+                          const ownerName = od
+                            ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
+                            : null;
+                          return ownerName ? (
+                            <p className="text-gray-400 text-sm">
+                              {ownerName}
+                            </p>
+                          ) : null;
+                        })()}
+                        {selectedApplication.cancelledDate && (
+                          <p className="text-gray-400 text-sm">
+                            {formatDateTimeThai(selectedApplication.cancelledDate)}
+                          </p>
+                        )}
+                        <p className="text-gray-400 text-sm">
+                          กระบวนการสมัครสิ้นสุดแล้ว
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-bold text-gray-900">
+                          {currentStepLabel[currentStepIndex]}
+                        </p>
+                        {stepCompletedInfo[currentStepIndex - 1]?.date && (
+                          <p className="text-gray-400 text-sm">
+                            {stepCompletedInfo[currentStepIndex - 1].date}
+                          </p>
+                        )}
+                        {stepCompletedInfo[currentStepIndex - 1]?.operator && (
+                          <p className="text-gray-400 text-sm">
+                            {stepCompletedInfo[currentStepIndex - 1].operator}
+                          </p>
+                        )}
+                        <p className="text-gray-400 text-sm">
+                          กระบวนการสมัครสิ้นสุดแล้ว
+                        </p>
+                      </>
                     )}
-                    {stepCompletedInfo[currentStepIndex - 1]?.operator && (
-                      <p className="text-gray-400 text-sm">
-                        {stepCompletedInfo[currentStepIndex - 1].operator}
-                      </p>
-                    )}
-                    <p className="text-gray-400 text-sm">
-                      กระบวนการสมัครสิ้นสุดแล้ว
-                    </p>
                   </div>
                 </div>
               );
@@ -2699,10 +2774,13 @@ function ApplicationsContent() {
             </button>
             {(() => {
               const totalSteps = 5;
-              const completedSteps = Math.min(
-                selectedApplication.step - 1,
-                totalSteps,
-              );
+              const isCancelledInternship = selectedApplication.status === "cancelled" && selectedApplication.step >= 6;
+              const completedSteps = isCancelledInternship
+                ? totalSteps
+                : Math.min(
+                  selectedApplication.step - 1,
+                  totalSteps,
+                );
               const currentStepLabel = [
                 "รอผู้สมัครยื่นเอกสาร",
                 "รอสัมภาษณ์",
@@ -2791,7 +2869,36 @@ function ApplicationsContent() {
                     </span>
                   </div>
                   <div>
-                    {isAllCompleted ? (
+                    {isCancelledInternship ? (
+                      <>
+                        <p className="font-bold text-gray-900">
+                          ยกเลิกฝึกงาน
+                        </p>
+                        {(() => {
+                          const od =
+                            positionInfo?.owner ||
+                            (positionInfo?.owners && positionInfo.owners.length > 0
+                              ? positionInfo.owners[0]
+                              : null);
+                          const ownerName = od
+                            ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
+                            : null;
+                          return ownerName ? (
+                            <p className="text-gray-400 text-sm">
+                              {ownerName}
+                            </p>
+                          ) : null;
+                        })()}
+                        {selectedApplication.cancelledDate && (
+                          <p className="text-gray-400 text-sm">
+                            {formatDateTimeThai(selectedApplication.cancelledDate)}
+                          </p>
+                        )}
+                        <p className="text-gray-400 text-sm">
+                          กระบวนการสมัครสิ้นสุดแล้ว
+                        </p>
+                      </>
+                    ) : isAllCompleted ? (
                       <>
                         <p className="font-bold text-gray-900">
                           การตรวจสอบเสร็จสิ้น
@@ -5405,38 +5512,37 @@ function ApplicationsContent() {
       {/* Interview Confirmation Popup */}
       {showInterviewConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
-            {/* Green Checkmark Icon */}
-            <div className="flex items-center justify-center mx-auto mb-6">
-              <svg
-                width="70"
-                height="70"
-                viewBox="0 0 45 45"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
-                <path
-                  d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
-                  fill="#17B26A"
-                />
-              </svg>
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 text-center shadow-xl">
+            <div className="flex justify-center mb-4">
+              <div className="flex items-center justify-center">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
+                </svg>
+              </div>
             </div>
-
-            <h3 className="text-xl font-semibold text-gray-900 mb-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
               ยืนยันการสัมภาษณ์
             </h3>
-
-            <div className="flex gap-4 justify-center">
+            <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowInterviewConfirm(false)}
-                className="px-8 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                className="px-8 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-sm cursor-pointer"
               >
                 ย้อนกลับ
               </button>
               <button
                 onClick={handleConfirmInterview}
-                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white border-2 border-green-600 transition-colors cursor-pointer"
+                className="px-8 py-2.5 bg-green-600 border border-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white transition-colors font-sm cursor-pointer"
               >
                 ยืนยัน
               </button>
@@ -5522,6 +5628,35 @@ function ApplicationsContent() {
         </div>
       )}
 
+      {/* Approve Success Popup */}
+      {showApproveSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              ยืนยันรับเข้าฝึกงาน
+            </h3>
+            <p className="text-lg font-semibold text-gray-900">เรียบร้อยแล้ว</p>
+          </div>
+        </div>
+      )}
+
       {/* Reject Reason Modal (Step 1) */}
       {showRejectModal && selectedApplication && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -5595,7 +5730,7 @@ function ApplicationsContent() {
               </button>
               <button
                 onClick={() => {
-                  if (rejectReason.trim()) setShowRejectConfirm(true);
+                  if (rejectReason.trim()) handleReject();
                 }}
                 disabled={!rejectReason.trim()}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -5620,41 +5755,31 @@ function ApplicationsContent() {
         </div>
       )}
 
-      {/* Reject Confirmation Popup (Step 2) */}
-      {showRejectConfirm && selectedApplication && (
+      {/* Reject Success Popup */}
+      {showRejectSuccess && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 text-center">
+          <div className="bg-white rounded-xl p-8 max-w-sm w-full mx-4 text-center">
             <div className="flex justify-center mb-4">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 34 34"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M16.6667 19L21.5 23.8333C21.8056 24.1389 22.1944 24.2917 22.6667 24.2917C23.1389 24.2917 23.5278 24.1389 23.8333 23.8333C24.1389 23.5278 24.2917 23.1389 24.2917 22.6667C24.2917 22.1944 24.1389 21.8056 23.8333 21.5L19 16.6667L23.8333 11.8333C24.1389 11.5278 24.2917 11.1389 24.2917 10.6667C24.2917 10.1944 24.1389 9.80556 23.8333 9.5C23.5278 9.19444 23.1389 9.04167 22.6667 9.04167C22.1944 9.04167 21.8056 9.19444 21.5 9.5L16.6667 14.3333L11.8333 9.5C11.5278 9.19444 11.1389 9.04167 10.6667 9.04167C10.1944 9.04167 9.80556 9.19444 9.5 9.5C9.19444 9.80556 9.04167 10.1944 9.04167 10.6667C9.04167 11.1389 9.19444 11.5278 9.5 11.8333L14.3333 16.6667L9.5 21.5C9.19444 21.8056 9.04167 22.1944 9.04167 22.6667C9.04167 23.1389 9.19444 23.5278 9.5 23.8333C9.80556 24.1389 10.1944 24.2917 10.6667 24.2917C11.1389 24.2917 11.5278 24.1389 11.8333 23.8333L16.6667 19ZM16.6667 33.3333C14.3611 33.3333 12.1944 32.8958 10.1667 32.0208C8.13889 31.1458 6.375 29.9583 4.875 28.4583C3.375 26.9583 2.1875 25.1944 1.3125 23.1667C0.4375 21.1389 0 18.9722 0 16.6667C0 14.3611 0.4375 12.1944 1.3125 10.1667C2.1875 8.13889 3.375 6.375 4.875 4.875C6.375 3.375 8.13889 2.1875 10.1667 1.3125C12.1944 0.4375 14.3611 0 16.6667 0C18.9722 0 21.1389 0.4375 23.1667 1.3125C25.1944 2.1875 26.9583 3.375 28.4583 4.875C29.9583 6.375 31.1458 8.13889 32.0208 10.1667C32.8958 12.1944 33.3333 14.3611 33.3333 16.6667C33.3333 18.9722 32.8958 21.1389 32.0208 23.1667C31.1458 25.1944 29.9583 26.9583 28.4583 28.4583C26.9583 29.9583 25.1944 31.1458 23.1667 32.0208C21.1389 32.8958 18.9722 33.3333 16.6667 33.3333Z"
-                  fill="#F04438"
-                />
-              </svg>
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
+                </svg>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
               ปฏิเสธรับเข้าฝึกงาน
             </h3>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowRejectConfirm(false)}
-                className="flex-1 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 cursor-pointer font-medium"
-              >
-                ย้อนกลับ
-              </button>
-              <button
-                onClick={handleReject}
-                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer font-medium"
-              >
-                ยืนยัน
-              </button>
-            </div>
+            <p className="text-lg font-semibold text-gray-900">เรียบร้อยแล้ว</p>
           </div>
         </div>
       )}
@@ -5688,7 +5813,7 @@ function ApplicationsContent() {
                 <svg
                   width="24"
                   height="24"
-                  viewBox="0 0 24 24"
+                  viewBox="0 0 18 14"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -5802,44 +5927,21 @@ function ApplicationsContent() {
                 ย้อนกลับ
               </button>
               <button
-                onClick={() => {
-                  // Save cancellation to localStorage
-                  const existingCancelled = (() => {
-                    try {
-                      const stored = localStorage.getItem("pea_cancelled_apps");
-                      return stored ? JSON.parse(stored) : [];
-                    } catch {
-                      return [];
-                    }
-                  })();
-
-                  const today = new Date();
-                  const buddhistYear = today.getFullYear() + 543;
-                  const month = String(today.getMonth() + 1).padStart(2, "0");
-                  const day = String(today.getDate()).padStart(2, "0");
-                  const cancelDate = `${buddhistYear}-${month}-${day}`;
-
-                  if (
-                    !existingCancelled.find(
-                      (c: { id: string }) => c.id === selectedApplication.id,
-                    )
-                  ) {
-                    existingCancelled.push({
-                      id: selectedApplication.id,
-                      reason: cancelReason,
-                      cancelledBy: "เจ้าของหน่วยงาน",
-                      cancelledDate: cancelDate,
-                    });
-                    localStorage.setItem(
-                      "pea_cancelled_apps",
-                      JSON.stringify(existingCancelled),
+                onClick={async () => {
+                  try {
+                    await ownerStudentsApi.updateInternshipStatus(
+                      selectedApplication.internId,
+                      "CANCEL",
+                      cancelReason
                     );
-                    setCancelledAppsData(existingCancelled);
+                    setShowCancelConfirm(false);
+                    setShowCancelModal(false);
+                    setCancelReason("");
+                    await fetchApplications();
+                  } catch (err) {
+                    console.error("Cancel internship failed:", err);
+                    alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
                   }
-
-                  setShowCancelConfirm(false);
-                  setShowCancelModal(false);
-                  setCancelReason("");
                 }}
                 className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer font-medium"
               >
@@ -5979,6 +6081,7 @@ function ApplicationsContent() {
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
+                          item.isActive,
                         );
                         return (
                           <div key={item.applicationId}>

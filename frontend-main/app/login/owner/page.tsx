@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import VideoLoading from "../../components/ui/VideoLoading";
-import { authApi } from "../../services/api";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { authApi } from "@/services/api";
 
 export default function OwnerLoginPage() {
   // Auto-redirect to Keycloak SSO

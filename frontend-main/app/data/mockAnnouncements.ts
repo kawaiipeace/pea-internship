@@ -1,6 +1,6 @@
 // Mock data for Job Announcements (Owner side)
 
-import { JobAnnouncement, AnnouncementApplicant, AnnouncementStats } from '../types/announcement';
+import { JobAnnouncement, AnnouncementApplicant, AnnouncementStats } from '@/types/announcement';
 
 // Initial mock announcements
 export const initialMockAnnouncements: JobAnnouncement[] = [

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import VideoLoading from "../../../components/ui/VideoLoading";
-import { authApi, authStorage } from "../../../services/api";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { authApi, authStorage } from "@/services/api";
 
 export default function KeycloakCallbackPage() {
   const router = useRouter();

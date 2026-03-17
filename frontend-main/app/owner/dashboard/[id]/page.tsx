@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -17,8 +17,8 @@ import {
   type AppStatusEnum,
   type MyApplicationData,
   type Position,
-} from "../../../services/api";
-import VideoLoading from "../../../components/ui/VideoLoading";
+} from "@/services/api";
+import VideoLoading from "@/components/ui/VideoLoading";
 
 // Thai month names
 const thaiMonths = [
@@ -292,10 +292,10 @@ function ApplicationDetailContent() {
     }
   };
 
-  // Helper: format API status to display status
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
   ) => {
     switch (status) {
       case "COMPLETE":
@@ -304,6 +304,12 @@ function ApplicationDetailContent() {
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
       case "CANCEL":
+        if (!isActive) {
+          return {
+            label: "ยกเลิกฝึกงาน",
+            color: "bg-red-50 text-red-600 border-red-200",
+          };
+        }
         if (statusNote) {
           return {
             label: "ไม่ผ่าน",
@@ -2304,6 +2310,7 @@ function ApplicationDetailContent() {
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
+                          item.isActive,
                         );
                         return (
                           <div key={item.applicationId}>

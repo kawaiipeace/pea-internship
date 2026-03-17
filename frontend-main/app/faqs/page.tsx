@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NavbarIntern } from "../components";
-import Navbar from "../components/ui/Navbar";
-import { authStorage } from "../services/api";
+import { NavbarIntern } from "@/components";
+import Navbar from "@/components/ui/Navbar";
+import { authStorage } from "@/services/api";
 
 // Image Viewer Modal Component
 interface ImageViewerProps {
