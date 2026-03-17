@@ -376,8 +376,12 @@ function NearStartApplicationsContent() {
       setHistoryData(
         data.filter(
           (h) =>
-            h.applicationStatus === "COMPLETE" ||
-            h.applicationStatus === "CANCEL",
+            getHistoryOutcome(
+              h.applicationStatus,
+              h.statusNote,
+              h.isActive,
+              h.infoEndDate,
+            ) !== null,
         ),
       );
     } catch (error) {
@@ -388,30 +392,69 @@ function NearStartApplicationsContent() {
     }
   };
 
+  type HistoryOutcome = "complete" | "rejected" | "cancelled";
+
+  const isInternshipEndDatePassed = (endDate?: string | null) => {
+    if (!endDate) return false;
+
+    const dateOnly = endDate.split("T")[0].trim();
+    const plainDateMatch = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    let parsedEndDate: Date;
+    if (plainDateMatch) {
+      const [, year, month, day] = plainDateMatch;
+      parsedEndDate = new Date(Number(year), Number(month) - 1, Number(day));
+    } else {
+      parsedEndDate = new Date(endDate);
+      if (Number.isNaN(parsedEndDate.getTime())) return false;
+    }
+
+    parsedEndDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return parsedEndDate.getTime() < today.getTime();
+  };
+
+  const getHistoryOutcome = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+    isActive?: boolean,
+    endDate?: string | null,
+  ): HistoryOutcome | null => {
+    if (status === "COMPLETE") {
+      return isInternshipEndDatePassed(endDate) ? "complete" : null;
+    }
+
+    if (status === "CANCEL" || status === "ABORT") {
+      if (!isActive) return "cancelled";
+      if (statusNote) return "rejected";
+      return "cancelled";
+    }
+
+    return null;
+  };
+
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
     isActive?: boolean,
+    endDate?: string | null,
   ) => {
-    switch (status) {
-      case "COMPLETE":
+    const outcome = getHistoryOutcome(status, statusNote, isActive, endDate);
+
+    switch (outcome) {
+      case "complete":
         return {
           label: "ฝึกงานเสร็จสิ้น",
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
-      case "CANCEL":
-        if (!isActive) {
-          return {
-            label: "ยกเลิกฝึกงาน",
-            color: "bg-red-50 text-red-600 border-red-200",
-          };
-        }
-        if (statusNote) {
-          return {
-            label: "ไม่ผ่าน",
-            color: "bg-red-50 text-red-600 border-red-200",
-          };
-        }
+      case "rejected":
+        return {
+          label: "ไม่ผ่าน",
+          color: "bg-red-50 text-red-600 border-red-200",
+        };
+      case "cancelled":
         return {
           label: "ยกเลิกฝึกงาน",
           color: "bg-red-50 text-red-600 border-red-200",
@@ -2048,10 +2091,17 @@ function NearStartApplicationsContent() {
                   ) : (
                     <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
                       {historyData.map((item) => {
+                        const historyOutcome = getHistoryOutcome(
+                          item.applicationStatus,
+                          item.statusNote,
+                          item.isActive,
+                          item.infoEndDate,
+                        );
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
                           item.isActive,
+                          item.infoEndDate,
                         );
                         return (
                           <div key={item.applicationId}>
@@ -2103,10 +2153,9 @@ function NearStartApplicationsContent() {
                                     />
                                   </svg>
                                   <span className="text-sm font-semibold text-red-500">
-                                    {item.applicationStatus === "CANCEL" &&
-                                    item.statusNote
+                                    {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
-                                      : item.applicationStatus === "CANCEL"
+                                      : historyOutcome === "cancelled"
                                         ? "เหตุผลประกอบการยกเลิกฝึกงาน"
                                         : "หมายเหตุ"}
                                   </span>

@@ -1395,10 +1395,14 @@ api.interceptors.response.use(
         // ไม่ redirect ถ้าอยู่หน้า public ("/", "/pea-info", "/faqs", "/jobs")
         const publicPaths = ["/", "/pea-info", "/faqs", "/jobs"];
         const currentPath = window.location.pathname;
+        const isAuthPage = currentPath.startsWith("/login") || currentPath.startsWith("/register");
         const isPublicPage = publicPaths.some(p => currentPath === p || currentPath.startsWith("/jobs/"));
 
-        if (!isPublicPage) {
-          window.location.href = "/login/intern";
+        if (!isPublicPage && !isAuthPage) {
+          const loginUrl = new URL("/login/intern", window.location.origin);
+          loginUrl.searchParams.set("forceLogin", "1");
+          loginUrl.searchParams.set("callbackUrl", currentPath);
+          window.location.replace(loginUrl.toString());
         }
       }
     }

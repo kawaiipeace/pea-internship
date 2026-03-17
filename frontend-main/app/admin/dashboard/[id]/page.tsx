@@ -64,7 +64,7 @@ function getValidationBadge(status: string) {
   switch (status) {
     case "VERIFIED": return { label: "ผ่าน", className: "bg-green-100 text-green-700" };
     case "INVALID": return { label: "ไม่ผ่าน", className: "bg-red-100 text-red-700" };
-    default: return { label: "รอตรวจ", className: "bg-yellow-100 text-yellow-700" };
+    default: return { label: "รอตรวจ", className: "bg-[#FEF0C7] text-[#7A2E0E]" };
   }
 }
 
@@ -213,18 +213,18 @@ export default function AdminApplicationDetailPage() {
 
   // Primary badge
   const primaryBadge = viewMode === "pending_review"
-    ? { text: "รอตรวจเอกสาร", className: "bg-orange-100 text-orange-700 border border-orange-300" }
+    ? { text: "รอตรวจเอกสาร", className: "bg-[#FEF0C7] text-[#7A2E0E] border border-[#FEDF89]" }
     : viewMode === "docs_invalid"
-      ? { text: "เอกสารไม่ผ่าน", className: "bg-red-100 text-red-700 border border-red-300" }
-      : { text: "เอกสารผ่าน", className: "bg-green-100 text-green-700 border border-green-300" };
+      ? { text: "เอกสารไม่ผ่าน", className: "bg-[#FEE4E2] text-[#912018] border border-[#FECDCA]" }
+      : { text: "เอกสารผ่าน", className: "bg-[#DCFAE6] text-[#085D3A] border border-[#DCFAE6]" };
 
   // Secondary badge (only for COMPLETE status)
   const secondaryBadge = viewMode === "active"
-    ? { text: "อยู่ระหว่างฝึกงาน", className: "bg-blue-100 text-blue-700 border border-blue-300" }
+    ? { text: "อยู่ระหว่างฝึกงาน", className: "bg-[#FEF0C7] text-[#7A2E0E] border border-[#FEDF89]" }
     : viewMode === "completed"
-      ? { text: "ฝึกงานเสร็จสิ้น", className: "bg-gray-100 text-gray-700 border border-gray-300" }
+      ? { text: "ฝึกงานเสร็จสิ้น", className: "bg-[#DCFAE6] text-[#085D3A] border border-[#DCFAE6]" }
       : viewMode === "cancelled"
-        ? { text: "ยกเลิกฝึกงาน", className: "bg-gray-100 text-gray-700 border border-gray-300" }
+        ? { text: "ยกเลิกฝึกงาน", className: "bg-[#FEE4E2] text-[#912018] border border-[#FECDCA]" }
         : null;
 
   // Reason box
@@ -267,16 +267,17 @@ export default function AdminApplicationDetailPage() {
 
             {/* Reason Box */}
             {showReasonBox && (
-              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+              <div className="bg-[#FEE4E2] border border-[#FECDCA] rounded-2xl p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 17C12.2833 17 12.5208 16.9042 12.7125 16.7125C12.9042 16.5208 13 16.2833 13 16V12C13 11.7167 12.9042 11.4792 12.7125 11.2875C12.5208 11.0958 12.2833 11 12 11C11.7167 11 11.4792 11.0958 11.2875 11.2875C11.0958 11.4792 11 11.7167 11 12V16C11 16.2833 11.0958 16.5208 11.2875 16.7125C11.4792 16.9042 11.7167 17 12 17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z" fill="#D92D20" />
                     </svg>
+
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-orange-800">{reasonTitle}</p>
-                    <p className="text-sm text-orange-700 mt-1">{application.statusNote}</p>
+                    <p className="text-sm font-semibold text-[#D92D20]">{reasonTitle}</p>
+                    <p className="text-sm text-gray-800 mt-1">{application.statusNote}</p>
                   </div>
                 </div>
               </div>
@@ -307,6 +308,8 @@ export default function AdminApplicationDetailPage() {
                   {application.documents.map((doc, idx) => {
                     const docInfo = DOC_TYPE_MAP[doc.docTypeId] || { name: `เอกสาร #${doc.docTypeId}`, key: "transcript" as DocTypeName, label: `เอกสาร #${doc.docTypeId}` };
                     const badge = getValidationBadge(doc.validationStatus);
+                    const hideVerifiedBadge =
+                      [1, 2, 3].includes(doc.docTypeId) && doc.validationStatus === "VERIFIED";
                     return (
                       <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                         <div className="flex items-center gap-3 min-w-0">
@@ -315,7 +318,11 @@ export default function AdminApplicationDetailPage() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-gray-800 truncate">{docInfo.label}</p>
-                            <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>{badge.label}</span>
+                            {!hideVerifiedBadge && (
+                              <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>
+                                {badge.label}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
@@ -334,11 +341,11 @@ export default function AdminApplicationDetailPage() {
               <div className="mt-4">
                 {/* Action Buttons — only for PENDING_REVIEW with pending docs */}
                 {viewMode === "pending_review" && hasPendingDocs && !actionCompleted && (
-                  <div className="space-y-3">
-                    <button onClick={() => setShowApproveConfirm(true)} disabled={actionLoading} className="w-full py-3 bg-green-500 text-white rounded-2xl font-semibold text-base hover:bg-green-600 disabled:opacity-50 transition-colors">
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => setShowApproveConfirm(true)} disabled={actionLoading} className="w-full py-3 bg-[#17B26A] text-white rounded-2xl cursor-pointer font-semibold text-base hover:bg-[#067647] disabled:opacity-50 transition-colors">
                       {actionLoading ? "กำลังดำเนินการ..." : "เอกสารถูกต้อง"}
                     </button>
-                    <button onClick={() => setShowRejectConfirm(true)} disabled={actionLoading} className="w-full py-3 bg-red-500 text-white rounded-2xl font-semibold text-base hover:bg-red-600 disabled:opacity-50 transition-colors">
+                    <button onClick={() => setShowRejectConfirm(true)} disabled={actionLoading} className="w-full py-3 bg-[#D92D20] text-white rounded-2xl cursor-pointer font-semibold text-base hover:bg-[#912018] disabled:opacity-50 transition-colors">
                       เอกสารไม่ถูกต้อง
                     </button>
                   </div>
@@ -401,21 +408,33 @@ export default function AdminApplicationDetailPage() {
 
             {/* Related Persons */}
             <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h3 className="text-base font-bold text-gray-800 mb-6">ข้อมูลผู้เกี่ยวข้อง</h3>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-9 h-9 bg-primary-50 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-bold text-gray-800">ข้อมูลผู้เกี่ยวข้อง</h3>
+              </div>
 
               {/* Owner */}
               <div className="mb-6">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">รายละเอียดผู้ประกาศรับสมัคร</h4>
                 {owner ? (
-                  <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
-                    <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    </div>
-                    <div className="text-sm">
-                      <p className="font-medium text-gray-800">{owner.fname} {owner.lname}</p>
-                      <div className="flex flex-wrap gap-x-4 mt-1 text-gray-500">
-                        <span>{owner.email || "-"}</span>
-                        <span>{owner.phoneNumber || "-"}</span>
+                  <div className="p-4 bg-gray-50 rounded-2xl">
+                    <h5 className="text-base font-semibold text-gray-800">รายละเอียดผู้ประกาศรับสมัคร</h5>
+                    <hr className="border-gray-200 mt-3 mb-4" />
+                    <div className="space-y-4 text-sm">
+                      <div>
+                        <p className="text-gray-400">ชื่อผู้ประกาศ</p>
+                        <p className="font-medium text-gray-800 mt-0.5">{owner.fname} {owner.lname}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">อีเมลผู้ประกาศรับสมัคร</p>
+                        <p className="font-medium text-gray-800 mt-0.5">{owner.email || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">เบอร์โทรผู้ประกาศรับสมัคร</p>
+                        <p className="font-medium text-gray-800 mt-0.5">{owner.phoneNumber || "-"}</p>
                       </div>
                     </div>
                   </div>
@@ -426,19 +445,24 @@ export default function AdminApplicationDetailPage() {
 
               {/* Mentors */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">รายละเอียดพี่เลี้ยง</h4>
                 {application.mentors && application.mentors.length > 0 ? (
                   <div className="space-y-3">
                     {application.mentors.map((mentor, idx) => (
-                      <div key={idx} className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <svg className="w-5 h-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        </div>
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-800">{mentor.fname} {mentor.lname}</p>
-                          <div className="flex flex-wrap gap-x-4 mt-1 text-gray-500">
-                            <span>{mentor.email || "-"}</span>
-                            <span>{mentor.phone || "-"}</span>
+                      <div key={idx} className="p-4 bg-gray-50 rounded-2xl">
+                        <h5 className="text-base font-semibold text-gray-800">รายละเอียดพี่เลี้ยง</h5>
+                        <hr className="border-gray-200 mt-3 mb-4" />
+                        <div className="space-y-4 text-sm">
+                          <div>
+                            <p className="text-gray-400">ชื่อพี่เลี้ยง</p>
+                            <p className="font-medium text-gray-800 mt-0.5">{mentor.fname} {mentor.lname}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">อีเมล</p>
+                            <p className="font-medium text-gray-800 mt-0.5">{mentor.email || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-400">เบอร์โทร</p>
+                            <p className="font-medium text-gray-800 mt-0.5">{mentor.phone || "-"}</p>
                           </div>
                         </div>
                       </div>
@@ -475,7 +499,7 @@ export default function AdminApplicationDetailPage() {
             <h3 className="text-lg font-bold text-gray-800 mb-6">ยืนยันการตรวจ</h3>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setShowApproveConfirm(false)} className="px-6 py-2.5 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium">ย้อนกลับ</button>
-              <button onClick={() => { setShowApproveConfirm(false); handleApproveAll(); }} disabled={actionLoading} className="px-6 py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 transition-colors font-medium">ยืนยัน</button>
+              <button onClick={() => { setShowApproveConfirm(false); handleApproveAll(); }} disabled={actionLoading} className="px-6 py-2.5 bg-[#17B26A] text-white rounded-xl hover:bg-[#067647] disabled:opacity-50 transition-colors font-medium">ยืนยัน</button>
             </div>
           </div>
         </div>
@@ -518,7 +542,7 @@ export default function AdminApplicationDetailPage() {
             />
             <div className="flex gap-3 justify-center">
               <button onClick={() => { setShowRejectConfirm(false); setRejectionNote(""); }} className="px-6 py-2.5 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium">ย้อนกลับ</button>
-              <button onClick={handleRejectAll} disabled={actionLoading || !rejectionNote.trim()} className="px-6 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50 transition-colors font-medium">ยืนยัน</button>
+              <button onClick={handleRejectAll} disabled={actionLoading || !rejectionNote.trim()} className="px-6 py-2.5 bg-[#D92D20] text-white rounded-xl hover:bg-[#912018] disabled:opacity-50 transition-colors font-medium">ยืนยัน</button>
             </div>
           </div>
         </div>

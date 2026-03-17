@@ -1,4 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { ConflictError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
   applicationStatuses,
@@ -88,7 +89,19 @@ export class CheckTimeService {
       });
 
       if (existingLog?.checkInId) {
-        throw new Error("คุณได้บันทึกเวลาเข้างานของวันนี้ไปแล้ว");
+        throw new ConflictError("คุณได้บันทึกเวลาเข้างานของวันนี้ไปแล้ว");
+      }
+
+      const ipUsedToday = await tx.query.checkTimes.findFirst({
+        where: and(
+          eq(checkTimes.ip, ip),
+          eq(checkTimes.typeCheck, "IN"),
+          sql`DATE(${checkTimes.time}) = ${today}`
+        ),
+      });
+
+      if (ipUsedToday) {
+        throw new ConflictError("ไอพีนี้ถูกใช้บันทึกเวลาเข้างานไปแล้วในวันนี้");
       }
 
       const workStartTime = new Date(now);

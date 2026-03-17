@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { authApi, authStorage, userApi, notificationApi, type NotificationItem } from "@/services/api";
 import Toast from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
 
 // Helper: relative time in Thai
 function relativeTime(dateString: string): string {
@@ -346,15 +347,23 @@ export default function OwnerNavbar() {
                           >
                             X
                           </button>
-                          <p className="text-gray-900 text-sm font-medium">
-                            {notif.title}
-                          </p>
-                          <p className="text-gray-600 text-xs mt-0.5">
-                            {notif.message}
-                          </p>
-                          <p className="text-gray-400 text-xs mt-1">
-                            {relativeTime(notif.createdAt)}
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <NotificationStatusIcon
+                              tone={detectNotificationTone(notif.title, notif.message)}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <div>
+                              <p className="text-gray-900 text-sm font-medium">
+                                {notif.title}
+                              </p>
+                              <p className="text-gray-600 text-xs mt-0.5">
+                                {notif.message}
+                              </p>
+                              <p className="text-gray-400 text-xs mt-1">
+                                {relativeTime(notif.createdAt)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ))
                     )}
