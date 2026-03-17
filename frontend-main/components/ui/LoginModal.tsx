@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authApi, authStorage } from "../../services/api";
+import { authApi, authStorage } from "@/services/api";
 
 interface LoginModalProps {
   isOpen: boolean;

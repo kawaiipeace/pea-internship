@@ -3,6 +3,7 @@ import { application } from "./application";
 import { applicationStatusActionsModule } from "./application_status_actions";
 import { ApplicationDocuments } from "./application-documents";
 import { auth } from "./auth";
+import { checkTime } from "./check-time";
 import { department } from "./department";
 import { favorite } from "./favorite";
 import { institution } from "./institution";
@@ -28,5 +29,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(ApplicationDocuments)
   .use(ownerStudents)
   .use(staffLogs)
+  .use(checkTime)
   .use(applicationStatusActionsModule);
 export default modules;

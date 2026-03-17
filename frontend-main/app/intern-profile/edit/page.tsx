@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { NavbarIntern } from "../../components";
-import VideoLoading from "../../components/ui/VideoLoading";
-import { userApi, institutionApi, extractStudentProfile, applicationApi, positionApi, Position } from "../../services/api";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import ThaiDateInput from "@/components/ui/ThaiDateInput";
+import { userApi, institutionApi, extractStudentProfile, applicationApi, positionApi, Position } from "@/services/api";
 
 // Helper functions
 const getEducationLabel = (value: string): string => {
@@ -586,11 +587,9 @@ export default function EditProfilePage() {
                         <label className="block text-sm text-gray-600 mb-1 font-medium">
                           วันเริ่มต้น
                         </label>
-                        <input
-                          type="date"
+                        <ThaiDateInput
                           value={startDate}
-                          onChange={(e) => {
-                            const v = e.target.value;
+                          onChange={(v) => {
                             setStartDate(v);
                             if (endDate && v > endDate) setEndDate("");
                           }}
@@ -602,11 +601,10 @@ export default function EditProfilePage() {
                         <label className="block text-sm text-gray-600 mb-1 font-medium">
                           วันสิ้นสุด
                         </label>
-                        <input
-                          type="date"
+                        <ThaiDateInput
                           value={endDate}
                           min={startDate || undefined}
-                          onChange={(e) => setEndDate(e.target.value)}
+                          onChange={(v) => setEndDate(v)}
                           className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-primary-500"
                         />
                       </div>

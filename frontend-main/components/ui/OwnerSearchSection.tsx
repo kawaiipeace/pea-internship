@@ -6,7 +6,7 @@ import {
   vocationalSchools,
   highVocationalSchools,
   universities,
-} from "../../data/institutions";
+} from "../../app/data/institutions";
 
 // Institution categories
 const institutionCategories = [

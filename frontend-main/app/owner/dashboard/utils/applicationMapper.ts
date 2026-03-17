@@ -6,7 +6,7 @@ import {
   AllStudentsHistoryItem,
   AppStatusEnum,
   applicationApi,
-} from "../../../services/api";
+} from "@/services/api";
 import type {
   Application,
   ApplicationStatus,
@@ -108,8 +108,17 @@ export function mapApiToApplication(
 ): Application {
   let mapped = statusMap[item.applicationStatus] || statusMap.PENDING_DOCUMENT;
 
-  // CANCEL + statusNote = owner rejected, plain CANCEL = actual cancellation
-  if (item.applicationStatus === "CANCEL" && item.statusNote) {
+  // CANCEL + isActive=false = internship cancelled by owner (ยกเลิกฝึกงาน)
+  // manualEndInternships sets isActive=false; cancelByOwner leaves isActive=true
+  if (item.applicationStatus === "CANCEL" && item.isActive === false) {
+    mapped = {
+      step: 6,
+      status: "cancelled",
+      detailedStatus: "cancelled",
+      stepDescription: "ยกเลิกฝึกงาน",
+    };
+  } else if (item.applicationStatus === "CANCEL" && item.statusNote) {
+    // CANCEL + isActive=true + statusNote = owner rejected during application (ไม่ผ่าน)
     mapped = {
       step: 3,
       status: "rejected",
@@ -169,6 +178,10 @@ export function mapApiToApplication(
     cancellationReason:
       item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
         ? item.statusNote || undefined
+        : undefined,
+    cancelledDate:
+      item.applicationStatus === "CANCEL" && item.isActive === false
+        ? item.updatedAt || undefined
         : undefined,
     mentors:
       item.mentors && item.mentors.length > 0 ? item.mentors : undefined,

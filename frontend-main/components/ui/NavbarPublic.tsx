@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { authApi } from "../../services/api";
+import { authApi } from "@/services/api";
 
 // Helper: fetch Keycloak SSO URL and redirect
 const handleKeycloakRedirect = async () => {

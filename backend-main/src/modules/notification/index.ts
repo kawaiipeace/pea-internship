@@ -64,4 +64,25 @@ export const notification = new Elysia({
         summary: "อ่านทั้งหมด",
       },
     }
+  )
+
+  .delete(
+    "/delete/:id",
+    async ({ session, params: { id }, set }) => {
+      const res = await notificationService.deleteNotification(
+        session.userId,
+        Number(id)
+      );
+      set.status = 200;
+      return res;
+    },
+    {
+      role: [1, 2, 3],
+      params: model.params,
+      detail: {
+        summary: "ลบ notification ของตนเอง",
+        description:
+          "ผู้ใช้สามารถลบได้เฉพาะ notification ของตนเอง และระบบจะลบออกจากฐานข้อมูลจริง",
+      },
+    }
   );

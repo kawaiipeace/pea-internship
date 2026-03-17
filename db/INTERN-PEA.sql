@@ -263,7 +263,7 @@ CREATE TABLE -- itt
     user_id VARCHAR(50) NOT NULL,
     time TIMESTAMP,
     type_check VARCHAR(20) NOT NULL,
-    status BOOLEAN,
+    is_onsite BOOLEAN,
     ip VARCHAR(100),
     note TEXT,
     location VARCHAR(255),
