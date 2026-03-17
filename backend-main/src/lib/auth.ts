@@ -38,11 +38,17 @@ export const auth = betterAuth({
 
           scopes: [
             "openid",
-            "profile",
-            "email",
             "phone",
-            "address",
+            "roles",
+            "acr",
             "offline_access",
+            "web-origins",
+            "microprofile-jwt",
+            "address",
+            "profile",
+            "basic",
+            "service_account",
+            "email"
           ],
           mapProfileToUser: async (profile) => {
             const employeeId =
