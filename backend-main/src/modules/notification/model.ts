@@ -16,3 +16,4 @@ export const MarkReadBody = t.Object({
 
 export type GetNotificationsQueryType = typeof GetNotificationsQuery.static;
 export type MarkReadBodyType = typeof MarkReadBody.static;
+export type ParamsType = typeof params.static;

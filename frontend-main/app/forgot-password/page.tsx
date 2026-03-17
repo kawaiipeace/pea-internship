@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Navbar } from "../components";
+import { Navbar } from "@/components";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();

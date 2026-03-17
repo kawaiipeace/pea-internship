@@ -3,16 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
-import VideoLoading from "../../../components/ui/VideoLoading";
-import ThaiDateInput from "../../../components/ui/ThaiDateInput";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import VideoLoading from "@/components/ui/VideoLoading";
+import ThaiDateInput from "@/components/ui/ThaiDateInput";
 import {
   AnnouncementFormErrors,
-} from "../../../types/announcement";
+} from "@/types/announcement";
 import {
   relatedFieldOptions,
 } from "../../../data/mockAnnouncements";
-import { positionApi, CreatePositionData, docTypeApi, DocType, userApi, StaffUser, departmentApi } from "../../../services/api";
+import { positionApi, CreatePositionData, docTypeApi, DocType, userApi, StaffUser, departmentApi } from "@/services/api";
 
 // ประเภทข้อมูลฟอร์มที่ตรงกับ API และ Design
 interface PositionFormData {

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { NavbarIntern } from "../components";
-import VideoLoading from "../components/ui/VideoLoading";
-import { userApi, authApi, studentProfileApi, institutionApi, applicationApi, positionApi, Position, extractStudentProfile } from "../services/api";
+import { NavbarIntern } from "@/components";
+import VideoLoading from "@/components/ui/VideoLoading";
+import { userApi, authApi, studentProfileApi, institutionApi, applicationApi, positionApi, Position, extractStudentProfile } from "@/services/api";
 
 // ข้อมูล default หากไม่มี user login
 const defaultInternData = {

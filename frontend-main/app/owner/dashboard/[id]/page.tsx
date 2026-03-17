@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -17,8 +17,8 @@ import {
   type AppStatusEnum,
   type MyApplicationData,
   type Position,
-} from "../../../services/api";
-import VideoLoading from "../../../components/ui/VideoLoading";
+} from "@/services/api";
+import VideoLoading from "@/components/ui/VideoLoading";
 
 // Thai month names
 const thaiMonths = [
@@ -280,8 +280,12 @@ function ApplicationDetailContent() {
       setHistoryData(
         data.filter(
           (h) =>
-            h.applicationStatus === "COMPLETE" ||
-            h.applicationStatus === "CANCEL",
+            getHistoryOutcome(
+              h.applicationStatus,
+              h.statusNote,
+              h.isActive,
+              h.infoEndDate,
+            ) !== null,
         ),
       );
     } catch (error) {
@@ -292,24 +296,69 @@ function ApplicationDetailContent() {
     }
   };
 
-  // Helper: format API status to display status
+  type HistoryOutcome = "complete" | "rejected" | "cancelled";
+
+  const isInternshipEndDatePassed = (endDate?: string | null) => {
+    if (!endDate) return false;
+
+    const dateOnly = endDate.split("T")[0].trim();
+    const plainDateMatch = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    let parsedEndDate: Date;
+    if (plainDateMatch) {
+      const [, year, month, day] = plainDateMatch;
+      parsedEndDate = new Date(Number(year), Number(month) - 1, Number(day));
+    } else {
+      parsedEndDate = new Date(endDate);
+      if (Number.isNaN(parsedEndDate.getTime())) return false;
+    }
+
+    parsedEndDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return parsedEndDate.getTime() < today.getTime();
+  };
+
+  const getHistoryOutcome = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+    isActive?: boolean,
+    endDate?: string | null,
+  ): HistoryOutcome | null => {
+    if (status === "COMPLETE") {
+      return isInternshipEndDatePassed(endDate) ? "complete" : null;
+    }
+
+    if (status === "CANCEL" || status === "ABORT") {
+      if (!isActive) return "cancelled";
+      if (statusNote) return "rejected";
+      return "cancelled";
+    }
+
+    return null;
+  };
+
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
+    endDate?: string | null,
   ) => {
-    switch (status) {
-      case "COMPLETE":
+    const outcome = getHistoryOutcome(status, statusNote, isActive, endDate);
+
+    switch (outcome) {
+      case "complete":
         return {
           label: "ฝึกงานเสร็จสิ้น",
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
-      case "CANCEL":
-        if (statusNote) {
-          return {
-            label: "ไม่ผ่าน",
-            color: "bg-red-50 text-red-600 border-red-200",
-          };
-        }
+      case "rejected":
+        return {
+          label: "ไม่ผ่าน",
+          color: "bg-red-50 text-red-600 border-red-200",
+        };
+      case "cancelled":
         return {
           label: "ยกเลิกฝึกงาน",
           color: "bg-red-50 text-red-600 border-red-200",
@@ -572,24 +621,6 @@ function ApplicationDetailContent() {
     };
   };
 
-  // Get student internship lifecycle badge (ฝึกงานเสร็จสิ้น / อยู่ระหว่างฝึกงาน / ยกเลิกฝึกงาน)
-  const getStudentInternshipBadge = (): { text: string; dotColor: string; textColor: string } | null => {
-    if (!application) return null;
-    const internStatus = application.studentInternshipStatus;
-    const isActive = application.isActive;
-
-    if (internStatus === "COMPLETE" && !isActive) {
-      return { text: "ฝึกงานเสร็จสิ้น", dotColor: "bg-green-500", textColor: "text-green-600" };
-    }
-    if (internStatus === "ACTIVE" || isActive) {
-      return { text: "อยู่ระหว่างฝึกงาน", dotColor: "bg-orange-500", textColor: "text-orange-500" };
-    }
-    if (internStatus === "CANCEL" || application.status === "cancelled" || isCancelledViaStorage) {
-      return { text: "ยกเลิกฝึกงาน", dotColor: "bg-red-500", textColor: "text-red-500" };
-    }
-    return null;
-  };
-
   // Get effective status badge based on localStorage state
   const getStatusBadge = (): {
     text: string;
@@ -773,7 +804,6 @@ function ApplicationDetailContent() {
 
   const effectiveStep = getEffectiveStep();
   const statusBadge = getStatusBadge();
-  const studentInternshipBadge = getStudentInternshipBadge();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -874,14 +904,6 @@ function ApplicationDetailContent() {
                   ประวัติผู้สมัคร
                 </button>
               </div>
-              {studentInternshipBadge && (
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`w-2.5 h-2.5 rounded-full ${studentInternshipBadge.dotColor}`}></span>
-                  <span className={`text-sm font-semibold ${studentInternshipBadge.textColor}`}>
-                    {studentInternshipBadge.text}
-                  </span>
-                </div>
-              )}
               <div className="flex flex-wrap gap-2 mb-4">
                 <span
                   className={`${statusBadge.bgColor} ${statusBadge.textColor} text-sm px-3 py-1 rounded-full`}
@@ -2301,9 +2323,17 @@ function ApplicationDetailContent() {
                   ) : (
                     <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
                       {historyData.map((item) => {
+                        const historyOutcome = getHistoryOutcome(
+                          item.applicationStatus,
+                          item.statusNote,
+                          item.isActive,
+                          item.infoEndDate,
+                        );
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
+                          item.isActive,
+                          item.infoEndDate,
                         );
                         return (
                           <div key={item.applicationId}>
@@ -2343,22 +2373,21 @@ function ApplicationDetailContent() {
                               <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                  fill="#D92D20"
-                                />
-                              </svg>
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 20 20"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
+                                      fill="#D92D20"
+                                    />
+                                  </svg>
                                   <span className="text-sm font-semibold text-red-500">
-                                    {item.applicationStatus === "CANCEL" &&
-                                    item.statusNote
+                                    {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
-                                      : item.applicationStatus === "CANCEL"
+                                      : historyOutcome === "cancelled"
                                         ? "เหตุผลประกอบการยกเลิกฝึกงาน"
                                         : "หมายเหตุ"}
                                   </span>

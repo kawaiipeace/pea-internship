@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import OwnerNavbar from "../../../components/ui/OwnerNavbar";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -12,11 +12,12 @@ import {
 import {
   applicationApi,
   applicationStatusActionsApi,
+  ownerStudentsApi,
   type ApplicationStatusAction,
   type AppStatusEnum,
   type MyApplicationData,
-} from "../../../services/api";
-import VideoLoading from "../../../components/ui/VideoLoading";
+} from "@/services/api";
+import VideoLoading from "@/components/ui/VideoLoading";
 import {
   highSchools,
   vocationalSchools,
@@ -286,7 +287,7 @@ function AcceptedStatusPage() {
         waiting_review++;
       } else if (status === "doc_rejected") {
         doc_rejected++;
-      } else if (status === "doc_passed") {
+      } else if (status === "doc_passed" || status === "completed") {
         doc_passed++;
       }
     });
@@ -320,7 +321,10 @@ function AcceptedStatusPage() {
         case "doc_rejected":
           return app.detailedStatus === "doc_rejected";
         case "doc_passed":
-          return app.detailedStatus === "doc_passed";
+          return (
+            app.detailedStatus === "doc_passed" ||
+            app.detailedStatus === "completed"
+          );
         default:
           return true;
       }
@@ -431,6 +435,7 @@ function AcceptedStatusPage() {
             "bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA]",
         };
       case "doc_passed":
+      case "completed":
         return {
           text: "เอกสารผ่าน",
           color:
@@ -470,8 +475,12 @@ function AcceptedStatusPage() {
       setHistoryData(
         data.filter(
           (h) =>
-            h.applicationStatus === "COMPLETE" ||
-            h.applicationStatus === "CANCEL",
+            getHistoryOutcome(
+              h.applicationStatus,
+              h.statusNote,
+              h.isActive,
+              h.infoEndDate,
+            ) !== null,
         ),
       );
     } catch (error) {
@@ -482,23 +491,69 @@ function AcceptedStatusPage() {
     }
   };
 
+  type HistoryOutcome = "complete" | "rejected" | "cancelled";
+
+  const isInternshipEndDatePassed = (endDate?: string | null) => {
+    if (!endDate) return false;
+
+    const dateOnly = endDate.split("T")[0].trim();
+    const plainDateMatch = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    let parsedEndDate: Date;
+    if (plainDateMatch) {
+      const [, year, month, day] = plainDateMatch;
+      parsedEndDate = new Date(Number(year), Number(month) - 1, Number(day));
+    } else {
+      parsedEndDate = new Date(endDate);
+      if (Number.isNaN(parsedEndDate.getTime())) return false;
+    }
+
+    parsedEndDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return parsedEndDate.getTime() < today.getTime();
+  };
+
+  const getHistoryOutcome = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+    isActive?: boolean,
+    endDate?: string | null,
+  ): HistoryOutcome | null => {
+    if (status === "COMPLETE") {
+      return isInternshipEndDatePassed(endDate) ? "complete" : null;
+    }
+
+    if (status === "CANCEL" || status === "ABORT") {
+      if (!isActive) return "cancelled";
+      if (statusNote) return "rejected";
+      return "cancelled";
+    }
+
+    return null;
+  };
+
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
+    isActive?: boolean,
+    endDate?: string | null,
   ) => {
-    switch (status) {
-      case "COMPLETE":
+    const outcome = getHistoryOutcome(status, statusNote, isActive, endDate);
+
+    switch (outcome) {
+      case "complete":
         return {
           label: "ฝึกงานเสร็จสิ้น",
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
-      case "CANCEL":
-        if (statusNote) {
-          return {
-            label: "ไม่ผ่าน",
-            color: "bg-red-50 text-red-600 border-red-200",
-          };
-        }
+      case "rejected":
+        return {
+          label: "ไม่ผ่าน",
+          color: "bg-red-50 text-red-600 border-red-200",
+        };
+      case "cancelled":
         return {
           label: "ยกเลิกฝึกงาน",
           color: "bg-red-50 text-red-600 border-red-200",
@@ -541,7 +596,8 @@ function AcceptedStatusPage() {
     const hasAnalysisDocuments =
       selectedApplication.analysisDocuments &&
       selectedApplication.analysisDocuments.length > 0;
-    const isDocPassed = effectiveStatus === "doc_passed";
+    const isDocPassed =
+      effectiveStatus === "doc_passed" || effectiveStatus === "completed";
     const isDocRejected = effectiveStatus === "doc_rejected";
 
     // Document icon SVG component
@@ -2127,45 +2183,28 @@ function AcceptedStatusPage() {
                 ยกเลิก
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (cancelReason.trim() && selectedApplication) {
-                    const existingCancelled = (() => {
-                      try {
-                        const stored =
-                          localStorage.getItem("pea_cancelled_apps");
-                        return stored ? JSON.parse(stored) : [];
-                      } catch {
-                        return [];
-                      }
-                    })();
-                    const today = new Date();
-                    const buddhistYear = today.getFullYear() + 543;
-                    const month = String(today.getMonth() + 1).padStart(2, "0");
-                    const day = String(today.getDate()).padStart(2, "0");
-                    const cancelDate = `${buddhistYear}-${month}-${day}`;
-                    if (
-                      !existingCancelled.find(
-                        (c: { id: string }) => c.id === selectedApplication.id,
-                      )
-                    ) {
-                      existingCancelled.push({
-                        id: selectedApplication.id,
-                        reason: cancelReason,
-                        cancelledBy: "เจ้าของหน่วยงาน",
-                        cancelledDate: cancelDate,
-                      });
-                      localStorage.setItem(
-                        "pea_cancelled_apps",
-                        JSON.stringify(existingCancelled),
+                    try {
+                      await ownerStudentsApi.updateInternshipStatus(
+                        selectedApplication.internId,
+                        "CANCEL",
+                        cancelReason,
                       );
-                      setCancelledAppsData(existingCancelled);
+                      setShowCancelModal(false);
+                      setCancelReason("");
+                      setShowCancelSuccess(true);
+                      setTimeout(() => {
+                        setShowCancelSuccess(false);
+                      }, 500);
+                      const apps = await fetchAllApplications(
+                        positionId ? Number(positionId) : undefined,
+                      );
+                      setAllApps(apps);
+                    } catch (err) {
+                      console.error("Cancel internship failed:", err);
+                      alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
                     }
-                    setShowCancelModal(false);
-                    setCancelReason("");
-                    setShowCancelSuccess(true);
-                    setTimeout(() => {
-                      setShowCancelSuccess(false);
-                    }, 500);
                   }
                 }}
                 disabled={!cancelReason.trim()}
@@ -2274,9 +2313,17 @@ function AcceptedStatusPage() {
               ) : (
                 <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
                   {historyData.map((item) => {
+                    const historyOutcome = getHistoryOutcome(
+                      item.applicationStatus,
+                      item.statusNote,
+                      item.isActive,
+                      item.infoEndDate,
+                    );
                     const statusInfo = getHistoryStatusInfo(
                       item.applicationStatus,
                       item.statusNote,
+                      item.isActive,
+                      item.infoEndDate,
                     );
                     return (
                       <div key={item.applicationId}>
@@ -2323,12 +2370,11 @@ function AcceptedStatusPage() {
                                 />
                               </svg>
                               <span className="text-sm font-semibold text-red-500">
-                                {item.applicationStatus === "CANCEL" &&
-                                item.statusNote
+                                {historyOutcome === "rejected"
                                   ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
-                                  : item.applicationStatus === "CANCEL"
+                                  : historyOutcome === "cancelled"
                                     ? "เหตุผลประกอบการยกเลิกฝึกงาน"
-                                    : "เหตุผลที่ไม่ผ่านการคัดเลือก"}
+                                    : "หมายเหตุ"}
                               </span>
                             </div>
                             <div className="mx-4 border-t border-red-200" />
