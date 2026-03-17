@@ -71,3 +71,4 @@ ON CONFLICT (short_name) DO NOTHING;
 --   (100101, 'กอพ.2', 'กองอำนวยการพัฒนา 2', B'1', 1, NOW(), NOW(), 'SYSTEM'),
 --   (100102, 'กอพ.3', 'กองอำนวยการพัฒนา 3', B'1', 1, NOW(), NOW(), 'SYSTEM')
 -- ON CONFLICT (dept_sap) DO NOTHING;
+
