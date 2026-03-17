@@ -47,21 +47,65 @@ const thaiMonths = [
 // Format date to Thai format
 const formatDateThai = (dateString: string): string => {
   if (!dateString) return "";
-  const parts = dateString.split("-");
-  if (parts.length !== 3) return dateString;
-  const year = parseInt(parts[0]);
-  const month = parseInt(parts[1]) - 1;
-  const day = parseInt(parts[2]);
-  return `${day} ${thaiMonths[month]} ${year}`;
+  const raw = dateString.trim();
+  const dateOnly = raw.split("T")[0].split(" ")[0];
+  const plainDateMatch = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (plainDateMatch) {
+    const [, y, m, d] = plainDateMatch;
+    const year = Number(y);
+    const month = Number(m);
+    const day = Number(d);
+    const displayYear = year > 2400 ? year : year + 543;
+    if (month < 1 || month > 12) return dateString;
+    return `${day} ${thaiMonths[month - 1]} ${displayYear}`;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return dateString;
+  const year = parsed.getFullYear();
+  const displayYear = year > 2400 ? year : year + 543;
+  return `${parsed.getDate()} ${thaiMonths[parsed.getMonth()]} ${displayYear}`;
 };
 
 // Format ISO datetime to Thai format with time (e.g. "12 มี.ค. 2569 15:00")
-const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+const thaiMonthsShort = [
+  "ม.ค.",
+  "ก.พ.",
+  "มี.ค.",
+  "เม.ย.",
+  "พ.ค.",
+  "มิ.ย.",
+  "ก.ค.",
+  "ส.ค.",
+  "ก.ย.",
+  "ต.ค.",
+  "พ.ย.",
+  "ธ.ค.",
+];
 const formatDateTimeThai = (dateString: string): string => {
   if (!dateString) return "";
+
+  const raw = dateString.trim();
+  const plainDateTimeMatch = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/,
+  );
+  if (plainDateTimeMatch) {
+    const [, y, m, d, hh = "00", mm = "00"] = plainDateTimeMatch;
+    const year = Number(y);
+    const month = Number(m);
+    const day = Number(d);
+    const displayYear = year > 2400 ? year : year + 543;
+    if (month >= 1 && month <= 12) {
+      return `${day} ${thaiMonthsShort[month - 1]} ${displayYear} ${hh}:${mm}`;
+    }
+  }
+
   const d = new Date(dateString);
   if (isNaN(d.getTime())) return formatDateThai(dateString);
-  return `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${d.getFullYear() + 543} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const year = d.getFullYear();
+  const displayYear = year > 2400 ? year : year + 543;
+  return `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${displayYear} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
 // Get education type label
@@ -272,8 +316,12 @@ function CancelledApplicationsContent() {
       setHistoryData(
         data.filter(
           (h) =>
-            h.applicationStatus === "COMPLETE" ||
-            h.applicationStatus === "CANCEL",
+            getHistoryOutcome(
+              h.applicationStatus,
+              h.statusNote,
+              h.isActive,
+              h.infoEndDate,
+            ) !== null,
         ),
       );
     } catch (error) {
@@ -284,30 +332,69 @@ function CancelledApplicationsContent() {
     }
   };
 
+  type HistoryOutcome = "complete" | "rejected" | "cancelled";
+
+  const isInternshipEndDatePassed = (endDate?: string | null) => {
+    if (!endDate) return false;
+
+    const dateOnly = endDate.split("T")[0].trim();
+    const plainDateMatch = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    let parsedEndDate: Date;
+    if (plainDateMatch) {
+      const [, year, month, day] = plainDateMatch;
+      parsedEndDate = new Date(Number(year), Number(month) - 1, Number(day));
+    } else {
+      parsedEndDate = new Date(endDate);
+      if (Number.isNaN(parsedEndDate.getTime())) return false;
+    }
+
+    parsedEndDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return parsedEndDate.getTime() < today.getTime();
+  };
+
+  const getHistoryOutcome = (
+    status: AppStatusEnum,
+    statusNote?: string | null,
+    isActive?: boolean,
+    endDate?: string | null,
+  ): HistoryOutcome | null => {
+    if (status === "COMPLETE") {
+      return isInternshipEndDatePassed(endDate) ? "complete" : null;
+    }
+
+    if (status === "CANCEL" || status === "ABORT") {
+      if (!isActive) return "cancelled";
+      if (statusNote) return "rejected";
+      return "cancelled";
+    }
+
+    return null;
+  };
+
   const getHistoryStatusInfo = (
     status: AppStatusEnum,
     statusNote?: string | null,
     isActive?: boolean,
+    endDate?: string | null,
   ) => {
-    switch (status) {
-      case "COMPLETE":
+    const outcome = getHistoryOutcome(status, statusNote, isActive, endDate);
+
+    switch (outcome) {
+      case "complete":
         return {
           label: "ฝึกงานเสร็จสิ้น",
           color: "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]",
         };
-      case "CANCEL":
-        if (!isActive) {
-          return {
-            label: "ยกเลิกฝึกงาน",
-            color: "bg-red-50 text-red-600 border-red-200",
-          };
-        }
-        if (statusNote) {
-          return {
-            label: "ไม่ผ่าน",
-            color: "bg-red-50 text-red-600 border-red-200",
-          };
-        }
+      case "rejected":
+        return {
+          label: "ไม่ผ่าน",
+          color: "bg-red-50 text-red-600 border-red-200",
+        };
+      case "cancelled":
         return {
           label: "ยกเลิกฝึกงาน",
           color: "bg-red-50 text-red-600 border-red-200",
@@ -1239,26 +1326,25 @@ function CancelledApplicationsContent() {
                           {(() => {
                             const od =
                               positionInfo?.owner ||
-                              (positionInfo?.owners && positionInfo.owners.length > 0
+                              (positionInfo?.owners &&
+                              positionInfo.owners.length > 0
                                 ? positionInfo.owners[0]
                                 : null);
                             const ownerName = od
-                              ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
+                              ? `${od.fname || ""} ${od.lname || ""}`.trim() ||
+                                "-"
                               : "-";
-                            return (
-                              selectedApplication.cancelledBy ||
-                              ownerName
-                            );
+                            return selectedApplication.cancelledBy || ownerName;
                           })()}
                         </p>
                       </div>
                       <div>
                         <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
                         <p className="text-gray-900 text-sm">
-                          {formatDateTimeThai(
+                          {formatDateThai(
                             selectedApplication.cancelledDate ||
-                            selectedApplication.actionDate ||
-                            ""
+                              selectedApplication.actionDate ||
+                              "",
                           )}
                         </p>
                       </div>
@@ -1294,7 +1380,9 @@ function CancelledApplicationsContent() {
                     {(() => {
                       const totalSteps = 5;
                       const detailed = selectedApplication.detailedStatus;
-                      const isCancelledInternship = selectedApplication.status === "cancelled" && selectedApplication.step >= 6;
+                      const isCancelledInternship =
+                        selectedApplication.status === "cancelled" &&
+                        selectedApplication.step >= 6;
                       let completedSteps = 0;
                       if (isCancelledInternship) {
                         completedSteps = 5;
@@ -1410,14 +1498,17 @@ function CancelledApplicationsContent() {
                             {isAllCompleted ? (
                               <>
                                 <p className="font-bold text-gray-900">
-                                  {isCancelledInternship ? "ยกเลิกฝึกงาน" : "การตรวจสอบเสร็จสิ้น"}
+                                  {isCancelledInternship
+                                    ? "ยกเลิกฝึกงาน"
+                                    : "การตรวจสอบเสร็จสิ้น"}
                                 </p>
                                 {isCancelledInternship ? (
                                   <>
                                     {(() => {
                                       const od =
                                         positionInfo?.owner ||
-                                        (positionInfo?.owners && positionInfo.owners.length > 0
+                                        (positionInfo?.owners &&
+                                        positionInfo.owners.length > 0
                                           ? positionInfo.owners[0]
                                           : null);
                                       const ownerName = od
@@ -1431,7 +1522,9 @@ function CancelledApplicationsContent() {
                                     })()}
                                     {selectedApplication.cancelledDate && (
                                       <p className="text-gray-400 text-sm">
-                                        {formatDateTimeThai(selectedApplication.cancelledDate)}
+                                        {formatDateThai(
+                                          selectedApplication.cancelledDate,
+                                        )}
                                       </p>
                                     )}
                                   </>
@@ -2014,10 +2107,17 @@ function CancelledApplicationsContent() {
                   ) : (
                     <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
                       {historyData.map((item) => {
+                        const historyOutcome = getHistoryOutcome(
+                          item.applicationStatus,
+                          item.statusNote,
+                          item.isActive,
+                          item.infoEndDate,
+                        );
                         const statusInfo = getHistoryStatusInfo(
                           item.applicationStatus,
                           item.statusNote,
                           item.isActive,
+                          item.infoEndDate,
                         );
                         return (
                           <div key={item.applicationId}>
@@ -2066,10 +2166,9 @@ function CancelledApplicationsContent() {
                                     />
                                   </svg>
                                   <span className="text-sm font-semibold text-red-500">
-                                    {item.applicationStatus === "CANCEL" &&
-                                    item.statusNote
+                                    {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
-                                      : item.applicationStatus === "CANCEL"
+                                      : historyOutcome === "cancelled"
                                         ? "เหตุผลประกอบการยกเลิกฝึกงาน"
                                         : "หมายเหตุ"}
                                   </span>
