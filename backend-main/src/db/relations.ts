@@ -34,7 +34,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   department: one(departments, {
     fields: [users.departmentId],
-    references: [departments.id],
+    references: [departments.deptSap],
   }),
   staffProfiles: many(staffProfiles),
   studentProfiles: many(studentProfiles),
@@ -163,8 +163,8 @@ export const internshipPositionsRelations = relations(
       references: [offices.id],
     }),
     department: one(departments, {
-      fields: [internshipPositions.departmentId],
-      references: [departments.id],
+      fields: [applicationStatuses.departmentId],
+      references: [departments.deptSap],
     }),
     mentors: many(internshipPositionMentors),
     favorites: many(favorites),
@@ -198,7 +198,7 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   }),
 }));
 
-export const applicationStatusesRelations = relations(
+export const applicationStatusesRelations = relations(references: [departments.deptSap]
   applicationStatuses,
   ({ one, many }) => ({
     user: one(users, {
@@ -207,7 +207,7 @@ export const applicationStatusesRelations = relations(
     }),
     department: one(departments, {
       fields: [applicationStatuses.departmentId],
-      references: [departments.id],
+      ,
     }),
     internshipPosition: one(internshipPositions, {
       fields: [applicationStatuses.positionId],

@@ -75,8 +75,7 @@ COMMENT ON TABLE public.offices IS 'สำนักงาน';
 
 CREATE TABLE -- all
   public.departments (
-    id SERIAL PRIMARY KEY,
-    dept_sap INT4 NOT NULL,
+    dept_sap INT4 PRIMARY KEY,
     dept_change_code BPCHAR (20) NULL,
     dept_upper INT4 NULL,
     dept_short1 TEXT NULL,
@@ -128,12 +127,10 @@ CREATE TABLE -- all
     seq INT4 NULL,
     location TEXT NULL,
     office_id INT NOT NULL,
-    CONSTRAINT departments_dept_sap_key UNIQUE (dept_sap),
     CONSTRAINT departments_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.offices (id) ON UPDATE CASCADE ON DELETE RESTRICT
   );
 
 -- Indexes 
-CREATE INDEX idx_departments_dept_sap ON public.departments USING btree (dept_sap);
 
 CREATE INDEX idx_departments_dept_upper ON public.departments USING btree (dept_upper);
 
@@ -174,7 +171,7 @@ CREATE TABLE -- all
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES public.roles (id),
-    FOREIGN KEY (department_id) REFERENCES public.departments (id)
+    FOREIGN KEY (department_id) REFERENCES public.departments (dept_sap)
   );
 
 COMMENT ON TABLE public.users IS 'บัญชีผู้ใช้หลักใช้ Login';
@@ -326,7 +323,7 @@ CREATE TABLE -- intern
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT internship_positions_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.offices (id) ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT internship_positions_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments (id) ON UPDATE CASCADE ON DELETE RESTRICT
+    CONSTRAINT internship_positions_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments (dept_sap) ON UPDATE CASCADE ON DELETE RESTRICT
   );
 
 -- indexes
@@ -375,7 +372,7 @@ CREATE TABLE -- intern
     UNIQUE (user_id, internship_round),
     UNIQUE (user_id, department_id, active_key),
     FOREIGN KEY (user_id) REFERENCES public.users (id),
-    FOREIGN KEY (department_id) REFERENCES public.departments (id),
+    FOREIGN KEY (department_id) REFERENCES public.departments (dept_sap),
     FOREIGN KEY (position_id) REFERENCES public.internship_positions (id)
   );
 
