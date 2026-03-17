@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { ConflictError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
   applicationStatuses,
@@ -7,8 +8,6 @@ import {
   studentProfiles,
 } from "@/db/schema";
 import type * as checkSchema from "./model";
-import { ConflictError, ForbiddenError } from "@/common/exceptions";
-
 
 export class CheckTimeService {
   private getDistanceInMeters(
@@ -23,9 +22,9 @@ export class CheckTimeService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

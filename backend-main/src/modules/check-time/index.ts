@@ -1,12 +1,14 @@
 import { Elysia } from "elysia";
-import { isAuthenticated,ROLE_IDS } from "@/middlewares/auth.middleware";
+import { isAuthenticated, ROLE_IDS } from "@/middlewares/auth.middleware";
 import * as checkSchema from "./model";
 import { CheckTimeService } from "./service";
 
-
 const checkTimeService = new CheckTimeService();
 
-export const checkTime = new Elysia({ prefix: "/check-time", tags: ["check-time"], })
+export const checkTime = new Elysia({
+  prefix: "/check-time",
+  tags: ["check-time"],
+})
 
   .use(isAuthenticated)
   .post(

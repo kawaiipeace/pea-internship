@@ -44,7 +44,7 @@ export const isAuthenticated = new Elysia({ name: "better-auth" })
         }
 
         const allowedRoles = Array.isArray(roles) ? roles : [roles];
-        
+
         if (!allowedRoles.includes(session.user.roleId as role_value)) {
           throw new ForbiddenError("Forbidden: You do not have permission");
         }
