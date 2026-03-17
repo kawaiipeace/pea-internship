@@ -34,6 +34,7 @@ import IconMenuAuthentication from '@/components/icon/menu/icon-menu-authenticat
 import IconMenuDocumentation from '@/components/icon/menu/icon-menu-documentation';
 import { usePathname } from 'next/navigation';
 import { getTranslation } from '@/i18n';
+import IconCalendar from '../icon/icon-calendar';
 
 const Sidebar = () => {
     const dispatch = useDispatch();
@@ -91,7 +92,7 @@ const Sidebar = () => {
                 <div className="h-full bg-white dark:bg-black">
                     <div className="flex items-center justify-between px-4 py-3">
                         <Link href="/" className="main-logo flex shrink-0 items-center">
-                            <img className="ml-[5px] w-32 flex-none" src="/assets/images/logo.svg" alt="logo" />
+                            <img className="ml-[5px] w-320 flex-none" src="/assets/images/logo.svg" alt="logo" />
                         </Link>
 
                         <button
@@ -144,8 +145,8 @@ const Sidebar = () => {
                                     <li className="menu nav-item">
                                         <button type="button" className={`${currentMenu === 'chat' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('chat')}>
                                             <div className="flex items-center">
-                                                <IconClock className="shrink-0 group-hover:!text-primary" />
-                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">{t('การลงเวลาปฏิบัติงาน')}</span>
+                                                <IconClock className="h-9 w-9 group-hover:!text-[#A80689]" />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark ">{t('การลงเวลาปฏิบัติงาน')}</span>
                                             </div>
 
                                             <div className={currentMenu !== 'chat' ? '-rotate-90 rtl:rotate-90' : ''}>
@@ -164,6 +165,31 @@ const Sidebar = () => {
                                             </ul>
                                         </AnimateHeight>
                                     </li>
+
+                                    <li className="menu nav-item">
+                                        <button type="button" className={`${currentMenu === 'leave' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('leave')}>
+                                            <div className="flex items-center">
+                                            <IconCalendar className="h-9 w-9 group-hover:!text-[#A80689]" />
+                                                <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">{t('การลาปฏิบัติงาน')}</span>
+                                            </div>
+
+                                            <div className={currentMenu !== 'leave' ? '-rotate-90 rtl:rotate-90' : ''}>
+                                                <IconCaretDown />
+                                            </div>
+                                        </button>
+
+                                        <AnimateHeight duration={300} height={currentMenu === 'leave' ? 'auto' : 0}>
+                                            <ul className="sub-menu text-gray-500">
+                                                <li>
+                                                    <Link href="/leave-request">{t('ยื่นคำขอลา')}</Link>
+                                                </li>
+                                                <li>
+                                                    <Link href="/leave-history">{t('ประวัติการลา')}</Link>
+                                                </li>
+                                            </ul>
+                                        </AnimateHeight>
+                                    </li>
+
                                     <li className="nav-item">
                                         <Link href="/apps/mailbox" className="group">
                                             <div className="flex items-center">

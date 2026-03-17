@@ -182,3 +182,50 @@
     border-color: #060818;
     box-shadow: -5px 0 0 #060818, 5px 0 0 #060818;
 }
+
+/* ===== Light mode: Pink/Purple theme ===== */
+.flatpickr-calendar .flatpickr-day.selected,
+.flatpickr-calendar .flatpickr-day.startRange,
+.flatpickr-calendar .flatpickr-day.endRange {
+    background: #A80689 !important;
+    border-color: #A80689 !important;
+    color: #fff !important;
+    font-weight: 700;
+}
+
+.flatpickr-calendar .flatpickr-day.selected:hover,
+.flatpickr-calendar .flatpickr-day.startRange:hover,
+.flatpickr-calendar .flatpickr-day.endRange:hover {
+    background: #8e0570 !important;
+    border-color: #8e0570 !important;
+}
+
+.flatpickr-calendar .flatpickr-day.inRange {
+    background: #f3e8ff !important;
+    border-color: #f3e8ff !important;
+    box-shadow: -5px 0 0 #f3e8ff, 5px 0 0 #f3e8ff !important;
+    color: #A80689;
+}
+
+.flatpickr-calendar .flatpickr-day.today {
+    border-color: #A80689 !important;
+}
+
+.flatpickr-calendar .flatpickr-day:hover {
+    background: #fdf2f8;
+    border-color: #fdf2f8;
+}
+
+/* ===== Dark mode: override ===== */
+.dark .flatpickr-calendar .flatpickr-day.selected,
+.dark .flatpickr-calendar .flatpickr-day.startRange,
+.dark .flatpickr-calendar .flatpickr-day.endRange {
+    background: #A80689 !important;
+    border-color: #A80689 !important;
+    color: #fff !important;
+    font-weight: 700;
+}
+
+.dark .flatpickr-calendar .flatpickr-day.today {
+    border-color: #A80689 !important;
+}
