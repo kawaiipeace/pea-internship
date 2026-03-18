@@ -498,6 +498,11 @@ export interface Institution {
   updatedAt?: string;
 }
 
+export interface CreateInstitutionPayload {
+  institutionsType: "UNIVERSITY" | "VOCATIONAL" | "SCHOOL" | "OTHERS";
+  name: string;
+}
+
 // ประเภทข้อมูล Faculty (คณะ)
 export interface Faculty {
   id: number;
@@ -568,6 +573,14 @@ export const institutionApi = {
     } catch {
       return null;
     }
+  },
+
+  // สร้างสถานศึกษาใหม่
+  createInstitution: async (
+    payload: CreateInstitutionPayload,
+  ): Promise<Institution> => {
+    const response = await api.post<Institution>("/institution", payload);
+    return response.data;
   },
 
   // ดึงรายการคณะทั้งหมด
@@ -1475,6 +1488,12 @@ export const departmentApi = {
       console.log("getDepartmentByDeptSap error:", error);
       return null;
     }
+  },
+
+  getDepartmentById: async (
+    id: number | string
+  ): Promise<Department | null> => {
+    return departmentApi.getDepartmentByDeptSap(id);
   },
 };
 
