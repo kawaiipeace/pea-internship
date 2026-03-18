@@ -1435,18 +1435,44 @@ export interface DepartmentsResponse {
 }
 
 export const departmentApi = {
-  // ดึงรายการ departments ทั้งหมด
-  getDepartments: async (): Promise<DepartmentsResponse> => {
-    const response = await api.get<DepartmentsResponse>("/dept");
+  getDepartments: async (
+    page: number = 1,
+    limit: number = 100
+  ): Promise<DepartmentsResponse> => {
+    const response = await api.get<DepartmentsResponse>(
+      `/dept?page=${page}&limit=${limit}`
+    );
     return response.data;
   },
 
-  // ดึง department ตาม ID
-  getDepartmentById: async (id: number): Promise<Department | null> => {
+  getDepartmentByDeptSap: async (
+    id: number | string
+  ): Promise<Department | null> => {
     try {
-      const response = await departmentApi.getDepartments();
-      return response.data.find(d => d.id === id) || null;
-    } catch {
+      const targetId = Number(id);
+      let page = 1;
+      let hasNextPage = true;
+      const limit = 100;
+
+      while (hasNextPage) {
+        const response = await departmentApi.getDepartments(page, limit);
+
+        const found =
+          response.data.find((d) => {
+            const deptSap = Number(d.deptSap);
+            const deptId = Number(d.id);
+            return deptSap === targetId || deptId === targetId;
+          }) || null;
+
+        if (found) return found;
+
+        hasNextPage = response.meta?.hasNextPage ?? false;
+        page++;
+      }
+
+      return null;
+    } catch (error) {
+      console.log("getDepartmentByDeptSap error:", error);
       return null;
     }
   },
