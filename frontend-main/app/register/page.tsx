@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
-import { authApi, RegisterInternData, institutionApi, Institution } from "@/services/api";
+import {
+  authApi,
+  RegisterInternData,
+  institutionApi,
+  Institution,
+} from "@/services/api";
 
 interface FormData {
   firstName: string;
@@ -95,17 +100,19 @@ export default function RegisterPage() {
 
   // Autocomplete states for institution
   const [showInstitutionDropdown, setShowInstitutionDropdown] = useState(false);
-  const [filteredInstitutions, setFilteredInstitutions] = useState<Institution[]>([]);
+  const [filteredInstitutions, setFilteredInstitutions] = useState<
+    Institution[]
+  >([]);
   const [justSelectedInstitution, setJustSelectedInstitution] = useState(false);
   const institutionInputRef = useRef<HTMLInputElement>(null);
   const institutionDropdownRef = useRef<HTMLDivElement>(null);
 
   // Institutions from backend API
   const [apiInstitutions, setApiInstitutions] = useState<Institution[]>([]);
-  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<
+    number | null
+  >(null);
   const [loadingInstitutions, setLoadingInstitutions] = useState(false);
-
-
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -118,7 +125,6 @@ export default function RegisterPage() {
       ) {
         setShowInstitutionDropdown(false);
       }
-
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -126,14 +132,22 @@ export default function RegisterPage() {
   }, []);
 
   // Map education level to institution type(s) for API filter
-  const getInstitutionTypes = (education: string): ("UNIVERSITY" | "VOCATIONAL" | "SCHOOL" | "OTHERS")[] => {
+  const getInstitutionTypes = (
+    education: string,
+  ): ("UNIVERSITY" | "VOCATIONAL" | "SCHOOL" | "OTHERS")[] => {
     switch (education) {
-      case "university": return ["UNIVERSITY"];
-      case "vocational": return ["VOCATIONAL"];
-      case "high_vocational": return ["VOCATIONAL"];
-      case "high_school": return ["SCHOOL", "OTHERS"];
-      case "other": return ["OTHERS"];
-      default: return [];
+      case "university":
+        return ["UNIVERSITY"];
+      case "vocational":
+        return ["VOCATIONAL"];
+      case "high_vocational":
+        return ["VOCATIONAL"];
+      case "high_school":
+        return ["SCHOOL", "OTHERS"];
+      case "other":
+        return ["OTHERS"];
+      default:
+        return [];
     }
   };
 
@@ -161,9 +175,17 @@ export default function RegisterPage() {
       try {
         let results: Institution[];
         if (types.length === 1) {
-          results = await institutionApi.getInstitutions(types[0], searchText, 100);
+          results = await institutionApi.getInstitutions(
+            types[0],
+            searchText,
+            100,
+          );
         } else {
-          results = await institutionApi.getInstitutionsByTypes(types, searchText, 100);
+          results = await institutionApi.getInstitutionsByTypes(
+            types,
+            searchText,
+            100,
+          );
         }
         setApiInstitutions(results);
         setFilteredInstitutions(results.slice(0, 100));
@@ -222,6 +244,7 @@ export default function RegisterPage() {
         return undefined;
       case "institution":
         if (!value.trim()) return "จำเป็นต้องระบุ";
+        if (formData.education === "other") return undefined;
         // บังคับเลือกจาก dropdown เท่านั้น
         if (!selectedInstitutionId) return "กรุณาเลือกสถานศึกษาจากรายการ";
         return undefined;
@@ -281,18 +304,12 @@ export default function RegisterPage() {
     // Validate all fields in order
     for (const field of fieldOrder) {
       // Skip faculty validation if not university
-      if (
-        field === "faculty" &&
-        formData.education !== "university"
-      ) {
+      if (field === "faculty" && formData.education !== "university") {
         continue;
       }
 
       // Skip otherEducationType validation if not "other"
-      if (
-        field === "otherEducationType" &&
-        formData.education !== "other"
-      ) {
+      if (field === "otherEducationType" && formData.education !== "other") {
         continue;
       }
 
@@ -317,7 +334,9 @@ export default function RegisterPage() {
             if (el) {
               el.scrollIntoView({ behavior: "smooth", block: "center" });
               // Focus input ตัวแรกใน section นั้น (ถ้ามี)
-              const input = el.querySelector("input, select, textarea") as HTMLElement | null;
+              const input = el.querySelector(
+                "input, select, textarea",
+              ) as HTMLElement | null;
               if (input && !input.hasAttribute("disabled")) {
                 setTimeout(() => input.focus(), 500);
               }
@@ -346,7 +365,12 @@ export default function RegisterPage() {
 
     // Clear institution, faculty, and otherEducationType when education changes
     if (name === "education") {
-      setFormData((prev) => ({ ...prev, institution: "", faculty: "", otherEducationType: "" }));
+      setFormData((prev) => ({
+        ...prev,
+        institution: "",
+        faculty: "",
+        otherEducationType: "",
+      }));
       setApiInstitutions([]);
       setFilteredInstitutions([]);
       setShowInstitutionDropdown(false);
@@ -446,7 +470,6 @@ export default function RegisterPage() {
       formData.institution.trim() !== "" ||
       formData.faculty.trim() !== "" ||
       formData.major.trim() !== "" ||
-
       formData.password.trim() !== "" ||
       formData.confirmPassword.trim() !== "" ||
       formData.profileImage !== null
@@ -474,8 +497,11 @@ export default function RegisterPage() {
 
     if (validateForm()) {
       // ตรวจสอบว่าเลือกสถานศึกษาจาก dropdown แล้ว
-      if (!selectedInstitutionId) {
-        setErrors((prev) => ({ ...prev, institution: "กรุณาเลือกสถานศึกษาจากรายการ" }));
+      if (formData.education !== "other" && !selectedInstitutionId) {
+        setErrors((prev) => ({
+          ...prev,
+          institution: "กรุณาเลือกสถานศึกษาจากรายการ",
+        }));
         return;
       }
 
@@ -488,6 +514,26 @@ export default function RegisterPage() {
     setShowRegisterConfirm(false);
     setIsSubmitting(true);
     try {
+      let institutionIdToSubmit = selectedInstitutionId;
+
+      // การศึกษาอื่น ๆ: ถ้าพิมพ์เองและยังไม่ได้เลือกจาก dropdown ให้สร้างสถาบันใหม่ด้วย POST /institution
+      if (!institutionIdToSubmit && formData.education === "other") {
+        const institutionName = formData.institution.trim();
+        const created = await institutionApi.createInstitution({
+          institutionsType: "OTHERS",
+          name: institutionName,
+        });
+        institutionIdToSubmit = created.id;
+      }
+
+      if (!institutionIdToSubmit) {
+        setErrors((prev) => ({
+          ...prev,
+          institution: "กรุณาเลือกสถานศึกษาจากรายการ",
+        }));
+        return;
+      }
+
       const registerData: RegisterInternData = {
         fname: formData.firstName,
         lname: formData.lastName,
@@ -495,14 +541,15 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
         gender: formData.gender === "male" ? "MALE" : "FEMALE",
-        institutionId: selectedInstitutionId!,
+        institutionId: institutionIdToSubmit,
         faculty: formData.faculty,
         major: formData.education === "high_school" ? "" : formData.major,
-        studentNote: formData.education === "high_school"
-          ? formData.major
-          : formData.education === "other"
-            ? formData.otherEducationType
-            : undefined,
+        studentNote:
+          formData.education === "high_school"
+            ? formData.major
+            : formData.education === "other"
+              ? formData.otherEducationType
+              : undefined,
         totalHours: undefined,
       };
 
@@ -518,11 +565,21 @@ export default function RegisterPage() {
         // API ส่ง success: false กลับมา (HTTP 200 แต่ไม่สำเร็จ)
         const apiMsg = response.message || "";
         let message = "เกิดข้อผิดพลาดในการลงทะเบียน กรุณาลองใหม่อีกครั้ง";
-        if (apiMsg.toLowerCase().includes("username") && apiMsg.toLowerCase().includes("already")) {
+        if (
+          apiMsg.toLowerCase().includes("username") &&
+          apiMsg.toLowerCase().includes("already")
+        ) {
           message = "เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์โทรอื่น";
-        } else if (apiMsg.toLowerCase().includes("email") || apiMsg.includes("อีเมล") || apiMsg.includes("already exists")) {
+        } else if (
+          apiMsg.toLowerCase().includes("email") ||
+          apiMsg.includes("อีเมล") ||
+          apiMsg.includes("already exists")
+        ) {
           message = "อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น";
-        } else if (apiMsg.toLowerCase().includes("phone") || apiMsg.includes("เบอร์โทร")) {
+        } else if (
+          apiMsg.toLowerCase().includes("phone") ||
+          apiMsg.includes("เบอร์โทร")
+        ) {
           message = "เบอร์โทรนี้ถูกใช้งานแล้ว กรุณาใช้เบอร์โทรอื่น";
         } else if (apiMsg) {
           message = apiMsg;
@@ -533,18 +590,33 @@ export default function RegisterPage() {
     } catch (error: unknown) {
       console.error("Registration error:", error);
       let message = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง";
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string; code?: string; error?: string } } };
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            data?: { message?: string; code?: string; error?: string };
+          };
+        };
         const respData = axiosError.response?.data;
         const apiMsg = respData?.message || respData?.error || "";
         const apiCode = respData?.code || "";
 
         // ตรวจสอบกรณีอีเมลซ้ำหรือเบอร์โทรซ้ำ
-        if (apiMsg.toLowerCase().includes("username") && apiMsg.toLowerCase().includes("already")) {
+        if (
+          apiMsg.toLowerCase().includes("username") &&
+          apiMsg.toLowerCase().includes("already")
+        ) {
           message = "เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์โทรอื่น";
-        } else if (apiMsg.toLowerCase().includes("email") || apiCode === "USER_ALREADY_EXISTS" || apiMsg.includes("อีเมล") || apiMsg.includes("already exists")) {
+        } else if (
+          apiMsg.toLowerCase().includes("email") ||
+          apiCode === "USER_ALREADY_EXISTS" ||
+          apiMsg.includes("อีเมล") ||
+          apiMsg.includes("already exists")
+        ) {
           message = "อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น";
-        } else if (apiMsg.toLowerCase().includes("phone") || apiMsg.includes("เบอร์โทร")) {
+        } else if (
+          apiMsg.toLowerCase().includes("phone") ||
+          apiMsg.includes("เบอร์โทร")
+        ) {
           message = "เบอร์โทรนี้ถูกใช้งานแล้ว กรุณาใช้เบอร์โทรอื่น";
         } else if (apiMsg) {
           message = apiMsg;
@@ -610,10 +682,11 @@ export default function RegisterPage() {
               <div data-field="firstName">
                 <label
                   htmlFor="firstName"
-                  className={`block text-sm mb-2 ${hasError("firstName")
-                    ? "text-red-500 font-semibold"
-                    : "text-gray-800 font-semibold"
-                    }`}
+                  className={`block text-sm mb-2 ${
+                    hasError("firstName")
+                      ? "text-red-500 font-semibold"
+                      : "text-gray-800 font-semibold"
+                  }`}
                 >
                   ชื่อ <span className="text-primary-600">*</span>
                 </label>
@@ -624,10 +697,11 @@ export default function RegisterPage() {
                   onChange={(e) => handleChange("firstName", e.target.value)}
                   onBlur={() => handleBlur("firstName")}
                   placeholder="ชื่อ"
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasError("firstName")
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-200 focus:border-primary-600"
-                    }`}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasError("firstName")
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-200 focus:border-primary-600"
+                  }`}
                 />
                 {hasError("firstName") && (
                   <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -641,10 +715,11 @@ export default function RegisterPage() {
               <div data-field="lastName">
                 <label
                   htmlFor="lastName"
-                  className={`block text-sm mb-2 ${hasError("lastName")
-                    ? "text-red-500 font-semibold"
-                    : "text-gray-800 font-semibold"
-                    }`}
+                  className={`block text-sm mb-2 ${
+                    hasError("lastName")
+                      ? "text-red-500 font-semibold"
+                      : "text-gray-800 font-semibold"
+                  }`}
                 >
                   นามสกุล <span className="text-primary-600">*</span>
                 </label>
@@ -655,10 +730,11 @@ export default function RegisterPage() {
                   onChange={(e) => handleChange("lastName", e.target.value)}
                   onBlur={() => handleBlur("lastName")}
                   placeholder="นามสกุล"
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasError("lastName")
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-200 focus:border-primary-600"
-                    }`}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasError("lastName")
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-200 focus:border-primary-600"
+                  }`}
                 />
                 {hasError("lastName") && (
                   <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -675,10 +751,11 @@ export default function RegisterPage() {
               <div data-field="email">
                 <label
                   htmlFor="email"
-                  className={`block text-sm mb-2 ${hasError("email")
-                    ? "text-red-500 font-semibold"
-                    : "text-gray-800 font-semibold"
-                    }`}
+                  className={`block text-sm mb-2 ${
+                    hasError("email")
+                      ? "text-red-500 font-semibold"
+                      : "text-gray-800 font-semibold"
+                  }`}
                 >
                   อีเมล <span className="text-primary-600">*</span>
                 </label>
@@ -689,10 +766,11 @@ export default function RegisterPage() {
                   onChange={(e) => handleChange("email", e.target.value)}
                   onBlur={() => handleBlur("email")}
                   placeholder="อีเมล"
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasError("email")
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-200 focus:border-primary-600"
-                    }`}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasError("email")
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-200 focus:border-primary-600"
+                  }`}
                 />
                 {hasError("email") && (
                   <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -706,10 +784,11 @@ export default function RegisterPage() {
               <div data-field="phone">
                 <label
                   htmlFor="phone"
-                  className={`block text-sm mb-2 ${hasError("phone")
-                    ? "text-red-500 font-semibold"
-                    : "text-gray-800 font-semibold"
-                    }`}
+                  className={`block text-sm mb-2 ${
+                    hasError("phone")
+                      ? "text-red-500 font-semibold"
+                      : "text-gray-800 font-semibold"
+                  }`}
                 >
                   เบอร์โทร <span className="text-primary-600">*</span>
                 </label>
@@ -720,10 +799,11 @@ export default function RegisterPage() {
                   onChange={(e) => handleChange("phone", e.target.value)}
                   onBlur={() => handleBlur("phone")}
                   placeholder="เบอร์โทร"
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasError("phone")
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-200 focus:border-primary-600"
-                    }`}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasError("phone")
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-200 focus:border-primary-600"
+                  }`}
                 />
                 {hasError("phone") && (
                   <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -737,10 +817,11 @@ export default function RegisterPage() {
             {/* Gender */}
             <div data-field="gender">
               <label
-                className={`block text-sm mb-2 ${hasError("gender")
-                  ? "text-red-500 font-semibold"
-                  : "text-gray-800 font-semibold"
-                  }`}
+                className={`block text-sm mb-2 ${
+                  hasError("gender")
+                    ? "text-red-500 font-semibold"
+                    : "text-gray-800 font-semibold"
+                }`}
               >
                 เพศ <span className="text-primary-600">*</span>
               </label>
@@ -781,10 +862,11 @@ export default function RegisterPage() {
             {/* Education Level */}
             <div data-field="education">
               <label
-                className={`block text-sm mb-2 ${hasError("education")
-                  ? "text-red-500 font-semibold"
-                  : "text-gray-800 font-semibold"
-                  }`}
+                className={`block text-sm mb-2 ${
+                  hasError("education")
+                    ? "text-red-500 font-semibold"
+                    : "text-gray-800 font-semibold"
+                }`}
               >
                 การศึกษาปัจจุบัน <span className="text-primary-600">*</span>
               </label>
@@ -822,24 +904,29 @@ export default function RegisterPage() {
               <div data-field="otherEducationType">
                 <label
                   htmlFor="otherEducationType"
-                  className={`block text-sm mb-2 ${hasError("otherEducationType")
-                    ? "text-red-500 font-semibold"
-                    : "text-gray-800 font-semibold"
-                    }`}
+                  className={`block text-sm mb-2 ${
+                    hasError("otherEducationType")
+                      ? "text-red-500 font-semibold"
+                      : "text-gray-800 font-semibold"
+                  }`}
                 >
-                  ระบุประเภทการศึกษาอื่น ๆ <span className="text-primary-600">*</span>
+                  ระบุประเภทการศึกษาอื่น ๆ{" "}
+                  <span className="text-primary-600">*</span>
                 </label>
                 <input
                   type="text"
                   id="otherEducationType"
                   value={formData.otherEducationType}
-                  onChange={(e) => handleChange("otherEducationType", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("otherEducationType", e.target.value)
+                  }
                   onBlur={() => handleBlur("otherEducationType")}
                   placeholder="เช่น หลักสูตรประกาศนียบัตร อบรมเฉพาะทาง การศึกษานอกประเทศ"
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasError("otherEducationType")
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-200 focus:border-primary-600"
-                    }`}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasError("otherEducationType")
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-200 focus:border-primary-600"
+                  }`}
                 />
                 {hasError("otherEducationType") && (
                   <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -854,10 +941,11 @@ export default function RegisterPage() {
             <div className="relative" data-field="institution">
               <label
                 htmlFor="institution"
-                className={`block text-sm mb-2 ${hasError("institution")
-                  ? "text-red-500 font-semibold"
-                  : "text-gray-800 font-semibold"
-                  }`}
+                className={`block text-sm mb-2 ${
+                  hasError("institution")
+                    ? "text-red-500 font-semibold"
+                    : "text-gray-800 font-semibold"
+                }`}
               >
                 {getInstitutionLabel()}{" "}
                 <span className="text-primary-600">*</span>
@@ -874,23 +962,34 @@ export default function RegisterPage() {
                     // ปิด dropdown
                     setTimeout(() => setShowInstitutionDropdown(false), 200);
                     // ถ้าพิมพ์แต่ไม่ได้เลือกจาก dropdown — เคลียร์ข้อความ & แสดง error
-                    if (formData.institution.trim() && !selectedInstitutionId) {
+                    if (
+                      formData.education !== "other" &&
+                      formData.institution.trim() &&
+                      !selectedInstitutionId
+                    ) {
                       setFormData((prev) => ({ ...prev, institution: "" }));
                     }
                     handleBlur("institution");
                   }}
                   placeholder={
-                    formData.education
-                      ? `พิมพ์เพื่อค้นหา${getInstitutionLabel()}`
-                      : "กรุณาเลือกระดับการศึกษาก่อน"
+                    formData.education === "other"
+                      ? "พิมพ์เพื่อค้นหา หรือระบุชื่อสถานศึกษา"
+                      : formData.education
+                        ? `พิมพ์เพื่อค้นหา${getInstitutionLabel()}`
+                        : "กรุณาเลือกระดับการศึกษาก่อน"
                   }
                   disabled={!formData.education}
-                  className={`w-full px-4 py-3 ${showInstitutionDropdown && filteredInstitutions.length > 0 ? "pr-10" : ""
-                    } border-2 rounded-xl focus:outline-none transition-colors ${hasError("institution")
+                  className={`w-full px-4 py-3 ${
+                    showInstitutionDropdown && filteredInstitutions.length > 0
+                      ? "pr-10"
+                      : ""
+                  } border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasError("institution")
                       ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-primary-600"
-                    } ${!formData.education ? "bg-gray-100 cursor-not-allowed" : ""
-                    }`}
+                  } ${
+                    !formData.education ? "bg-gray-100 cursor-not-allowed" : ""
+                  }`}
                 />
                 {/* Dropdown Arrow Icon - แสดงเฉพาะตอนมี dropdown */}
                 {showInstitutionDropdown && filteredInstitutions.length > 0 && (
@@ -945,50 +1044,58 @@ export default function RegisterPage() {
             {/* Faculty - Only show for university and other */}
             {(formData.education === "university" ||
               formData.education === "other") && (
-                <div data-field="faculty">
-                  <label
-                    htmlFor="faculty"
-                    className={`block text-sm mb-2 ${hasError("faculty")
+              <div data-field="faculty">
+                <label
+                  htmlFor="faculty"
+                  className={`block text-sm mb-2 ${
+                    hasError("faculty")
                       ? "text-red-500 font-semibold"
                       : "text-gray-800 font-semibold"
-                      }`}
-                  >
-                    คณะ {formData.education === "university" && <span className="text-primary-600">*</span>}
-                  </label>
-                  <input
-                    type="text"
-                    id="faculty"
-                    value={formData.faculty}
-                    onChange={(e) => handleChange("faculty", e.target.value)}
-                    onBlur={() => handleBlur("faculty")}
-                    placeholder="คณะ"
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasError("faculty")
+                  }`}
+                >
+                  คณะ{" "}
+                  {formData.education === "university" && (
+                    <span className="text-primary-600">*</span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  id="faculty"
+                  value={formData.faculty}
+                  onChange={(e) => handleChange("faculty", e.target.value)}
+                  onBlur={() => handleBlur("faculty")}
+                  placeholder="คณะ"
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasError("faculty")
                       ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-primary-600"
-                      }`}
-                  />
-                  {hasError("faculty") && (
-                    <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                      <ErrorIcon />
-                      {errors.faculty}
-                    </p>
-                  )}
-                </div>
-              )}
+                  }`}
+                />
+                {hasError("faculty") && (
+                  <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                    <ErrorIcon />
+                    {errors.faculty}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Major */}
             <div data-field="major">
               <label
                 htmlFor="major"
-                className={`block text-sm mb-2 ${hasError("major")
-                  ? "text-red-500 font-semibold"
-                  : "text-gray-800 font-semibold"
-                  }`}
+                className={`block text-sm mb-2 ${
+                  hasError("major")
+                    ? "text-red-500 font-semibold"
+                    : "text-gray-800 font-semibold"
+                }`}
               >
                 {formData.education === "high_school"
                   ? "แผนการเรียน"
                   : "สาขาวิชา"}{" "}
-                {formData.education !== "other" && <span className="text-primary-600">*</span>}
+                {formData.education !== "other" && (
+                  <span className="text-primary-600">*</span>
+                )}
               </label>
               <input
                 type="text"
@@ -1001,10 +1108,11 @@ export default function RegisterPage() {
                     ? "แผนการเรียน"
                     : "สาขาวิชา"
                 }
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasError("major")
-                  ? "border-red-500 focus:border-red-500"
-                  : "border-gray-200 focus:border-primary-600"
-                  }`}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                  hasError("major")
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-200 focus:border-primary-600"
+                }`}
               />
               {hasError("major") && (
                 <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -1020,10 +1128,11 @@ export default function RegisterPage() {
               <div data-field="password">
                 <label
                   htmlFor="password"
-                  className={`block text-sm mb-2 ${hasError("password")
-                    ? "text-red-500 font-semibold"
-                    : "text-gray-800 font-semibold"
-                    }`}
+                  className={`block text-sm mb-2 ${
+                    hasError("password")
+                      ? "text-red-500 font-semibold"
+                      : "text-gray-800 font-semibold"
+                  }`}
                 >
                   รหัสผ่าน <span className="text-primary-600">*</span>
                 </label>
@@ -1035,10 +1144,11 @@ export default function RegisterPage() {
                     onChange={(e) => handleChange("password", e.target.value)}
                     onBlur={() => handleBlur("password")}
                     placeholder="รหัสผ่าน"
-                    className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${hasError("password")
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-gray-200 focus:border-primary-600"
-                      }`}
+                    className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${
+                      hasError("password")
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-gray-200 focus:border-primary-600"
+                    }`}
                   />
                   <button
                     type="button"
@@ -1097,10 +1207,11 @@ export default function RegisterPage() {
               <div data-field="confirmPassword">
                 <label
                   htmlFor="confirmPassword"
-                  className={`block text-sm mb-2 ${hasError("confirmPassword")
-                    ? "text-red-500 font-semibold"
-                    : "text-gray-800 font-semibold"
-                    }`}
+                  className={`block text-sm mb-2 ${
+                    hasError("confirmPassword")
+                      ? "text-red-500 font-semibold"
+                      : "text-gray-800 font-semibold"
+                  }`}
                 >
                   ยืนยันรหัสผ่าน <span className="text-primary-600">*</span>
                 </label>
@@ -1113,14 +1224,19 @@ export default function RegisterPage() {
                       handleChange("confirmPassword", e.target.value)
                     }
                     onBlur={() => handleBlur("confirmPassword")}
-                    placeholder={formData.password.length >= 8 ? "ยืนยันรหัสผ่าน" : "ยืนยันรหัสผ่าน"}
+                    placeholder={
+                      formData.password.length >= 8
+                        ? "ยืนยันรหัสผ่าน"
+                        : "ยืนยันรหัสผ่าน"
+                    }
                     disabled={formData.password.length < 8}
-                    className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${formData.password.length < 8
-                      ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-200"
-                      : hasError("confirmPassword")
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-200 focus:border-primary-600"
-                      }`}
+                    className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${
+                      formData.password.length < 8
+                        ? "bg-gray-100 cursor-not-allowed opacity-60 border-gray-200"
+                        : hasError("confirmPassword")
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-200 focus:border-primary-600"
+                    }`}
                   />
                   <button
                     type="button"
@@ -1185,18 +1301,30 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`px-8 py-3 bg-primary-600 text-white rounded-xl font-medium transition-colors active:scale-95 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-700 cursor-pointer'}`}
+                className={`px-8 py-3 bg-primary-600 text-white rounded-xl font-medium transition-colors active:scale-95 ${isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-primary-700 cursor-pointer"}`}
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     กำลังลงทะเบียน...
                   </span>
                 ) : (
-                  'ลงทะเบียน'
+                  "ลงทะเบียน"
                 )}
               </button>
             </div>
@@ -1210,12 +1338,18 @@ export default function RegisterPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-red-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-6">ยืนยันการละทิ้งข้อมูล</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              ยืนยันการละทิ้งข้อมูล
+            </h3>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowBackConfirm(false)}
@@ -1240,12 +1374,18 @@ export default function RegisterPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-green-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-6">ยืนยันการลงทะเบียน</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              ยืนยันการลงทะเบียน
+            </h3>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowRegisterConfirm(false)}
@@ -1270,8 +1410,18 @@ export default function RegisterPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-10 h-10 text-green-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
             </div>
@@ -1286,12 +1436,18 @@ export default function RegisterPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-red-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">ลงทะเบียนไม่สำเร็จ</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              ลงทะเบียนไม่สำเร็จ
+            </h3>
             <p className="text-gray-600 mb-6">{errorModalMessage}</p>
             <button
               onClick={() => setShowErrorModal(false)}

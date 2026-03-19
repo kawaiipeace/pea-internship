@@ -7,6 +7,7 @@ import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
+  getEducationDisplayText,
 } from "../../../utils/applicationMapper";
 
 // Thai month names
@@ -374,7 +375,9 @@ export default function CancelInternshipPage() {
                       <p className="text-gray-400 text-sm mb-1">
                         การศึกษาปัจจุบัน
                       </p>
-                      <p className="font-medium text-gray-900">มหาวิทยาลัย</p>
+                      <p className="font-medium text-gray-900">
+                        {getEducationDisplayText(application)}
+                      </p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm mb-1">ชื่อสถาบัน</p>
@@ -393,7 +396,7 @@ export default function CancelInternshipPage() {
                     <div>
                       <p className="text-gray-400 text-sm mb-1">สาขา</p>
                       <p className="font-medium text-gray-900">
-                        {application.major}
+                        {application.major?.trim() || "-"}
                       </p>
                     </div>
                   </div>

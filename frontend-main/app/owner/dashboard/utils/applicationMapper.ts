@@ -17,6 +17,32 @@ import type {
 // Re-export for convenience
 export type { Application, ApplicationStatus, DetailedStatus, Mentor };
 
+export function getEducationDisplayText(app: {
+  education: string;
+  studentNote?: string;
+}): string {
+  const labels: Record<string, string> = {
+    high_school: "มัธยมศึกษาตอนปลาย",
+    vocational: "ปวช.",
+    high_vocational: "ปวส.",
+    university: "มหาวิทยาลัย",
+    other: "อื่น ๆ",
+  };
+
+  if (app.education === "other") {
+    const raw = (app.studentNote || "").trim();
+    if (raw) {
+      const firstPart = raw
+        .split("|")
+        .map((p) => p.trim())
+        .find((p) => p && !p.startsWith("สถานศึกษา:"));
+      if (firstPart) return firstPart;
+    }
+  }
+
+  return labels[app.education] || app.education;
+}
+
 const statusMap: Record<
   AppStatusEnum,
   {
@@ -88,7 +114,7 @@ const eduMap: Record<string, string> = {
   VOCATIONAL: "vocational",
   HIGH_VOCATIONAL: "high_vocational",
   SCHOOL: "high_school",
-  OTHERS: "university",
+  OTHERS: "other",
 };
 
 function formatDate(d: string | null): string {
@@ -157,7 +183,7 @@ export function mapApiToApplication(
     phone: item.phoneNumber || "",
     education,
     institution: item.institutionName || "",
-    major: item.major || "",
+    major: item.major?.trim() || "",
     startDate: formatDate(item.infoStartDate || item.profileStartDate),
     endDate: formatDate(item.infoEndDate || item.profileEndDate),
     trainingHours: Number(item.infoHours || item.profileHours || 0),
@@ -173,7 +199,7 @@ export function mapApiToApplication(
       analysisDocuments.length > 0 ? analysisDocuments : undefined,
     step: mapped.step,
     stepDescription: mapped.stepDescription,
-    faculty: item.faculty || undefined,
+    faculty: item.faculty?.trim() || undefined,
     studentNote: item.studentNote || undefined,
     cancellationReason:
       item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"

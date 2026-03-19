@@ -15,10 +15,9 @@ import IconX from '@/components/icon/icon-x';
 const LeaveRequestPage = () => {
     const [leaveDate, setLeaveDate] = useState<any>('');
     const [leaveType, setLeaveType] = useState<'sick' | 'personal' | ''>('');
-    const [timePeriod, setTimePeriod] = useState('');
+    const [timePeriod, setTimePeriod] = useState('fullday');
     const [details, setDetails] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
@@ -26,8 +25,6 @@ const LeaveRequestPage = () => {
 
     const timePeriodOptions = [
         { value: 'fullday', label: 'ลาเต็มวัน' },
-        { value: 'morning', label: 'ลาช่วงเช้า (08:00 - 12:00)' },
-        { value: 'afternoon', label: 'ลาช่วงบ่าย (13:00 - 17:00)' },
     ];
 
     const validateAndSetFile = (file: File) => {
@@ -228,38 +225,11 @@ const LeaveRequestPage = () => {
                     <div className="mb-5">
                         <label className="mb-2 block text-sm font-semibold text-dark dark:text-white-dark">ช่วงเวลาการลงเวลา</label>
                         <div className="relative max-w-xs">
-                            <button
-                                type="button"
-                                className="form-input flex w-full items-center justify-between text-left focus:border-[#A80689] focus:ring-[#A80689] focus:ring-0"
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            <div
+                                className="form-input flex w-full items-center justify-between text-left bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-[#1b2e4b] dark:text-gray-400 border-gray-200 dark:border-[#1b2e4b]"
                             >
-                                <span className={timePeriod ? 'text-dark dark:text-white-light' : 'text-gray-400'}>
-                                    {selectedTimePeriodLabel || 'เลือกช่วงเวลาการลา'}
-                                </span>
-                                <svg className={`h-4 w-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            {isDropdownOpen && (
-                                <ul className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white py-1 shadow-lg dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
-                                    {timePeriodOptions.map((opt) => (
-                                        <li key={opt.value}>
-                                            <button
-                                                type="button"
-                                                className={`w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-[#f3e8ff] hover:text-[#A80689] dark:hover:bg-[#3b1f6e]/30 ${
-                                                    timePeriod === opt.value ? 'bg-[#f3e8ff] font-semibold text-[#A80689] dark:bg-[#3b1f6e]/30' : 'text-gray-600 dark:text-gray-300'
-                                                }`}
-                                                onClick={() => {
-                                                    setTimePeriod(opt.value);
-                                                    setIsDropdownOpen(false);
-                                                }}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
+                                <span>{selectedTimePeriodLabel || 'ลาเต็มวัน'}</span>
+                            </div>
                         </div>
                     </div>
 
