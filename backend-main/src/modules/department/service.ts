@@ -27,14 +27,12 @@ export class DepartmentService {
       const terms = search.split(" ").filter(Boolean);
 
       if (terms.length > 0) {
-        // ให้แต่ละคำไป match กับหลาย field แล้ว AND รวมกัน
-        const perTerm: SQL[] = terms.map(
-          (w) =>
-            or(
-              ilike(departments.deptShort, `%${w}%`),
-              ilike(departments.deptFull, `%${w}%`),
-              ilike(departments.peaCode, `%${w}%`)
-            )!
+        const perTerm: SQL[] = terms.map((w) =>
+          or(
+            ilike(departments.deptShort, `%${w}%`),
+            ilike(departments.deptFull, `%${w}%`),
+            ilike(departments.peaCode, `%${w}%`)
+          )!
         );
 
         filters.push(and(...perTerm)!);
@@ -44,12 +42,77 @@ export class DepartmentService {
     const whereClause = filters.length ? and(...filters) : undefined;
 
     const data = await db
-      .select()
+      .select({
+        id: departments.deptSap,
+        deptSap: departments.deptSap,
+        deptChangeCode: departments.deptChangeCode,
+        deptUpper: departments.deptUpper,
+
+        deptShort1: departments.deptShort1,
+        deptShort2: departments.deptShort2,
+        deptShort3: departments.deptShort3,
+        deptShort4: departments.deptShort4,
+        deptShort5: departments.deptShort5,
+        deptShort6: departments.deptShort6,
+        deptShort7: departments.deptShort7,
+        deptShort: departments.deptShort,
+
+        deptFull1: departments.deptFull1,
+        deptFull2: departments.deptFull2,
+        deptFull3: departments.deptFull3,
+        deptFull4: departments.deptFull4,
+        deptFull5: departments.deptFull5,
+        deptFull6: departments.deptFull6,
+        deptFull7: departments.deptFull7,
+        deptFull: departments.deptFull,
+
+        costCenterCode: departments.costCenterCode,
+        costCenterName: departments.costCenterName,
+
+        peaCode: departments.peaCode,
+        businessPlace: departments.businessPlace,
+        businessArea: departments.businessArea,
+
+        resourceCode: departments.resourceCode,
+        resourceName: departments.resourceName,
+
+        taxBranch: departments.taxBranch,
+
+        isActive: departments.isActive,
+        createdAt: departments.createdAt,
+        createdBy: departments.createdBy,
+        updatedAt: departments.updatedAt,
+        updatedBy: departments.updatedBy,
+        isDeleted: departments.isDeleted,
+
+        deptStableCode: departments.deptStableCode,
+        deptSapShort: departments.deptSapShort,
+        deptSapFull: departments.deptSapFull,
+
+        deptFullEng1: departments.deptFullEng1,
+        deptFullEng2: departments.deptFullEng2,
+        deptFullEng3: departments.deptFullEng3,
+        deptFullEng4: departments.deptFullEng4,
+        deptFullEng5: departments.deptFullEng5,
+        deptFullEng6: departments.deptFullEng6,
+        deptFullEng7: departments.deptFullEng7,
+
+        deptOrder: departments.deptOrder,
+        flgDelimit: departments.flgDelimit,
+        delimitEffectivedt: departments.delimitEffectivedt,
+        gsberCctr: departments.gsberCctr,
+
+        deptLev2: departments.deptLev2,
+        deptLev3: departments.deptLev3,
+        seq: departments.seq,
+        location: departments.location,
+        officeId: departments.officeId,
+      })
       .from(departments)
       .where(whereClause)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(departments.deptSap), desc(departments.id));
+      .orderBy(desc(departments.deptSap));
 
     const [totalResult] = await db
       .select({ count: count() })
@@ -107,7 +170,7 @@ export class DepartmentService {
       const [updatedDept] = await db
         .update(departments)
         .set(payload)
-        .where(eq(departments.id, id))
+        .where(eq(departments.deptSap, id))
         .returning();
 
       if (!updatedDept) {
@@ -130,7 +193,7 @@ export class DepartmentService {
     try {
       const [deletedDept] = await db
         .delete(departments)
-        .where(eq(departments.id, id))
+        .where(eq(departments.deptSap, id))
         .returning();
 
       if (!deletedDept) {

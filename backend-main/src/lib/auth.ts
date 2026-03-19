@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth, username } from "better-auth/plugins";
-import type { InferSelectModel } from "drizzle-orm";
+import { eq, type InferSelectModel } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
@@ -60,7 +60,7 @@ export const auth = betterAuth({
 
             return {
               roleId: 2,
-              departmentId: 1,
+              departmentId: null,
               fname:
                 profile.given_name || profile.name?.split(" ")[0] || "Unknown",
               lname:
@@ -88,12 +88,31 @@ export const auth = betterAuth({
 
           if (employeeId) {
             try {
+              // create staff_profile
               await db.insert(schema.staffProfiles).values({
                 userId: user.id,
                 employeeId: employeeId,
               });
+
+              // หา dept_sap จาก employee_id_dept_sap
+              const [mapping] = await db
+                .select({
+                  deptSap: schema.employeeIdDeptSap.deptSap,
+                })
+                .from(schema.employeeIdDeptSap)
+                .where(eq(schema.employeeIdDeptSap.employeeId, employeeId));
+
+              // ถ้าเจอ dept_sap ให้ update users.department_id
+              if (mapping?.deptSap) {
+                await db
+                  .update(schema.users)
+                  .set({
+                    departmentId: mapping.deptSap,
+                  })
+                  .where(eq(schema.users.id, user.id));
+              }
             } catch (error) {
-              console.error("Failed to create staff_profile:", error);
+              console.error("Failed to sync employee department:", error);
             } finally {
               tempStaffData.delete(user.email);
             }

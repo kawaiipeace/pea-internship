@@ -8,6 +8,7 @@ import {
   Application,
   fetchAllApplications,
   getNearStartApps,
+  getEducationDisplayText,
 } from "../utils/applicationMapper";
 import {
   applicationApi,
@@ -664,7 +665,9 @@ function NearStartApplicationsContent() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-gray-500 text-sm">การศึกษาปัจจุบัน</span>
-                <p className="text-gray-900 text-sm">มหาวิทยาลัย</p>
+                <p className="text-gray-900 text-sm">
+                  {getEducationDisplayText(selectedApplication)}
+                </p>
               </div>
               <div>
                 <span className="text-gray-500 text-sm">ชื่อสถาบัน</span>

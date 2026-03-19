@@ -8,6 +8,7 @@ import {
   Application,
   fetchAllApplications,
   Mentor,
+  getEducationDisplayText,
 } from "../utils/applicationMapper";
 import {
   applicationApi,
@@ -1664,7 +1665,9 @@ function ApplicationDetailContent() {
               <div className="grid grid-cols-2 gap-6 mt-6">
                 <div>
                   <p className="text-gray-400 text-sm mb-1">การศึกษาปัจจุบัน</p>
-                  <p className="font-medium text-gray-900">มหาวิทยาลัย</p>
+                  <p className="font-medium text-gray-900">
+                    {getEducationDisplayText(application)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm mb-1">ชื่อสถาบัน</p>
@@ -1681,7 +1684,7 @@ function ApplicationDetailContent() {
                 <div>
                   <p className="text-gray-400 text-sm mb-1">สาขา</p>
                   <p className="font-medium text-gray-900">
-                    {application.major}
+                    {application.major?.trim() || "-"}
                   </p>
                 </div>
               </div>

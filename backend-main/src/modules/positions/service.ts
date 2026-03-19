@@ -96,7 +96,7 @@ export class PositionService {
         officeId: departments.officeId,
       })
       .from(users)
-      .leftJoin(departments, eq(departments.id, users.departmentId))
+      .leftJoin(departments, eq(departments.deptSap, users.departmentId))
       .where(eq(users.id, userId));
 
     if (!row) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
@@ -223,7 +223,7 @@ export class PositionService {
       departmentIds.length > 0
         ? await db
             .select({
-              id: departments.id,
+              id: departments.deptSap,
               deptSap: departments.deptSap,
               deptShort: departments.deptShort,
               deptFull: departments.deptFull,
@@ -231,7 +231,9 @@ export class PositionService {
               officeId: departments.officeId,
             })
             .from(departments)
-            .where(or(...departmentIds.map((dId) => eq(departments.id, dId))))
+            .where(
+              or(...departmentIds.map((dId) => eq(departments.deptSap, dId)))
+            )
         : [];
 
     const officeData =

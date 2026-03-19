@@ -60,13 +60,13 @@ export class StaffLogsService {
         lname: users.lname,
 
         roleName: roles.name,
-        departmentId: departments.id,
+        departmentId: departments.deptSap,
         departmentName: departments.deptShort,
       })
       .from(staffLogs)
       .leftJoin(users, eq(users.id, staffLogs.userId))
       .leftJoin(roles, eq(roles.id, users.roleId))
-      .leftJoin(departments, eq(departments.id, users.departmentId))
+      .leftJoin(departments, eq(departments.deptSap, users.departmentId))
       .where(whereClause)
       .orderBy(desc(staffLogs.createdAt))
       .limit(limit)
