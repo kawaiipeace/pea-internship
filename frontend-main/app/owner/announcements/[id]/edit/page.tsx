@@ -6,11 +6,15 @@ import { useRouter } from "next/navigation";
 import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import ThaiDateInput from "@/components/ui/ThaiDateInput";
-import {
-  AnnouncementFormErrors,
-} from "@/types/announcement";
+import { AnnouncementFormErrors } from "@/types/announcement";
 import { relatedFieldOptions } from "../../../../data/mockAnnouncements";
-import { positionApi, positionToAnnouncement, UpdatePositionData, userApi, StaffUser } from "@/services/api";
+import {
+  positionApi,
+  positionToAnnouncement,
+  UpdatePositionData,
+  userApi,
+  StaffUser,
+} from "@/services/api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -25,8 +29,8 @@ interface EditFormData {
   startDate: string;
   endDate: string;
   relatedFields: string[];
-  requiredDocuments: ('portfolio' | 'resume')[];
-  status: 'draft' | 'open' | 'closed';
+  requiredDocuments: ("portfolio" | "resume")[];
+  status: "draft" | "open" | "closed";
   contactName: string;
   contactEmail: string;
   contactPhone: string;
@@ -54,15 +58,24 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   // State for list items (editable boxes like create page)
   const [jobDetailsList, setJobDetailsList] = useState<string[]>([""]);
   const [requirementsList, setRequirementsList] = useState<string[]>([""]);
-  const [benefitsList, setBenefitsList] = useState<string[]>(["ไม่มีค่าตอบแทน"]);
+  const [benefitsList, setBenefitsList] = useState<string[]>([
+    "ไม่มีค่าตอบแทน",
+  ]);
 
   // Staff list for mentor selection
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(true);
-  const [showMentorDropdown, setShowMentorDropdown] = useState<number | null>(null);
-  const [mentors, setMentors] = useState<{ staffProfileId: number | null; name: string; email: string; phone: string }[]>([
-    { staffProfileId: null, name: "", email: "", phone: "" }
-  ]);
+  const [showMentorDropdown, setShowMentorDropdown] = useState<number | null>(
+    null,
+  );
+  const [mentors, setMentors] = useState<
+    {
+      staffProfileId: number | null;
+      name: string;
+      email: string;
+      phone: string;
+    }[]
+  >([{ staffProfileId: null, name: "", email: "", phone: "" }]);
   const mentorDropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Current user (owner) info
@@ -71,7 +84,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
   // Mentor delete confirmation modal
   const [showDeleteMentorModal, setShowDeleteMentorModal] = useState(false);
-  const [deleteMentorIndex, setDeleteMentorIndex] = useState<number | null>(null);
+  const [deleteMentorIndex, setDeleteMentorIndex] = useState<number | null>(
+    null,
+  );
   const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
 
   // Cancel confirmation modal
@@ -96,7 +111,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     if (!formData) return "NOT_YET";
     if (formData.status === "closed") return "CLOSE";
     const now = new Date();
-    const recruitStart = formData.startDate ? new Date(formData.startDate) : null;
+    const recruitStart = formData.startDate
+      ? new Date(formData.startDate)
+      : null;
     const recruitEnd = formData.endDate ? new Date(formData.endDate) : null;
     if (isNoTimeLimit || (!recruitStart && !recruitEnd)) return "OPEN";
     if (recruitStart && now < recruitStart) return "NOT_YET";
@@ -107,18 +124,28 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
   // Document types
   const [loadingDocTypes, setLoadingDocTypes] = useState(false);
-  const docTypes: { id: 'portfolio' | 'resume'; name: string; description?: string }[] = [
-    { id: 'resume', name: 'Resume', description: 'ใบสมัครและประวัติการศึกษา' },
-    { id: 'portfolio', name: 'Portfolio', description: 'ผลงานและประสบการณ์' },
+  const docTypes: {
+    id: "portfolio" | "resume";
+    name: string;
+    description?: string;
+  }[] = [
+    { id: "resume", name: "Resume", description: "ใบสมัครและประวัติการศึกษา" },
+    { id: "portfolio", name: "Portfolio", description: "ผลงานและประสบการณ์" },
   ];
 
   // Close major dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (majorDropdownRef.current && !majorDropdownRef.current.contains(event.target as Node)) {
+      if (
+        majorDropdownRef.current &&
+        !majorDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowFieldDropdown(false);
       }
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowStatusDropdown(false);
       }
     };
@@ -157,14 +184,14 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
   // Filter majors based on search text
   const filteredMajorOptions = allMajorOptions.filter((opt) =>
-    opt.toLowerCase().includes(majorSearchText.toLowerCase())
+    opt.toLowerCase().includes(majorSearchText.toLowerCase()),
   );
 
   // Check if user can add new major
   const canAddNewMajor =
     majorSearchText.trim() !== "" &&
     !allMajorOptions.some(
-      (opt) => opt.toLowerCase() === majorSearchText.toLowerCase()
+      (opt) => opt.toLowerCase() === majorSearchText.toLowerCase(),
     );
 
   // Handle add custom major
@@ -219,9 +246,11 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
       try {
         const staff = await userApi.getStaff();
-        const validStaff = (staff || []).filter(s => {
+        const validStaff = (staff || []).filter((s) => {
           const hasProfileId = s.staffProfileId != null;
-          const sameDepartment = currentUser?.departmentId ? s.departmentId === currentUser.departmentId : true;
+          const sameDepartment = currentUser?.departmentId
+            ? s.departmentId === currentUser.departmentId
+            : true;
           return hasProfileId && sameDepartment;
         });
         setStaffList(validStaff);
@@ -238,9 +267,14 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   // Once staffList loads, set staffProfileId on currentUser from the staffList match
   useEffect(() => {
     if (!currentUser || staffList.length === 0) return;
-    const match = staffList.find(s => s.id === currentUser.id);
-    if (match?.staffProfileId != null && currentUser.staffProfileId !== match.staffProfileId) {
-      setCurrentUser(prev => prev ? { ...prev, staffProfileId: match.staffProfileId } : prev);
+    const match = staffList.find((s) => s.id === currentUser.id);
+    if (
+      match?.staffProfileId != null &&
+      currentUser.staffProfileId !== match.staffProfileId
+    ) {
+      setCurrentUser((prev) =>
+        prev ? { ...prev, staffProfileId: match.staffProfileId } : prev,
+      );
     }
   }, [staffList, currentUser]);
 
@@ -261,7 +295,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           const announcement = positionToAnnouncement(position);
           setAcceptedCount(position.acceptedCount ?? 0);
 
-          const formatDateForInput = (dateStr: string | null | undefined): string => {
+          const formatDateForInput = (
+            dateStr: string | null | undefined,
+          ): string => {
             if (!dateStr) return "";
             const match = dateStr.match(/^(\d{4}-\d{2}-\d{2})/);
             if (match) {
@@ -271,8 +307,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           };
 
           // Detect unlimited count and no time limit from loaded data
-          const loadedUnlimited = position.positionCount === null || position.positionCount === 0;
-          const loadedNoTimeLimit = !position.recruitStart && !position.recruitEnd;
+          const loadedUnlimited =
+            position.positionCount === null || position.positionCount === 0;
+          const loadedNoTimeLimit =
+            !position.recruitStart && !position.recruitEnd;
           setIsUnlimitedCount(loadedUnlimited);
           setIsNoTimeLimit(loadedNoTimeLimit);
 
@@ -285,28 +323,41 @@ export default function EditAnnouncementPage({ params }: PageProps) {
             endDate: formatDateForInput(position.recruitEnd),
             relatedFields: announcement.relatedFields,
             requiredDocuments: announcement.requiredDocuments,
-            status: announcement.status === "expired" ? "closed" : announcement.status,
+            status:
+              announcement.status === "expired"
+                ? "closed"
+                : announcement.status,
             contactName: announcement.contactName,
             contactEmail: announcement.contactEmail,
             contactPhone: announcement.contactPhone,
           });
 
           // Set list items from loaded data
-          const responsibilities = announcement.responsibilities.length > 0 ? announcement.responsibilities : [""];
-          const qualifications = announcement.qualifications.length > 0 ? announcement.qualifications : [""];
-          const benefits = announcement.benefits ? announcement.benefits.split(/\r?\n/).filter(b => b.trim()) : ["ไม่มีค่าตอบแทน"];
+          const responsibilities =
+            announcement.responsibilities.length > 0
+              ? announcement.responsibilities
+              : [""];
+          const qualifications =
+            announcement.qualifications.length > 0
+              ? announcement.qualifications
+              : [""];
+          const benefits = announcement.benefits
+            ? announcement.benefits.split(/\r?\n/).filter((b) => b.trim())
+            : ["ไม่มีค่าตอบแทน"];
           setJobDetailsList(responsibilities);
           setRequirementsList(qualifications);
           setBenefitsList(benefits.length > 0 ? benefits : ["ไม่มีค่าตอบแทน"]);
 
           // Set mentors from loaded data
           if (position.mentors && position.mentors.length > 0) {
-            setMentors(position.mentors.map(m => ({
-              staffProfileId: m.staffId,
-              name: m.name,
-              email: m.email,
-              phone: m.phoneNumber || "",
-            })));
+            setMentors(
+              position.mentors.map((m) => ({
+                staffProfileId: m.staffId,
+                name: m.name,
+                email: m.email,
+                phone: m.phoneNumber || "",
+              })),
+            );
           }
 
           console.log("Loaded position:", position);
@@ -325,7 +376,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     const profileId = staff.staffProfileId ?? null;
     // ถ้าพี่เลี้ยงที่เลือกเป็นคนเดียวกับผู้ประกาศรับสมัคร → ใช้เบอร์จากฟอร์มด้านบน
     const isSameAsContact = currentUser && staff.id === currentUser.id;
-    const phone = (isSameAsContact && formData) ? formData.contactPhone : (staff.phoneNumber || "");
+    const phone =
+      isSameAsContact && formData
+        ? formData.contactPhone
+        : staff.phoneNumber || "";
     const newMentors = [...mentors];
     newMentors[index] = {
       staffProfileId: profileId,
@@ -340,14 +394,20 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   // Add new mentor slot (max 5)
   const handleAddMentor = () => {
     if (mentors.length >= 5) return;
-    setMentors([...mentors, { staffProfileId: null, name: "", email: "", phone: "" }]);
+    setMentors([
+      ...mentors,
+      { staffProfileId: null, name: "", email: "", phone: "" },
+    ]);
   };
 
   // Sync mentor phone when contactPhone changes and mentor is the same person
   useEffect(() => {
     if (!currentUser || !formData) return;
     const updated = mentors.map((m) => {
-      if (m.staffProfileId === currentUser.staffProfileId && currentUser.staffProfileId != null) {
+      if (
+        m.staffProfileId === currentUser.staffProfileId &&
+        currentUser.staffProfileId != null
+      ) {
         return { ...m, phone: formData.contactPhone };
       }
       return m;
@@ -396,12 +456,12 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     }
     if (isUnlimitedCount === null) {
       newErrors.maxApplicants = "กรุณาเลือกจำนวนผู้สมัครที่เปิดรับ";
-    } else if (!isUnlimitedCount && (!formData.maxApplicants || formData.maxApplicants < 1)) {
-      newErrors.maxApplicants = "ระบุจำนวนที่เปิดรับ";
     } else if (
       !isUnlimitedCount &&
-      formData.maxApplicants < acceptedCount
+      (!formData.maxApplicants || formData.maxApplicants < 1)
     ) {
+      newErrors.maxApplicants = "ระบุจำนวนที่เปิดรับ";
+    } else if (!isUnlimitedCount && formData.maxApplicants < acceptedCount) {
       newErrors.maxApplicants = `จำนวนที่เปิดรับต้องไม่น้อยกว่าจำนวนนักศึกษาที่ตอบรับแล้ว (${acceptedCount} คน)`;
     }
     if (isNoTimeLimit === null) {
@@ -415,10 +475,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     if (formData.relatedFields.length === 0) {
       newErrors.relatedFields = "เพิ่มสาขาวิชาที่เกี่ยวข้องอย่างน้อย 1 สาขา";
     }
-    if (jobDetailsList.filter(d => d.trim()).length === 0) {
+    if (jobDetailsList.filter((d) => d.trim()).length === 0) {
       newErrors.responsibilities = "ระบุลักษณะงาน";
     }
-    if (requirementsList.filter(r => r.trim()).length === 0) {
+    if (requirementsList.filter((r) => r.trim()).length === 0) {
       newErrors.qualifications = "ระบุคุณสมบัติ";
     }
     if (!formData.contactName.trim()) {
@@ -433,14 +493,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
       newErrors.contactPhone = "เบอร์โทรต้องมี 10 หลัก";
     }
     // Validate mentor selection
-    const hasAtLeastOneMentor = mentors.some(m => m.staffProfileId !== null);
+    const hasAtLeastOneMentor = mentors.some((m) => m.staffProfileId !== null);
     if (!hasAtLeastOneMentor) {
       newErrors.mentorName = "กรุณาเลือกพี่เลี้ยงอย่างน้อย 1 คน";
     }
     // Validate mentor phones (10 digits)
     mentors.forEach((m, i) => {
-      if (m.staffProfileId !== null && m.phone.replace(/\D/g, "").length !== 10) {
-        newErrors[`mentorPhone_${i}` as keyof AnnouncementFormErrors] = "เบอร์โทรพี่เลี้ยงต้องมี 10 หลัก";
+      if (
+        m.staffProfileId !== null &&
+        m.phone.replace(/\D/g, "").length !== 10
+      ) {
+        newErrors[`mentorPhone_${i}` as keyof AnnouncementFormErrors] =
+          "เบอร์โทรพี่เลี้ยงต้องมี 10 หลัก";
       }
     });
 
@@ -466,23 +530,31 @@ export default function EditAnnouncementPage({ params }: PageProps) {
         throw new Error("Invalid position ID");
       }
 
-      const resumeRq = formData.requiredDocuments.includes('resume');
-      const portfolioRq = formData.requiredDocuments.includes('portfolio');
+      const resumeRq = formData.requiredDocuments.includes("resume");
+      const portfolioRq = formData.requiredDocuments.includes("portfolio");
 
       const mentorStaffIds: number[] = mentors
-        .filter(m => m.staffProfileId !== null)
-        .map(m => m.staffProfileId as number);
+        .filter((m) => m.staffProfileId !== null)
+        .map((m) => m.staffProfileId as number);
 
       const updateData: UpdatePositionData = {
         name: formData.title,
         location: formData.location,
         positionCount: isUnlimitedCount ? null : formData.maxApplicants,
         major: formData.relatedFields.join(", "),
-        recruitStart: isNoTimeLimit ? null : (formData.startDate ? new Date(formData.startDate).toISOString() : null),
-        recruitEnd: isNoTimeLimit ? null : (formData.endDate ? new Date(formData.endDate).toISOString() : null),
-        jobDetails: jobDetailsList.filter(d => d.trim()).join("\n"),
-        requirement: requirementsList.filter(r => r.trim()).join("\n"),
-        benefits: benefitsList.filter(b => b.trim()).join("\n"),
+        recruitStart: isNoTimeLimit
+          ? null
+          : formData.startDate
+            ? new Date(formData.startDate).toISOString()
+            : null,
+        recruitEnd: isNoTimeLimit
+          ? null
+          : formData.endDate
+            ? new Date(formData.endDate).toISOString()
+            : null,
+        jobDetails: jobDetailsList.filter((d) => d.trim()).join("\n"),
+        requirement: requirementsList.filter((r) => r.trim()).join("\n"),
+        benefits: benefitsList.filter((b) => b.trim()).join("\n"),
         recruitmentStatus: formData.status === "open" ? "OPEN" : "CLOSE",
         resumeRq,
         portfolioRq,
@@ -498,7 +570,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           console.warn("Failed to update phone number:", phoneErr);
           setEditErrorModal({
             title: "แก้ไขประกาศไม่สำเร็จ",
-            message: "ไม่สามารถบันทึกเบอร์โทรได้ เบอร์โทรนี้อาจถูกใช้งานในระบบแล้ว",
+            message:
+              "ไม่สามารถบันทึกเบอร์โทรได้ เบอร์โทรนี้อาจถูกใช้งานในระบบแล้ว",
           });
         }
       }
@@ -512,7 +585,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     } catch (error: unknown) {
       console.error("Error updating announcement:", error);
 
-      const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+      const axiosError = error as {
+        response?: { status?: number; data?: { message?: string } };
+      };
 
       if (axiosError.response?.status === 404) {
         setEditErrorModal({
@@ -526,7 +601,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
         });
         router.push("/login/owner");
       } else {
-        const message = axiosError.response?.data?.message || "เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง";
+        const message =
+          axiosError.response?.data?.message ||
+          "เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง";
         const isPositionCountError =
           message.includes("จำนวนที่เปิดรับต้องไม่น้อยกว่า") ||
           message.includes("acceptedCount");
@@ -603,7 +680,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-gray-50">
         <OwnerNavbar />
-        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 5rem)" }}>
+        <div
+          className="flex items-center justify-center"
+          style={{ minHeight: "calc(100vh - 5rem)" }}
+        >
           <VideoLoading message="กำลังโหลดข้อมูล..." />
         </div>
       </div>
@@ -629,37 +709,63 @@ export default function EditAnnouncementPage({ params }: PageProps) {
         {/* Breadcrumb */}
         <div className="mb-6">
           <div className="flex items-center gap-2 text-sm">
-            <Link href="/owner/announcements" className="text-gray-500 hover:text-primary-600">
+            <Link
+              href="/owner/announcements"
+              className="text-gray-500 hover:text-primary-600"
+            >
               ประกาศที่รับสมัครอยู่
             </Link>
             <span className="text-gray-400">{">"}</span>
             <span className="text-primary-600 font-medium">แก้ไขประกาศ</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mt-2">แก้ไขประกาศรับสมัครฝึกงาน</h1>
-          <p className="text-gray-500 mt-1">แก้ไขรายละเอียดประกาศรับสมัครฝึกงาน</p>
+          <h1 className="text-2xl font-bold text-gray-800 mt-2">
+            แก้ไขประกาศรับสมัครฝึกงาน
+          </h1>
+          <p className="text-gray-500 mt-1">
+            แก้ไขรายละเอียดประกาศรับสมัครฝึกงาน
+          </p>
         </div>
 
-        <div className={isNotYetStatus ? "max-w-3xl mx-auto" : "grid grid-cols-1 lg:grid-cols-3 gap-6"}>
+        <div
+          className={
+            isNotYetStatus
+              ? "max-w-3xl mx-auto"
+              : "grid grid-cols-1 lg:grid-cols-3 gap-6"
+          }
+        >
           {/* Main Form */}
-          <div className={isNotYetStatus ? "space-y-6" : "lg:col-span-2 space-y-6"}>
+          <div
+            className={isNotYetStatus ? "space-y-6" : "lg:col-span-2 space-y-6"}
+          >
             {/* Basic Info */}
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">ข้อมูลพื้นฐาน</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                ข้อมูลพื้นฐาน
+              </h2>
 
               {/* Title */}
               <div className="mb-4">
-                <label className={`block text-sm font-medium mb-1 ${errors.title ? "text-red-500" : "text-gray-700"}`}>
+                <label
+                  className={`block text-sm font-medium mb-1 ${errors.title ? "text-red-500" : "text-gray-700"}`}
+                >
                   ชื่อตำแหน่งงาน *
                 </label>
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   placeholder="ชื่อตำแหน่งงาน"
-                  className={`w-full px-4 py-3 rounded-lg border ${errors.title ? "border-red-300 focus:ring-red-600" : "border-gray-200 focus:ring-primary-600"
-                    } focus:outline-none focus:ring-2`}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    errors.title
+                      ? "border-red-300 focus:ring-red-600"
+                      : "border-gray-200 focus:ring-primary-600"
+                  } focus:outline-none focus:ring-2`}
                 />
-                {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+                {errors.title && (
+                  <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+                )}
               </div>
 
               {/* Department & Location */}
@@ -677,7 +783,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${errors.location ? "text-red-500" : "text-gray-700"}`}>
+                  <label
+                    className={`block text-sm font-medium mb-1 ${errors.location ? "text-red-500" : "text-gray-700"}`}
+                  >
                     <span className="flex items-center gap-1">
                       สถานที่ปฏิบัติงาน *
                       <span className="relative inline-block">
@@ -685,11 +793,23 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                           type="button"
                           onMouseEnter={() => setShowLocationTooltip(true)}
                           onMouseLeave={() => setShowLocationTooltip(false)}
-                          onClick={() => setShowLocationTooltip(!showLocationTooltip)}
+                          onClick={() =>
+                            setShowLocationTooltip(!showLocationTooltip)
+                          }
                           className="text-gray-400 hover:text-gray-600 focus:outline-none"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                           </svg>
                         </button>
                         {showLocationTooltip && (
@@ -704,18 +824,29 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   <input
                     type="text"
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, location: e.target.value })
+                    }
                     placeholder="สถานที่ปฏิบัติงาน"
-                    className={`w-full px-4 py-3 rounded-lg border ${errors.location ? "border-red-300 focus:ring-red-600" : "border-gray-200 focus:ring-primary-600"
-                      } focus:outline-none focus:ring-2`}
+                    className={`w-full px-4 py-3 rounded-lg border ${
+                      errors.location
+                        ? "border-red-300 focus:ring-red-600"
+                        : "border-gray-200 focus:ring-primary-600"
+                    } focus:outline-none focus:ring-2`}
                   />
-                  {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+                  {errors.location && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Position Count - Radio buttons */}
               <div className="mb-4" data-field="maxApplicants">
-                <label className={`block text-sm font-medium mb-2 ${errors.maxApplicants ? "text-red-500" : "text-gray-700"}`}>
+                <label
+                  className={`block text-sm font-medium mb-2 ${errors.maxApplicants ? "text-red-500" : "text-gray-700"}`}
+                >
                   จำนวนผู้สมัครที่เปิดรับ *
                 </label>
                 <div className="flex items-center gap-6">
@@ -748,7 +879,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                         }}
                         className="w-4 h-4 accent-[#9B1F7A] cursor-pointer"
                       />
-                      <span className="text-sm text-gray-700">จำนวนที่เปิดรับ</span>
+                      <span className="text-sm text-gray-700">
+                        จำนวนที่เปิดรับ
+                      </span>
                     </label>
                     {isUnlimitedCount === false && (
                       <input
@@ -757,26 +890,39 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                         value={formData.maxApplicants || ""}
                         onChange={(e) => {
                           const val = e.target.value;
-                          setFormData({ ...formData, maxApplicants: val === "" ? 0 : (parseInt(val) || 0) });
+                          setFormData({
+                            ...formData,
+                            maxApplicants: val === "" ? 0 : parseInt(val) || 0,
+                          });
                         }}
                         placeholder="ระบุจำนวน"
-                        className={`w-32 px-3 py-2 rounded-lg border ${errors.maxApplicants ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-primary-600"
-                          } focus:outline-none focus:ring-2 text-sm`}
+                        className={`w-32 px-3 py-2 rounded-lg border ${
+                          errors.maxApplicants
+                            ? "border-red-300 focus:ring-red-500"
+                            : "border-gray-200 focus:ring-primary-600"
+                        } focus:outline-none focus:ring-2 text-sm`}
                       />
                     )}
                   </div>
                 </div>
-                {errors.maxApplicants && <p className="text-red-500 text-xs mt-1">{errors.maxApplicants}</p>}
+                {errors.maxApplicants && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.maxApplicants}
+                  </p>
+                )}
                 {acceptedCount > 0 && isUnlimitedCount === false && (
                   <p className="text-gray-500 text-xs mt-1">
-                    ปัจจุบันมีนักศึกษาที่ตอบรับแล้ว {acceptedCount} คน จึงไม่สามารถลดจำนวนที่เปิดรับต่ำกว่านี้ได้
+                    ปัจจุบันมีนักศึกษาที่ตอบรับแล้ว {acceptedCount} คน
+                    จึงไม่สามารถลดจำนวนที่เปิดรับต่ำกว่านี้ได้
                   </p>
                 )}
               </div>
 
               {/* Related Fields */}
               <div className="mb-4">
-                <label className={`block text-sm font-medium mb-1 ${errors.relatedFields ? "text-red-500" : "text-gray-700"}`}>
+                <label
+                  className={`block text-sm font-medium mb-1 ${errors.relatedFields ? "text-red-500" : "text-gray-700"}`}
+                >
                   สาขาวิชาที่เกี่ยวข้อง (เพิ่มได้มากกว่า 1 สาขา) *
                 </label>
 
@@ -794,8 +940,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                           onClick={() => handleRemoveField(field)}
                           className="text-gray-400 hover:text-gray-600"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -807,12 +963,13 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 <div className="relative" ref={majorDropdownRef}>
                   <div
                     onClick={() => setShowFieldDropdown(true)}
-                    className={`w-full px-4 py-3 rounded-lg border ${showFieldDropdown
-                      ? "border-primary-600 ring-2 ring-primary-600"
-                      : errors.relatedFields
-                        ? "border-red-300"
-                        : "border-gray-200"
-                      } bg-white flex items-center justify-between cursor-pointer`}
+                    className={`w-full px-4 py-3 rounded-lg border ${
+                      showFieldDropdown
+                        ? "border-primary-600 ring-2 ring-primary-600"
+                        : errors.relatedFields
+                          ? "border-red-300"
+                          : "border-gray-200"
+                    } bg-white flex items-center justify-between cursor-pointer`}
                   >
                     <input
                       type="text"
@@ -831,7 +988,12 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
 
@@ -864,34 +1026,34 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       )} */}
 
                       {/* Filtered Options */}
-                      {filteredMajorOptions.length > 0 ? (
-                        filteredMajorOptions.map((opt, index) => (
-                          <label
-                            key={index}
-                            className="flex items-center gap-3 px-4 py-2 hover:bg-primary-50 cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={formData.relatedFields.includes(opt)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  handleAddField(opt);
-                                } else {
-                                  handleRemoveField(opt);
-                                }
-                              }}
-                              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-600"
-                            />
-                            <span className="text-sm text-gray-700">{opt}</span>
-                          </label>
-                        ))
-                      ) : (
-                        !canAddNewMajor && (
-                          <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                            ไม่พบสาขาที่ค้นหา
-                          </div>
-                        )
-                      )}
+                      {filteredMajorOptions.length > 0
+                        ? filteredMajorOptions.map((opt, index) => (
+                            <label
+                              key={index}
+                              className="flex items-center gap-3 px-4 py-2 hover:bg-primary-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.relatedFields.includes(opt)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    handleAddField(opt);
+                                  } else {
+                                    handleRemoveField(opt);
+                                  }
+                                }}
+                                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-600"
+                              />
+                              <span className="text-sm text-gray-700">
+                                {opt}
+                              </span>
+                            </label>
+                          ))
+                        : !canAddNewMajor && (
+                            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                              ไม่พบสาขาที่ค้นหา
+                            </div>
+                          )}
 
                       {/* Add New Major Button */}
                       {canAddNewMajor && (
@@ -900,22 +1062,40 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                           onClick={handleAddCustomMajor}
                           className="w-full flex items-center gap-2 px-4 py-3 text-left text-primary-600 hover:bg-primary-50 border-t border-gray-100"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
                           </svg>
-                          <span className="text-sm font-medium">เพิ่มสาขา &quot;{majorSearchText}&quot;</span>
+                          <span className="text-sm font-medium">
+                            เพิ่มสาขา &quot;{majorSearchText}&quot;
+                          </span>
                         </button>
                       )}
                     </div>
                   )}
                 </div>
-                {errors.relatedFields && <p className="text-red-500 text-xs mt-1">{errors.relatedFields}</p>}
+                {errors.relatedFields && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.relatedFields}
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Duration - Application Period */}
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">ระยะเวลาที่เปิดรับสมัคร</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                ระยะเวลาที่เปิดรับสมัคร
+              </h2>
 
               <div className="flex items-center gap-6 mb-4">
                 {/* Option 1: No time limit */}
@@ -930,7 +1110,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     }}
                     className="w-4 h-4 accent-[#9B1F7A] cursor-pointer"
                   />
-                  <span className="text-sm text-gray-700">ไม่กำหนดระยะเวลา</span>
+                  <span className="text-sm text-gray-700">
+                    ไม่กำหนดระยะเวลา
+                  </span>
                 </label>
                 {/* Option 2: Specify period */}
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -948,39 +1130,81 @@ export default function EditAnnouncementPage({ params }: PageProps) {
               {isNoTimeLimit === false && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div data-field="startDate">
-                    <label className={`block text-sm font-medium mb-1 ${errors.startDate ? "text-red-500" : "text-gray-700"}`}>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${errors.startDate ? "text-red-500" : "text-gray-700"}`}
+                    >
                       วันที่เปิดรับสมัคร *
                     </label>
                     <div className="relative">
-                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                       <ThaiDateInput
                         value={formData.startDate}
-                        onChange={(val) => setFormData({ ...formData, startDate: val })}
-                        className={`pl-12 pr-4 py-3 rounded-lg border ${errors.startDate ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-primary-600"
-                          } focus:outline-none focus:ring-2`}
+                        onChange={(val) =>
+                          setFormData({ ...formData, startDate: val })
+                        }
+                        className={`pl-12 pr-4 py-3 rounded-lg border ${
+                          errors.startDate
+                            ? "border-red-300 focus:ring-red-500"
+                            : "border-gray-200 focus:ring-primary-600"
+                        } focus:outline-none focus:ring-2`}
                       />
                     </div>
-                    {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
+                    {errors.startDate && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.startDate}
+                      </p>
+                    )}
                   </div>
                   <div data-field="endDate">
-                    <label className={`block text-sm font-medium mb-1 ${errors.endDate ? "text-red-500" : "text-gray-700"}`}>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${errors.endDate ? "text-red-500" : "text-gray-700"}`}
+                    >
                       วันที่ปิดรับสมัคร *
                     </label>
                     <div className="relative">
-                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                       <ThaiDateInput
                         value={formData.endDate}
                         min={formData.startDate}
-                        onChange={(val) => setFormData({ ...formData, endDate: val })}
-                        className={`pl-12 pr-4 py-3 rounded-lg border ${errors.endDate ? "border-red-300 focus:ring-red-500" : "border-gray-200 focus:ring-primary-600"
-                          } focus:outline-none focus:ring-2`}
+                        onChange={(val) =>
+                          setFormData({ ...formData, endDate: val })
+                        }
+                        className={`pl-12 pr-4 py-3 rounded-lg border ${
+                          errors.endDate
+                            ? "border-red-300 focus:ring-red-500"
+                            : "border-gray-200 focus:ring-primary-600"
+                        } focus:outline-none focus:ring-2`}
                       />
                     </div>
-                    {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
+                    {errors.endDate && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.endDate}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -988,8 +1212,12 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
             {/* Required Documents */}
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">เอกสารที่ต้องการเพิ่ม</h2>
-              <p className="text-gray-500 text-sm mb-4">เลือกเอกสารที่ต้องการให้นักศึกษาแนบมาพร้อมใบสมัคร</p>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                เอกสารที่ต้องการเพิ่ม (ถ้ามี)
+              </h2>
+              <p className="text-gray-500 text-sm mb-4">
+                เลือกเอกสารที่ต้องการให้นักศึกษาแนบมาพร้อมใบสมัคร
+              </p>
               {loadingDocTypes ? (
                 <div className="flex gap-4">
                   <div className="animate-pulse flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg w-40 h-16 bg-gray-100"></div>
@@ -1000,43 +1228,69 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   {docTypes.map((docType) => (
                     <label
                       key={docType.id}
-                      className={`flex items-center gap-4 px-4 py-4 border-2 rounded-2xl cursor-pointer hover:bg-gray-50 transition-all min-w-[240px] ${formData.requiredDocuments.includes(docType.id)
-                        ? "border-primary-600 bg-primary-50"
-                        : "border-gray-200"
-                        }`}
+                      className={`flex items-center gap-4 px-4 py-4 border-2 rounded-2xl cursor-pointer hover:bg-gray-50 transition-all min-w-[240px] ${
+                        formData.requiredDocuments.includes(docType.id)
+                          ? "border-primary-600 bg-primary-50"
+                          : "border-gray-200"
+                      }`}
                     >
-                      <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${formData.requiredDocuments.includes(docType.id)
-                        ? "border-primary-600 bg-primary-600"
-                        : "border-gray-300"
-                        }`}>
+                      <div
+                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${
+                          formData.requiredDocuments.includes(docType.id)
+                            ? "border-primary-600 bg-primary-600"
+                            : "border-gray-300"
+                        }`}
+                      >
                         {formData.requiredDocuments.includes(docType.id) && (
-                          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          <svg
+                            className="w-4 h-4 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                         )}
                       </div>
                       <input
                         type="checkbox"
-                        checked={formData.requiredDocuments.includes(docType.id)}
+                        checked={formData.requiredDocuments.includes(
+                          docType.id,
+                        )}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setFormData({
                               ...formData,
-                              requiredDocuments: [...formData.requiredDocuments, docType.id],
+                              requiredDocuments: [
+                                ...formData.requiredDocuments,
+                                docType.id,
+                              ],
                             });
                           } else {
                             setFormData({
                               ...formData,
-                              requiredDocuments: formData.requiredDocuments.filter((d) => d !== docType.id),
+                              requiredDocuments:
+                                formData.requiredDocuments.filter(
+                                  (d) => d !== docType.id,
+                                ),
                             });
                           }
                         }}
                         className="sr-only"
                       />
                       <div>
-                        <p className="font-semibold text-gray-800 text-base">{docType.name}</p>
+                        <p className="font-semibold text-gray-800 text-base">
+                          {docType.name}
+                        </p>
                         {docType.description && (
-                          <p className="text-sm text-gray-500 mt-1">{docType.description}</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {docType.description}
+                          </p>
                         )}
                       </div>
                     </label>
@@ -1047,24 +1301,27 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
             {/* Job Details */}
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">รายละเอียดงาน</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                รายละเอียดงาน
+              </h2>
 
               {/* Responsibilities - Editable boxes */}
               <div className="mb-6">
-                <label className={`block text-sm font-medium mb-1 ${errors.responsibilities ? "text-red-500" : "text-gray-700"}`}>
+                <label
+                  className={`block text-sm font-medium mb-1 ${errors.responsibilities ? "text-red-500" : "text-gray-700"}`}
+                >
                   ลักษณะงาน *
                 </label>
 
                 <div className="space-y-2 mb-2">
                   {jobDetailsList.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                       <input
                         type="text"
                         value={item}
-                        onChange={(e) => handleUpdateJobDetail(index, e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateJobDetail(index, e.target.value)
+                        }
                         placeholder="ลักษณะงาน"
                         className="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-sm text-gray-700"
                       />
@@ -1074,8 +1331,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                           onClick={() => handleRemoveJobDetail(index)}
                           className="text-gray-400 hover:text-red-500 transition-colors p-1"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                         </button>
                       )}
@@ -1083,15 +1350,29 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   ))}
                 </div>
 
-                {errors.responsibilities && <p className="text-red-500 text-xs mt-1">{errors.responsibilities}</p>}
+                {errors.responsibilities && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.responsibilities}
+                  </p>
+                )}
 
                 <button
                   type="button"
                   onClick={handleAddJobDetail}
                   className="mt-2 flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm cursor-pointer"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                   เพิ่มลักษณะงาน
                 </button>
@@ -1099,20 +1380,21 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
               {/* Qualifications - Editable boxes */}
               <div className="mb-6">
-                <label className={`block text-sm font-medium mb-1 ${errors.qualifications ? "text-red-500" : "text-gray-700"}`}>
+                <label
+                  className={`block text-sm font-medium mb-1 ${errors.qualifications ? "text-red-500" : "text-gray-700"}`}
+                >
                   คุณสมบัติ *
                 </label>
 
                 <div className="space-y-2 mb-2">
                   {requirementsList.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                       <input
                         type="text"
                         value={item}
-                        onChange={(e) => handleUpdateRequirement(index, e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateRequirement(index, e.target.value)
+                        }
                         placeholder="คุณสมบัติ"
                         className="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-sm text-gray-700"
                       />
@@ -1122,8 +1404,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                           onClick={() => handleRemoveRequirement(index)}
                           className="text-gray-400 hover:text-red-500 transition-colors p-1"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                         </button>
                       )}
@@ -1131,15 +1423,29 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   ))}
                 </div>
 
-                {errors.qualifications && <p className="text-red-500 text-xs mt-1">{errors.qualifications}</p>}
+                {errors.qualifications && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.qualifications}
+                  </p>
+                )}
 
                 <button
                   type="button"
                   onClick={handleAddRequirement}
                   className="mt-2 flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm cursor-pointer"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                   เพิ่มคุณสมบัติ
                 </button>
@@ -1153,14 +1459,13 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
                 <div className="space-y-2 mb-2">
                   {benefitsList.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                       <input
                         type="text"
                         value={item}
-                        onChange={(e) => handleUpdateBenefit(index, e.target.value)}
+                        onChange={(e) =>
+                          handleUpdateBenefit(index, e.target.value)
+                        }
                         disabled={item === "ไม่มีค่าตอบแทน"}
                         placeholder="สวัสดิการ"
                         className={`flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-sm text-gray-700 ${item === "ไม่มีค่าตอบแทน" ? "bg-gray-50 cursor-not-allowed" : ""}`}
@@ -1171,8 +1476,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                           onClick={() => handleRemoveBenefit(index)}
                           className="text-gray-400 hover:text-red-500 transition-colors p-1"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                         </button>
                       )}
@@ -1185,8 +1500,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   onClick={handleAddBenefit}
                   className="mt-2 flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-sm cursor-pointer"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                   เพิ่มสวัสดิการ
                 </button>
@@ -1195,12 +1520,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
             {/* Contact Info */}
             <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">รายละเอียดผู้ประกาศรับสมัคร</h2>
-              <p className="text-gray-500 text-sm mb-4">ข้อมูลจากบัญชีผู้ใช้ของคุณ</p>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                รายละเอียดผู้ประกาศรับสมัคร
+              </h2>
+              <p className="text-gray-500 text-sm mb-4">
+                ข้อมูลจากบัญชีผู้ใช้ของคุณ
+              </p>
 
               <div className="space-y-4">
                 <div>
-                  <label className={`block text-sm font-medium mb-1 ${errors.contactName ? "text-red-500" : "text-gray-700"}`}>
+                  <label
+                    className={`block text-sm font-medium mb-1 ${errors.contactName ? "text-red-500" : "text-gray-700"}`}
+                  >
                     ชื่อผู้ประกาศรับสมัคร *
                   </label>
                   <input
@@ -1209,12 +1540,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     disabled
                     className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
                   />
-                  {errors.contactName && <p className="text-red-500 text-xs mt-1">{errors.contactName}</p>}
+                  {errors.contactName && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.contactName}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${errors.contactEmail ? "text-red-500" : "text-gray-700"}`}>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${errors.contactEmail ? "text-red-500" : "text-gray-700"}`}
+                    >
                       อีเมลผู้ประกาศรับสมัคร *
                     </label>
                     <input
@@ -1223,24 +1560,36 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       disabled
                       className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
                     />
-                    {errors.contactEmail && <p className="text-red-500 text-xs mt-1">{errors.contactEmail}</p>}
+                    {errors.contactEmail && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.contactEmail}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${errors.contactPhone ? "text-red-500" : "text-gray-700"}`}>
+                    <label
+                      className={`block text-sm font-medium mb-1 ${errors.contactPhone ? "text-red-500" : "text-gray-700"}`}
+                    >
                       เบอร์โทรผู้ประกาศรับสมัคร *
                     </label>
                     <input
                       type="tel"
                       value={formData.contactPhone}
                       onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        const digits = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
                         setFormData({ ...formData, contactPhone: digits });
                       }}
                       maxLength={10}
                       placeholder="เบอร์โทรผู้ประกาศรับสมัคร"
                       className={`w-full px-4 py-3 rounded-lg border ${errors.contactPhone ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
-                    {errors.contactPhone && <p className="text-red-500 text-xs mt-1">{errors.contactPhone}</p>}
+                    {errors.contactPhone && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.contactPhone}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1248,39 +1597,71 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
             {/* Mentor Info - Separate cards per mentor */}
             {mentors.map((mentor, index) => (
-              <div key={index} className="bg-white rounded-2xl p-6 border border-gray-100">
+              <div
+                key={index}
+                className="bg-white rounded-2xl p-6 border border-gray-100"
+              >
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-lg font-semibold text-gray-800">รายละเอียดพี่เลี้ยง {index + 1}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    รายละเอียดพี่เลี้ยง {index + 1}
+                  </h2>
                   {mentors.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveMentor(index)}
                       className="p-2 text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   )}
                 </div>
                 {index === 0 && (
-                  <p className="text-sm text-gray-500 mb-3">พี่เลี้ยงหลักของระบบ (ค่าเริ่มต้น)</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    พี่เลี้ยงหลักของระบบ (ค่าเริ่มต้น)
+                  </p>
                 )}
                 {index !== 0 && <div className="mb-3" />}
 
                 {/* Mentor Selection Dropdown */}
-                <div ref={(el) => { mentorDropdownRefs.current[index] = el; }} className="relative mb-4">
+                <div
+                  ref={(el) => {
+                    mentorDropdownRefs.current[index] = el;
+                  }}
+                  className="relative mb-4"
+                >
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     ชื่อพี่เลี้ยง *
                   </label>
                   <button
                     type="button"
-                    onClick={() => setShowMentorDropdown(showMentorDropdown === index ? null : index)}
+                    onClick={() =>
+                      setShowMentorDropdown(
+                        showMentorDropdown === index ? null : index,
+                      )
+                    }
                     disabled={loadingStaff}
                     className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-white text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    <span className={mentor.name ? "text-gray-800" : "text-gray-400"}>
-                      {loadingStaff ? "กำลังโหลด..." : (mentor.name || "เลือกพี่เลี้ยง")}
+                    <span
+                      className={
+                        mentor.name ? "text-gray-800" : "text-gray-400"
+                      }
+                    >
+                      {loadingStaff
+                        ? "กำลังโหลด..."
+                        : mentor.name || "เลือกพี่เลี้ยง"}
                     </span>
                     <svg
                       className={`w-5 h-5 text-gray-400 transition-transform ${showMentorDropdown === index ? "rotate-180" : ""}`}
@@ -1288,7 +1669,12 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
 
@@ -1297,21 +1683,37 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {staffList.length > 0 ? (
                         staffList
-                          .filter(s => !mentors.some((m, i) => i !== index && m.staffProfileId === s.staffProfileId))
+                          .filter(
+                            (s) =>
+                              !mentors.some(
+                                (m, i) =>
+                                  i !== index &&
+                                  m.staffProfileId === s.staffProfileId,
+                              ),
+                          )
                           .map((staff) => (
                             <button
                               key={staff.id}
                               type="button"
                               onClick={() => handleMentorSelect(staff, index)}
-                              className={`w-full px-4 py-3 text-left hover:bg-primary-50 border-b border-gray-100 last:border-b-0 ${mentor.staffProfileId === staff.staffProfileId ? "bg-primary-100 text-primary-800" : "text-gray-700"
-                                }`}
+                              className={`w-full px-4 py-3 text-left hover:bg-primary-50 border-b border-gray-100 last:border-b-0 ${
+                                mentor.staffProfileId === staff.staffProfileId
+                                  ? "bg-primary-100 text-primary-800"
+                                  : "text-gray-700"
+                              }`}
                             >
-                              <div className="font-medium">{staff.fname} {staff.lname}</div>
-                              <div className="text-sm text-gray-500">{staff.email}</div>
+                              <div className="font-medium">
+                                {staff.fname} {staff.lname}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {staff.email}
+                              </div>
                             </button>
                           ))
                       ) : (
-                        <div className="px-4 py-3 text-gray-500 text-center">ไม่พบรายชื่อพนักงานที่สามารถเป็นพี่เลี้ยงได้</div>
+                        <div className="px-4 py-3 text-gray-500 text-center">
+                          ไม่พบรายชื่อพนักงานที่สามารถเป็นพี่เลี้ยงได้
+                        </div>
                       )}
                     </div>
                   )}
@@ -1327,10 +1729,17 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       value={mentor.email}
                       onChange={(e) => {
                         const newMentors = [...mentors];
-                        newMentors[index] = { ...newMentors[index], email: e.target.value };
+                        newMentors[index] = {
+                          ...newMentors[index],
+                          email: e.target.value,
+                        };
                         setMentors(newMentors);
                       }}
-                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
+                      disabled={
+                        mentor.staffProfileId != null &&
+                        currentUser?.staffProfileId != null &&
+                        mentor.staffProfileId === currentUser.staffProfileId
+                      }
                       placeholder="อีเมลพี่เลี้ยง"
                       className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
@@ -1343,17 +1752,36 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       type="tel"
                       value={mentor.phone}
                       onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        const digits = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
                         const newMentors = [...mentors];
-                        newMentors[index] = { ...newMentors[index], phone: digits };
+                        newMentors[index] = {
+                          ...newMentors[index],
+                          phone: digits,
+                        };
                         setMentors(newMentors);
                       }}
                       maxLength={10}
-                      disabled={mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId}
+                      disabled={
+                        mentor.staffProfileId != null &&
+                        currentUser?.staffProfileId != null &&
+                        mentor.staffProfileId === currentUser.staffProfileId
+                      }
                       placeholder="เบอร์โทรพี่เลี้ยง"
                       className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : (errors as Record<string, string>)[`mentorPhone_${index}`] ? "border-red-400 focus:ring-red-400 focus:outline-none focus:ring-2 text-gray-700" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
                     />
-                    {(errors as Record<string, string>)[`mentorPhone_${index}`] && <p className="text-red-500 text-xs mt-1">{(errors as Record<string, string>)[`mentorPhone_${index}`]}</p>}
+                    {(errors as Record<string, string>)[
+                      `mentorPhone_${index}`
+                    ] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {
+                          (errors as Record<string, string>)[
+                            `mentorPhone_${index}`
+                          ]
+                        }
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -1365,8 +1793,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       onClick={handleAddMentor}
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 text-gray-500 rounded-2xl hover:border-primary-600 hover:text-primary-600 transition-colors text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
                       </svg>
                       เพิ่มพี่เลี้ยง
                     </button>
@@ -1384,22 +1822,31 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           {!isNotYetStatus && (
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl p-6 border-2 border-primary-600 sticky top-24">
-                <h2 className="text-lg font-semibold text-gray-800">สถานะประกาศ</h2>
+                <h2 className="text-lg font-semibold text-gray-800">
+                  สถานะประกาศ
+                </h2>
                 <hr className="my-4 border-gray-200" />
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">สถานะ</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    สถานะ
+                  </label>
                   <div className="relative" ref={statusDropdownRef}>
                     <button
                       type="button"
                       onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                       className="w-full px-4 py-3 rounded-lg border-2 border-primary-600 bg-white text-left flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-primary-600"
                     >
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${formData.status === "open"
-                        ? "bg-green-50 text-green-700 border border-green-500"
-                        : "bg-red-50 text-red-600 border border-red-500"
-                        }`}>
-                        {formData.status === "open" ? "เปิดรับสมัคร" : "ปิดรับสมัคร"}
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          formData.status === "open"
+                            ? "bg-green-50 text-green-700 border border-green-500"
+                            : "bg-red-50 text-red-600 border border-red-500"
+                        }`}
+                      >
+                        {formData.status === "open"
+                          ? "เปิดรับสมัคร"
+                          : "ปิดรับสมัคร"}
                       </span>
                       <svg
                         className={`w-5 h-5 text-gray-400 transition-transform ${showStatusDropdown ? "rotate-180" : ""}`}
@@ -1407,7 +1854,12 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </button>
 
@@ -1420,8 +1872,11 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                             setFormData({ ...formData, status: "open" });
                             setShowStatusDropdown(false);
                           }}
-                          className={`w-full px-4 py-3 text-left hover:bg-primary-50 ${formData.status === "open" ? "bg-primary-200 text-primary-800" : "text-gray-700"
-                            }`}
+                          className={`w-full px-4 py-3 text-left hover:bg-primary-50 ${
+                            formData.status === "open"
+                              ? "bg-primary-200 text-primary-800"
+                              : "text-gray-700"
+                          }`}
                         >
                           เปิดรับสมัคร
                         </button>
@@ -1431,8 +1886,11 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                             setFormData({ ...formData, status: "closed" });
                             setShowStatusDropdown(false);
                           }}
-                          className={`w-full px-4 py-3 text-left hover:bg-primary-100 ${formData.status === "closed" ? "bg-primary-200 text-primary-800" : "text-gray-700"
-                            }`}
+                          className={`w-full px-4 py-3 text-left hover:bg-primary-100 ${
+                            formData.status === "closed"
+                              ? "bg-primary-200 text-primary-800"
+                              : "text-gray-700"
+                          }`}
                         >
                           ปิดรับสมัคร
                         </button>
@@ -1489,12 +1947,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-red-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">ยกเลิกการแก้ไขข้อมูล</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              ยกเลิกการแก้ไขข้อมูล
+            </h3>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCancelConfirmModal(false)}
@@ -1522,12 +1986,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-red-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">ยืนยันการลบข้อมูลพี่เลี้ยง</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              ยืนยันการลบข้อมูลพี่เลี้ยง
+            </h3>
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -1555,12 +2025,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-green-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-800">ลบข้อมูลเรียบร้อยแล้ว</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              ลบข้อมูลเรียบร้อยแล้ว
+            </h3>
           </div>
         </div>
       )}
@@ -1571,12 +2047,20 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-green-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">ยืนยันการ<br />แก้ไขประกาศหรือไม่</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              ยืนยันการ
+              <br />
+              แก้ไขประกาศหรือไม่
+            </h3>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowEditConfirmModal(false)}
@@ -1601,12 +2085,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
             <div className="flex justify-center mb-4">
               <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-8 h-8 text-green-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-800">แก้ไขประกาศเรียบร้อยแล้ว</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              แก้ไขประกาศเรียบร้อยแล้ว
+            </h3>
           </div>
         </div>
       )}
@@ -1617,13 +2107,21 @@ export default function EditAnnouncementPage({ params }: PageProps) {
             <div className="text-center">
               <div className="flex justify-center mb-5">
                 <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-                  <svg className="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-10 h-10 text-red-600"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
                   </svg>
                 </div>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4">{editErrorModal.title}</h3>
-              <p className="text-lg text-gray-500 leading-relaxed whitespace-pre-line mb-8">{editErrorModal.message}</p>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+                {editErrorModal.title}
+              </h3>
+              <p className="text-lg text-gray-500 leading-relaxed whitespace-pre-line mb-8">
+                {editErrorModal.message}
+              </p>
               <button
                 onClick={() => setEditErrorModal(null)}
                 className="px-10 py-4 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors text-lg font-medium"

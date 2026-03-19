@@ -1448,25 +1448,25 @@ export interface DepartmentsResponse {
 export const departmentApi = {
   // ดึงรายการ departments ทั้งหมด
   getDepartments: async (): Promise<DepartmentsResponse> => {
-    const response = await api.get<DepartmentsResponse>("/dept");
-    return response.data;
-  },
+  const response = await api.get<DepartmentsResponse>("/dept");
+  return response.data;
+},
 
   // ดึง department ตาม deptSap หรือ id
-  getDepartmentByDeptSap: async (id: number | string): Promise<Department | null> => {
-    try {
-      const targetId = Number(id);
-      const response = await departmentApi.getDepartments();
-      return response.data.find(d => Number(d.deptSap) === targetId || Number(d.id) === targetId) || null;
-    } catch {
-      return null;
-    }
-  },
+  getDepartmentByDeptSap: async (id: number): Promise<Department | null> => {
+  try {
+    const response = await departmentApi.getDepartments();
+    return (
+      response.data.find(
+        (d) => d.deptSap === id || d.id === id
+      ) || null
+    );
+  } catch {
+    return null;
+  }
+},
 
-  // ดึง department ตาม ID
-  getDepartmentById: async (id: number | string): Promise<Department | null> => {
-    return departmentApi.getDepartmentByDeptSap(id);
-  },
+  
 };
 
 // ==================== Notification API ====================
