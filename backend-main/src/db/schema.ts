@@ -140,7 +140,7 @@ export const users = pgTable(
     }),
     foreignKey({
       columns: [table.departmentId],
-      foreignColumns: [departments.id],
+      foreignColumns: [departments.deptSap],
       name: "users_department_id_fkey",
     }),
     unique("users_username_key").on(table.username),
@@ -173,10 +173,9 @@ export const offices = pgTable(
 export const departments = pgTable(
   "departments",
   {
-    id: serial().primaryKey().notNull(),
+    deptSap: integer("dept_sap").primaryKey().notNull(),
 
-    deptSap: integer("dept_sap").notNull(),
-    deptChangeCode: varchar("dept_change_code", { length: 20 }), // แทน BPCHAR(20)
+    deptChangeCode: varchar("dept_change_code", { length: 20 }),
     deptUpper: integer("dept_upper"),
 
     deptShort1: text("dept_short1"),
@@ -197,14 +196,14 @@ export const departments = pgTable(
     deptFull7: text("dept_full7"),
     deptFull: text("dept_full"),
 
-    costCenterCode: varchar("cost_center_code", { length: 20 }), // แทน BPCHAR(20)
+    costCenterCode: varchar("cost_center_code", { length: 20 }),
     costCenterName: text("cost_center_name"),
 
     peaCode: varchar("pea_code", { length: 6 }),
     businessPlace: varchar("business_place", { length: 4 }),
     businessArea: varchar("business_area", { length: 4 }),
 
-    resourceCode: varchar("resource_code", { length: 5 }), // แทน BPCHAR(5)
+    resourceCode: varchar("resource_code", { length: 5 }),
     resourceName: text("resource_name"),
 
     taxBranch: varchar("tax_branch", { length: 30 }),
@@ -213,11 +212,11 @@ export const departments = pgTable(
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    createdBy: varchar("created_by", { length: 20 }), // แทน BPCHAR(20)
+    createdBy: varchar("created_by", { length: 20 }),
     updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updatedBy: varchar("updated_by", { length: 20 }).notNull(), // แทน BPCHAR(20)
+    updatedBy: varchar("updated_by", { length: 20 }).notNull(),
     isDeleted: boolean("is_deleted").default(false),
 
     deptStableCode: text("dept_stable_code"),
@@ -232,8 +231,8 @@ export const departments = pgTable(
     deptFullEng6: text("dept_full_eng6"),
     deptFullEng7: text("dept_full_eng7"),
 
-    deptOrder: varchar("dept_order", { length: 10 }), // แทน BPCHAR(10)
-    flgDelimit: varchar("flg_delimit", { length: 5 }), // แทน BPCHAR(5)
+    deptOrder: varchar("dept_order", { length: 10 }),
+    flgDelimit: varchar("flg_delimit", { length: 5 }),
     delimitEffectivedt: timestamp("delimit_effectivedt", { mode: "string" }),
     gsberCctr: text("gsber_cctr"),
 
@@ -246,13 +245,13 @@ export const departments = pgTable(
     officeId: integer("office_id").notNull(),
   },
   (table) => [
-    unique("departments_dept_sap_key").on(table.deptSap),
-
     foreignKey({
       columns: [table.officeId],
       foreignColumns: [offices.id],
       name: "departments_office_id_fkey",
-    }),
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
 
     foreignKey({
       columns: [table.deptUpper],
@@ -291,6 +290,11 @@ export const staffProfiles = pgTable(
     unique("staff_profiles_employee_id_key").on(table.employeeId),
   ]
 );
+
+export const employeeIdDeptSap = pgTable("employee_id_dept_sap", {
+  employeeId: varchar("employee_id", { length: 50 }).primaryKey().notNull(),
+  deptSap: integer("dept_sap"),
+});
 
 export const studentProfiles = pgTable(
   "student_profiles",
@@ -543,12 +547,16 @@ export const internshipPositions = pgTable(
       columns: [table.officeId],
       foreignColumns: [offices.id],
       name: "internship_positions_office_id_fkey",
-    }),
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
     foreignKey({
       columns: [table.departmentId],
-      foreignColumns: [departments.id],
+      foreignColumns: [departments.deptSap],
       name: "internship_positions_department_id_fkey",
-    }),
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
   ]
 );
 
@@ -639,7 +647,7 @@ export const applicationStatuses = pgTable(
     }),
     foreignKey({
       columns: [table.departmentId],
-      foreignColumns: [departments.id],
+      foreignColumns: [departments.deptSap],
       name: "application_statuses_department_id_fkey",
     }),
     foreignKey({

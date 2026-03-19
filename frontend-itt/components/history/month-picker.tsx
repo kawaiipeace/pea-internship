@@ -13,7 +13,8 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
     const [tempMonth, setTempMonth] = useState(currentMonth);
     const popupRef = useRef<HTMLDivElement>(null);
 
-    const monthLabels = ['Jan', 'Fab', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const monthLabels = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
     useEffect(() => {
         if (isOpen) {
@@ -22,7 +23,6 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
         }
     }, [isOpen, currentYear, currentMonth]);
 
-    // Close when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
@@ -45,6 +45,10 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
         setPickerYear(currentYear);
     };
 
+    const today = new Date();
+    const todayMonth = today.getMonth();
+    const todayYear = today.getFullYear() + 543;
+
     return (
         <div className="relative" ref={popupRef}>
             {/* Trigger */}
@@ -59,7 +63,7 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                <span>{['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][currentMonth]} {currentYear}</span>
+                <span>{thaiMonthsShort[currentMonth]} {currentYear}</span>
             </button>
 
             {/* Popup */}
@@ -76,21 +80,21 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
                         </button>
                     </div>
 
-                    {/* Month grid */}
+                    {/* Month grid 3x4 */}
                     <div className="grid grid-cols-3 gap-2 mb-4">
                         {monthLabels.map((label, index) => {
                             const isSelected = tempMonth === index && pickerYear === currentYear;
-                            const isCurrent = currentMonth === index && currentYear === pickerYear;
+                            const isCurrent = todayMonth === index && todayYear === pickerYear;
                             return (
                                 <button
                                     key={index}
                                     type="button"
                                     onClick={() => setTempMonth(index)}
                                     className={`py-2 px-1 rounded-full text-xs font-semibold transition-all
-                                        ${tempMonth === index 
-                                            ? 'bg-[#A80689] text-white shadow-md' 
+                                        ${tempMonth === index
+                                            ? 'bg-[#A80689] text-white shadow-md'
                                             : isCurrent
-                                                ? 'bg-[#FDF2E2] text-[#A80689] border border-[#A80689]'
+                                                ? 'bg-[#FDF2FE] text-[#A80689] border border-[#A80689]'
                                                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                                         }`}
                                 >

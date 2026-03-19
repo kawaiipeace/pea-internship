@@ -13,6 +13,7 @@ import {
   relatedFieldOptions,
 } from "../../../data/mockAnnouncements";
 import { positionApi, CreatePositionData, docTypeApi, DocType, userApi, StaffUser, departmentApi } from "@/services/api";
+import { error } from "console";
 
 // ประเภทข้อมูลฟอร์มที่ตรงกับ API และ Design
 interface PositionFormData {
@@ -185,9 +186,11 @@ export default function CreateAnnouncementPage() {
           let departmentName = "";
           if (profile.departmentId) {
             try {
-              const dept = await departmentApi.getDepartmentById(profile.departmentId);
+              console.log("department name loaded")
+              const dept = await departmentApi.getDepartmentByDeptSap(profile.departmentId);
               departmentName = dept?.deptFull || dept?.deptShort || `${profile.departmentId}`;
-            } catch {
+            } catch (error) {
+              console.log("can't load department name", error);
               departmentName = `${profile.departmentId}`;
             }
           }

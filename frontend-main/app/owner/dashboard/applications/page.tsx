@@ -268,7 +268,7 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
     VOCATIONAL: "vocational",
     HIGH_VOCATIONAL: "high_vocational",
     SCHOOL: "high_school",
-    OTHERS: "university",
+    OTHERS: "other",
   };
   const education = eduMap[item.institutionType || ""] || "university";
 
@@ -308,7 +308,7 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
     phone: item.phoneNumber || "",
     education,
     institution: item.institutionName || "",
-    major: item.major || "",
+    major: item.major?.trim() || "",
     startDate: formatDate(item.infoStartDate || item.profileStartDate),
     endDate: formatDate(item.infoEndDate || item.profileEndDate),
     trainingHours: Number(item.infoHours || item.profileHours || 0),
@@ -324,7 +324,7 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       analysisDocuments.length > 0 ? analysisDocuments : undefined,
     step: mapped.step,
     stepDescription: mapped.stepDescription,
-    faculty: item.faculty || undefined,
+    faculty: item.faculty?.trim() || undefined,
     studentNote: item.studentNote || undefined,
     cancellationReason:
       item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
@@ -1054,14 +1054,28 @@ function ApplicationsContent() {
     return null;
   };
 
-  // Helper: get education type label (for cancelled panel)
-  const getEducationLabel = (education: string): string => {
+  // Helper: get education text shown to owner (use entered text for "other")
+  const getEducationLabel = (
+    education: string,
+    studentNote?: string,
+  ): string => {
     const labels: Record<string, string> = {
       high_school: "มัธยมศึกษาตอนปลาย",
       vocational: "ปวช.",
       high_vocational: "ปวส.",
       university: "มหาวิทยาลัย",
+      other: "อื่น ๆ",
     };
+    if (education === "other") {
+      const raw = (studentNote || "").trim();
+      if (raw) {
+        const firstPart = raw
+          .split("|")
+          .map((p) => p.trim())
+          .find((p) => p && !p.startsWith("สถานศึกษา:"));
+        if (firstPart) return firstPart;
+      }
+    }
     return labels[education] || education;
   };
 
@@ -1942,7 +1956,10 @@ function ApplicationsContent() {
                     การศึกษาปัจจุบัน
                   </span>
                   <p className="text-gray-900 text-sm">
-                    {getEducationLabel(selectedApplication.education)}
+                    {getEducationLabel(
+                      selectedApplication.education,
+                      selectedApplication.studentNote,
+                    )}
                   </p>
                 </div>
                 <div>
@@ -1962,7 +1979,7 @@ function ApplicationsContent() {
                 <div>
                   <span className="text-gray-500 text-sm">สาขา</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.major}
+                    {selectedApplication.major?.trim() || "-"}
                   </p>
                 </div>
               </div>
@@ -2543,7 +2560,10 @@ function ApplicationsContent() {
                     การศึกษาปัจจุบัน
                   </span>
                   <p className="text-gray-900 text-sm">
-                    {getEducationLabel(selectedApplication.education)}
+                    {getEducationLabel(
+                      selectedApplication.education,
+                      selectedApplication.studentNote,
+                    )}
                   </p>
                 </div>
                 <div>
@@ -2564,7 +2584,7 @@ function ApplicationsContent() {
                 <div>
                   <span className="text-gray-500 text-sm">สาขา</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.major}
+                    {selectedApplication.major?.trim() || "-"}
                   </p>
                 </div>
               </div>
@@ -3280,7 +3300,10 @@ function ApplicationsContent() {
                     การศึกษาปัจจุบัน
                   </span>
                   <p className="text-gray-900 text-sm">
-                    {getEducationLabel(selectedApplication.education)}
+                    {getEducationLabel(
+                      selectedApplication.education,
+                      selectedApplication.studentNote,
+                    )}
                   </p>
                 </div>
                 <div>
@@ -3300,7 +3323,7 @@ function ApplicationsContent() {
                 <div>
                   <span className="text-gray-500 text-sm">สาขา</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.major}
+                    {selectedApplication.major?.trim() || "-"}
                   </p>
                 </div>
               </div>
@@ -3905,7 +3928,10 @@ function ApplicationsContent() {
               <div>
                 <span className="text-gray-500 text-sm">การศึกษาปัจจุบัน</span>
                 <p className="text-gray-900 text-sm">
-                  {getEducationLabel(selectedApplication.education)}
+                  {getEducationLabel(
+                    selectedApplication.education,
+                    selectedApplication.studentNote,
+                  )}
                 </p>
               </div>
               <div>
@@ -3926,7 +3952,7 @@ function ApplicationsContent() {
               <div>
                 <span className="text-gray-500 text-sm">สาขา</span>
                 <p className="text-gray-900 text-sm">
-                  {selectedApplication.major}
+                  {selectedApplication.major?.trim() || "-"}
                 </p>
               </div>
             </div>
@@ -4574,7 +4600,12 @@ function ApplicationsContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-gray-400 text-sm mb-1">การศึกษาปัจจุบัน</p>
-                  <p className="font-medium text-gray-900">{getEducationLabel(selectedApplication.education)}</p>
+                  <p className="font-medium text-gray-900">
+                    {getEducationLabel(
+                      selectedApplication.education,
+                      selectedApplication.studentNote,
+                    )}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm mb-1">ชื่อสถาบัน</p>
@@ -4593,7 +4624,7 @@ function ApplicationsContent() {
                 <div>
                   <p className="text-gray-400 text-sm mb-1">สาขา</p>
                   <p className="font-medium text-gray-900">
-                    {selectedApplication.major}
+                    {selectedApplication.major?.trim() || "-"}
                   </p>
                 </div>
               </div>

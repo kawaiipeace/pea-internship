@@ -162,25 +162,178 @@ export class UserService {
       endDate?: string;
     }
   ) {
-    const updateData: Record<string, unknown> = {};
-    if (data.hours !== undefined) updateData.hours = String(data.hours);
-    if (data.faculty !== undefined) updateData.faculty = data.faculty;
-    if (data.major !== undefined) updateData.major = data.major;
-    if (data.studentNote !== undefined)
-      updateData.studentNote = data.studentNote;
-    if (data.startDate !== undefined) updateData.startDate = data.startDate;
-    if (data.endDate !== undefined) updateData.endDate = data.endDate;
+    return await db.transaction(async (tx) => {
+      const profileUpdateData: Record<string, unknown> = {};
+      if (data.faculty !== undefined) profileUpdateData.faculty = data.faculty;
+      if (data.major !== undefined) profileUpdateData.major = data.major;
+      if (data.studentNote !== undefined) {
+        profileUpdateData.studentNote = data.studentNote;
+      }
 
-    const [updated] = await db
-      .update(studentProfiles)
-      .set(updateData)
-      .where(eq(studentProfiles.userId, userId))
-      .returning();
+      let updatedProfile: typeof studentProfiles.$inferSelect | null = null;
 
-    if (!updated) {
-      throw new Error("Student profile not found");
-    }
+      if (Object.keys(profileUpdateData).length > 0) {
+        const [profile] = await tx
+          .update(studentProfiles)
+          .set(profileUpdateData)
+          .where(eq(studentProfiles.userId, userId))
+          .returning();
 
-    return updated;
+        if (!profile) {
+          throw new Error("Student profile not found");
+        }
+
+        updatedProfile = profile;
+      } else {
+        const [profile] = await tx
+          .select()
+          .from(studentProfiles)
+          .where(eq(studentProfiles.userId, userId))
+          .limit(1);
+
+        if (!profile) {
+          throw new Error("Student profile not found");
+        }
+
+        updatedProfile = profile;
+      }
+
+      const hasApplicationInfoField =
+        data.hours !== undefined ||
+        data.startDate !== undefined ||
+        data.endDate !== undefined;
+
+      let updatedApplicationInfo: {
+        hours: string | null;
+        startDate: Date | null;
+        endDate: Date | null;
+      } | null = null;
+
+      if (hasApplicationInfoField) {
+        const [latestApp] = await tx
+          .select({
+            applicationStatusId: applicationStatuses.id,
+          })
+          .from(applicationStatuses)
+          .where(eq(applicationStatuses.userId, userId))
+          .orderBy(desc(applicationStatuses.internshipRound))
+          .limit(1);
+
+        if (!latestApp) {
+          throw new Error("Latest application not found");
+        }
+
+        const [existingInfo] = await tx
+          .select({
+            id: applicationInformations.id,
+            startDate: applicationInformations.startDate,
+            endDate: applicationInformations.endDate,
+            hours: applicationInformations.hours,
+          })
+          .from(applicationInformations)
+          .where(
+            eq(
+              applicationInformations.applicationStatusId,
+              latestApp.applicationStatusId
+            )
+          )
+          .limit(1);
+
+        if (!existingInfo) {
+          throw new Error("Application information not found");
+        }
+
+        const nextStartDate =
+          data.startDate !== undefined
+            ? data.startDate
+              ? new Date(data.startDate)
+              : null
+            : existingInfo.startDate;
+
+        const nextEndDate =
+          data.endDate !== undefined
+            ? data.endDate
+              ? new Date(data.endDate)
+              : null
+            : existingInfo.endDate;
+
+        if (nextStartDate && nextEndDate && nextEndDate < nextStartDate) {
+          throw new Error("endDate must be greater than or equal to startDate");
+        }
+
+        const infoUpdateData: Record<string, unknown> = {
+          updatedAt: new Date(),
+        };
+
+        if (data.hours !== undefined) {
+          infoUpdateData.hours =
+            data.hours === null || data.hours === undefined
+              ? null
+              : String(data.hours);
+        }
+
+        if (data.startDate !== undefined) {
+          infoUpdateData.startDate = data.startDate
+            ? new Date(data.startDate)
+            : null;
+        }
+
+        if (data.endDate !== undefined) {
+          infoUpdateData.endDate = data.endDate ? new Date(data.endDate) : null;
+        }
+
+        const [info] = await tx
+          .update(applicationInformations)
+          .set(infoUpdateData)
+          .where(
+            eq(
+              applicationInformations.applicationStatusId,
+              latestApp.applicationStatusId
+            )
+          )
+          .returning({
+            hours: applicationInformations.hours,
+            startDate: applicationInformations.startDate,
+            endDate: applicationInformations.endDate,
+          });
+
+        updatedApplicationInfo = info ?? null;
+      } else {
+        const [latestApp] = await tx
+          .select({
+            applicationStatusId: applicationStatuses.id,
+          })
+          .from(applicationStatuses)
+          .where(eq(applicationStatuses.userId, userId))
+          .orderBy(desc(applicationStatuses.internshipRound))
+          .limit(1);
+
+        if (latestApp) {
+          const [info] = await tx
+            .select({
+              hours: applicationInformations.hours,
+              startDate: applicationInformations.startDate,
+              endDate: applicationInformations.endDate,
+            })
+            .from(applicationInformations)
+            .where(
+              eq(
+                applicationInformations.applicationStatusId,
+                latestApp.applicationStatusId
+              )
+            )
+            .limit(1);
+
+          updatedApplicationInfo = info ?? null;
+        }
+      }
+
+      return {
+        ...updatedProfile,
+        hours: updatedApplicationInfo?.hours ?? null,
+        startDate: updatedApplicationInfo?.startDate ?? null,
+        endDate: updatedApplicationInfo?.endDate ?? null,
+      };
+    });
   }
 }

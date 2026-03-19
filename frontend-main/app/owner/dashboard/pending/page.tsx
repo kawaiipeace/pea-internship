@@ -8,6 +8,7 @@ import {
   Application,
   fetchAllApplications,
   computeApplicationStats,
+  getEducationDisplayText,
 } from "../utils/applicationMapper";
 import VideoLoading from "@/components/ui/VideoLoading";
 import {
@@ -1273,7 +1274,9 @@ function PendingStatusContent() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-gray-500 text-sm">การศึกษาปัจจุบัน</span>
-                <p className="text-gray-900 text-sm">มหาวิทยาลัย</p>
+                <p className="text-gray-900 text-sm">
+                  {getEducationDisplayText(selectedApplication)}
+                </p>
               </div>
               <div>
                 <span className="text-gray-500 text-sm">ชื่อสถาบัน</span>
@@ -1293,7 +1296,7 @@ function PendingStatusContent() {
               <div>
                 <span className="text-gray-500 text-sm">สาขา</span>
                 <p className="text-gray-900 text-sm">
-                  {selectedApplication.major}
+                  {selectedApplication.major?.trim() || "-"}
                 </p>
               </div>
             </div>
