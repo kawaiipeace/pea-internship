@@ -147,8 +147,9 @@ const AttendanceHistoryPage = () => {
 
     return (
         <div className="-m-6 p-[22px] sm:p-6 text-black dark:text-white-light bg-[#fffbf7] dark:bg-black min-h-screen">
-            {/* Header Section */}
-            <div className="flex flex-row items-start justify-between gap-2 sm:gap-4 mb-6">
+            <div className="w-full max-w-[349px] sm:max-w-[840px] mx-auto min-h-[888px] sm:min-h-[813px] flex flex-col gap-[16px]">
+                {/* Header Section */}
+                <div className="flex flex-row items-start justify-between gap-2 sm:gap-4 shrink-0">
                 <div>
                     <h1 className="text-xl sm:text-2xl font-bold mb-1 text-black dark:text-white">ประวัติการลงเวลา</h1>
                     <p className="text-gray-500 text-xs sm:text-sm">รายงานการลงเวลาปฏิบัติงาน ประจำเดือน</p>
@@ -165,8 +166,8 @@ const AttendanceHistoryPage = () => {
             </div>
 
             {/* Summary Section */}
-            <div className="mb-4">
-                <div className="flex items-center justify-between mb-4">
+            <div className="shrink-0 flex flex-col gap-[16px]">
+                <div className="flex items-center justify-between">
                     <h2 className="text-[17px] font-bold text-[#b40e56]">สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})</h2>
                     {selectedFilter && (
                         <button
@@ -177,7 +178,7 @@ const AttendanceHistoryPage = () => {
                         </button>
                     )}
                 </div>
-                <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 pb-4 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-[13px] pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {summaryData.map((item, index) => {
                         const isSelected = selectedFilter === item.title;
                         const borderColorClass = item.textColor.replace('text-', 'border-');
@@ -187,7 +188,7 @@ const AttendanceHistoryPage = () => {
                                 key={index}
                                 type="button"
                                 onClick={() => setSelectedFilter(isSelected ? null : item.title)}
-                                className={`panel ${item.bgColor} flex flex-col sm:flex-row justify-between sm:justify-start items-start sm:items-center p-3 sm:p-5 rounded-xl shadow-none dark:bg-opacity-20 shrink-0 w-[100px] h-[120px] sm:w-[200px] sm:h-[90px] lg:w-auto text-left transition-all ${isSelected ? `border-2 ${borderColorClass}` : 'border-2 border-transparent hover:-translate-y-1'}`}
+                                className={`panel ${item.bgColor} flex flex-col sm:flex-row justify-between sm:justify-start items-start sm:items-center p-3 sm:px-4 sm:py-5 rounded-[10px] shadow-none dark:bg-opacity-20 shrink-0 w-[100px] h-[120px] sm:w-[200px] sm:h-[90px] text-left transition-all ${isSelected ? `border-2 ${borderColorClass}` : 'border-2 border-transparent hover:-translate-y-1'}`}
                             >
                                 <div className="flex-shrink-0 bg-white dark:bg-black sm:bg-transparent sm:dark:bg-transparent w-8 h-8 sm:w-auto sm:h-auto rounded-full sm:rounded-none flex items-center justify-center shadow-sm sm:shadow-none sm:mr-4">
                                     {React.cloneElement(item.icon, { className: 'w-5 h-5 sm:w-8 sm:h-8 ' + item.textColor })}
@@ -200,26 +201,26 @@ const AttendanceHistoryPage = () => {
                         );
                     })}
                 </div>
-                <p className="text-xs sm:text-sm text-gray-500 mt-2 sm:mt-6 mb-4">รายการลงเวลาทั้งหมด {historyData.length} วัน</p>
+                <p className="text-xs sm:text-sm text-gray-500">รายการลงเวลาทั้งหมด {historyData.length} วัน</p>
             </div>
 
             {/* History List Section */}
-            <div>
-                <h2 className="text-[17px] font-bold text-[#b40e56] mb-4">
+            <div className="shrink-0 flex flex-col gap-[16px]">
+                <h2 className="text-[17px] font-bold text-[#b40e56]">
                     รายการประวัติการลงเวลา {selectedFilter && <span className="text-sm font-normal text-gray-500 ml-2">(แสดงเฉพาะ: {selectedFilter})</span>}
                 </h2>
-                <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col gap-[14px]">
                     {filteredHistoryData.length > 0 ? (
                         filteredHistoryData.map((item, index) => (
                             <div
                                 key={index}
                                 onClick={() => {
-                                    if (item.isLeave || item.isLate || item.statusType === 'default') {
+                                    if (item.isLeave || item.isLate || item.statusType === 'default' || item.statusType === 'danger') {
                                         setSelectedHistoryItem(item);
                                         setIsDetailModalOpen(true);
                                     }
                                 }}
-                                className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-[#121212] shadow-sm animate-[fadeIn_0.3s_ease-in-out] ${(item.isLeave || item.isLate || item.statusType === 'default') ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-[1.01]' : ''}`}
+                                className={`w-full h-auto sm:h-[80px] flex flex-col sm:flex-row sm:items-center gap-[6px] sm:gap-[14px] border border-[#CECFD2] dark:border-gray-700 rounded-[14px] p-4 sm:px-4 sm:py-2 bg-white dark:bg-[#121212] overflow-hidden animate-[fadeIn_0.3s_ease-in-out] ${(item.isLeave || item.isLate || item.statusType === 'default' || item.statusType === 'danger') ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-[1.01]' : ''}`}
                             >
                                 {/* Desktop Date Badge */}
                                 <div className="hidden sm:flex flex-col items-center justify-center bg-[#fcf2e3] dark:bg-orange-900/20 rounded-xl w-14 h-14 shrink-0 border border-[#f5e3cd] dark:border-none">
@@ -228,7 +229,7 @@ const AttendanceHistoryPage = () => {
                                 </div>
 
                                 {/* Mobile Date Header */}
-                                <div className="sm:hidden text-[13px] font-bold text-gray-600 dark:text-gray-400 mb-1">
+                                <div className="sm:hidden text-[13px] font-bold text-gray-900 dark:text-gray-100 mb-0.5">
                                     {item.labelMobile}
                                 </div>
 
@@ -250,7 +251,7 @@ const AttendanceHistoryPage = () => {
             </div>
 
             {/* Footer / Pagination & Export */}
-            <div className="mt-6 sm:mt-8 flex flex-row items-center justify-between gap-4 pb-8">
+            <div className="flex flex-row items-center justify-between gap-4 shrink-0 pb-8 mt-auto pt-4">
                 <button type="button" className="flex items-center gap-2 font-bold text-[15px] hover:opacity-80 text-gray-700 dark:text-gray-300 whitespace-nowrap">
                     <IconShare className="w-5 h-5 sm:w-6 sm:h-6 text-[#b40e56] stroke-[2px]" />
                     <span className="hidden sm:inline">ส่งออกตาราง</span>
@@ -295,7 +296,7 @@ const AttendanceHistoryPage = () => {
                         >
                             <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px]" />
                         </Transition.Child>
-                        <div className="fixed inset-0 overflow-y-auto">
+                        <div className="fixed inset-0 overflow-y-auto lg:pl-[260px]">
                             <div className={`flex min-h-full justify-center p-0 sm:p-4 text-center ${isEditingTime ? 'items-stretch sm:items-center' : 'items-end sm:items-center'}`}>
                                 <Transition.Child
                                     as={Fragment}
@@ -325,9 +326,67 @@ const AttendanceHistoryPage = () => {
                                         </button>
 
                                         {selectedHistoryItem && (
-                                            <div className="space-y-4 text-black dark:text-white-light">
+                                            <div className="space-y-4 text-black dark:text-white-light h-full">
                                                 {isEditingTime ? (
                                                     <EditTimeForm selectedHistoryItem={selectedHistoryItem} setIsEditingTime={setIsEditingTime} />
+                                                ) : selectedHistoryItem.statusType === 'danger' ? (
+                                                    <div className="flex flex-col pb-2">
+                                                        {/* Header */}
+                                                        <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">{selectedHistoryItem.labelMobile}</div>
+                                                        <div className="inline-flex items-center px-4 py-1.5 bg-[#FFEAEC] text-[#D92D20] border border-[#FCA5A5] rounded-full text-xs font-bold gap-1.5 w-fit">
+                                                            <div className="w-5 h-5 bg-[#D92D20] rounded-full flex items-center justify-center text-white shrink-0">
+                                                                <IconX className="w-3 h-3" />
+                                                            </div>
+                                                            {selectedHistoryItem.status}
+                                                        </div>
+                                                        
+                                                        <hr className="mt-3 mb-6 h-[1px] bg-[#CECFD2] border-none dark:bg-gray-700" />
+                                                        
+                                                        {/* Content */}
+                                                        <div className="flex flex-col items-center justify-start flex-1 pt-0 pb-8 px-4">
+                                                            {/* Custom CSS Absent Calendar Illustration */}
+                                                            <div className="relative w-44 h-44 mb-4 flex items-center justify-center">
+                                                                {/* Soft red background circle */}
+                                                                <div className="absolute inset-2 bg-[#FFEAEC] dark:bg-red-900/30 rounded-full"></div>
+                                                                {/* Base shadow oval */}
+                                                                <div className="absolute w-[100px] h-3 bg-[#FCA5A5]/40 rounded-[100%] bottom-6 blur-[3px]"></div>
+                                                                
+                                                                {/* Calendar Body */}
+                                                                <div className="relative w-[110px] h-[120px] bg-white dark:bg-[#202020] rounded-[18px] shadow-sm flex flex-col z-10 overflow-hidden">
+                                                                    {/* Calendar Header */}
+                                                                    <div className="h-[36px] bg-[#EF4444] w-full shrink-0"></div>
+                                                                    
+                                                                    {/* Calendar Content */}
+                                                                    <div className="flex-1 w-full flex items-center justify-center">
+                                                                        <svg className="w-14 h-14 text-[#EF4444]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Calendar Rings (Absolute positioned over header) */}
+                                                                <div className="absolute top-[40px] left-[52px] w-[14px] h-[22px] border-[3.5px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
+                                                                <div className="absolute top-[40px] right-[52px] w-[14px] h-[22px] border-[3.5px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
+                                                            </div>
+                                                            <div className="text-[17px] font-bold text-gray-700 dark:text-gray-200 mb-1">ไม่มีการลงเวลาในวันนี้</div>
+                                                            <div className="text-sm text-gray-500 font-medium text-center">หากมาทำงานปกติ โปรดส่งคำขอแก้ไขเวลา</div>
+                                                        </div>
+
+                                                        {/* Button */}
+                                                        <div className="flex justify-center mt-8 mb-2">
+                                                            <button 
+                                                                type="button" 
+                                                                className="w-[280px] max-w-full px-6 py-3.5 bg-[#A80689] text-white rounded-lg text-[15px] font-bold shadow-sm hover:bg-[#A80689]/90 transition-colors"
+                                                                onClick={() => {
+                                                                    localStorage.setItem('editItem', JSON.stringify(selectedHistoryItem));
+                                                                    router.push('/history/edit-time');
+                                                                }}
+                                                            >
+                                                                ส่งคำขอแก้ไขเวลา
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 ) : (
                                                     <>
                                                 {/* Header */}
@@ -364,6 +423,9 @@ const AttendanceHistoryPage = () => {
                                                         {selectedHistoryItem.status}
                                                     </div>
                                                 )}
+                                                
+                                                {/* Divider */}
+                                                <hr className="mt-5 mb-1 h-[1px] bg-[#CECFD2] border-none dark:bg-gray-700" />
 
                                                 {/* Card 1: Details */}
                                                 <div className="bg-[#FFFCF6] dark:bg-[#1C1710] border border-[#FDF2E2] dark:border-[#3A2A1A] rounded-2xl p-4 space-y-3 shadow-sm mt-4">
@@ -473,6 +535,7 @@ const AttendanceHistoryPage = () => {
                         </div>
                     </Dialog>
                 </Transition>
+            </div>
             </div>
         </div>
     );

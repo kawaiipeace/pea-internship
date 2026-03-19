@@ -22,7 +22,7 @@ const Page = () => {
 
     return (
         // 🔥 พื้นหลัง
-       <div className="max-screen bg-white flex justify-center p-6">
+       <div className="-m-6 min-h-screen bg-white dark:bg-black flex justify-center p-6">
             
             {/* 🔥 กล่องหลัก (ตาม Figma แต่ไม่พัง) */}
             <div className="w-full max-w-[840px] p-6 flex flex-col gap-6">
