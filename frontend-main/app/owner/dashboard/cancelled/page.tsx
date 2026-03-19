@@ -164,6 +164,16 @@ function CancelledApplicationsContent() {
 
   // Search and filter states
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [selectedTrainingStartDate, setSelectedTrainingStartDate] =
+    useState("");
+  const [selectedTrainingEndDate, setSelectedTrainingEndDate] = useState("");
+  const [draftTrainingStartDate, setDraftTrainingStartDate] = useState("");
+  const [draftTrainingEndDate, setDraftTrainingEndDate] = useState("");
+  const [showTrainingDateDropdown, setShowTrainingDateDropdown] =
+    useState(false);
+  const [trainingDateViewMonth, setTrainingDateViewMonth] = useState(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  );
   const [showInstitutionDropdown, setShowInstitutionDropdown] = useState(false);
   const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>(
     [],
@@ -172,6 +182,7 @@ function CancelledApplicationsContent() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const institutionDropdownRef = useRef<HTMLDivElement>(null);
+  const trainingDateDropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch timeline actions when selected application changes
   useEffect(() => {
@@ -197,14 +208,22 @@ function CancelledApplicationsContent() {
       .finally(() => setTimelineLoading(false));
   }, [selectedApplication?.id]);
 
-  // Close institution dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
         institutionDropdownRef.current &&
-        !institutionDropdownRef.current.contains(event.target as Node)
+        !institutionDropdownRef.current.contains(target)
       ) {
         setShowInstitutionDropdown(false);
+      }
+
+      if (
+        trainingDateDropdownRef.current &&
+        !trainingDateDropdownRef.current.contains(target)
+      ) {
+        setShowTrainingDateDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -272,6 +291,112 @@ function CancelledApplicationsContent() {
         : [...prev, school],
     );
   };
+
+  const toISODate = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  const parseISODate = (value?: string | null): Date | null => {
+    if (!value) return null;
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const [, y, m, d] = match;
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    if (Number.isNaN(date.getTime())) return null;
+    return date;
+  };
+
+  const parseLocalDateOnly = (value?: string | null): Date | null => {
+    if (!value) return null;
+    const raw = value.trim();
+    const dateOnly = raw.split("T")[0].split(" ")[0];
+    const plainDateMatch = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (plainDateMatch) {
+      const [, y, m, d] = plainDateMatch;
+      const year = Number(y);
+      const month = Number(m);
+      const day = Number(d);
+      if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+      const adYear = year > 2400 ? year - 543 : year;
+      return new Date(adYear, month - 1, day);
+    }
+
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  };
+
+  const getTrainingDateDisplayText = () => {
+    if (!selectedTrainingStartDate && !selectedTrainingEndDate)
+      return "ระยะเวลาที่ฝึกงาน";
+    if (selectedTrainingStartDate && selectedTrainingEndDate) {
+      return `${formatDateThai(selectedTrainingStartDate)} - ${formatDateThai(selectedTrainingEndDate)}`;
+    }
+    if (selectedTrainingStartDate)
+      return formatDateThai(selectedTrainingStartDate);
+    return formatDateThai(selectedTrainingEndDate);
+  };
+
+  const openTrainingDateDropdown = () => {
+    const selectedDate =
+      parseISODate(selectedTrainingStartDate) ||
+      parseISODate(selectedTrainingEndDate);
+    const base = selectedDate || new Date();
+    setDraftTrainingStartDate(selectedTrainingStartDate);
+    setDraftTrainingEndDate(selectedTrainingEndDate);
+    setTrainingDateViewMonth(new Date(base.getFullYear(), base.getMonth(), 1));
+    setShowTrainingDateDropdown(true);
+  };
+
+  const trainingDateWeekdayLabels = [
+    "อา.",
+    "จ.",
+    "อ.",
+    "พ.",
+    "พฤ.",
+    "ศ.",
+    "ส.",
+  ];
+
+  const trainingDateCells = useMemo(() => {
+    const year = trainingDateViewMonth.getFullYear();
+    const month = trainingDateViewMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const firstWeekday = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const cells: { date: Date; inCurrentMonth: boolean }[] = [];
+
+    for (let i = firstWeekday - 1; i >= 0; i -= 1) {
+      cells.push({
+        date: new Date(year, month - 1, daysInPrevMonth - i),
+        inCurrentMonth: false,
+      });
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push({
+        date: new Date(year, month, day),
+        inCurrentMonth: true,
+      });
+    }
+
+    let nextDay = 1;
+    while (cells.length < 35 || cells.length % 7 !== 0) {
+      cells.push({
+        date: new Date(year, month + 1, nextDay),
+        inCurrentMonth: false,
+      });
+      nextDay += 1;
+    }
+
+    return cells;
+  }, [trainingDateViewMonth]);
 
   // Load cancelled apps from localStorage
   const [cancelledAppsData, setCancelledAppsData] = useState<
@@ -483,6 +608,23 @@ function CancelledApplicationsContent() {
       });
     }
 
+    // Apply training-period range filter (overlap with selected period)
+    if (selectedTrainingStartDate || selectedTrainingEndDate) {
+      const filterStart = parseLocalDateOnly(selectedTrainingStartDate);
+      const filterEnd = parseLocalDateOnly(selectedTrainingEndDate);
+
+      filtered = filtered.filter((app) => {
+        const appStart = parseLocalDateOnly(app.startDate);
+        const appEnd = parseLocalDateOnly(app.endDate);
+        if (!appStart || !appEnd) return false;
+
+        if (filterStart && appEnd.getTime() < filterStart.getTime())
+          return false;
+        if (filterEnd && appStart.getTime() > filterEnd.getTime()) return false;
+        return true;
+      });
+    }
+
     setFilteredApplications(filtered);
     setCurrentPage(1);
 
@@ -502,6 +644,8 @@ function CancelledApplicationsContent() {
     }
   }, [
     searchKeyword,
+    selectedTrainingStartDate,
+    selectedTrainingEndDate,
     selectedInstitutions,
     selectedSchools,
     cancelledAppsData,
@@ -830,8 +974,8 @@ function CancelledApplicationsContent() {
         </div>
 
         {/* Search & Filter Section */}
-        <div className="flex flex-col md:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <svg
                 className="w-5 h-5 text-gray-400"
@@ -855,7 +999,7 @@ function CancelledApplicationsContent() {
               className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-300 shadow-sm hover:border-primary-600 outline-none text-gray-700 bg-white text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-100 transition"
             />
           </div>
-          <div className="relative flex-1" ref={institutionDropdownRef}>
+          <div className="relative" ref={institutionDropdownRef}>
             <button
               onClick={() =>
                 setShowInstitutionDropdown(!showInstitutionDropdown)
@@ -1064,6 +1208,189 @@ function CancelledApplicationsContent() {
                         </div>
                       );
                     })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Training Period Filter */}
+          <div className="relative" ref={trainingDateDropdownRef}>
+            <button
+              onClick={() =>
+                showTrainingDateDropdown
+                  ? setShowTrainingDateDropdown(false)
+                  : openTrainingDateDropdown()
+              }
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 shadow-sm hover:border-primary-600 outline-none text-gray-700 bg-white flex items-center justify-between cursor-pointer text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-100 transition"
+            >
+              <span
+                className={`truncate ${selectedTrainingStartDate || selectedTrainingEndDate ? "text-gray-700" : "text-gray-500"}`}
+              >
+                {getTrainingDateDisplayText()}
+              </span>
+              <div className="flex items-center gap-2 ml-2">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                {(selectedTrainingStartDate || selectedTrainingEndDate) && (
+                  <span
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTrainingStartDate("");
+                      setSelectedTrainingEndDate("");
+                      setDraftTrainingStartDate("");
+                      setDraftTrainingEndDate("");
+                    }}
+                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                    title="ล้างช่วงวันที่"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </span>
+                )}
+              </div>
+            </button>
+
+            {showTrainingDateDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTrainingDateViewMonth(
+                        (prev) =>
+                          new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+                      )
+                    }
+                    className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                    aria-label="เดือนก่อนหน้า"
+                  >
+                    ←
+                  </button>
+                  <div className="text-lg font-semibold text-gray-800">
+                    {thaiMonths[trainingDateViewMonth.getMonth()]}{" "}
+                    {trainingDateViewMonth.getFullYear() + 543}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTrainingDateViewMonth(
+                        (prev) =>
+                          new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+                      )
+                    }
+                    className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                    aria-label="เดือนถัดไป"
+                  >
+                    →
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {trainingDateWeekdayLabels.map((label) => (
+                    <div
+                      key={label}
+                      className="text-center text-gray-500 text-xs font-medium py-1.5"
+                    >
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-1">
+                  {trainingDateCells.map(({ date, inCurrentMonth }) => {
+                    const iso = toISODate(date);
+                    const hasStart = !!draftTrainingStartDate;
+                    const hasEnd = !!draftTrainingEndDate;
+                    const isStart = draftTrainingStartDate === iso;
+                    const isEnd = draftTrainingEndDate === iso;
+                    const isInRange =
+                      hasStart &&
+                      hasEnd &&
+                      iso > draftTrainingStartDate &&
+                      iso < draftTrainingEndDate;
+
+                    return (
+                      <button
+                        key={iso}
+                        type="button"
+                        onClick={() => {
+                          if (!draftTrainingStartDate || draftTrainingEndDate) {
+                            setDraftTrainingStartDate(iso);
+                            setDraftTrainingEndDate("");
+                          } else if (iso < draftTrainingStartDate) {
+                            setDraftTrainingEndDate(draftTrainingStartDate);
+                            setDraftTrainingStartDate(iso);
+                          } else {
+                            setDraftTrainingEndDate(iso);
+                          }
+
+                          if (!inCurrentMonth) {
+                            setTrainingDateViewMonth(
+                              new Date(date.getFullYear(), date.getMonth(), 1),
+                            );
+                          }
+                        }}
+                        className={`h-8 rounded-md text-xs font-medium transition ${
+                          isStart || isEnd
+                            ? "bg-primary-600 text-white"
+                            : isInRange
+                              ? "bg-gray-100 text-gray-700"
+                              : inCurrentMonth
+                                ? "text-gray-700 hover:bg-gray-100"
+                                : "text-gray-300 hover:bg-gray-100"
+                        }`}
+                      >
+                        {date.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftTrainingStartDate("");
+                      setDraftTrainingEndDate("");
+                    }}
+                    className="py-2.5 rounded-lg border border-gray-300 text-gray-600 bg-gray-50 hover:bg-gray-100 transition font-medium text-sm"
+                  >
+                    เคลียร์
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTrainingStartDate(draftTrainingStartDate);
+                      setSelectedTrainingEndDate(draftTrainingEndDate);
+                      setShowTrainingDateDropdown(false);
+                    }}
+                    className="py-2.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition font-medium text-sm"
+                  >
+                    ตกลง
+                  </button>
                 </div>
               </div>
             )}
