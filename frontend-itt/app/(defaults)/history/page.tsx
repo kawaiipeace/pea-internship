@@ -14,8 +14,12 @@ import IconArchive from '@/components/icon/icon-archive';
 import EditTimeForm from '@/components/history/edit-time-form';
 import IconCalendar from '@/components/icon/icon-calendar';
 import MonthPicker from '@/components/history/month-picker';
+import { useRouter } from 'next/navigation';
+
 
 const AttendanceHistoryPage = () => {
+    const router = useRouter();
+
     const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
@@ -25,7 +29,7 @@ const AttendanceHistoryPage = () => {
     const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
     const thaiMonthsFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-    const [currentYear, setCurrentYear] = useState(new Date().getFullYear() + 543); // แปลง ค.ศ. เป็น พ.ศ. อัตโนมัติ
+    const [currentYear, setCurrentYear] = useState(new Date().getFullYear() + 543);
 
     const handleMonthSelect = (month: number, year: number) => {
         setCurrentMonth(month);
@@ -442,8 +446,18 @@ const AttendanceHistoryPage = () => {
                                                     <div className="flex justify-end mt-6">
                                                         <button 
                                                             type="button" 
-                                                            onClick={() => setIsEditingTime(true)}
+                                                            // onClick={() => setIsEditingTime(true)}
                                                             className="px-6 py-2 bg-[#A80689] text-white rounded-full text-sm font-bold shadow-md hover:bg-[#A80689]/90 transition-colors"
+                        //                                     onClick={() => {
+                        //     router.push('/history/edit-time');
+                        // }}
+                        onClick={() => {
+    localStorage.setItem(
+        'editItem',
+        JSON.stringify(selectedHistoryItem)
+    );
+    router.push('/history/edit-time');
+}}
                                                         >
                                                             ส่งคำขอแก้ไขเวลา
                                                         </button>
