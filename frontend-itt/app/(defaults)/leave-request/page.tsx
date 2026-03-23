@@ -1,31 +1,23 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { renderToString } from 'react-dom/server';
 import Swal from 'sweetalert2';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import IconCalendar from '@/components/icon/icon-calendar';
 import IconCloudDownload from '@/components/icon/icon-cloud-download';
 import IconSend from '@/components/icon/icon-send';
-import IconInfoCircle from '@/components/icon/icon-info-circle';
 import IconFile from '@/components/icon/icon-file';
 import IconX from '@/components/icon/icon-x';
 
 const LeaveRequestPage = () => {
     const [leaveDate, setLeaveDate] = useState<any>('');
     const [leaveType, setLeaveType] = useState<'sick' | 'personal' | ''>('');
-    const [timePeriod, setTimePeriod] = useState('fullday');
     const [details, setDetails] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const router = useRouter();
 
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
-    const timePeriodOptions = [
-        { value: 'fullday', label: 'ลาเต็มวัน' },
-    ];
 
     const validateAndSetFile = (file: File) => {
         if (file.size > MAX_FILE_SIZE) {
@@ -65,34 +57,57 @@ const LeaveRequestPage = () => {
         Swal.fire({
             html: `
                 <div class="flex flex-col items-center py-2">
-                    <div class="mb-6 flex h-24 w-24 items-center justify-center rounded-full border-4 border-gray-400 bg-gray-100">
-                        ${renderToString(<IconInfoCircle className="h-10 w-10 text-gray-500" />)}
+                    <div class="mb-5 flex h-20 w-20 items-center justify-center rounded-full border-4 border-green-200 bg-green-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
                     </div>
-                    <h2 class="mb-2 text-2xl font-bold text-gray-800">ยืนยันการยื่นคำขอลา</h2>
-                    <p class="text-sm text-gray-500">คุณตรวจสอบข้อมูลครบถ้วน และต้องการยื่นคำขอลาใช่หรือไม่?</p>
+                    <h2 class="text-xl font-bold text-gray-800">ยืนยันส่งคำขอลา</h2>
                 </div>
             `,
             showConfirmButton: true,
             showCancelButton: true,
-            confirmButtonText: 'ตกลง',
-            cancelButtonText: 'ยกเลิก',
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ย้อนกลับ',
+            reverseButtons: true,
             showCloseButton: false,
             customClass: {
                 confirmButton: '!rounded-lg !px-8 !py-3 !text-base !font-bold',
-                cancelButton: '!rounded-lg !px-8 !py-3 !text-base !font-bold !bg-white !text-gray-700 !border !border-gray-300 hover:!bg-gray-50',
+                cancelButton: '!rounded-lg !px-8 !py-3 !text-base !font-bold !bg-white !text-gray-700 !border !border-gray-300',
                 popup: '!rounded-2xl',
                 actions: '!gap-4',
             },
             didOpen: () => {
-                const btn = document.querySelector('.swal2-confirm') as HTMLElement;
-                if (btn) {
-                    btn.style.cssText = 'background-color: #A80689 !important; border-color: #A80689 !important; color: white !important; border-radius: 8px; padding: 12px 32px; font-size: 16px; font-weight: 700;';
+                const confirmBtn = document.querySelector('.swal2-confirm') as HTMLElement;
+                if (confirmBtn) {
+                    confirmBtn.style.cssText = 'background-color: #22c55e !important; border-color: #22c55e !important; color: white !important; border-radius: 8px; padding: 12px 32px; font-size: 16px; font-weight: 700;';
                 }
             },
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    html: `
+                        <div class="flex flex-col items-center py-4">
+                            <div class="mb-5 flex h-20 w-20 items-center justify-center rounded-full border-4 border-green-200 bg-green-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-800">ส่งคำขอลาสำเร็จ</h2>
+                        </div>
+                    `,
+                    showConfirmButton: false,
+                    showCancelButton: false,
+                    showCloseButton: false,
+                    timer: 2000,
+                    customClass: {
+                        popup: '!rounded-2xl',
+                    },
+                });
+            }
         });
     };
 
-    const selectedTimePeriodLabel = timePeriodOptions.find((opt) => opt.value === timePeriod)?.label || '';
 
     return (
         <div className="mx-auto max-w-3xl">
@@ -221,18 +236,6 @@ const LeaveRequestPage = () => {
                         </label>
                     </div>
 
-                    {/* Time Period Dropdown */}
-                    <div className="mb-5">
-                        <label className="mb-2 block text-sm font-semibold text-dark dark:text-white-dark">ช่วงเวลาการลงเวลา</label>
-                        <div className="relative max-w-xs">
-                            <div
-                                className="form-input flex w-full items-center justify-between text-left bg-gray-100 text-gray-500 cursor-not-allowed dark:bg-[#1b2e4b] dark:text-gray-400 border-gray-200 dark:border-[#1b2e4b]"
-                            >
-                                <span>{selectedTimePeriodLabel || 'ลาเต็มวัน'}</span>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Leave Details Textarea */}
                     <div className="mb-5">
                         <label className="mb-2 block text-sm font-semibold text-dark dark:text-white-dark">
@@ -251,9 +254,8 @@ const LeaveRequestPage = () => {
 
                     {/* File Upload */}
                     <div>
-                        <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-dark dark:text-white-dark">
+                        <label className="mb-2 block text-sm font-semibold text-dark dark:text-white-dark">
                             แนบหลักฐาน ถ้ามี
-                            <IconInfoCircle className="h-4 w-4 text-gray-400" />
                         </label>
                         <p className="mb-2 text-xs text-gray-400">รองรับไฟล์ขนาดไม่เกิน 50 MB</p>
 
