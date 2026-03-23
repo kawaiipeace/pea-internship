@@ -33,7 +33,7 @@ export const internshipStatusEnum = pgEnum("internship_status_enum", [
   "INTERVIEW",
   "REVIEW",
   "ACCEPT",
-  'AWAITING',
+  "AWAITING",
   "ACTIVE",
   "COMPLETE",
   "CANCEL",

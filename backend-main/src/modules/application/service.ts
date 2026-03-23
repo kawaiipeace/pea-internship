@@ -34,9 +34,9 @@ import {
   users,
 } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
+import { MailService } from "@/modules/mail/service";
 import { StaffLogsService } from "@/modules/staff-logs/service";
 import type * as model from "./model";
-import { MailService } from "@/modules/mail/service";
 
 const mailService = new MailService();
 
@@ -302,7 +302,6 @@ export class ApplicationService {
         "การสมัครถูกยกเลิก",
         "การสมัครของคุณถูกยกเลิกเนื่องจากตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว"
       );
-      
     }
   }
 

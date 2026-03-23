@@ -96,10 +96,7 @@ export class ApplicationRequestTimeoutService {
         });
       }
     } catch (error) {
-      console.error(
-        "[CRON ERROR] abortExpiredPendingRequests failed:",
-        error
-      );
+      console.error("[CRON ERROR] abortExpiredPendingRequests failed:", error);
     }
   }
 }
