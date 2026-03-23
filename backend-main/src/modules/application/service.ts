@@ -36,8 +36,12 @@ import {
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import { StaffLogsService } from "@/modules/staff-logs/service";
 import type * as model from "./model";
+import { MailService } from "@/modules/mail/service";
+
+const mailService = new MailService();
 
 const staffLogsService = new StaffLogsService();
+
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export class ApplicationService {
@@ -54,6 +58,39 @@ export class ApplicationService {
       oldStatus,
       newStatus,
     });
+  }
+
+  private async notifyStudentWithEmail(
+    tx: DbTx,
+    userId: string,
+    title: string,
+    message: string
+  ) {
+    const [student] = await tx
+      .select({
+        email: users.email,
+        fname: users.fname,
+        lname: users.lname,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    await tx.insert(notifications).values({
+      userId,
+      title,
+      message,
+      isRead: false,
+    });
+
+    if (!student?.email) return;
+
+    const html = mailService.buildStudentNotificationEmail({
+      title,
+      studentName: `${student.fname ?? ""} ${student.lname ?? ""}`,
+      message,
+    });
+
+    await mailService.sendEmail(student.email, title, html);
   }
 
   private async resolveStudentInternshipStatusAfterComplete(
@@ -76,62 +113,61 @@ export class ApplicationService {
     return "ACTIVE";
   }
 
-  private async autoCompleteInternships(tx: DbTx, userId: string) {
-    const now = new Date();
+  // private async autoCompleteInternships(tx: DbTx, userId: string) {
+  //   const now = new Date();
 
-    // Find this user's active internship where end date has passed
-    const expired = await tx
-      .select({
-        applicationId: applicationStatuses.id,
-        positionId: applicationStatuses.positionId,
-      })
-      .from(applicationStatuses)
-      .innerJoin(
-        applicationInformations,
-        eq(applicationInformations.applicationStatusId, applicationStatuses.id)
-      )
-      .innerJoin(
-        studentProfiles,
-        eq(studentProfiles.userId, applicationStatuses.userId)
-      )
-      .where(
-        and(
-          eq(applicationStatuses.userId, userId),
-          eq(applicationStatuses.applicationStatus, "COMPLETE"),
-          eq(applicationStatuses.isActive, true),
-          eq(studentProfiles.internshipStatus, "ACTIVE"),
-          lte(applicationInformations.endDate, now)
-        )
-      );
+  //   const expired = await tx
+  //     .select({
+  //       applicationId: applicationStatuses.id,
+  //       positionId: applicationStatuses.positionId,
+  //     })
+  //     .from(applicationStatuses)
+  //     .innerJoin(
+  //       applicationInformations,
+  //       eq(applicationInformations.applicationStatusId, applicationStatuses.id)
+  //     )
+  //     .innerJoin(
+  //       studentProfiles,
+  //       eq(studentProfiles.userId, applicationStatuses.userId)
+  //     )
+  //     .where(
+  //       and(
+  //         eq(applicationStatuses.userId, userId),
+  //         eq(applicationStatuses.applicationStatus, "COMPLETE"),
+  //         eq(applicationStatuses.isActive, true),
+  //         eq(studentProfiles.internshipStatus, "ACTIVE"),
+  //         lte(applicationInformations.endDate, now)
+  //       )
+  //     );
 
-    for (const app of expired) {
-      await tx
-        .update(applicationStatuses)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(applicationStatuses.id, app.applicationId));
+  //   for (const app of expired) {
+  //     await tx
+  //       .update(applicationStatuses)
+  //       .set({ isActive: false, updatedAt: new Date() })
+  //       .where(eq(applicationStatuses.id, app.applicationId));
 
-      await tx
-        .update(studentProfiles)
-        .set({ internshipStatus: "COMPLETE" })
-        .where(eq(studentProfiles.userId, userId));
+  //     await tx
+  //       .update(studentProfiles)
+  //       .set({ internshipStatus: "COMPLETE" })
+  //       .where(eq(studentProfiles.userId, userId));
 
-      if (app.positionId) {
-        await tx
-          .update(internshipPositions)
-          .set({
-            acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
-          })
-          .where(eq(internshipPositions.id, app.positionId));
-      }
+  //     if (app.positionId) {
+  //       await tx
+  //         .update(internshipPositions)
+  //         .set({
+  //           acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
+  //         })
+  //         .where(eq(internshipPositions.id, app.positionId));
+  //     }
 
-      await tx.insert(applicationStatusActions).values({
-        applicationStatusId: app.applicationId,
-        actionBy: "system",
-        oldStatus: "COMPLETE",
-        newStatus: "COMPLETE",
-      });
-    }
-  }
+  //     await tx.insert(applicationStatusActions).values({
+  //       applicationStatusId: app.applicationId,
+  //       actionBy: "system",
+  //       oldStatus: "COMPLETE",
+  //       newStatus: "COMPLETE",
+  //     });
+  //   }
+  // }
 
   private async updateCompletedInternshipsStatus(tx: DbTx) {
     const now = new Date();
@@ -259,14 +295,15 @@ export class ApplicationService {
       await this.logAppStatusAction(tx, app.id, actionBy, app.status, "ABORT");
     }
 
-    await tx.insert(notifications).values(
-      pendingApps.map((app) => ({
-        userId: app.userId,
-        title: "การสมัครถูกยกเลิก",
-        message: "การสมัครของคุณถูกยกเลิกเนื่องจากตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
-        isRead: false,
-      }))
-    );
+    for (const app of pendingApps) {
+      await this.notifyStudentWithEmail(
+        tx,
+        app.userId,
+        "การสมัครถูกยกเลิก",
+        "การสมัครของคุณถูกยกเลิกเนื่องจากตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว"
+      );
+      
+    }
   }
 
   async apply(userId: string, positionId: number) {
@@ -781,12 +818,12 @@ export class ApplicationService {
         .set({ internshipStatus: "REVIEW" })
         .where(eq(studentProfiles.userId, app.userId));
 
-      await tx.insert(notifications).values({
-        userId: app.userId,
-        title: "อัปเดตสถานะการสมัคร",
-        message: `คุณผ่านขั้นตอนสัมภาษณ์แล้ว สำหรับตำแหน่ง ${app.positionName}`,
-        isRead: false,
-      });
+      await this.notifyStudentWithEmail(
+        tx,
+        app.userId,
+        "อัปเดตสถานะการสมัคร",
+        `คุณผ่านขั้นตอนสัมภาษณ์แล้ว สำหรับตำแหน่ง ${app.positionName}`
+      );
 
       await staffLogsService.log(
         tx,
@@ -901,12 +938,12 @@ export class ApplicationService {
           .onConflictDoNothing();
       }
 
-      await tx.insert(notifications).values({
-        userId: app.userId,
-        title: "อัปเดตสถานะการสมัคร",
-        message: `คุณได้รับการตอบรับแล้วในตำแหน่ง ${app.positionName} กรุณายื่นเอกสารขอความอนุเคราะห์`,
-        isRead: false,
-      });
+      await this.notifyStudentWithEmail(
+        tx,
+        app.userId,
+        "อัปเดตสถานะการสมัคร",
+        `คุณได้รับการตอบรับแล้วในตำแหน่ง ${app.positionName} กรุณายื่นเอกสารขอความอนุเคราะห์`
+      );
 
       await staffLogsService.log(
         tx,
@@ -1122,12 +1159,12 @@ export class ApplicationService {
             "PENDING_REQUEST"
           );
 
-          await tx.insert(notifications).values({
-            userId: app.userId,
-            title: "เอกสารถูกตีกลับ",
-            message: `เอกสารถูกตีกลับสำหรับตำแหน่ง ${app.positionName} กรุณาอัปโหลดใหม่`,
-            isRead: false,
-          });
+          await this.notifyStudentWithEmail(
+            tx,
+            app.userId,
+            "เอกสารถูกตีกลับ",
+            `เอกสารถูกตีกลับสำหรับตำแหน่ง ${app.positionName} กรุณาอัปโหลดใหม่`
+          );
 
           await staffLogsService.log(
             tx,
@@ -1181,15 +1218,14 @@ export class ApplicationService {
             .set({ internshipStatus: nextInternshipStatus })
             .where(eq(studentProfiles.userId, app.userId));
 
-          await tx.insert(notifications).values({
-            userId: app.userId,
-            title: "การสมัครเสร็จสมบูรณ์",
-            message:
-              nextInternshipStatus === "AWAITING"
-                ? `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์ กำลังรอถึงวันเริ่มฝึกงาน`
-                : `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์`,
-            isRead: false,
-          });
+          await this.notifyStudentWithEmail(
+            tx,
+            app.userId,
+            "การสมัครเสร็จสมบูรณ์",
+            nextInternshipStatus === "AWAITING"
+              ? `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์ กำลังรอถึงวันเริ่มฝึกงาน`
+              : `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์`
+          );
 
           await staffLogsService.log(
             tx,
@@ -1218,7 +1254,7 @@ export class ApplicationService {
       if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
 
       // Auto-complete expired internships for this user
-      await this.autoCompleteInternships(tx, userId);
+      // await this.autoCompleteInternships(tx, userId);
 
       const whereClause = includeCanceled
         ? eq(applicationStatuses.userId, userId)
@@ -1321,7 +1357,7 @@ export class ApplicationService {
       }
 
       // Auto-complete expired internships for this student
-      await this.autoCompleteInternships(tx, studentUserId);
+      // await this.autoCompleteInternships(tx, studentUserId);
 
       const rows = await tx
         .select({
@@ -1722,12 +1758,12 @@ export class ApplicationService {
         .set({ internshipStatus: "IDLE" })
         .where(eq(studentProfiles.userId, app.studentUserId));
 
-      await tx.insert(notifications).values({
-        userId: app.studentUserId,
-        title: "การสมัครถูกยกเลิก",
-        message: `การสมัครในตำแหน่ง ${app.positionName} ถูกยกเลิกโดยกองงาน`,
-        isRead: false,
-      });
+      await this.notifyStudentWithEmail(
+        tx,
+        app.studentUserId,
+        "การสมัครถูกยกเลิก",
+        `การสมัครในตำแหน่ง ${app.positionName} ถูกยกเลิกโดยกองงาน`
+      );
 
       await staffLogsService.log(
         tx,

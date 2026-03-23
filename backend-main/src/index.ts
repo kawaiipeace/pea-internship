@@ -9,6 +9,9 @@ import { auth } from "@/lib/auth";
 import { errorMiddleware } from "@/middlewares/error.middleware";
 import modules from "@/modules";
 
+import { MailService } from "@/modules/mail/service";
+
+
 const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
 const app = new Elysia()
   .use(
