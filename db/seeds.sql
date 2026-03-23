@@ -65,10 +65,10 @@ VALUES
   -- ,('การไฟฟ้าส่วนภูมิภาคสาขาย่อยอำเภอพญาเม็งราย','กฟจ.เชียงราย','นายอดิเรก ไลไธสง','โทร. 0-5379-9069', 19.7400, 100.0900, '114 ม.18 (อ้างอิงข้อมูลที่ตั้ง) ต.แม่เปา อ.พญาเม็งราย จ.เชียงราย 57290', NOW(), NOW())
 ON CONFLICT (short_name) DO NOTHING;
 
--- INSERT INTO departments (dept_sap, dept_short, dept_full, is_active, office_id, created_at, updated_at, updated_by)
--- VALUES
---   (100100, 'กอพ.1', 'กองอำนวยการพัฒนา 1', B'1', 1, NOW(), NOW(), 'SYSTEM'),
---   (100101, 'กอพ.2', 'กองอำนวยการพัฒนา 2', B'1', 1, NOW(), NOW(), 'SYSTEM'),
---   (100102, 'กอพ.3', 'กองอำนวยการพัฒนา 3', B'1', 1, NOW(), NOW(), 'SYSTEM')
--- ON CONFLICT (dept_sap) DO NOTHING;
+INSERT INTO departments (dept_sap, dept_short, dept_full, is_active, office_id, created_at, updated_at, updated_by)
+VALUES
+  (100100, 'กอพ.1', 'กองอำนวยการพัฒนา 1', B'1', 1, NOW(), NOW(), 'SYSTEM'),
+  (100101, 'กอพ.2', 'กองอำนวยการพัฒนา 2', B'1', 1, NOW(), NOW(), 'SYSTEM'),
+  (100102, 'กอพ.3', 'กองอำนวยการพัฒนา 3', B'1', 1, NOW(), NOW(), 'SYSTEM')
+ON CONFLICT (dept_sap) DO NOTHING;
 

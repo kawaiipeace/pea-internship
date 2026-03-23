@@ -1,5 +1,5 @@
-import { and, eq, sql } from "drizzle-orm";
-import { ConflictError } from "@/common/exceptions";
+import { and, eq, not, sql } from "drizzle-orm";
+import { ConflictError, NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
   applicationStatuses,
@@ -36,7 +36,7 @@ export class CheckTimeService {
       });
 
       if (!student) {
-        throw new Error("ไม่พบโปรไฟล์นักศึกษา");
+        throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
       }
 
       const activeApp = await tx.query.applicationStatuses.findFirst({
@@ -52,7 +52,7 @@ export class CheckTimeService {
       });
 
       if (!activeApp || !activeApp.department?.office) {
-        throw new Error("ไม่พบข้อมูลสำนักงานที่คุณกำลังฝึกงานอยู่");
+        throw new NotFoundError("ไม่พบข้อมูลสำนักงานที่คุณกำลังฝึกงานอยู่");
       }
 
       const officeLat = activeApp.department.office.latitude;
@@ -79,12 +79,18 @@ export class CheckTimeService {
       }
 
       const now = new Date();
-      const today = now.toLocaleDateString("en-CA");
+      const bkkFormatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Bangkok",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const todayStr = bkkFormatter.format(now);
 
       const existingLog = await tx.query.attendanceLogs.findFirst({
         where: and(
           eq(attendanceLogs.studentProfileId, student.id),
-          eq(attendanceLogs.workDate, today)
+          eq(attendanceLogs.workDate, todayStr)
         ),
       });
 
@@ -92,29 +98,37 @@ export class CheckTimeService {
         throw new ConflictError("คุณได้บันทึกเวลาเข้างานของวันนี้ไปแล้ว");
       }
 
-      const ipUsedToday = await tx.query.checkTimes.findFirst({
+      const ipUsedByOther = await tx.query.checkTimes.findFirst({
         where: and(
           eq(checkTimes.ip, ip),
           eq(checkTimes.typeCheck, "IN"),
-          sql`DATE(${checkTimes.time}) = ${today}`
+          sql`DATE(${checkTimes.time} AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok') = ${todayStr}`,
+          not(eq(checkTimes.userId, userId))
         ),
       });
 
-      if (ipUsedToday) {
-        throw new ConflictError("ไอพีนี้ถูกใช้บันทึกเวลาเข้างานไปแล้วในวันนี้");
+      if (ipUsedByOther) {
+        throw new ConflictError(
+          "ระบบตรวจพบการใช้งานอุปกรณ์ซ้ำ (ไม่อนุญาตให้เช็คอินแทนกันหรือใช้เครือข่ายร่วมกัน)"
+        );
       }
 
-      const workStartTime = new Date(now);
+      const bkkTimeStr = now.toLocaleString("en-US", {
+        timeZone: "Asia/Bangkok",
+      });
+      const currentBkkTime = new Date(bkkTimeStr);
+
+      const workStartTime = new Date(bkkTimeStr);
       workStartTime.setHours(9, 0, 0, 0);
 
       let isLate = false;
       let lateMinutes = 0;
       let status: "PRESENT" | "LATE" = "PRESENT";
 
-      if (now > workStartTime) {
+      if (currentBkkTime > workStartTime) {
         isLate = true;
         status = "LATE";
-        const diffMs = now.getTime() - workStartTime.getTime();
+        const diffMs = currentBkkTime.getTime() - workStartTime.getTime();
         lateMinutes = Math.floor(diffMs / 60000);
       }
 
@@ -138,13 +152,13 @@ export class CheckTimeService {
           .update(attendanceLogs)
           .set({
             checkInId: newCheckIn.id,
-            lateMinutes: existingLog.lateMinutes! + lateMinutes,
+            lateMinutes: (existingLog.lateMinutes || 0) + lateMinutes,
           })
           .where(eq(attendanceLogs.id, existingLog.id));
       } else {
         await tx.insert(attendanceLogs).values({
           studentProfileId: student.id,
-          workDate: today,
+          workDate: todayStr,
           checkInId: newCheckIn.id,
           lateMinutes: lateMinutes,
           dailyStatus: status,

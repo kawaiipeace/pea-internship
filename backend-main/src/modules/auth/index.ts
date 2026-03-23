@@ -31,6 +31,19 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
     }
   )
 
+  .post(
+    "/sign-in/intern/itt",
+    async ({ body, set }) => {
+      const response = authService.login_itt(body);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      body: model.LoginInternBody,
+    }
+  )
+
   .get("/sign-in/keycloak", async ({ request, redirect }) => {
     const response = await authService.loginWithKeycloak(request.headers);
 

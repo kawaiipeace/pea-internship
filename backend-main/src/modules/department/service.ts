@@ -27,12 +27,13 @@ export class DepartmentService {
       const terms = search.split(" ").filter(Boolean);
 
       if (terms.length > 0) {
-        const perTerm: SQL[] = terms.map((w) =>
-          or(
-            ilike(departments.deptShort, `%${w}%`),
-            ilike(departments.deptFull, `%${w}%`),
-            ilike(departments.peaCode, `%${w}%`)
-          )!
+        const perTerm: SQL[] = terms.map(
+          (w) =>
+            or(
+              ilike(departments.deptShort, `%${w}%`),
+              ilike(departments.deptFull, `%${w}%`),
+              ilike(departments.peaCode, `%${w}%`)
+            )!
         );
 
         filters.push(and(...perTerm)!);

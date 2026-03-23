@@ -3,10 +3,10 @@ import { Elysia } from "elysia";
 import { logger } from "elysia-logger";
 import swagger from "@/config/swagger";
 import { applicationTranscriptTimeoutCron } from "@/cron/application-transcript-timeout";
-import { applicationRequestTimeoutCron } from "./cron/application-request-timeout";
 import { auth } from "@/lib/auth";
 import { errorMiddleware } from "@/middlewares/error.middleware";
 import modules from "@/modules";
+import { applicationRequestTimeoutCron } from "./cron/application-request-timeout";
 
 const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
 const app = new Elysia()
