@@ -19,46 +19,46 @@ const CheckInPage = () => {
         if (locationStatus === 'searching') {
             return (
                 <div 
-                    className="flex flex-col items-center justify-center gap-[8px] cursor-pointer transition-all select-none"
+                    className="flex flex-row items-center justify-center gap-[16px] cursor-pointer transition-all select-none bg-[#F3F4F6] border border-[#E5E7EB] rounded-full pr-8 pl-3 py-2.5"
                     onClick={() => setLocationStatus('found')}
                     title="คลิกเพื่อจำลองการหาสถานที่เจอแบบในภาพ"
                 >
-                    <div className="rounded-full flex items-center justify-center w-[56px] h-[56px] bg-[#CECFD2]">
-                        <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[42px] h-[42px]">
-                            <IconMapPin className="w-7 h-7" />
+                    <div className="rounded-full flex items-center justify-center w-[44px] h-[44px] bg-[#CECFD2]">
+                        <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[32px] h-[32px]">
+                            <IconMapPin className="w-[18px] h-[18px]" />
                         </div>
                     </div>
-                    <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
+                    <div className="font-bold text-[17px] text-[#333741] whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
                 </div>
             );
         } else if (locationStatus === 'outside') {
             return (
                 <div 
-                    className="flex flex-col items-center justify-center gap-[8px] cursor-pointer transition-all select-none"
+                    className="flex flex-row items-center justify-center gap-[16px] cursor-pointer transition-all select-none bg-[#FEE4E2] border border-[#FDA29B] rounded-full pr-8 pl-3 py-2.5"
                     onClick={() => setLocationStatus('searching')}
                     title="คลิกเพื่อจำลองการค้นหาสถานที่"
                 >
-                    <div className="rounded-full flex items-center justify-center w-[56px] h-[56px] bg-[#F97066]" >
-                        <div className="bg-[#F04438] text-[#FEF3F2] rounded-full flex items-center justify-center w-[42px] h-[42px]">
-                            <IconMapPin className="w-7 h-7" />
+                    <div className="rounded-full flex items-center justify-center w-[44px] h-[44px] bg-[#F97066]" >
+                        <div className="bg-[#F04438] text-[#FEF3F2] rounded-full flex items-center justify-center w-[32px] h-[32px]">
+                            <IconMapPin className="w-[18px] h-[18px]" />
                         </div>
                     </div>
-                    <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">อยู่นอกสถานที่</div>
+                    <div className="font-bold text-[17px] text-[#333741] whitespace-nowrap">อยู่นอกสถานที่</div>
                 </div>
             );
         } else {
             return (
                 <div 
-                    className="flex flex-col items-center justify-center gap-[8px] cursor-pointer transition-all select-none"
+                    className="flex flex-row items-center justify-center gap-[16px] cursor-pointer transition-all select-none bg-[#D1FADF] border border-[#6CE9A6] rounded-full pr-8 pl-3 py-2.5"
                     onClick={() => setLocationStatus('outside')}
                     title="คลิกเพื่อจำลองว่าอยู่นอกสถานที่"
                 >
-                    <div className="rounded-full flex items-center justify-center w-[56px] h-[56px] bg-[#75E0A7]" >
-                        <div className="bg-[#42B86F] text-[#E4F5EA] rounded-full flex items-center justify-center w-[42px] h-[42px]">
-                            <IconMapPin className="w-7 h-7" />
+                    <div className="rounded-full flex items-center justify-center w-[44px] h-[44px] bg-[#75E0A7]" >
+                        <div className="bg-[#42B86F] text-[#E4F5EA] rounded-full flex items-center justify-center w-[32px] h-[32px]">
+                            <IconMapPin className="w-[18px] h-[18px]" />
                         </div>
                     </div>
-                    <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">อยู่ในสถานที่</div>
+                    <div className="font-bold text-[17px] text-[#333741] whitespace-nowrap">อยู่ในสถานที่</div>
                 </div>
             );
         }
@@ -124,83 +124,87 @@ const CheckInPage = () => {
 
     return (
         <>
-            {/* Desktop View */}
-            <div className="hidden md:flex panel -m-6 min-h-[calc(100vh-114px)] rounded-none border-0 flex-col bg-[#FFFCF6] p-6">
-                {/* Top Bar */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    {/* Location Status */}
-                    <div>
-                        {renderDesktopLocationStatus()}
-                    </div>
+            {/* ----- Desktop Global Fixed Background ----- */}
+            <div className="hidden md:block fixed inset-0 z-[1] pointer-events-none bg-[#fdfbfe]">
+                <div className="absolute inset-0 bg-[url('/bg-checkin.jpg')] bg-cover bg-center bg-no-repeat rotate-180 opacity-50"></div>
+            </div>
 
-                    {/* Progress Bar */}
-                    <div className="w-full md:w-5/12 max-w-[450px] space-y-2 pr-6">
-                        <div className="text-[15px] font-medium text-[#333741] dark:text-gray-300 mb-2">
+            {/* Desktop View */}
+            <div className="hidden md:flex panel -m-6 min-h-[calc(100vh-80px)] h-fit lg:h-[calc(100vh-80px)] rounded-none border-0 flex-col !bg-transparent p-6 relative z-[2] shadow-none overflow-hidden">
+                {/* Content Container */}
+                <div className="relative z-10 flex flex-col justify-center w-full h-full flex-1 gap-[16px] max-w-[764px] mx-auto my-auto">
+                    
+                    {/* Top Panel - Progress Bar (Figma Specs: W764, H72, Radius 15, Drop Shadow, Glass, Inside Stroke Gradient) */}
+                    <div className="relative rounded-[15px] w-full h-[72px] px-6 py-[13px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] bg-white/60 backdrop-blur-[4px] backdrop-saturate-[150%] flex flex-col justify-between">
+                        {/* Stroke Gradient Ring (Border Only) */}
+                        <div className="absolute inset-0 rounded-[15px] pointer-events-none p-[1px] bg-gradient-to-tl from-white/20 from-0% to-white to-100% [mask-image:linear-gradient(#fff,#fff),linear-gradient(#fff,#fff)] [mask-clip:content-box,border-box] [mask-composite:exclude] [-webkit-mask-composite:xor]"></div>
+                        
+                        <div className="text-[14px] font-bold text-[#333741] tracking-wide leading-none z-10">
                             ความคืบหน้าในการฝึกงาน
                         </div>
-                        <div className="flex items-center space-x-[10px]">
-                            {/* Track */}
-                            <div 
-                                className="w-[358px] h-[18px] shrink-0 rounded-full overflow bg-[#ECECED] dark:bg-[#1b2e4b]  shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.1)]"
-                            >
+                        <div className="flex items-center w-full gap-[10px] h-[22px] z-10">
+                            {/* Track Container (Shadow Inner) */}
+                            <div className="flex-1 h-[18px] rounded-full overflow-hidden bg-gradient-to-b from-[#e4e4e4] to-[#f8f8f8] dark:from-[#1b2e4b] dark:to-[#0f1928] shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.1)] relative flex items-center min-w-0">
                                 {/* Thumb */}
                                 <div 
-                                    className="text-white text-[9px] w-[256px] h-[18px] sm:text-[11px] flex justify-end pr-3 items-center font-medium rounded-full whitespace-nowrap bg-[#A80689] shadow-[inset_0px_-4px_6px_rgba(0,0,0,0.4),inset_0px_2px_3px_rgba(255,255,255,0.4)]" 
+                                    className="text-white text-[11px] w-[75%] h-[18px] flex justify-end pr-5 items-center font-medium rounded-full bg-[#A80689] shadow-[inset_0px_-4px_6px_rgba(0,0,0,0.4),inset_0px_2px_3px_rgba(255,255,255,0.4)]" 
                                 >
                                     420 ชั่วโมง
                                 </div>
                             </div>
-                            {/* Right standalone pill */}
+                            {/* Badge at the End */}
                             <div 
-                                className="text-white text-[9px] px-4 w-[70px] h-[22px] rounded-full font-medium flex items-center justify-center whitespace-nowrap shrink-0 bg-[#A80689] shadow-[inset_0px_-5px_7px_rgba(0,0,0,0.4),inset_0px_2px_4px_rgba(255,255,255,0.4)]"
+                                className="shrink-0 text-white text-[11px] px-3 min-w-[70px] h-[22px] rounded-full font-medium flex items-center justify-center bg-[#A80689] shadow-[inset_0px_-5px_7px_rgba(0,0,0,0.4),inset_0px_2px_4px_rgba(255,255,255,0.4)] whitespace-nowrap z-20"
                             >
                                 560 ชั่วโมง
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Center Time */}
-                <div className="flex-1 flex flex-col justify-center items-center mt-12 mb-10 space-y-6">
-                    <div className="text-[80px] font-bold text-black dark:text-white tracking-wider tabular-nums leading-none">
-                        {currentTime ? currentTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '00:00:00'}
-                    </div>
-                    <div className="text-[33px] font-medium text-black dark:text-gray-300">
-                        {currentTime ? formatDate(currentTime) : '-'}
-                    </div>
-                </div>
+                    {/* Main Panel - Content (Figma Specs: W764, H524, Radius 20, Drop Shadow, Glass, Inside Stroke Gradient) */}
+                    <div className="relative rounded-[20px] w-full h-[524px] flex-none p-10 shadow-[0_4px_15px_rgba(0,0,0,0.1)] bg-white/60 backdrop-blur-[4px] backdrop-saturate-[150%] flex flex-col items-center justify-center overflow-hidden">
+                        {/* Stroke Gradient Ring (Border Only) */}
+                        <div className="absolute inset-0 rounded-[20px] pointer-events-none p-[1px] bg-gradient-to-tl from-white/20 from-0% to-white to-100% [mask-image:linear-gradient(#fff,#fff),linear-gradient(#fff,#fff)] [mask-clip:content-box,border-box] [mask-composite:exclude] [-webkit-mask-composite:xor]"></div>
+                        
+                        {/* Center Time */}
+                        <div className="flex flex-col justify-center items-center -mt-6 space-y-4 text-center z-10">
+                            <div className="text-[70px] font-bold text-black tracking-wide tabular-nums leading-none">
+                                {currentTime ? currentTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '00:00:00'}
+                            </div>
+                            <div className="text-[28px] font-medium text-black tracking-wide">
+                                {currentTime ? formatDate(currentTime) : '-'}
+                            </div>
+                        </div>
 
-                {/* Bottom Buttons */}
-                <div className="flex flex-col justify-center items-center gap-[10px] mb-[100px]">
-                    <button type="button" className={`w-[235px] h-[48px] flex items-center justify-center font-bold rounded-[6px] text-[16px] transition-colors ${
-                        locationStatus === 'searching' 
-                            ? 'bg-[#EAEAEA] text-[#9A9A9A]' 
-                            : 'bg-[#A80689] text-white'
-                    }`}>
-                        ลงเวลาเข้างาน
-                    </button>
-                    <button type="button" className="w-[235px] h-[48px] flex items-center justify-center bg-[#ECECED] text-[#000000] font-bold rounded-[6px] text-[16px] dark:bg-[#1b2e4b] dark:text-[#888ea8]">
-                        ลงเวลาออกงาน
-                    </button>
+                        {/* Location Status Pill */}
+                        <div className="mt-14 mb-[70px] z-10">
+                            {renderDesktopLocationStatus()}
+                        </div>
+
+                        {/* Bottom Buttons */}
+                        <div className="flex flex-row justify-center items-center gap-[24px] z-10">
+                            <button type="button" className={`w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] transition-all hover:-translate-y-[1px] ${
+                                locationStatus === 'searching' 
+                                    ? 'bg-[#EAEAEA] text-[#9A9A9A] shadow-none' 
+                                    : 'bg-[#A80689] text-white hover:bg-[#8B0374] shadow-[0_4px_15px_rgba(168,6,137,0.3)]'
+                            }`}>
+                                ลงเวลาเข้างาน
+                            </button>
+                            <button type="button" className="w-[250px] h-[64px] flex items-center justify-center bg-[#F3F4F6] border border-[#E5E7EB] text-[#475467] font-bold rounded-[8px] text-[19px] transition-all hover:-translate-y-[1px] hover:bg-[#E5E7EB] shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+                                ลงเวลาออกงาน
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
+            {/* ----- Mobile Global Fixed Background ----- */}
+            <div className="md:hidden fixed inset-0 z-[1] pointer-events-none bg-[#fdfbfe]">
+                <div className="absolute inset-0 bg-[url('/bg-checkin.jpg')] bg-cover bg-center bg-no-repeat opacity-50"></div>
+            </div>
+
             {/* Mobile View (PWA) */}
-            <div className="flex md:hidden panel -m-6 min-h-[calc(100vh-114px)] rounded-none border-0 flex-col items-center pt-10 pb-16 relative overflow-hidden font-sans">
-                {/* Background Base */}
-                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none bg-[#fdfbfe]">
-                    {/* Top Left: #FDB022 (Yellow/Orange) */}
-                    <div className="absolute top-[-5%] left-[-15%] w-[60vw] min-w-[280px] h-[60vw] min-h-[280px] rounded-full bg-[#FDB022] opacity-[0.55] blur-[150px] animate-float1"></div>
-
-                    {/* Top Right: #C212F7 (Purple) */}
-                    <div className="absolute top-[-10%] right-[-15%] w-[60vw] min-w-[280px] h-[120vw] min-h-[280px] rounded-full bg-[#C212F7] opacity-[0.5] blur-[90px] animate-float2"></div>
-
-                    {/* Bottom Left: #A80689 (Magenta) */}
-                    <div className="absolute bottom-[-5%] left-[-15%] w-[65vw] min-w-[300px] h-[80vw] min-h-[300px] rounded-full bg-[#A80689] opacity-[0.45] blur-[70px] animate-float3"></div>
-
-                    {/* Bottom Right: #58F9FF (Cyan) */}
-                    <div className="absolute bottom-[-5%] right-[-15%] w-[65vw] min-w-[300px] h-[65vw] min-h-[300px] rounded-full bg-[#58F9FF] opacity-[0.55] blur-[200px] animate-float4"></div>
-                </div>
+            <div className="flex md:hidden panel -m-6 min-h-[calc(100vh-114px)] rounded-none border-0 flex-col items-center pt-10 pb-16 relative overflow-hidden font-sans z-[2] !bg-transparent shadow-none">
 
                 {/* Title */}
                 <h2 className="text-[#333741] text-[13px] font-medium mb-[85px] tracking-wide relative z-10">ความคืบหน้าในการฝึกงาน</h2>
@@ -209,7 +213,7 @@ const CheckInPage = () => {
                 <div className="bg-white w-[293px] h-[536px] max-w-[360px] rounded-[10px] shadow-[0_10px_30px_rgba(0,0,0,0.06)] relative z-10 flex flex-col items-center pt-[70px] pb-8 px-6">
                     
                     {/* Donut Chart overlapping top */}
-                    <div className="absolute -top-[65px] left-1/2 transform -translate-x-1/2 w-[130px] h-[130px] bg-white/40 backdrop-blur-md border border-white/60 rounded-full flex items-center justify-center shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+                    <div className="absolute -top-[57px] left-1/2 transform -translate-x-1/2 w-[114px] h-[114px] bg-white/40 backdrop-blur-md border border-white/60 rounded-full flex items-center justify-center shadow-[0_0_100px_rgba(0,0,0,0.1)]">
                         
                         <svg className="w-[110px] h-[110px] transform -rotate-90 relative z-10 overflow-visible">
                             <defs>
