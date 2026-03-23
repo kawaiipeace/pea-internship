@@ -4,6 +4,7 @@ CREATE TYPE public.internship_status_enum AS ENUM (
   'INTERVIEW',
   'REVIEW',
   'ACCEPT',
+  'AWAITING',
   'ACTIVE',
   'COMPLETE',
   'CANCEL'

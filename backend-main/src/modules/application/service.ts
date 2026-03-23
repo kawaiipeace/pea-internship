@@ -56,6 +56,26 @@ export class ApplicationService {
     });
   }
 
+  private async resolveStudentInternshipStatusAfterComplete(
+    tx: DbTx,
+    applicationId: number
+  ): Promise<"AWAITING" | "ACTIVE"> {
+    const [info] = await tx
+      .select({
+        startDate: applicationInformations.startDate,
+      })
+      .from(applicationInformations)
+      .where(eq(applicationInformations.applicationStatusId, applicationId));
+
+    const now = new Date();
+
+    if (info?.startDate && info.startDate > now) {
+      return "AWAITING";
+    }
+
+    return "ACTIVE";
+  }
+
   private async autoCompleteInternships(tx: DbTx, userId: string) {
     const now = new Date();
 
@@ -1150,25 +1170,37 @@ export class ApplicationService {
             "COMPLETE"
           );
 
+          const nextInternshipStatus =
+            await this.resolveStudentInternshipStatusAfterComplete(
+              tx,
+              applicationId
+            );
+
           await tx
             .update(studentProfiles)
-            .set({ internshipStatus: "ACTIVE" })
+            .set({ internshipStatus: nextInternshipStatus })
             .where(eq(studentProfiles.userId, app.userId));
 
           await tx.insert(notifications).values({
             userId: app.userId,
             title: "การสมัครเสร็จสมบูรณ์",
-            message: `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์`,
+            message:
+              nextInternshipStatus === "AWAITING"
+                ? `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์ กำลังรอถึงวันเริ่มฝึกงาน`
+                : `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์`,
             isRead: false,
           });
 
           await staffLogsService.log(
             tx,
             adminUserId,
-            `APPLICATION_STATUS_CHANGE applicationId=${applicationId} to=COMPLETE`
+            `APPLICATION_STATUS_CHANGE applicationId=${applicationId} to=COMPLETE internshipStatus=${nextInternshipStatus}`
           );
 
-          return { applicationStatus: "COMPLETE" };
+          return {
+            applicationStatus: "COMPLETE",
+            internshipStatus: nextInternshipStatus,
+          };
         }
       }
 
