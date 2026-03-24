@@ -8,8 +8,6 @@ const CheckInPage = () => {
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const [locationStatus, setLocationStatus] = useState<'searching' | 'found' | 'outside'>('found');
 
-    // Native OS Camera Tracking State
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [checkInActionType, setCheckInActionType] = useState<'in' | 'out' | null>(null);
 
     // Success Modal State
@@ -19,28 +17,19 @@ const CheckInPage = () => {
     // Confirm Clock Out Modal State
     const [showConfirmOutModal, setShowConfirmOutModal] = useState(false);
 
-    const handleCameraTrigger = (actionType: 'in' | 'out') => {
+    const handleCheckIn = (actionType: 'in' | 'out') => {
         setCheckInActionType(actionType);
-        if (fileInputRef.current) {
-            fileInputRef.current.click();
-        }
+        setCheckInTime(new Date());
+        setShowSuccessModal(true);
     };
 
-    const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setCheckInTime(new Date());
-            setShowSuccessModal(true);
-        }
-        if (e.target) {
-            e.target.value = ''; // Reset input to allow retaking
-        }
-    };
+
 
     const handleClockOut = () => {
         setCheckInActionType('out');
         setShowConfirmOutModal(true);
     };
+
     useEffect(() => {
         setCurrentTime(new Date());
         const timer = setInterval(() => {
@@ -187,15 +176,6 @@ const CheckInPage = () => {
 
     return (
         <>
-            {/* Hidden Input for Native OS Camera Capture (Uses Desktop/Mobile built-in camera/file-picker automatically) */}
-            <input
-                type="file"
-                accept="image/*"
-                capture="user"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handlePhotoCapture}
-            />
 
             {/* ----- Desktop Global Fixed Background ----- */}
             <div className="hidden md:block fixed inset-0 z-[1] pointer-events-none bg-[#fdfbfe]">
@@ -258,7 +238,7 @@ const CheckInPage = () => {
                         <div className="flex flex-col sm:flex-row justify-center items-center gap-[16px] sm:gap-[24px] w-full z-10">
                             <button
                                 type="button"
-                                onClick={() => handleCameraTrigger('in')}
+                                onClick={() => handleCheckIn('in')}
                                 className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] transition-all hover:-translate-y-[1px] ${locationStatus === 'searching'
                                         ? 'bg-[#EAEAEA] text-[#9A9A9A] shadow-none'
                                         : 'bg-[#A80689] text-white hover:bg-[#8B0374] shadow-[0_4px_15px_rgba(168,6,137,0.3)]'
@@ -334,7 +314,7 @@ const CheckInPage = () => {
                     <div className="flex flex-col items-center w-full max-w-[280px] gap-[24px] mt-[32px]">
                         <button
                             type="button"
-                            onClick={() => handleCameraTrigger('in')}
+                            onClick={() => handleCheckIn('in')}
                             className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${locationStatus === 'searching'
                                     ? 'bg-[#ECECED] text-[#9A9A9A]'
                                     : 'bg-[#A80689] text-white'
