@@ -479,7 +479,7 @@ const LeaveHistoryPage = () => {
                                         leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                                         leaveTo="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
                                       >
-                                        <Dialog.Panel as="div" className={`w-full sm:max-w-[700px] transform overflow-hidden text-left align-middle shadow-xl transition-all overflow-y-auto rounded-t-[25px] sm:rounded-2xl bg-[#ffffff] dark:bg-[#1A1A1A] p-5 sm:p-6 h-[606px] sm:h-[623px] max-h-[90vh] sm:max-h-none`}>
+                                        <Dialog.Panel as="div" className={`w-full sm:max-w-[700px] transform overflow-hidden text-left align-middle shadow-xl transition-all overflow-y-auto rounded-t-[20px] sm:rounded-[20px] bg-[#ffffff] dark:bg-[#1A1A1A] p-5 sm:p-6 h-[606px] sm:h-[623px] max-h-[90vh] sm:max-h-none`}>
 
                                             {/* Drawer Handle for mobile */}
                                             <div className="flex justify-center mb-4 sm:hidden">
