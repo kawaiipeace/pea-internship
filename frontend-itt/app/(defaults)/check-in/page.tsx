@@ -54,46 +54,46 @@ const CheckInPage = () => {
         if (locationStatus === 'searching') {
             return (
                 <div
-                    className="flex flex-row items-center justify-center gap-[16px] cursor-pointer transition-all select-none bg-[#F3F4F6] border border-[#E5E7EB] rounded-full pr-8 pl-3 py-2.5"
+                    className="flex flex-row items-center w-[180px] h-[40px] gap-[10px] cursor-pointer transition-all select-none bg-[#F3F4F6] rounded-[25px] pr-4 overflow-hidden"
                     onClick={() => setLocationStatus('found')}
                     title="คลิกเพื่อจำลองการหาสถานที่เจอแบบในภาพ"
                 >
-                    <div className="rounded-full flex items-center justify-center w-[44px] h-[44px] bg-[#CECFD2]">
-                        <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[32px] h-[32px]">
-                            <IconMapPin className="w-[18px] h-[18px]" />
+                    <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#CECFD2]">
+                        <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
+                            <IconMapPin className="w-[20px] h-[20px]" />
                         </div>
                     </div>
-                    <div className="font-bold text-[17px] text-[#333741] whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
+                    <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
                 </div>
             );
         } else if (locationStatus === 'outside') {
             return (
                 <div
-                    className="flex flex-row items-center justify-center gap-[16px] cursor-pointer transition-all select-none bg-[#FEE4E2] border border-[#FDA29B] rounded-full pr-8 pl-3 py-2.5"
+                    className="flex flex-row items-center w-[180px] h-[40px] gap-[10px] cursor-pointer transition-all select-none bg-[#FAF0DB] rounded-[25px] pr-4 overflow-hidden"
                     onClick={() => setLocationStatus('searching')}
                     title="คลิกเพื่อจำลองการค้นหาสถานที่"
                 >
-                    <div className="rounded-full flex items-center justify-center w-[44px] h-[44px] bg-[#F97066]" >
-                        <div className="bg-[#F04438] text-[#FEF3F2] rounded-full flex items-center justify-center w-[32px] h-[32px]">
-                            <IconMapPin className="w-[18px] h-[18px]" />
+                    <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#EDC878]">
+                        <div className="bg-[#E2A727] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
+                            <IconMapPin className="w-[20px] h-[20px]" />
                         </div>
                     </div>
-                    <div className="font-bold text-[17px] text-[#333741] whitespace-nowrap">อยู่นอกสถานที่</div>
+                    <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">อยู่นอกสถานที่</div>
                 </div>
             );
         } else {
             return (
                 <div
-                    className="flex flex-row items-center justify-center gap-[16px] cursor-pointer transition-all select-none bg-[#D1FADF] border border-[#6CE9A6] rounded-full pr-8 pl-3 py-2.5"
+                    className="flex flex-row items-center w-[180px] h-[40px] gap-[10px] cursor-pointer transition-all select-none bg-[#D1FADF] rounded-[25px] pr-4 overflow-hidden"
                     onClick={() => setLocationStatus('outside')}
                     title="คลิกเพื่อจำลองว่าอยู่นอกสถานที่"
                 >
-                    <div className="rounded-full flex items-center justify-center w-[44px] h-[44px] bg-[#75E0A7]" >
-                        <div className="bg-[#42B86F] text-[#E4F5EA] rounded-full flex items-center justify-center w-[32px] h-[32px]">
-                            <IconMapPin className="w-[18px] h-[18px]" />
+                    <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#75E0A7]">
+                        <div className="bg-[#42B86F] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
+                            <IconMapPin className="w-[20px] h-[20px]" />
                         </div>
                     </div>
-                    <div className="font-bold text-[17px] text-[#333741] whitespace-nowrap">อยู่ในสถานที่</div>
+                    <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">อยู่ในสถานที่</div>
                 </div>
             );
         }
