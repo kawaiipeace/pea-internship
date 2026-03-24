@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import {
@@ -45,6 +45,77 @@ const thaiMonthsFull = [
   "ธันวาคม",
 ];
 
+const toDateOnly = (dateString?: string | null): Date | null => {
+  if (!dateString) return null;
+
+  const datePart = dateString.split("T")[0]?.trim();
+  const plainMatch = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  let parsedDate: Date;
+  if (plainMatch) {
+    const [, year, month, day] = plainMatch;
+    parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
+  } else {
+    parsedDate = new Date(dateString);
+  }
+
+  if (Number.isNaN(parsedDate.getTime())) return null;
+  parsedDate.setHours(0, 0, 0, 0);
+  return parsedDate;
+};
+
+const formatShortThaiDate = (dateString?: string | null): string => {
+  const d = toDateOnly(dateString);
+  if (!d) return "-";
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const buddhistYearShort = String((d.getFullYear() + 543) % 100).padStart(
+    2,
+    "0",
+  );
+
+  return `${day}/${month}/${buddhistYearShort}`;
+};
+
+const parseLocalDateOnly = (raw?: string | null): Date | null => {
+  if (!raw) return null;
+  return toDateOnly(raw);
+};
+
+const parseISODate = (value?: string | null): Date | null => {
+  if (!value) return null;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, y, m, d] = match;
+  return new Date(Number(y), Number(m) - 1, Number(d));
+};
+
+const toISODate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+type InternTableStatus =
+  | "awaiting"
+  | "active"
+  | "completed"
+  | "cancelled"
+  | "accepted";
+
+type InternTableRow = {
+  id: number;
+  fullName: string;
+  positionName: string;
+  periodText: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  statusLabel: string;
+  statusType: InternTableStatus;
+};
+
 // Institution type mapping for education chart
 const INSTITUTION_TYPE_LABELS: Record<string, string> = {
   UNIVERSITY: "มหาวิทยาลัย",
@@ -74,6 +145,9 @@ const STATUS_MAP: Record<AppStatusEnum, { label: string; color: string }> = {
 export default function OwnerDashboard() {
   const currentYear = new Date().getFullYear() + 543; // Buddhist Era
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [monthlyChartMode, setMonthlyChartMode] = useState<
+    "applicants" | "interns"
+  >("applicants");
 
   // API-based stats
   const [apiStats, setApiStats] = useState<AnnouncementStats>({
@@ -101,6 +175,40 @@ export default function OwnerDashboard() {
   // Position list pagination
   const [posPage, setPosPage] = useState(1);
   const posPerPage = 2;
+
+  // Intern list table states
+  const [internSearch, setInternSearch] = useState("");
+  const [internPositionSearch, setInternPositionSearch] = useState("");
+  const [selectedInternTrainingStartDate, setSelectedInternTrainingStartDate] =
+    useState("");
+  const [selectedInternTrainingEndDate, setSelectedInternTrainingEndDate] =
+    useState("");
+  const [draftInternTrainingStartDate, setDraftInternTrainingStartDate] =
+    useState("");
+  const [draftInternTrainingEndDate, setDraftInternTrainingEndDate] =
+    useState("");
+  const [showInternPeriodDropdown, setShowInternPeriodDropdown] =
+    useState(false);
+  const [internTrainingDateViewMonth, setInternTrainingDateViewMonth] =
+    useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [internPage, setInternPage] = useState(1);
+  const internsPerPage = 5;
+  const internPeriodDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        internPeriodDropdownRef.current &&
+        !internPeriodDropdownRef.current.contains(target)
+      ) {
+        setShowInternPeriodDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -154,8 +262,8 @@ export default function OwnerDashboard() {
     loadStats();
   }, []);
 
-  // Monthly data from real applications
-  const monthlyData = useMemo(() => {
+  // Monthly data: all applicants
+  const monthlyApplicantsData = useMemo(() => {
     const selectedCE = selectedYear - 543;
     const counts = Array(12).fill(0);
     allApps.forEach((app) => {
@@ -170,6 +278,30 @@ export default function OwnerDashboard() {
       count: counts[i],
     }));
   }, [allApps, selectedYear]);
+
+  // Monthly data: interns who were accepted and had documents passed.
+  // In current workflow this maps to COMPLETE status.
+  const monthlyInternsData = useMemo(() => {
+    const selectedCE = selectedYear - 543;
+    const counts = Array(12).fill(0);
+    allApps.forEach((app) => {
+      if (app.applicationStatus !== "COMPLETE") return;
+      const d = new Date(app.createdAt);
+      if (d.getFullYear() === selectedCE) {
+        counts[d.getMonth()]++;
+      }
+    });
+    return Array.from({ length: 12 }, (_, i) => ({
+      month: thaiMonthsShort[i],
+      monthFull: thaiMonthsFull[i],
+      count: counts[i],
+    }));
+  }, [allApps, selectedYear]);
+
+  const monthlyData =
+    monthlyChartMode === "applicants"
+      ? monthlyApplicantsData
+      : monthlyInternsData;
 
   const maxMonthly = Math.max(...monthlyData.map((d) => d.count), 1);
 
@@ -267,6 +399,229 @@ export default function OwnerDashboard() {
   }, [allApps, positionNames, positions]);
 
   const maxAccepted = Math.max(...positionData.map((d) => d.accepted), 1);
+
+  const internTableData = useMemo<InternTableRow[]>(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    return allApps
+      .map((app) => {
+        const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
+        const endDate = toDateOnly(app.infoEndDate || app.profileEndDate);
+        const fullName = `${app.fname || ""} ${app.lname || ""}`.trim() || "-";
+        const positionName = app.positionName || "ตำแหน่งไม่ระบุ";
+        const periodText = `${formatShortThaiDate(app.infoStartDate || app.profileStartDate)} - ${formatShortThaiDate(app.infoEndDate || app.profileEndDate)}`;
+
+        const internshipCancelled =
+          app.studentInternshipStatus === "CANCEL" ||
+          (app.applicationStatus === "CANCEL" && app.isActive === false);
+
+        if (internshipCancelled) {
+          return {
+            id: app.applicationId,
+            fullName,
+            positionName,
+            periodText,
+            startDate,
+            endDate,
+            statusLabel: "ยกเลิกฝึกงาน",
+            statusType: "cancelled" as const,
+          };
+        }
+
+        // Accepted + document passed flow for this dashboard view.
+        if (app.applicationStatus !== "COMPLETE") return null;
+
+        const isAwaiting =
+          (startDate && now.getTime() < startDate.getTime()) ||
+          app.studentInternshipStatus === "AWAITING";
+        if (isAwaiting) {
+          return {
+            id: app.applicationId,
+            fullName,
+            positionName,
+            periodText,
+            startDate,
+            endDate,
+            statusLabel: "รอเริ่มฝึกงาน",
+            statusType: "awaiting" as const,
+          };
+        }
+
+        const isActiveByPeriod =
+          !!startDate &&
+          !!endDate &&
+          now.getTime() >= startDate.getTime() &&
+          now.getTime() <= endDate.getTime();
+        const isActiveByStatus = app.studentInternshipStatus === "ACTIVE";
+        if (isActiveByPeriod || isActiveByStatus) {
+          return {
+            id: app.applicationId,
+            fullName,
+            positionName,
+            periodText,
+            startDate,
+            endDate,
+            statusLabel: "อยู่ระหว่างฝึกงาน",
+            statusType: "active" as const,
+          };
+        }
+
+        const isCompleted =
+          app.studentInternshipStatus === "COMPLETE" ||
+          (!!endDate && now.getTime() > endDate.getTime());
+        if (isCompleted) {
+          return {
+            id: app.applicationId,
+            fullName,
+            positionName,
+            periodText,
+            startDate,
+            endDate,
+            statusLabel: "ฝึกงานเสร็จสิ้น",
+            statusType: "completed" as const,
+          };
+        }
+
+        return {
+          id: app.applicationId,
+          fullName,
+          positionName,
+          periodText,
+          startDate,
+          endDate,
+          statusLabel: "รับเข้าฝึกงาน",
+          statusType: "accepted" as const,
+        };
+      })
+      .filter((row): row is InternTableRow => row !== null);
+  }, [allApps]);
+
+  const filteredInternTableData = useMemo(() => {
+    const nameKeyword = internSearch.trim().toLowerCase();
+    const positionKeyword = internPositionSearch.trim().toLowerCase();
+    const filterStart = parseISODate(selectedInternTrainingStartDate);
+    const filterEnd = parseISODate(selectedInternTrainingEndDate);
+
+    return internTableData.filter((row) => {
+      const matchName = nameKeyword
+        ? row.fullName.toLowerCase().includes(nameKeyword)
+        : true;
+      const matchPosition = positionKeyword
+        ? row.positionName.toLowerCase().includes(positionKeyword)
+        : true;
+      const matchPeriod = (() => {
+        if (!filterStart && !filterEnd) return true;
+        if (!row.startDate || !row.endDate) return false;
+        if (filterStart && row.endDate.getTime() < filterStart.getTime())
+          return false;
+        if (filterEnd && row.startDate.getTime() > filterEnd.getTime())
+          return false;
+        return true;
+      })();
+
+      return matchName && matchPosition && matchPeriod;
+    });
+  }, [
+    internSearch,
+    internPositionSearch,
+    selectedInternTrainingStartDate,
+    selectedInternTrainingEndDate,
+    internTableData,
+  ]);
+
+  useEffect(() => {
+    setInternPage(1);
+  }, [
+    internSearch,
+    internPositionSearch,
+    selectedInternTrainingStartDate,
+    selectedInternTrainingEndDate,
+  ]);
+
+  const getInternTrainingDateDisplayText = () => {
+    if (!selectedInternTrainingStartDate && !selectedInternTrainingEndDate)
+      return "ระยะเวลาฝึกงาน";
+    if (selectedInternTrainingStartDate && selectedInternTrainingEndDate) {
+      return `${formatShortThaiDate(selectedInternTrainingStartDate)} - ${formatShortThaiDate(selectedInternTrainingEndDate)}`;
+    }
+    if (selectedInternTrainingStartDate)
+      return formatShortThaiDate(selectedInternTrainingStartDate);
+    return formatShortThaiDate(selectedInternTrainingEndDate);
+  };
+
+  const openInternTrainingDateDropdown = () => {
+    const selectedDate =
+      parseISODate(selectedInternTrainingStartDate) ||
+      parseISODate(selectedInternTrainingEndDate);
+    const base = selectedDate || new Date();
+    setDraftInternTrainingStartDate(selectedInternTrainingStartDate);
+    setDraftInternTrainingEndDate(selectedInternTrainingEndDate);
+    setInternTrainingDateViewMonth(
+      new Date(base.getFullYear(), base.getMonth(), 1),
+    );
+    setShowInternPeriodDropdown(true);
+  };
+
+  const internTrainingDateWeekdayLabels = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+
+  const internTrainingDateCells = useMemo(() => {
+    const year = internTrainingDateViewMonth.getFullYear();
+    const month = internTrainingDateViewMonth.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const startWeekDay = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    const cells: { date: Date; inCurrentMonth: boolean }[] = [];
+
+    for (let i = startWeekDay - 1; i >= 0; i--) {
+      cells.push({
+        date: new Date(year, month - 1, prevMonthDays - i),
+        inCurrentMonth: false,
+      });
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push({ date: new Date(year, month, d), inCurrentMonth: true });
+    }
+
+    while (cells.length % 7 !== 0) {
+      const nextDay = cells.length - (startWeekDay + daysInMonth) + 1;
+      cells.push({
+        date: new Date(year, month + 1, nextDay),
+        inCurrentMonth: false,
+      });
+    }
+
+    return cells;
+  }, [internTrainingDateViewMonth]);
+
+  const totalInternPages = Math.max(
+    1,
+    Math.ceil(filteredInternTableData.length / internsPerPage),
+  );
+  const currentInternPage = Math.min(internPage, totalInternPages);
+  const currentInternRows = filteredInternTableData.slice(
+    (currentInternPage - 1) * internsPerPage,
+    currentInternPage * internsPerPage,
+  );
+
+  const getInternStatusBadgeClass = (statusType: InternTableStatus) => {
+    switch (statusType) {
+      case "awaiting":
+        return "bg-[#FEF3C7] text-[#B45309] border-[#FCD34D]";
+      case "active":
+        return "bg-[#FEF3C7] text-[#B45309] border-[#FCD34D]";
+      case "completed":
+        return "bg-[#DCFAE6] text-[#085D3A] border-[#A9EFC5]";
+      case "cancelled":
+        return "bg-[#FEE4E2] text-[#B42318] border-[#FECDCA]";
+      default:
+        return "bg-[#EEF2F6] text-[#344054] border-[#D0D5DD]";
+    }
+  };
 
   // Pagination for position list
   const totalPosPages = Math.ceil(positionData.length / posPerPage);
@@ -645,9 +1000,64 @@ export default function OwnerDashboard() {
 
         {/* จำนวนผู้สมัครฝึกงาน - Bar Chart */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">
-            จำนวนผู้สมัครฝึกงาน ปี {selectedYear}
-          </h3>
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <h3 className="text-lg font-bold text-gray-900">
+              {monthlyChartMode === "applicants"
+                ? "จำนวนผู้สมัครฝึกงาน"
+                : "จำนวนนักศึกษาฝึกงาน"}{" "}
+              ปี {selectedYear}
+            </h3>
+            <div className="inline-flex items-center rounded-2xl bg-gray-100 p-1.5 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setMonthlyChartMode("applicants")}
+                className={`px-4 py-2 text-sm rounded-xl transition-colors border flex items-center gap-2.5 cursor-pointer ${
+                  monthlyChartMode === "applicants"
+                    ? "bg-white border-gray-200 text-gray-700"
+                    : "bg-transparent border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <svg
+                  width="22"
+                  height="16"
+                  viewBox="0 0 22 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="shrink-0"
+                >
+                  <path
+                    d="M16.55 5.175L20.075 1.625C20.275 1.425 20.5125 1.325 20.7875 1.325C21.0625 1.325 21.3 1.425 21.5 1.625C21.7 1.825 21.8 2.0625 21.8 2.3375C21.8 2.6125 21.7 2.85 21.5 3.05L17.25 7.3C17.05 7.5 16.8167 7.6 16.55 7.6C16.2833 7.6 16.05 7.5 15.85 7.3L13.725 5.175C13.525 4.975 13.425 4.7375 13.425 4.4625C13.425 4.1875 13.525 3.95 13.725 3.75C13.925 3.55 14.1583 3.45 14.425 3.45C14.6917 3.45 14.925 3.55 15.125 3.75L16.55 5.175ZM5.175 6.825C4.39167 6.04167 4 5.1 4 4C4 2.9 4.39167 1.95833 5.175 1.175C5.95833 0.391667 6.9 0 8 0C9.1 0 10.0417 0.391667 10.825 1.175C11.6083 1.95833 12 2.9 12 4C12 5.1 11.6083 6.04167 10.825 6.825C10.0417 7.60833 9.1 8 8 8C6.9 8 5.95833 7.60833 5.175 6.825ZM0 14V13.2C0 12.6333 0.145833 12.1125 0.4375 11.6375C0.729167 11.1625 1.11667 10.8 1.6 10.55C2.63333 10.0333 3.68333 9.64583 4.75 9.3875C5.81667 9.12917 6.9 9 8 9C9.1 9 10.1833 9.12917 11.25 9.3875C12.3167 9.64583 13.3667 10.0333 14.4 10.55C14.8833 10.8 15.2708 11.1625 15.5625 11.6375C15.8542 12.1125 16 12.6333 16 13.2V14C16 14.55 15.8042 15.0208 15.4125 15.4125C15.0208 15.8042 14.55 16 14 16H2C1.45 16 0.979167 15.8042 0.5875 15.4125C0.195833 15.0208 0 14.55 0 14ZM2 14H14V13.2C14 13.0167 13.9542 12.85 13.8625 12.7C13.7708 12.55 13.65 12.4333 13.5 12.35C12.6 11.9 11.6917 11.5625 10.775 11.3375C9.85833 11.1125 8.93333 11 8 11C7.06667 11 6.14167 11.1125 5.225 11.3375C4.30833 11.5625 3.4 11.9 2.5 12.35C2.35 12.4333 2.22917 12.55 2.1375 12.7C2.04583 12.85 2 13.0167 2 13.2V14ZM9.4125 5.4125C9.80417 5.02083 10 4.55 10 4C10 3.45 9.80417 2.97917 9.4125 2.5875C9.02083 2.19583 8.55 2 8 2C7.45 2 6.97917 2.19583 6.5875 2.5875C6.19583 2.97917 6 3.45 6 4C6 4.55 6.19583 5.02083 6.5875 5.4125C6.97917 5.80417 7.45 6 8 6C8.55 6 9.02083 5.80417 9.4125 5.4125Z"
+                    fill="#61646C"
+                  />
+                </svg>
+                ผู้สมัครทั้งหมด
+              </button>
+              <button
+                type="button"
+                onClick={() => setMonthlyChartMode("interns")}
+                className={`px-4 py-2 text-sm rounded-xl transition-colors border flex items-center gap-2.5 cursor-pointer ${
+                  monthlyChartMode === "interns"
+                    ? "bg-white border-gray-200 text-gray-700"
+                    : "bg-transparent border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <svg
+                  width="24"
+                  height="12"
+                  viewBox="0 0 24 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="shrink-0"
+                >
+                  <path
+                    d="M1 12C0.716667 12 0.479167 11.9042 0.2875 11.7125C0.0958333 11.5208 0 11.2833 0 11V10.425C0 9.70833 0.366667 9.125 1.1 8.675C1.83333 8.225 2.8 8 4 8C4.21667 8 4.425 8.00417 4.625 8.0125C4.825 8.02083 5.01667 8.04167 5.2 8.075C4.96667 8.425 4.79167 8.79167 4.675 9.175C4.55833 9.55833 4.5 9.95833 4.5 10.375V12H1ZM7 12C6.71667 12 6.47917 11.9042 6.2875 11.7125C6.09583 11.5208 6 11.2833 6 11V10.375C6 9.84167 6.14583 9.35417 6.4375 8.9125C6.72917 8.47083 7.14167 8.08333 7.675 7.75C8.20833 7.41667 8.84583 7.16667 9.5875 7C10.3292 6.83333 11.1333 6.75 12 6.75C12.8833 6.75 13.6958 6.83333 14.4375 7C15.1792 7.16667 15.8167 7.41667 16.35 7.75C16.8833 8.08333 17.2917 8.47083 17.575 8.9125C17.8583 9.35417 18 9.84167 18 10.375V11C18 11.2833 17.9042 11.5208 17.7125 11.7125C17.5208 11.9042 17.2833 12 17 12H7ZM19.5 12V10.375C19.5 9.94167 19.4458 9.53333 19.3375 9.15C19.2292 8.76667 19.0667 8.40833 18.85 8.075C19.0333 8.04167 19.2208 8.02083 19.4125 8.0125C19.6042 8.00417 19.8 8 20 8C21.2 8 22.1667 8.22083 22.9 8.6625C23.6333 9.10417 24 9.69167 24 10.425V11C24 11.2833 23.9042 11.5208 23.7125 11.7125C23.5208 11.9042 23.2833 12 23 12H19.5ZM8.125 10H15.9C15.7333 9.66667 15.2708 9.375 14.5125 9.125C13.7542 8.875 12.9167 8.75 12 8.75C11.0833 8.75 10.2458 8.875 9.4875 9.125C8.72917 9.375 8.275 9.66667 8.125 10ZM4 7C3.45 7 2.97917 6.80417 2.5875 6.4125C2.19583 6.02083 2 5.55 2 5C2 4.43333 2.19583 3.95833 2.5875 3.575C2.97917 3.19167 3.45 3 4 3C4.56667 3 5.04167 3.19167 5.425 3.575C5.80833 3.95833 6 4.43333 6 5C6 5.55 5.80833 6.02083 5.425 6.4125C5.04167 6.80417 4.56667 7 4 7ZM20 7C19.45 7 18.9792 6.80417 18.5875 6.4125C18.1958 6.02083 18 5.55 18 5C18 4.43333 18.1958 3.95833 18.5875 3.575C18.9792 3.19167 19.45 3 20 3C20.5667 3 21.0417 3.19167 21.425 3.575C21.8083 3.95833 22 4.43333 22 5C22 5.55 21.8083 6.02083 21.425 6.4125C21.0417 6.80417 20.5667 7 20 7ZM12 6C11.1667 6 10.4583 5.70833 9.875 5.125C9.29167 4.54167 9 3.83333 9 3C9 2.15 9.29167 1.4375 9.875 0.8625C10.4583 0.2875 11.1667 0 12 0C12.85 0 13.5625 0.2875 14.1375 0.8625C14.7125 1.4375 15 2.15 15 3C15 3.83333 14.7125 4.54167 14.1375 5.125C13.5625 5.70833 12.85 6 12 6ZM12 4C12.2833 4 12.5208 3.90417 12.7125 3.7125C12.9042 3.52083 13 3.28333 13 3C13 2.71667 12.9042 2.47917 12.7125 2.2875C12.5208 2.09583 12.2833 2 12 2C11.7167 2 11.4792 2.09583 11.2875 2.2875C11.0958 2.47917 11 2.71667 11 3C11 3.28333 11.0958 3.52083 11.2875 3.7125C11.4792 3.90417 11.7167 4 12 4Z"
+                    fill="#61646C"
+                  />
+                </svg>
+                นักศึกษาฝึกงานทั้งหมด
+              </button>
+            </div>
+          </div>
           <div className="flex items-end gap-3 h-56 relative">
             {monthlyData.map((d, i) => (
               <div
@@ -697,10 +1107,388 @@ export default function OwnerDashboard() {
           </div>
           {peakMonthIndex >= 0 && (
             <p className="text-sm text-gray-500 text-center mt-4">
-              ช่วงเวลาที่มีผู้สมัครมากที่สุด:{" "}
-              {monthlyData[peakMonthIndex].monthFull}
+              ช่วงเวลาที่มี
+              {monthlyChartMode === "applicants"
+                ? "ผู้สมัคร"
+                : "นักศึกษาฝึกงาน"}
+              มากที่สุด: {monthlyData[peakMonthIndex].monthFull}
             </p>
           )}
+        </div>
+
+        {/* รายการรายชื่อนักศึกษาฝึกงาน */}
+        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            รายการรายชื่อนักศึกษาฝึกงาน
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={internSearch}
+                onChange={(e) => setInternSearch(e.target.value)}
+                placeholder="ข้อมูลผู้สมัคร..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-300 shadow-sm hover:border-primary-600 outline-none text-gray-700 bg-white text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-100 transition"
+              />
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={internPositionSearch}
+                onChange={(e) => setInternPositionSearch(e.target.value)}
+                placeholder="ตำแหน่ง..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-300 shadow-sm hover:border-primary-600 outline-none text-gray-700 bg-white text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-100 transition"
+              />
+            </div>
+
+            <div className="relative" ref={internPeriodDropdownRef}>
+              <button
+                type="button"
+                onClick={() =>
+                  showInternPeriodDropdown
+                    ? setShowInternPeriodDropdown(false)
+                    : openInternTrainingDateDropdown()
+                }
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 shadow-sm hover:border-primary-600 outline-none text-gray-700 bg-white flex items-center justify-between cursor-pointer text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-100 transition"
+              >
+                <span
+                  className={`truncate ${selectedInternTrainingStartDate || selectedInternTrainingEndDate ? "text-gray-700" : "text-gray-500"}`}
+                >
+                  {getInternTrainingDateDisplayText()}
+                </span>
+                <div className="flex items-center gap-2 ml-2">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {(selectedInternTrainingStartDate ||
+                    selectedInternTrainingEndDate) && (
+                    <span
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedInternTrainingStartDate("");
+                        setSelectedInternTrainingEndDate("");
+                        setDraftInternTrainingStartDate("");
+                        setDraftInternTrainingEndDate("");
+                      }}
+                      className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                      title="ล้างช่วงวันที่"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {showInternPeriodDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setInternTrainingDateViewMonth(
+                          (prev) =>
+                            new Date(
+                              prev.getFullYear(),
+                              prev.getMonth() - 1,
+                              1,
+                            ),
+                        )
+                      }
+                      className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                      aria-label="เดือนก่อนหน้า"
+                    >
+                      ←
+                    </button>
+                    <div className="text-lg font-semibold text-gray-800">
+                      {thaiMonthsFull[internTrainingDateViewMonth.getMonth()]}{" "}
+                      {internTrainingDateViewMonth.getFullYear() + 543}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setInternTrainingDateViewMonth(
+                          (prev) =>
+                            new Date(
+                              prev.getFullYear(),
+                              prev.getMonth() + 1,
+                              1,
+                            ),
+                        )
+                      }
+                      className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                      aria-label="เดือนถัดไป"
+                    >
+                      →
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {internTrainingDateWeekdayLabels.map((label) => (
+                      <div
+                        key={label}
+                        className="text-center text-gray-500 text-xs font-medium py-1.5"
+                      >
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1">
+                    {internTrainingDateCells.map(({ date, inCurrentMonth }) => {
+                      const iso = toISODate(date);
+                      const hasStart = !!draftInternTrainingStartDate;
+                      const hasEnd = !!draftInternTrainingEndDate;
+                      const isStart = draftInternTrainingStartDate === iso;
+                      const isEnd = draftInternTrainingEndDate === iso;
+                      const isInRange =
+                        hasStart &&
+                        hasEnd &&
+                        iso > draftInternTrainingStartDate &&
+                        iso < draftInternTrainingEndDate;
+
+                      return (
+                        <button
+                          key={iso}
+                          type="button"
+                          onClick={() => {
+                            if (
+                              !draftInternTrainingStartDate ||
+                              draftInternTrainingEndDate
+                            ) {
+                              setDraftInternTrainingStartDate(iso);
+                              setDraftInternTrainingEndDate("");
+                            } else if (iso < draftInternTrainingStartDate) {
+                              setDraftInternTrainingEndDate(
+                                draftInternTrainingStartDate,
+                              );
+                              setDraftInternTrainingStartDate(iso);
+                            } else {
+                              setDraftInternTrainingEndDate(iso);
+                            }
+
+                            if (!inCurrentMonth) {
+                              setInternTrainingDateViewMonth(
+                                new Date(
+                                  date.getFullYear(),
+                                  date.getMonth(),
+                                  1,
+                                ),
+                              );
+                            }
+                          }}
+                          className={`h-8 rounded-md text-xs font-medium transition ${
+                            isStart || isEnd
+                              ? "bg-primary-600 text-white"
+                              : isInRange
+                                ? "bg-gray-100 text-gray-700"
+                                : inCurrentMonth
+                                  ? "text-gray-700 hover:bg-gray-100"
+                                  : "text-gray-300 hover:bg-gray-100"
+                          }`}
+                        >
+                          {date.getDate()}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftInternTrainingStartDate("");
+                        setDraftInternTrainingEndDate("");
+                      }}
+                      className="py-2.5 rounded-lg border border-gray-300 text-gray-600 bg-gray-50 hover:bg-gray-100 transition font-medium text-sm"
+                    >
+                      เคลียร์
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedInternTrainingStartDate(
+                          draftInternTrainingStartDate,
+                        );
+                        setSelectedInternTrainingEndDate(
+                          draftInternTrainingEndDate,
+                        );
+                        setShowInternPeriodDropdown(false);
+                      }}
+                      className="py-2.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition font-medium text-sm"
+                    >
+                      ตกลง
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0 text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-gray-700">
+                  <th className="text-left font-semibold px-4 py-3 rounded-tl-xl">
+                    ชื่อ - นามสกุล
+                  </th>
+                  <th className="text-left font-semibold px-4 py-3">ตำแหน่ง</th>
+                  <th className="text-left font-semibold px-4 py-3">
+                    ระยะเวลาฝึกงาน
+                  </th>
+                  <th className="text-left font-semibold px-4 py-3 rounded-tr-xl">
+                    สถานะ
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentInternRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-8 text-center text-gray-400"
+                    >
+                      ไม่พบข้อมูลนักศึกษาฝึกงาน
+                    </td>
+                  </tr>
+                ) : (
+                  currentInternRows.map((row) => (
+                    <tr key={row.id} className="text-gray-900">
+                      <td className="px-4 py-4 border-b border-gray-200">
+                        {row.fullName}
+                      </td>
+                      <td className="px-4 py-4 border-b border-gray-200 max-w-70">
+                        <span className="line-clamp-2">{row.positionName}</span>
+                      </td>
+                      <td className="px-4 py-4 border-b border-gray-200">
+                        {row.periodText}
+                      </td>
+                      <td className="px-4 py-4 border-b border-gray-200">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getInternStatusBadgeClass(row.statusType)}`}
+                        >
+                          {row.statusLabel}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <p className="text-sm text-gray-500">
+              แสดง{" "}
+              {filteredInternTableData.length === 0
+                ? 0
+                : (currentInternPage - 1) * internsPerPage + 1}
+              -
+              {Math.min(
+                currentInternPage * internsPerPage,
+                filteredInternTableData.length,
+              )}{" "}
+              จากทั้งหมด {filteredInternTableData.length}
+            </p>
+
+            <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setInternPage(Math.max(1, currentInternPage - 1))
+                }
+                disabled={currentInternPage === 1}
+                className="w-10 h-9 text-gray-500 hover:bg-gray-50 disabled:opacity-40"
+              >
+                ‹
+              </button>
+              {Array.from({ length: totalInternPages }, (_, i) => i + 1)
+                .slice(
+                  Math.max(0, currentInternPage - 3),
+                  Math.max(0, currentInternPage - 3) + 4,
+                )
+                .map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setInternPage(page)}
+                    className={`w-10 h-9 text-sm border-l border-gray-200 ${
+                      page === currentInternPage
+                        ? "bg-gray-200 text-gray-900 font-semibold"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              <button
+                type="button"
+                onClick={() =>
+                  setInternPage(
+                    Math.min(totalInternPages, currentInternPage + 1),
+                  )
+                }
+                disabled={currentInternPage === totalInternPages}
+                className="w-10 h-9 border-l border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40"
+              >
+                ›
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* การรับเข้าแยกตามตำแหน่ง - Horizontal Bar Chart */}
