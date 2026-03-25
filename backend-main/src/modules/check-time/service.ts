@@ -5,6 +5,8 @@ import {
   applicationStatuses,
   attendanceLogs,
   checkTimes,
+  offsiteTaskStudents,
+  offsiteTasks,
   studentProfiles,
 } from "@/db/schema";
 import type * as checkSchema from "./model";
@@ -55,6 +57,15 @@ export class CheckTimeService {
         throw new NotFoundError("ไม่พบข้อมูลสำนักงานที่คุณกำลังฝึกงานอยู่");
       }
 
+      const now = new Date();
+      const bkkFormatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Bangkok",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const todayStr = bkkFormatter.format(now);
+
       const officeLat = activeApp.department.office.latitude;
       const officeLon = activeApp.department.office.longitude;
 
@@ -74,18 +85,31 @@ export class CheckTimeService {
           isOnsite = true;
           finalLocationText = `ในสถานที่ (ห่าง ${Math.round(distance)} เมตร)`;
         } else {
-          finalLocationText = `นอกสถานที่ (ห่าง ${Math.round(distance)} เมตร)`;
+          isOnsite = false;
+          const assignedTask = await tx
+            .select()
+            .from(offsiteTaskStudents)
+            .innerJoin(
+              offsiteTasks,
+              eq(offsiteTaskStudents.taskId, offsiteTasks.id)
+            )
+            .where(
+              and(
+                eq(offsiteTaskStudents.studentId, userId),
+                eq(offsiteTasks.workDate, todayStr)
+              )
+            );
+
+          if (assignedTask.length === 0) {
+            throw new ConflictError(
+              "ไม่อนุญาตให้เช็คอินนอกสถานที่ เนื่องจากคุณไม่มีกำหนดการปฏิบัติงานนอกสถานที่ในวันนี้ (ต้องอยู่ในรัศมี 300 เมตรจากสำนักงาน)"
+            );
+          }
+
+          const locationName = assignedTask[0].offsite_tasks.locationName;
+          finalLocationText = `นอกสถานที่: ${locationName} (ห่างสำนักงาน ${Math.round(distance)} เมตร)`;
         }
       }
-
-      const now = new Date();
-      const bkkFormatter = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Bangkok",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      });
-      const todayStr = bkkFormatter.format(now);
 
       const existingLog = await tx.query.attendanceLogs.findFirst({
         where: and(
