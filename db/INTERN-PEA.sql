@@ -107,7 +107,7 @@ CREATE TABLE -- all
     created_by BPCHAR (20) NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_by BPCHAR (20) NOT NULL,
-    is_deleted BIT (1) NULL DEFAULT B '0',
+    is_deleted BIT (1) NULL DEFAULT B'0',
     dept_stable_code TEXT NULL,
     dept_sap_short TEXT NULL,
     dept_sap_full TEXT NULL,

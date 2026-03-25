@@ -9,6 +9,7 @@ import {
   pgEnum,
   pgTable,
   pgView,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -947,3 +948,49 @@ export const studentAttendanceSummary = pgView("student_attendance_summary", {
   sumLeaveHours: numeric("sum_leave_hours", { precision: 10, scale: 2 }),
   totalLateMinutes: integer("total_late_minutes"),
 }).existing();
+
+export const offsiteTasks = pgTable(
+  "offsite_tasks",
+  {
+    id: serial("id").primaryKey().notNull(),
+    assignedBy: varchar("assigned_by", { length: 50 }).notNull(),
+    workDate: date("work_date").notNull(),
+    locationName: varchar("location_name", { length: 255 }).notNull(),
+    taskDetail: text("task_detail").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.assignedBy],
+      foreignColumns: [users.id],
+      name: "offsite_tasks_assigned_by_fkey",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const offsiteTaskStudents = pgTable(
+  "offsite_task_students",
+  {
+    taskId: integer("task_id").notNull(),
+    studentId: varchar("student_id", { length: 50 }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.studentId] }),
+    foreignKey({
+      columns: [table.taskId],
+      foreignColumns: [offsiteTasks.id],
+      name: "task_students_task_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.studentId],
+      foreignColumns: [users.id],
+      name: "task_students_student_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);
