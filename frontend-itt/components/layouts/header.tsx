@@ -149,21 +149,19 @@ const Header = () => {
         <header className={`z-40 ${themeConfig.semidark && themeConfig.menu === 'horizontal' ? 'dark' : ''}`}>
             <div className="shadow-sm">
                 <div className="relative flex w-full items-center bg-white px-5 py-2.5 dark:bg-black">
-                    {/* Show hamburger + logo in header only when sidebar is closed */}
-                    {themeConfig.sidebar && (
-                        <div className="flex items-center gap-3 ltr:mr-4 rtl:ml-4">
-                            <button
-                                type="button"
-                                className="collapse-icon flex flex-none rounded-full p-2 hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
-                                onClick={() => dispatch(toggleSidebar())}
-                            >
-                                <IconMenu className="h-5 w-5 text-[#6B7280]" />
-                            </button>
-                            <Link href="/" className="main-logo flex shrink-0 items-center">
-                                <img className="inline w-32 flex-none" src="/assets/images/logo.svg" alt="logo" />
-                            </Link>
-                        </div>
-                    )}
+                    {/* Show hamburger + logo in header always on mobile, and only when sidebar is closed on desktop */}
+                    <div className={`flex items-center gap-3 ltr:mr-4 rtl:ml-4 ${themeConfig.sidebar ? 'flex' : 'lg:hidden'}`}>
+                        <button
+                            type="button"
+                            className="collapse-icon flex flex-none rounded-full p-2 hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
+                            onClick={() => dispatch(toggleSidebar())}
+                        >
+                            <IconMenu className="h-5 w-5 text-[#6B7280]" />
+                        </button>
+                        <Link href="/" className="main-logo flex shrink-0 items-center">
+                            <img className="inline w-32 flex-none" src="/assets/images/logo.svg" alt="logo" />
+                        </Link>
+                    </div>
 
                     <div className="flex items-center space-x-1.5 ltr:ml-auto rtl:mr-auto rtl:space-x-reverse dark:text-[#d0d2d6] lg:space-x-2">
                         <div>
