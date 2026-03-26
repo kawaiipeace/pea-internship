@@ -33,4 +33,27 @@ export const checkTime = new Elysia({
           "รับพิกัด Latitude, Longitude เพื่อบันทึกเวลาเข้างาน และคำนวณระยะทาง",
       },
     }
+  )
+  .post(
+    "/out",
+    async ({ set, headers, user, body }) => {
+      const userId = user.id;
+      const ipHeader =
+        headers["x-forwarded-for"] || headers["x-real-ip"] || "unknown";
+      const ipAddress = Array.isArray(ipHeader) ? ipHeader[0] : ipHeader;
+
+      const result = await checkTimeService.out(userId, ipAddress, body);
+
+      set.status = 201;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.STUDENT],
+      body: checkSchema.CheckTimeSchema,
+      detail: {
+        summary: "บันทึกเวลาออกงาน (Check-out)",
+        description:
+          "รับพิกัดเพื่อบันทึกเวลาออกงาน ตรวจสอบระยะทาง และคำนวณชั่วโมงการทำงาน",
+      },
+    }
   );

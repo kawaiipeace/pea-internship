@@ -10,6 +10,7 @@ import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
 import { ownerStudents } from "./manualEndInternships";
 import { notification } from "./notification";
+import { offsiteTasks } from "./outside";
 import { position } from "./positions";
 import { role } from "./role";
 import { staffLogs } from "./staff-logs";
@@ -29,6 +30,7 @@ const modules = new Elysia({ prefix: "/api" })
   .use(ApplicationDocuments)
   .use(ownerStudents)
   .use(staffLogs)
+  .use(offsiteTasks)
   .use(checkTime)
   .use(applicationStatusActionsModule);
 export default modules;
