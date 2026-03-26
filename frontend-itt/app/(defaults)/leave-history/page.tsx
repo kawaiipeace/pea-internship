@@ -62,6 +62,18 @@ const LeaveHistoryPage = () => {
 
     const [historyData, setHistoryData] = useState([
         {
+            id: 0,
+            date: '1', month: 'ม.ค.', labelMobile: '1 มกราคม', time: 'ลางานเต็มวัน', status: 'ไม่อนุมัติการลา', statusType: 'danger',
+            isLeave: true,
+            statusText: 'ไม่อนุมัติการลา',
+            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
+            leaveDuration: 'ลาเต็มวัน',
+            leaveType: 'ลาป่วย',
+            evidence: 'ลาป่วย.jpg',
+            evidenceSize: '(1MB)',
+            leaveReason: 'ไม่ผ่านการพิจารณา'
+        },
+        {
             id: 1,
             date: '13', month: 'ม.ค.', labelMobile: '13 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
             isLeave: true,
@@ -142,15 +154,15 @@ const LeaveHistoryPage = () => {
     const getStatusBadge = (type: string, status: string) => {
         let colorClass = '';
         if (type === 'success') {
-            colorClass = 'px-3 py-1 bg-[#DCFAE6] text-[#085D3A] rounded-md flex items-center text-xs font-bold whitespace-nowrap';
+            colorClass = 'w-[70px] h-[20px] bg-[#DCFAE6] text-[#085D3A] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
         } else if (type === 'warning') {
-            colorClass = 'px-2.5 py-1 bg-[#FDF2E2] text-[#D97706] rounded-md flex items-center text-[11px] font-bold whitespace-nowrap';
+            colorClass = 'w-[70px] h-[20px] bg-[#F0F1F1] text-[#61646C] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
         } else if (type === 'info') {
-            colorClass = 'px-3 py-1 bg-[#e5f5ff] text-[#3b82f6] rounded-md flex items-center text-xs font-bold whitespace-nowrap';
+            colorClass = 'w-[70px] h-[20px] bg-[#e5f5ff] text-[#3b82f6] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
         } else if (type === 'danger') {
-            colorClass = 'px-3 py-1 bg-[#ffeaeb] text-[#ef4444] rounded-md flex items-center text-xs font-bold whitespace-nowrap';
+            colorClass = 'w-[70px] h-[20px] bg-[#ffeaeb] text-[#ef4444] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
         } else {
-            colorClass = 'px-3 py-1 bg-[#F3F4F6] text-gray-400 rounded-md flex items-center text-xs font-bold whitespace-nowrap';
+            colorClass = 'w-[70px] h-[20px] bg-[#F3F4F6] text-gray-400 rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
         }
 
         return (
@@ -253,47 +265,49 @@ const LeaveHistoryPage = () => {
                                             </div>
                                             <div className="flex items-center gap-1.5 translate-y-[-2px]">
                                                 {getStatusBadge(item.statusType, item.status)}
-                                                <button
-                                                    type="button"
-                                                    className="text-gray-500 hover:text-red-500 transition-colors p-1"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        Swal.fire({
-                                                            title: 'ต้องการยกเลิกการลา',
-                                                            showCancelButton: true,
-                                                            confirmButtonText: 'ยืนยัน',
-                                                            cancelButtonText: 'ยกเลิก',
-                                                            buttonsStyling: false,
-                                                            reverseButtons: true,
-                                                            customClass: {
-                                                                popup: 'rounded-[20px] p-5 w-auto max-w-[320px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                title: 'text-[16px] font-bold text-black dark:text-white pt-2 pb-4 text-center',
-                                                                actions: 'flex gap-3 w-full justify-center mt-3',
-                                                                confirmButton: 'bg-[#A80689] hover:bg-[#8e0573] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                                cancelButton: 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
-                                                            }
-                                                        }).then((result) => {
-                                                            if (result.isConfirmed) {
-                                                                setHistoryData(prev => prev.filter(h => h.id !== item.id));
-                                                                Swal.fire({
-                                                                    title: 'ยกเลิกสำเร็จ!',
-                                                                    
-                                                                    icon: 'success',
-                                                                    buttonsStyling: false,
-                                                                    customClass: {
-                                                                        popup: 'rounded-[20px] p-5 w-auto max-w-[320px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                        title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center',
-                                                                        htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                        confirmButton: 'bg-[#A80689] hover:bg-[#8e0573] text-white font-bold py-2.5 px-8 rounded-[12px] text-[15px] min-w-[120px]'
-                                                                    },
-                                                                    confirmButtonText: 'ตกลง'
-                                                                });
-                                                            }
-                                                        });
-                                                    }}
-                                                >
-                                                    <IconTrash className="w-4 h-4" />
-                                                </button>
+                                                {item.statusType === 'warning' && (
+                                                    <button
+                                                        type="button"
+                                                        className="text-gray-500 hover:text-red-500 transition-colors p-1"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            Swal.fire({
+                                                                title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
+                                                                icon: 'error',
+                                                                showCancelButton: true,
+                                                                confirmButtonText: 'ตกลง',
+                                                                cancelButtonText: 'ย้อนกลับ',
+                                                                buttonsStyling: false,
+                                                                reverseButtons: true,
+                                                                customClass: {
+                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
+                                                                    actions: 'flex gap-3 w-full justify-center mt-3',
+                                                                    confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
+                                                                    cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
+                                                                }
+                                                            }).then((result) => {
+                                                                if (result.isConfirmed) {
+                                                                    setHistoryData(prev => prev.filter(h => h.id !== item.id));
+                                                                    Swal.fire({
+                                                                        title: 'ยกเลิกสำเร็จ!',
+                                                                        icon: 'success',
+                                                                        buttonsStyling: false,
+                                                                        customClass: {
+                                                                            popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                                                                            title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                                                                            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+                                                                            confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                                                                        },
+                                                                        confirmButtonText: 'ตกลง'
+                                                                    });
+                                                                }
+                                                            });
+                                                        }}
+                                                    >
+                                                        <IconTrash className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                         
@@ -353,47 +367,49 @@ const LeaveHistoryPage = () => {
 
                                         <div className="flex items-center gap-3 ml-auto">
                                             {getStatusBadge(item.statusType, item.status)}
-                                            <button
-                                                type="button"
-                                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    Swal.fire({
-                                                        title: 'ต้องการยกเลิกการลา',
-                                                        showCancelButton: true,
-                                                        confirmButtonText: 'ยืนยัน',
-                                                        cancelButtonText: 'ยกเลิก',
-                                                        buttonsStyling: false,
-                                                        reverseButtons: true,
-                                                        customClass: {
-                                                            popup: 'rounded-[20px] p-5 w-auto max-w-[320px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                            title: 'text-[16px] font-bold text-black dark:text-white pt-2 pb-4 text-center',
-                                                            actions: 'flex gap-3 w-full justify-center mt-3',
-                                                            confirmButton: 'bg-[#A80689] hover:bg-[#8e0573] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                            cancelButton: 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
-                                                        }
-                                                    }).then((result) => {
-                                                        if (result.isConfirmed) {
-                                                            setHistoryData(prev => prev.filter(h => h.id !== item.id));
+                                                {item.statusType === 'warning' && (
+                                                    <button
+                                                        type="button"
+                                                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
                                                             Swal.fire({
-                                                                title: 'ยกเลิกสำเร็จ!',
-                                                               
-                                                                icon: 'success',
+                                                                title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
+                                                                icon: 'error',
+                                                                showCancelButton: true,
+                                                                confirmButtonText: 'ตกลง',
+                                                                cancelButtonText: 'ย้อนกลับ',
                                                                 buttonsStyling: false,
+                                                                reverseButtons: true,
                                                                 customClass: {
-                                                                    popup: 'rounded-[20px] p-5 w-auto max-w-[320px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center',
-                                                                    htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                    confirmButton: 'bg-[#A80689] hover:bg-[#8e0573] text-white font-bold py-2.5 px-8 rounded-[12px] text-[15px] min-w-[120px]'
-                                                                },
-                                                                confirmButtonText: 'ตกลง'
+                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
+                                                                    actions: 'flex gap-3 w-full justify-center mt-3',
+                                                                    confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
+                                                                    cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
+                                                                }
+                                                            }).then((result) => {
+                                                                if (result.isConfirmed) {
+                                                                    setHistoryData(prev => prev.filter(h => h.id !== item.id));
+                                                                    Swal.fire({
+                                                                        title: 'ยกเลิกสำเร็จ!',
+                                                                        icon: 'success',
+                                                                        buttonsStyling: false,
+                                                                        customClass: {
+                                                                            popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                                                                            title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                                                                            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+                                                                            confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                                                                        },
+                                                                        confirmButtonText: 'ตกลง'
+                                                                    });
+                                                                }
                                                             });
-                                                        }
-                                                    });
-                                                }}
-                                            >
-                                                <IconTrash className="w-5 h-5" />
-                                            </button>
+                                                        }}
+                                                    >
+                                                        <IconTrash className="w-5 h-5" />
+                                                    </button>
+                                                )}
                                         </div>
                                     </div>
                                 </div>
@@ -463,7 +479,7 @@ const LeaveHistoryPage = () => {
                                         leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                                         leaveTo="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
                                       >
-                                        <Dialog.Panel as="div" className={`w-full sm:max-w-[700px] transform overflow-hidden text-left align-middle shadow-xl transition-all overflow-y-auto rounded-t-[25px] sm:rounded-2xl bg-[#ffffff] dark:bg-[#1A1A1A] p-5 sm:p-6 h-[606px] sm:h-[623px] max-h-[90vh] sm:max-h-none`}>
+                                        <Dialog.Panel as="div" className={`w-full sm:max-w-[700px] transform overflow-hidden text-left align-middle shadow-xl transition-all overflow-y-auto rounded-t-[20px] sm:rounded-[20px] bg-[#ffffff] dark:bg-[#1A1A1A] p-5 sm:p-6 h-[606px] sm:h-[623px] max-h-[90vh] sm:max-h-none`}>
 
                                             {/* Drawer Handle for mobile */}
                                             <div className="flex justify-center mb-4 sm:hidden">
@@ -486,7 +502,7 @@ const LeaveHistoryPage = () => {
                                                             <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                                                                 selectedHistoryItem.statusType === 'success' ? 'bg-[#E6F4EA] text-[#0D652D]' :
                                                                 selectedHistoryItem.statusType === 'danger' ? 'bg-[#FFE4E6] text-[#E11D48]' :
-                                                                selectedHistoryItem.statusType === 'warning' ? 'bg-[#FFFBEB] text-[#D97706]' :
+                                                                selectedHistoryItem.statusType === 'warning' ? 'bg-[#F0F1F1] text-[#61646C]' :
                                                                 'bg-[#F3F4F6] text-gray-600'
                                                             }`}>
                                                                 {selectedHistoryItem.status}
@@ -508,11 +524,11 @@ const LeaveHistoryPage = () => {
                                                         </div>
 
                                                         {/* Divider */}
-                                                        <hr className="w-full h-[1px] bg-[#F3F4F6] border-none mt-5 sm:mt-auto mb-1" />
+                                                        <hr className="w-full sm:w-[353px] h-[1px] bg-[#CECFD2] border-none mt-3 sm:mt-3 mb-1 self-start" />
                                                     </div>
 
                                                     {/* Card 1: Details */}
-                                                    <div className="w-full sm:w-[636px] bg-[#FFFDF9] dark:bg-[#1C1710] border border-[#FEF3C7] rounded-xl px-4 py-4 mt-4 flex flex-col justify-center mx-auto space-y-3.5">
+                                                    <div className="w-full sm:w-[636px] sm:h-[168px] bg-[#FEFBF6] dark:bg-[#1C1710] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
                                                         <div className="flex items-center gap-2">
                                                             <IconMapPin className="w-[18px] h-[18px] text-gray-800 dark:text-gray-300 stroke-[1.5px]" />
                                                             <div className="font-bold text-[14px] text-gray-800 dark:text-gray-100">อยู่นอกสถานที่</div>
@@ -554,7 +570,7 @@ const LeaveHistoryPage = () => {
                                                     </div>
 
                                                     {/* Card 2: Evidence & Reason */}
-                                                    <div className="w-full sm:w-[636px] bg-[#FFFDF9] dark:bg-[#1A1A1A] border border-[#FEF3C7] rounded-xl px-4 py-4 mt-4 flex flex-col justify-center mx-auto space-y-3.5">
+                                                    <div className="w-full sm:w-[636px] sm:h-[168px] bg-[#FEFBF6] dark:bg-[#1A1A1A] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
                                                         <div className="space-y-1.5">
                                                             <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
                                                                 <IconCamera className="w-[18px] h-[18px]" />

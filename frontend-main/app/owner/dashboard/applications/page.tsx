@@ -32,12 +32,6 @@ import {
   type AppStatusEnum,
   type MyApplicationData,
 } from "@/services/api";
-import {
-  highSchools,
-  vocationalSchools,
-  highVocationalSchools,
-  universities,
-} from "../../../data/institutions";
 
 // Thai month names
 const thaiMonths = [
@@ -434,6 +428,78 @@ function ApplicationsContent() {
   const institutionDropdownRef = useRef<HTMLDivElement>(null);
   const trainingDateDropdownRef = useRef<HTMLDivElement>(null);
 
+  const institutionsByCategory = useMemo(() => {
+    const grouped: Record<string, string[]> = {
+      high_school: [],
+      vocational: [],
+      high_vocational: [],
+      university: [],
+      other: [],
+    };
+    const seenByCategory: Record<string, Set<string>> = {
+      high_school: new Set<string>(),
+      vocational: new Set<string>(),
+      high_vocational: new Set<string>(),
+      university: new Set<string>(),
+      other: new Set<string>(),
+    };
+
+    allApplications.forEach((app) => {
+      const institutionName = (app.institution || "").trim();
+      if (!institutionName) return;
+
+      const categoryId =
+        app.education &&
+        Object.prototype.hasOwnProperty.call(grouped, app.education)
+          ? app.education
+          : "other";
+
+      if (!seenByCategory[categoryId].has(institutionName)) {
+        seenByCategory[categoryId].add(institutionName);
+        grouped[categoryId].push(institutionName);
+      }
+    });
+
+    Object.keys(grouped).forEach((categoryId) => {
+      grouped[categoryId].sort((a, b) => a.localeCompare(b, "th"));
+    });
+
+    return grouped;
+  }, [allApplications]);
+
+  // Institution categories for dropdown (show only categories that have real data)
+  const institutionCategories = useMemo(() => {
+    const baseCategories = [
+      { id: "high_school", label: "มัธยมศึกษาตอนปลาย" },
+      { id: "vocational", label: "ประกาศนียบัตรวิชาชีพ (ปวช.)" },
+      { id: "high_vocational", label: "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)" },
+      { id: "university", label: "มหาวิทยาลัย" },
+      { id: "other", label: "อื่น ๆ" },
+    ];
+
+    return baseCategories.filter(
+      (cat) => (institutionsByCategory[cat.id] || []).length > 0,
+    );
+  }, [institutionsByCategory]);
+
+  useEffect(() => {
+    const validCategoryIds = new Set(
+      institutionCategories.map((cat) => cat.id),
+    );
+    setSelectedInstitutions((prev) => {
+      const next = prev.filter((id) => validCategoryIds.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+
+    const validSchools = new Set(
+      Object.values(institutionsByCategory).flatMap((schools) => schools),
+    );
+    setSelectedSchools((prev) => {
+      const next = prev.filter((school) => validSchools.has(school));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [institutionCategories, institutionsByCategory]);
+
   // Fetch timeline actions when selected application changes
   useEffect(() => {
     if (!selectedApplication) {
@@ -481,14 +547,6 @@ function ApplicationsContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Institution categories for dropdown
-  const institutionCategories = [
-    { id: "high_school", label: "มัธยมศึกษาตอนปลาย" },
-    { id: "vocational", label: "ประกาศนียบัตรวิชาชีพ (ปวช.)" },
-    { id: "high_vocational", label: "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)" },
-    { id: "university", label: "มหาวิทยาลัย" },
-  ];
-
   const handleInstitutionToggle = (id: string) => {
     setSelectedInstitutions((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
@@ -497,7 +555,10 @@ function ApplicationsContent() {
 
   const getInstitutionDisplayText = () => {
     if (selectedInstitutions.length === 0) return "ชื่อสถาบันศึกษา";
-    if (selectedInstitutions.length === institutionCategories.length)
+    if (
+      institutionCategories.length > 0 &&
+      selectedInstitutions.length === institutionCategories.length
+    )
       return "ทั้งหมด";
     return selectedInstitutions
       .map((id) => institutionCategories.find((c) => c.id === id)?.label || id)
@@ -505,18 +566,7 @@ function ApplicationsContent() {
   };
 
   const getSchoolsByCategory = (categoryId: string): string[] => {
-    switch (categoryId) {
-      case "high_school":
-        return highSchools.slice(0, 3);
-      case "vocational":
-        return vocationalSchools.slice(0, 3);
-      case "high_vocational":
-        return highVocationalSchools.slice(0, 3);
-      case "university":
-        return universities.slice(0, 4);
-      default:
-        return [];
-    }
+    return institutionsByCategory[categoryId] || [];
   };
 
   const toggleCategoryExpand = (categoryId: string) => {
@@ -853,15 +903,7 @@ function ApplicationsContent() {
         }
         // Check category-level match
         if (selectedInstitutions.length > 0) {
-          const eduMap: Record<string, string> = {
-            high_school: "high_school",
-            vocational: "vocational",
-            high_vocational: "high_vocational",
-            university: "university",
-          };
-          return selectedInstitutions.some(
-            (instId) => app.education === eduMap[instId],
-          );
+          return selectedInstitutions.includes(app.education);
         }
         return false;
       });
@@ -2150,7 +2192,7 @@ function ApplicationsContent() {
           <div className="border-t border-gray-100">
             <button
               onClick={() => setShowMentorInfo(!showMentorInfo)}
-              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <span className="font-semibold text-gray-900">
                 ข้อมูลพี่เลี้ยง
@@ -2758,7 +2800,7 @@ function ApplicationsContent() {
           <div className="border-t border-gray-100">
             <button
               onClick={() => setShowMentorInfo(!showMentorInfo)}
-              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <span className="font-semibold text-gray-900">
                 ข้อมูลพี่เลี้ยง
@@ -3507,7 +3549,7 @@ function ApplicationsContent() {
           <div className="border-t border-gray-100">
             <button
               onClick={() => setShowMentorInfo(!showMentorInfo)}
-              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <span className="font-semibold text-gray-900">
                 ข้อมูลพี่เลี้ยง
@@ -4810,7 +4852,7 @@ function ApplicationsContent() {
         <div className="border-t border-gray-100">
           <button
             onClick={() => setShowMentorInfo(!showMentorInfo)}
-            className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <span className="font-semibold text-gray-900">ข้อมูลพี่เลี้ยง</span>
             <svg
@@ -5221,7 +5263,8 @@ function ApplicationsContent() {
                     d="M19 9l-7 7-7-7"
                   />
                 </svg>
-                {selectedInstitutions.length > 0 && (
+                {(selectedInstitutions.length > 0 ||
+                  selectedSchools.length > 0) && (
                   <span
                     role="button"
                     onClick={(e) => {
