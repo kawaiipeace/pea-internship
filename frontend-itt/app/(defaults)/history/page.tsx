@@ -168,7 +168,7 @@ const AttendanceHistoryPage = () => {
             {/* Summary Section */}
             <div className="shrink-0 flex flex-col gap-[16px]">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-[17px] font-bold text-[#b40e56]">สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})</h2>
+                    <h2 className="text-[17px] font-bold text-[#B10073]">สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})</h2>
                     {selectedFilter && (
                         <button
                             onClick={() => setSelectedFilter(null)}
@@ -206,7 +206,7 @@ const AttendanceHistoryPage = () => {
 
             {/* History List Section */}
             <div className="shrink-0 flex flex-col gap-[16px]">
-                <h2 className="text-[17px] font-bold text-[#b40e56]">
+                <h2 className="text-[17px] font-bold text-[#B10073]">
                     รายการประวัติการลงเวลา {selectedFilter && <span className="text-sm font-normal text-gray-500 ml-2">(แสดงเฉพาะ: {selectedFilter})</span>}
                 </h2>
                 <div className="flex flex-col gap-[14px]">
@@ -296,7 +296,7 @@ const AttendanceHistoryPage = () => {
                         >
                             <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px]" />
                         </Transition.Child>
-                        <div className="fixed inset-0 overflow-y-auto lg:pl-[260px]">
+                        <div className="fixed inset-0 overflow-y-auto">
                             <div className={`flex min-h-full justify-center p-0 sm:p-4 text-center ${isEditingTime ? 'items-stretch sm:items-center' : 'items-end sm:items-center'}`}>
                                 <Transition.Child
                                     as={Fragment}

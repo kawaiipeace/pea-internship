@@ -151,6 +151,24 @@ export default function RegisterPage() {
     }
   };
 
+  const getInstitutionTypeForCreate = (
+    education: string,
+  ): "UNIVERSITY" | "VOCATIONAL" | "SCHOOL" | "OTHERS" | null => {
+    switch (education) {
+      case "university":
+        return "UNIVERSITY";
+      case "vocational":
+      case "high_vocational":
+        return "VOCATIONAL";
+      case "high_school":
+        return "SCHOOL";
+      case "other":
+        return "OTHERS";
+      default:
+        return null;
+    }
+  };
+
   // Debounce timer ref for institution search
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -243,10 +261,7 @@ export default function RegisterPage() {
         }
         return undefined;
       case "institution":
-        if (!value.trim()) return "จำเป็นต้องระบุ";
-        if (formData.education === "other") return undefined;
-        // บังคับเลือกจาก dropdown เท่านั้น
-        if (!selectedInstitutionId) return "กรุณาเลือกสถานศึกษาจากรายการ";
+        if (!value.trim()) return "กรุณาระบุชื่อสถานศึกษา";
         return undefined;
       case "faculty":
         // Only required for university
@@ -496,15 +511,6 @@ export default function RegisterPage() {
     setTouched(allTouched);
 
     if (validateForm()) {
-      // ตรวจสอบว่าเลือกสถานศึกษาจาก dropdown แล้ว
-      if (formData.education !== "other" && !selectedInstitutionId) {
-        setErrors((prev) => ({
-          ...prev,
-          institution: "กรุณาเลือกสถานศึกษาจากรายการ",
-        }));
-        return;
-      }
-
       // แสดง popup ยืนยันการลงทะเบียน
       setShowRegisterConfirm(true);
     }
@@ -515,21 +521,84 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       let institutionIdToSubmit = selectedInstitutionId;
+      const institutionName = formData.institution.trim();
 
-      // การศึกษาอื่น ๆ: ถ้าพิมพ์เองและยังไม่ได้เลือกจาก dropdown ให้สร้างสถาบันใหม่ด้วย POST /institution
-      if (!institutionIdToSubmit && formData.education === "other") {
-        const institutionName = formData.institution.trim();
-        const created = await institutionApi.createInstitution({
-          institutionsType: "OTHERS",
-          name: institutionName,
-        });
-        institutionIdToSubmit = created.id;
+      if (!institutionName) {
+        setErrors((prev) => ({
+          ...prev,
+          institution: "กรุณาระบุชื่อสถานศึกษา",
+        }));
+        return;
+      }
+
+      if (!institutionIdToSubmit) {
+        const normalizedName = institutionName.toLowerCase();
+        const matchedInstitution = apiInstitutions.find(
+          (inst) => inst.name.trim().toLowerCase() === normalizedName,
+        );
+
+        if (matchedInstitution) {
+          institutionIdToSubmit = matchedInstitution.id;
+        }
+      }
+
+      // ถ้ายังไม่มี institutionId ให้สร้างสถาบันใหม่จากชื่อที่พิมพ์
+      if (!institutionIdToSubmit) {
+        const institutionType = getInstitutionTypeForCreate(formData.education);
+
+        if (!institutionType) {
+          setErrors((prev) => ({
+            ...prev,
+            institution: "กรุณาเลือกระดับการศึกษา",
+          }));
+          return;
+        }
+
+        try {
+          const created = await institutionApi.createInstitution({
+            institutionsType: institutionType,
+            name: institutionName,
+          });
+          institutionIdToSubmit = created.id;
+        } catch (createError: unknown) {
+          // ถ้าชื่อมีอยู่แล้ว ให้ค้นหาเพื่อหยิบ id เดิมมาใช้
+          if (
+            createError &&
+            typeof createError === "object" &&
+            "response" in createError
+          ) {
+            const axiosError = createError as {
+              response?: { status?: number };
+            };
+
+            if (axiosError.response?.status === 409) {
+              const fallbackResults = await institutionApi.getInstitutions(
+                institutionType,
+                institutionName,
+                100,
+              );
+              const fallback = fallbackResults.find(
+                (inst) =>
+                  inst.name.trim().toLowerCase() ===
+                  institutionName.toLowerCase(),
+              );
+
+              if (fallback) {
+                institutionIdToSubmit = fallback.id;
+              }
+            }
+          }
+
+          if (!institutionIdToSubmit) {
+            throw createError;
+          }
+        }
       }
 
       if (!institutionIdToSubmit) {
         setErrors((prev) => ({
           ...prev,
-          institution: "กรุณาเลือกสถานศึกษาจากรายการ",
+          institution: "ไม่สามารถใช้งานชื่อสถานศึกษานี้ได้ กรุณาลองใหม่",
         }));
         return;
       }
@@ -961,22 +1030,12 @@ export default function RegisterPage() {
                   onBlur={() => {
                     // ปิด dropdown
                     setTimeout(() => setShowInstitutionDropdown(false), 200);
-                    // ถ้าพิมพ์แต่ไม่ได้เลือกจาก dropdown — เคลียร์ข้อความ & แสดง error
-                    if (
-                      formData.education !== "other" &&
-                      formData.institution.trim() &&
-                      !selectedInstitutionId
-                    ) {
-                      setFormData((prev) => ({ ...prev, institution: "" }));
-                    }
                     handleBlur("institution");
                   }}
                   placeholder={
-                    formData.education === "other"
-                      ? "พิมพ์เพื่อค้นหา หรือระบุชื่อสถานศึกษา"
-                      : formData.education
-                        ? `พิมพ์เพื่อค้นหา${getInstitutionLabel()}`
-                        : "กรุณาเลือกระดับการศึกษาก่อน"
+                    formData.education
+                      ? `พิมพ์เพื่อค้นหา${getInstitutionLabel()} หรือพิมพ์ชื่อใหม่`
+                      : "กรุณาเลือกระดับการศึกษาก่อน"
                   }
                   disabled={!formData.education}
                   className={`w-full px-4 py-3 ${

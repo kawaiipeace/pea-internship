@@ -26,12 +26,14 @@
     "drizzle-orm": "^0.45.1",
     "elysia": "latest",
     "elysia-logger": "^0.5.2",
+    "nodemailer": "^8.0.3",
     "postgres": "^3.4.8",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.8",
+    "@biomejs/biome": "^2.4.6",
+    "@types/nodemailer": "^7.0.11",
     "bun-types": "latest",
     "drizzle-kit": "^0.31.10"
   },

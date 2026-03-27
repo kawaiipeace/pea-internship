@@ -182,3 +182,48 @@
     border-color: #060818;
     box-shadow: -5px 0 0 #060818, 5px 0 0 #060818;
 }
+
+/* ===== Light mode purple overrides (#A80689) ===== */
+
+/* Selected day (single or start/end of range) */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+    background: #A80689 !important;
+    border-color: #A80689 !important;
+    color: #fff !important;
+}
+
+/* Fix blue vertical line between adjacent startRange and endRange */
+.flatpickr-day.startRange + .flatpickr-day.endRange:not(:nth-child(7n+1)) {
+    box-shadow: -10px 0 0 #A80689 !important;
+}
+
+/* In-range days */
+.flatpickr-day.inRange {
+    background: #f3e8ff !important;
+    border-color: #f3e8ff !important;
+    box-shadow: -5px 0 0 #f3e8ff, 5px 0 0 #f3e8ff !important;
+    color: #A80689 !important;
+}
+
+/* Today outline */
+.flatpickr-day.today {
+    border-color: #A80689 !important;
+}
+
+.flatpickr-day.today:hover {
+    background: #A80689 !important;
+    border-color: #A80689 !important;
+    color: #fff !important;
+}
+
+/* Hover on normal days */
+.flatpickr-day:hover {
+    background: #f3e8ff !important;
+    border-color: #f3e8ff !important;
+    color: #A80689 !important;
+}

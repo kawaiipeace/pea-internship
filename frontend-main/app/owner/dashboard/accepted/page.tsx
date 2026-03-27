@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import Link from "next/link";
@@ -19,12 +19,6 @@ import {
   type MyApplicationData,
 } from "@/services/api";
 import VideoLoading from "@/components/ui/VideoLoading";
-import {
-  highSchools,
-  vocationalSchools,
-  highVocationalSchools,
-  universities,
-} from "../../../data/institutions";
 
 // Thai month names
 const thaiMonths = [
@@ -158,6 +152,80 @@ function AcceptedStatusPage() {
   const institutionDropdownRef = useRef<HTMLDivElement>(null);
   const trainingDateDropdownRef = useRef<HTMLDivElement>(null);
 
+  const institutionsByCategory = useMemo(() => {
+    const grouped: Record<string, string[]> = {
+      high_school: [],
+      vocational: [],
+      high_vocational: [],
+      university: [],
+      other: [],
+    };
+    const seenByCategory: Record<string, Set<string>> = {
+      high_school: new Set<string>(),
+      vocational: new Set<string>(),
+      high_vocational: new Set<string>(),
+      university: new Set<string>(),
+      other: new Set<string>(),
+    };
+
+    allApps.forEach((app) => {
+      const institutionName = (app.institution || "").trim();
+      if (!institutionName) return;
+
+      const categoryId =
+        app.education &&
+        Object.prototype.hasOwnProperty.call(grouped, app.education)
+          ? app.education
+          : "other";
+
+      if (!seenByCategory[categoryId].has(institutionName)) {
+        seenByCategory[categoryId].add(institutionName);
+        grouped[categoryId].push(institutionName);
+      }
+    });
+
+    Object.keys(grouped).forEach((categoryId) => {
+      grouped[categoryId].sort((a, b) => a.localeCompare(b, "th"));
+    });
+
+    return grouped;
+  }, [allApps]);
+
+  const institutionCategories = useMemo(() => {
+    const baseCategories = [
+      { id: "high_school", label: "มัธยมศึกษาตอนปลาย" },
+      { id: "vocational", label: "ประกาศนียบัตรวิชาชีพ (ปวช.)" },
+      {
+        id: "high_vocational",
+        label: "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)",
+      },
+      { id: "university", label: "มหาวิทยาลัย" },
+      { id: "other", label: "อื่น ๆ" },
+    ];
+
+    return baseCategories.filter(
+      (cat) => (institutionsByCategory[cat.id] || []).length > 0,
+    );
+  }, [institutionsByCategory]);
+
+  useEffect(() => {
+    const validCategoryIds = new Set(
+      institutionCategories.map((cat) => cat.id),
+    );
+    setSelectedInstitutions((prev) => {
+      const next = prev.filter((id) => validCategoryIds.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+
+    const validSchools = new Set(
+      Object.values(institutionsByCategory).flatMap((schools) => schools),
+    );
+    setSelectedSchools((prev) => {
+      const next = prev.filter((school) => validSchools.has(school));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [institutionCategories, institutionsByCategory]);
+
   // Fetch timeline actions when selected application changes
   useEffect(() => {
     if (!selectedApplication) {
@@ -204,14 +272,6 @@ function AcceptedStatusPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Institution categories for dropdown
-  const institutionCategories = [
-    { id: "high_school", label: "มัธยมศึกษาตอนปลาย" },
-    { id: "vocational", label: "ประกาศนียบัตรวิชาชีพ (ปวช.)" },
-    { id: "high_vocational", label: "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)" },
-    { id: "university", label: "มหาวิทยาลัย" },
-  ];
-
   const handleInstitutionToggle = (id: string) => {
     setSelectedInstitutions((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
@@ -220,7 +280,10 @@ function AcceptedStatusPage() {
 
   const getInstitutionDisplayText = () => {
     if (selectedInstitutions.length === 0) return "ชื่อสถาบันศึกษา";
-    if (selectedInstitutions.length === institutionCategories.length)
+    if (
+      institutionCategories.length > 0 &&
+      selectedInstitutions.length === institutionCategories.length
+    )
       return "ทั้งหมด";
     return selectedInstitutions
       .map((id) => institutionCategories.find((c) => c.id === id)?.label || id)
@@ -228,18 +291,7 @@ function AcceptedStatusPage() {
   };
 
   const getSchoolsByCategory = (categoryId: string): string[] => {
-    switch (categoryId) {
-      case "high_school":
-        return highSchools.slice(0, 3);
-      case "vocational":
-        return vocationalSchools.slice(0, 3);
-      case "high_vocational":
-        return highVocationalSchools.slice(0, 3);
-      case "university":
-        return universities.slice(0, 4);
-      default:
-        return [];
-    }
+    return institutionsByCategory[categoryId] || [];
   };
 
   const toggleCategoryExpand = (categoryId: string) => {
@@ -481,15 +533,7 @@ function AcceptedStatusPage() {
           if (selectedSchools.includes(app.institution)) return true;
         }
         if (selectedInstitutions.length > 0) {
-          const eduMap: Record<string, string> = {
-            high_school: "high_school",
-            vocational: "vocational",
-            high_vocational: "high_vocational",
-            university: "university",
-          };
-          return selectedInstitutions.some(
-            (instId) => app.education === eduMap[instId],
-          );
+          return selectedInstitutions.includes(app.education);
         }
         return false;
       });
@@ -1213,16 +1257,16 @@ function AcceptedStatusPage() {
 
         {isDocPassed && (
           <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-900 mb-3">
-                หมายเหตุเพิ่มเติม
-              </h4>
-              <div className="rounded-xl border border-gray-200 font-semibold bg-white p-4">
-                <p className="text-sm  text-[#079455]">
-                  ขณะนี้ขั้นตอนการรับเข้าฝึกงานเสร็จสิ้นแล้ว
-                  โปรดส่งเอกสารยินยอมไปที่ฝ่ายพัฒนาบุคคล
-                </p>
-              </div>
+            <h4 className="text-md font-semibold text-gray-900 mb-3">
+              หมายเหตุเพิ่มเติม
+            </h4>
+            <div className="rounded-xl border border-gray-200 font-semibold bg-white p-4">
+              <p className="text-sm  text-[#079455]">
+                ขณะนี้ขั้นตอนการรับเข้าฝึกงานเสร็จสิ้นแล้ว
+                โปรดส่งเอกสารยินยอมไปที่ฝ่ายพัฒนาบุคคล
+              </p>
             </div>
+          </div>
         )}
 
         {/* เหตุผลที่เอกสารไม่ผ่าน - only for doc_rejected */}
@@ -1337,7 +1381,7 @@ function AcceptedStatusPage() {
         <div className="border-t border-gray-100">
           <button
             onClick={() => setShowMentorInfo(!showMentorInfo)}
-            className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <span className="font-semibold text-gray-900">ข้อมูลพี่เลี้ยง</span>
             <svg

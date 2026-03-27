@@ -15,6 +15,7 @@ interface EditTimeFormProps {
 
 const EditTimeForm: React.FC<EditTimeFormProps> = ({ selectedHistoryItem, setIsEditingTime }) => {
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -23,7 +24,13 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({ selectedHistoryItem, setIsE
 
     const handleSubmit = () => {
         setShowConfirm(false);
-        setIsEditingTime(false);
+        setShowSuccess(true);
+        
+        // Auto close or redirect
+        setTimeout(() => {
+            setShowSuccess(false);
+            setIsEditingTime(false);
+        }, 2000);
     };
 
     return (
@@ -149,26 +156,50 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({ selectedHistoryItem, setIsE
             {mounted && showConfirm &&
                 createPortal(
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 lg:pl-[260px]">
-                        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl p-6 w-[280px] text-center">
-                            <h3 className="text-base font-bold mb-6">
-                                ส่งคำขอถึงพี่เลี้ยง
+                        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl p-6 w-[290px] text-center flex flex-col items-center">
+                            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#11A75C] text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </div>
+                            <h3 className="text-base font-bold mb-5 text-gray-800 dark:text-white">
+                                ยืนยันส่งคำขอแก้ไขเวลา
                             </h3>
 
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 w-full">
                                 <button
                                     onClick={() => setShowConfirm(false)}
-                                    className="flex-1 py-2 border rounded-lg"
+                                    className="flex-1 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50"
                                 >
-                                    ยกเลิก
+                                    ย้อนกลับ
                                 </button>
 
                                 <button
                                     onClick={handleSubmit}
-                                    className="flex-1 py-2 bg-[#A80689] text-white rounded-lg"
+                                    className="flex-1 py-2.5 bg-[#11A75C] hover:bg-[#0E8F4D] text-white rounded-xl text-sm font-bold"
                                 >
                                     ยืนยัน
                                 </button>
                             </div>
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
+
+            {/* ✅ Success Modal via Portal */}
+            {mounted && showSuccess &&
+                createPortal(
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 lg:pl-[260px]">
+                        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl p-8 w-[280px] text-center flex flex-col items-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#11A75C] text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+                                ส่งคำขอแก้ไขเวลาสำเร็จ
+                            </h3>
                         </div>
                     </div>,
                     document.body
