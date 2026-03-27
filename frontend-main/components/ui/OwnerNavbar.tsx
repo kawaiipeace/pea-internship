@@ -8,6 +8,7 @@ import { authApi, authStorage, userApi, notificationApi, type NotificationItem }
 import Toast from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
+import VideoLoading from "@/components/ui/VideoLoading";
 
 // Helper: relative time in Thai
 function relativeTime(dateString: string): string {
@@ -31,6 +32,7 @@ export default function OwnerNavbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [displayEmail, setDisplayEmail] = useState("");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showToast, setShowToast] = useState(false);
@@ -39,6 +41,8 @@ export default function OwnerNavbar() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isClearAllConfirm, setIsClearAllConfirm] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [userRoleId, setUserRoleId] = useState<number | null>(null);
+  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -48,12 +52,16 @@ export default function OwnerNavbar() {
       try {
         const profile = await userApi.getUserProfile();
         if (profile) {
-          setDisplayName(profile.username || "-");
+          setDisplayName(`${profile.fname || ""} ${profile.lname || ""}`.trim() || profile.username || "-");
+          setDisplayEmail(profile.email || "-");
+          setUserRoleId(profile.roleId);
         }
       } catch {
         const stored = authStorage.getUser();
         if (stored) {
-          setDisplayName(stored.username || "-");
+          setDisplayName(`${stored.fname || ""} ${stored.lname || ""}`.trim() || stored.username || "-");
+          setDisplayEmail(stored.email || "-");
+          setUserRoleId(stored.roleId);
         }
       }
     };
@@ -211,6 +219,7 @@ export default function OwnerNavbar() {
   };
 
   return (
+  <>
     <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -258,6 +267,25 @@ export default function OwnerNavbar() {
                 FAQs
               </Link>
             </div>
+
+            {/* Role Switch Button - only for roleId=1 */}
+            {userRoleId === 1 && (
+              <button
+                onClick={() => {
+                  setIsSwitchingRole(true);
+                  document.cookie = `user_role=admin; path=/; max-age=86400`;
+                  setTimeout(() => {
+                    router.push("/admin/applications");
+                  }, 1000);
+                }}
+                className="flex items-center gap-2 px-4 py-1.5 border-2 border-primary-600 text-primary-600 rounded-full font-medium hover:bg-primary-600 hover:text-white transition-all text-sm cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Owner
+              </button>
+            )}
 
             {/* Notification Bell */}
             <div className="relative" ref={notificationRef}>
@@ -406,55 +434,28 @@ export default function OwnerNavbar() {
 
               {/* Profile Dropdown */}
               {showProfile && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-lg border-2 border-primary-600 overflow-hidden z-50">
-                  <div className="py-2">
-                    <div className="flex items-center gap-3 px-4 py-3 text-gray-700 cursor-default">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M3.85 15.1C4.7 14.45 5.65 13.9375 6.7 13.5625C7.75 13.1875 8.85 13 10 13C11.15 13 12.25 13.1875 13.3 13.5625C14.35 13.9375 15.3 14.45 16.15 15.1C16.7333 14.4167 17.1875 13.6417 17.5125 12.775C17.8375 11.9083 18 10.9833 18 10C18 7.78333 17.2208 5.89583 15.6625 4.3375C14.1042 2.77917 12.2167 2 10 2C7.78333 2 5.89583 2.77917 4.3375 4.3375C2.77917 5.89583 2 7.78333 2 10C2 10.9833 2.1625 11.9083 2.4875 12.775C2.8125 13.6417 3.26667 14.4167 3.85 15.1ZM10 11C9.01667 11 8.1875 10.6625 7.5125 9.9875C6.8375 9.3125 6.5 8.48333 6.5 7.5C6.5 6.51667 6.8375 5.6875 7.5125 5.0125C8.1875 4.3375 9.01667 4 10 4C10.9833 4 11.8125 4.3375 12.4875 5.0125C13.1625 5.6875 13.5 6.51667 13.5 7.5C13.5 8.48333 13.1625 9.3125 12.4875 9.9875C11.8125 10.6625 10.9833 11 10 11ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C10.8833 18 11.7167 17.8708 12.5 17.6125C13.2833 17.3542 14 16.9833 14.65 16.5C14 16.0167 13.2833 15.6458 12.5 15.3875C11.7167 15.1292 10.8833 15 10 15C9.11667 15 8.28333 15.1292 7.5 15.3875C6.71667 15.6458 6 16.0167 5.35 16.5C6 16.9833 6.71667 17.3542 7.5 17.6125C8.28333 17.8708 9.11667 18 10 18ZM10 9C10.4333 9 10.7917 8.85833 11.075 8.575C11.3583 8.29167 11.5 7.93333 11.5 7.5C11.5 7.06667 11.3583 6.70833 11.075 6.425C10.7917 6.14167 10.4333 6 10 6C9.56667 6 9.20833 6.14167 8.925 6.425C8.64167 6.70833 8.5 7.06667 8.5 7.5C8.5 7.93333 8.64167 8.29167 8.925 8.575C9.20833 8.85833 9.56667 9 10 9Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-
-                      <span>{displayName || "..."}</span>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        setShowProfile(false);
-                        try {
-                          await authApi.signOut();
-                        } catch (error) {
-                          console.error("Logout API error:", error);
-                        } finally {
-                          authStorage.clearAuth();
-                          localStorage.removeItem("current_user");
-                          router.replace("/");
-                        }
-                      }}
-                      className="group flex items-center gap-3 px-4 py-3 hover:bg-red-50 hover:text-red-600 text-gray-700 w-full text-left cursor-pointer"
-                    >
-                      <svg
-                        className="w-5 h-5 text-gray-600 group-hover:text-red-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      <span>ออกจากระบบ</span>
-                    </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-lg border-2 border-primary-600 overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-800">{displayName || "..."}</p>
+                    <p className="text-xs text-gray-500">{displayEmail || "-"}</p>
                   </div>
+                  <button
+                    onClick={async () => {
+                      setShowProfile(false);
+                      try {
+                        await authApi.signOut();
+                      } catch (error) {
+                        console.error("Logout API error:", error);
+                      } finally {
+                        authStorage.clearAuth();
+                        localStorage.removeItem("current_user");
+                        router.replace("/");
+                      }
+                    }}
+                    className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-gray-50 cursor-pointer"
+                  >
+                    ออกจากระบบ
+                  </button>
                 </div>
               )}
             </div>
@@ -487,5 +488,11 @@ export default function OwnerNavbar() {
         }}
       />
     </nav>
+
+    {/* Role switching loading overlay */}
+    {isSwitchingRole && (
+      <VideoLoading message="กำลังสลับบทบาท..." fullScreen />
+    )}
+  </>
   );
 }

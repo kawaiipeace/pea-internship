@@ -130,6 +130,8 @@ export default function CreateAnnouncementPage() {
   const [isNoTimeLimit, setIsNoTimeLimit] = useState<boolean | null>(null);
   // Tooltip visibility for location
   const [showLocationTooltip, setShowLocationTooltip] = useState(false);
+  // Tooltip visibility for qualifications
+  const [showQualificationsTooltip, setShowQualificationsTooltip] = useState(false);
 
   // Default document types (fallback when API is not available)
   const defaultDocTypes: DocType[] = [
@@ -1365,6 +1367,43 @@ export default function CreateAnnouncementPage() {
                   className={`block text-sm font-medium mb-1 ${errors.qualifications ? "text-red-500" : "text-gray-700"}`}
                 >
                   คุณสมบัติ *
+                  <span className="relative inline-block">
+                        <button
+                          type="button"
+                          onMouseEnter={() => setShowQualificationsTooltip(true)}
+                          onMouseLeave={() => setShowQualificationsTooltip(false)}
+                          onClick={() =>
+                            setShowQualificationsTooltip(!showQualificationsTooltip)
+                          }
+                          className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </button>
+                        {showQualificationsTooltip && (
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50">
+                            <p className="mb-1">เช่น</p>
+                            <ul className="list-disc list-inside space-y-0.5">
+                              <li>กำลังศึกษาอยู่ชั้นปริญญาตรี</li>
+                              <li>มีทักษะการสื่อสารทำงานเป็นทีม</li>
+                              <li>สามารถฝึกงานเต็ม 5 วันต่อสัปดาห์</li>
+                              <li>มีความสนใจในการเรียนรู้เทคโนโลยีใหม่ๆ</li>
+                            </ul>
+                            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
+                          </div>
+                        )}
+                      </span>
                 </label>
 
                 {/* Editable Requirement Boxes */}

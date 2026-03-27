@@ -4,10 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { authApi, authStorage, notificationApi, type NotificationItem } from "@/services/api";
+import { authApi, authStorage, userApi, notificationApi, type NotificationItem } from "@/services/api";
 import Toast from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
+import VideoLoading from "@/components/ui/VideoLoading";
 
 // Helper: relative time in Thai
 function relativeTime(dateString: string): string {
@@ -38,8 +39,45 @@ export default function AdminNavbar() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isClearAllConfirm, setIsClearAllConfirm] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [displayEmail, setDisplayEmail] = useState("");
+  const [userRoleId, setUserRoleId] = useState<number | null>(null);
+  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Load user profile on mount
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const profile = await userApi.getUserProfile();
+        if (profile) {
+          setDisplayName(`${profile.fname || ""} ${profile.lname || ""}`.trim() || profile.username || "-");
+          setDisplayEmail(profile.email || "-");
+          setUserRoleId(profile.roleId);
+        }
+      } catch {
+        const stored = authStorage.getUser();
+        if (stored) {
+          setDisplayName(`${stored.fname || ""} ${stored.lname || ""}`.trim() || stored.username || "-");
+          setDisplayEmail(stored.email || "-");
+          setUserRoleId(stored.roleId);
+        }
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Handle role switch (Admin -> Owner)
+  const handleSwitchToOwner = () => {
+    setIsSwitchingRole(true);
+    // Update user_role cookie to owner
+    document.cookie = `user_role=owner; path=/; max-age=86400`;
+    // Short delay for loading animation
+    setTimeout(() => {
+      router.push("/owner/announcements");
+    }, 1000);
+  };
 
   // Load notifications
   const loadNotifications = useCallback(async () => {
@@ -163,6 +201,7 @@ export default function AdminNavbar() {
   };
 
   return (
+  <>
     <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -202,6 +241,19 @@ export default function AdminNavbar() {
                 แดชบอร์ด
               </Link>
             </div>
+
+            {/* Role Switch Button - only for roleId=1 */}
+            {userRoleId === 1 && (
+              <button
+                onClick={handleSwitchToOwner}
+                className="flex items-center gap-2 px-4 py-1.5 border-2 border-primary-600 text-primary-600 rounded-full font-medium hover:bg-primary-600 hover:text-white transition-all text-sm cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Admin
+              </button>
+            )}
 
             {/* Notification Bell */}
             <div className="relative" ref={notificationRef}>
@@ -364,8 +416,8 @@ export default function AdminNavbar() {
               {showProfile && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-lg border-2 border-primary-600 overflow-hidden z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-800">แอดมิน</p>
-                    <p className="text-xs text-gray-500">admin@pea.co.th</p>
+                    <p className="text-sm font-medium text-gray-800">{displayName || "แอดมิน"}</p>
+                    <p className="text-xs text-gray-500">{displayEmail || "admin@pea.co.th"}</p>
                   </div>
                   <button
                     onClick={async () => {
@@ -416,5 +468,11 @@ export default function AdminNavbar() {
         }}
       />
     </nav>
+
+    {/* Role switching loading overlay */}
+    {isSwitchingRole && (
+      <VideoLoading message="กำลังสลับบทบาท..." fullScreen />
+    )}
+  </>
   );
 }
