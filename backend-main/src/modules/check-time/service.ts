@@ -329,7 +329,7 @@ export class CheckTimeService {
         const lunchEnd = new Date(inTimeStr);
         lunchEnd.setHours(13, 0, 0, 0);
         const shiftEnd = new Date(inTimeStr);
-        shiftEnd.setHours(16, 30, 0, 0);
+        shiftEnd.setHours(23, 59, 59, 59);
 
         let calcIn = inTime;
         let calcOut = outTime;
