@@ -1,5 +1,9 @@
 import { eq } from "drizzle-orm";
-import { BadRequestError, InternalServerError } from "@/common/exceptions";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+} from "@/common/exceptions";
 import { db } from "@/db";
 import { studentProfiles, users } from "@/db/schema";
 import { type Auth, auth } from "@/lib/auth";
@@ -84,6 +88,41 @@ export class AuthService {
 
     if (!response.ok) {
       throw new BadRequestError("Invalid phone number or password");
+    }
+
+    return response;
+  }
+
+  async login_itt(data: model.LoginInternBodyType) {
+    const response = await auth.api.signInUsername({
+      body: {
+        username: data.phoneNumber,
+        password: data.password,
+      },
+      asResponse: true,
+    });
+
+    if (!response || !response.ok) {
+      throw new BadRequestError("Invalid phone number or password");
+    }
+
+    const authData = await response.json();
+    const userId = authData.user.id;
+
+    const studentProfile = await db
+      .select({
+        internshipStatus: studentProfiles.internshipStatus,
+      })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, userId))
+      .limit(1);
+
+    const profile = studentProfile[0];
+
+    if (!profile || profile.internshipStatus !== "ACCEPT") {
+      throw new ForbiddenError(
+        "การเข้าสู่ระบบถูกปฏิเสธ: สถานะการฝึกงานของคุณต้องเป็น ACCEPT เท่านั้น"
+      );
     }
 
     return response;

@@ -65,12 +65,12 @@ VALUES
   -- ,('การไฟฟ้าส่วนภูมิภาคสาขาย่อยอำเภอพญาเม็งราย','กฟจ.เชียงราย','นายอดิเรก ไลไธสง','โทร. 0-5379-9069', 19.7400, 100.0900, '114 ม.18 (อ้างอิงข้อมูลที่ตั้ง) ต.แม่เปา อ.พญาเม็งราย จ.เชียงราย 57290', NOW(), NOW())
 ON CONFLICT (short_name) DO NOTHING;
 
--- INSERT INTO departments (dept_sap, dept_short, dept_full, is_active, office_id, created_at, updated_at, updated_by)
--- VALUES
---   (100100, 'กอพ.1', 'กองอำนวยการพัฒนา 1', B'1', 1, NOW(), NOW(), 'SYSTEM'),
---   (100101, 'กอพ.2', 'กองอำนวยการพัฒนา 2', B'1', 1, NOW(), NOW(), 'SYSTEM'),
---   (100102, 'กอพ.3', 'กองอำนวยการพัฒนา 3', B'1', 1, NOW(), NOW(), 'SYSTEM')
--- ON CONFLICT (dept_sap) DO NOTHING;
+INSERT INTO departments (dept_sap, dept_short, dept_full, is_active, office_id, created_at, updated_at, updated_by)
+VALUES
+  (100100, 'กอพ.1', 'กองอำนวยการพัฒนา 1', B'1', 1, NOW(), NOW(), 'SYSTEM'),
+  (100101, 'กอพ.2', 'กองอำนวยการพัฒนา 2', B'1', 1, NOW(), NOW(), 'SYSTEM'),
+  (100102, 'กอพ.3', 'กองอำนวยการพัฒนา 3', B'1', 1, NOW(), NOW(), 'SYSTEM')
+ON CONFLICT (dept_sap) DO NOTHING;
 
 INSERT INTO departments (dept_sap,dept_change_code,dept_upper,dept_short1,dept_short2,dept_short3,dept_short4,dept_short5,dept_short6,dept_short7,dept_short,dept_full1,dept_full2,dept_full3,dept_full4,dept_full5,dept_full6,dept_full7,dept_full,cost_center_code,cost_center_name,pea_code,business_place,business_area,resource_code,resource_name,tax_branch,is_active,created_at,created_by,updated_at,updated_by,is_deleted,dept_stable_code,dept_sap_short,dept_sap_full,dept_full_eng1,dept_full_eng2,dept_full_eng3,dept_full_eng4,dept_full_eng5,dept_full_eng6,dept_full_eng7,dept_order,flg_delimit,delimit_effectivedt,gsber_cctr,dept_lev2,dept_lev3,seq,office_id) VALUES
 	 (504,'540304004000600     ',8061,'สายงาน ป','ผชก.(ป-บส)','ฝกร.','กผภ.',NULL,'ผรค.มค.',NULL,'ผรค.มค.','สายงานปฏิบัติการระบบไฟฟ้า','ผู้ช่วยผู้ว่าการปฏิบัติการระบบไฟฟ้า (บริหารสินทรัพย์โครงข่ายระบบไฟฟ้า)','ฝ่ายก่อสร้างระบบไฟฟ้า','กองผลิตภัณฑ์คอนกรีต',NULL,'แผนกโรงงานผลิตภัณฑ์คอนกรีตมหาสารคาม',NULL,'แผนกโรงงานผลิตภัณฑ์คอนกรีตมหาสารคาม','ZC02063060          ','ผรค.มค.กผภ.-บริหาร','Z00000',NULL,'Z000','500  ','แผนก/ส่วนงาน',NULL,'1','2026-02-16 01:40:01.438','dgt_airflow         ','2026-02-16 01:40:01.438','dgt_airflow         ','0','122010','ผรค.มค. กผภ. ฝกร. ผชก.(ป-บส)','แผนกโรงงานผลิตภัณฑ์คอนกรีตมหาสารคาม/กองผลิตภัณฑ์คอนกรีต/ฝ่ายก่อสร้างระบบไฟฟ้า/ผู้ช่วยผู้ว่าการปฏิบัติการระบบไฟฟ้า (บริหารสินทรัพย์โครงข่ายระบบไฟฟ้า)/สายงานปฏิบัติการระบบไฟฟ้า','Grid Operation Function','Assistant Governor (Grid Operation-Network Asset Management)','Power System Construction Department','Concrete Product Division',NULL,'Maha Sarakham Concrete Product Factory Section',NULL,'AF        ',NULL,NULL,'Z000',7385,9107,6673,1),

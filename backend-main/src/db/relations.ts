@@ -19,6 +19,8 @@ import {
   leaveRequests,
   notifications,
   offices,
+  offsiteTaskStudents,
+  offsiteTasks,
   projects,
   roles,
   sessions,
@@ -56,6 +58,12 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   applicationStatuses: many(applicationStatuses),
   dailyWorkLogs: many(dailyWorkLogs),
   applicationStatusActions: many(applicationStatusActions),
+  assignedOffsiteTasks: many(offsiteTasks, {
+    relationName: "assignedOffsiteTasks",
+  }),
+  studentOffsiteTasks: many(offsiteTaskStudents, {
+    relationName: "studentOffsiteTasks",
+  }),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -340,3 +348,30 @@ export const attendanceLogsRelations = relations(attendanceLogs, ({ one }) => ({
     references: [staffProfiles.id],
   }),
 }));
+
+export const offsiteTasksRelations = relations(
+  offsiteTasks,
+  ({ one, many }) => ({
+    assignedByUser: one(users, {
+      fields: [offsiteTasks.assignedBy],
+      references: [users.id],
+      relationName: "assignedOffsiteTasks",
+    }),
+    students: many(offsiteTaskStudents),
+  })
+);
+
+export const offsiteTaskStudentsRelations = relations(
+  offsiteTaskStudents,
+  ({ one }) => ({
+    task: one(offsiteTasks, {
+      fields: [offsiteTaskStudents.taskId],
+      references: [offsiteTasks.id],
+    }),
+    student: one(users, {
+      fields: [offsiteTaskStudents.studentId],
+      references: [users.id],
+      relationName: "studentOffsiteTasks",
+    }),
+  })
+);

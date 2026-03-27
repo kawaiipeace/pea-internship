@@ -132,7 +132,6 @@ CREATE TABLE -- all
   );
 
 -- Indexes 
-
 CREATE INDEX idx_departments_dept_upper ON public.departments USING btree (dept_upper);
 
 CREATE INDEX idx_departments_pea_null ON public.departments USING btree (pea_code)
@@ -188,9 +187,10 @@ CREATE TABLE -- all
 COMMENT ON TABLE public.staff_profiles IS 'โปรไฟล์พี่เลี้ยง';
 
 CREATE TABLE -- all 
-  public.employee_Id_dept_sap ( 
-    employee_id VARCHAR(50) PRIMARY KEY, 
-    dept_sap INT4 );
+  public.employee_Id_dept_sap (
+    employee_id VARCHAR(50) PRIMARY KEY,
+    dept_sap INT4
+  );
 
 CREATE TABLE -- all
   public.student_profiles (
@@ -499,6 +499,30 @@ CREATE TABLE
     FOREIGN KEY (check_out_id) REFERENCES public.check_times (id) ON DELETE SET NULL,
     FOREIGN KEY (verified_by) REFERENCES public.staff_profiles (id),
     UNIQUE (student_profile_id, work_date)
+  );
+
+CREATE TABLE
+  public.offsite_tasks (
+    id SERIAL PRIMARY KEY,
+    assigned_by VARCHAR(50) NOT NULL,
+    work_date DATE NOT NULL,
+    location_name VARCHAR(255) NOT NULL,
+    task_detail TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT offsite_tasks_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.users (id) ON DELETE CASCADE
+  );
+
+COMMENT ON TABLE public.offsite_tasks IS 'เก็บข้อมูลการมอบหมายงานนอกสถานที่โดย Mentor';
+
+CREATE TABLE
+  public.offsite_task_students (
+    task_id INT NOT NULL,
+    student_id VARCHAR(50) NOT NULL,
+    PRIMARY KEY (task_id, student_id),
+    CONSTRAINT task_students_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.offsite_tasks (id) ON DELETE CASCADE,
+    CONSTRAINT task_students_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.users (id) ON DELETE CASCADE
   );
 
 CREATE
