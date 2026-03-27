@@ -20,4 +20,9 @@ export const CheckTimeSchema = t.Object({
   ),
 });
 
+export const QueryDate = t.Object({
+  year: t.Optional(t.String()),
+  month: t.Optional(t.String()),
+});
+
 export type CheckTimeDto = Static<typeof CheckTimeSchema>;
