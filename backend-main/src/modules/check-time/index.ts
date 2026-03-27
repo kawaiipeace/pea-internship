@@ -56,4 +56,22 @@ export const checkTime = new Elysia({
           "รับพิกัดเพื่อบันทึกเวลาออกงาน ตรวจสอบระยะทาง และคำนวณชั่วโมงการทำงาน",
       },
     }
+  )
+  .get(
+    "/history",
+    async ({ user, query }) => {
+      const year = query.year ? parseInt(query.year, 10) : undefined;
+      const month = query.month ? parseInt(query.month, 10) : undefined;
+
+      return await checkTimeService.history(user.id, year, month);
+    },
+    {
+      role: [ROLE_IDS.STUDENT],
+      body: checkSchema.QueryDate,
+      detail: {
+        summary: "ประวัติการลงเวลา (รายเดือน)",
+        description:
+          "ดึงข้อมูลสรุปการลงเวลาและรายการรายวันตามเดือนที่ระบุ เพื่อแสดงในหน้าประวัติ",
+      },
+    }
   );

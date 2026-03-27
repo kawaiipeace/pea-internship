@@ -178,7 +178,7 @@ const LeaveHistoryPage = () => {
                 {/* Header Section */}
                 <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 shrink-0 px-1 sm:px-0">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลงเวลา</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลา</h1>
                         <p className="text-gray-500 text-xs sm:text-sm">รายงานการลาปฏิบัติงาน ประจำเดือน</p>
                     </div>
                     <div className="flex items-center justify-between bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 sm:px-3 sm:py-1.5 shrink-0 shadow-sm">
@@ -237,7 +237,7 @@ const LeaveHistoryPage = () => {
                 <div className="shrink-0 flex flex-col gap-[16px]">
                     <div className="flex items-center justify-between mt-2 px-1 sm:px-0">
                         <h2 className="text-[17px] font-bold text-[#B10073]">
-                            รายการประวัติการลงเวลา
+                            รายการประวัติการลา
                         </h2>
                         <button 
                             className="w-[130px] h-[35px] bg-[#A80689] text-white rounded-[10px] text-[13px] font-bold shadow-sm hover:bg-[#900b45] transition-colors flex items-center justify-center gap-1 shrink-0"

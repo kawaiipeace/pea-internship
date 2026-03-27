@@ -78,6 +78,7 @@ export const checkTimeStatusType = pgEnum("check_time_status_type", [
   "LATE",
   "ABSENT",
   "LEAVE",
+  "MISSING_OUT",
 ]);
 
 export const leavePeriodEnum = pgEnum("leave_period_enum", [

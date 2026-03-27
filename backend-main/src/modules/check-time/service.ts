@@ -1,4 +1,4 @@
-import { and, eq, not, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, not, sql } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
@@ -394,5 +394,87 @@ export class CheckTimeService {
         isOnsite: isOnsite,
       };
     });
+  }
+  async history(userId: string, year?: number, month?: number) {
+    const student = await db.query.studentProfiles.findFirst({
+      where: eq(studentProfiles.userId, userId),
+      columns: { id: true },
+    });
+
+    if (!student) {
+      throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
+    }
+
+    const now = new Date();
+    const targetYear = year || now.getFullYear();
+    const targetMonth = month || now.getMonth() + 1;
+
+    const monthStr = targetMonth.toString().padStart(2, "0");
+    const startDate = `${targetYear}-${monthStr}-01`;
+    const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+    const endDate = `${targetYear}-${monthStr}-${lastDay}`;
+
+    const historyData = await db.query.attendanceLogs.findMany({
+      where: and(
+        eq(attendanceLogs.studentProfileId, student.id),
+        gte(attendanceLogs.workDate, startDate),
+        lte(attendanceLogs.workDate, endDate)
+      ),
+      orderBy: [desc(attendanceLogs.workDate)],
+      with: {
+        checkIn: { columns: { time: true } },
+        checkOut: { columns: { time: true } },
+      },
+    });
+
+    const summary = {
+      present: 0,
+      late: 0,
+      leave: 0,
+      absent: 0,
+    };
+
+    const records = historyData.map((log) => {
+      if (log.dailyStatus === "PRESENT") summary.present++;
+      else if (log.dailyStatus === "LATE") summary.late++;
+      else if (log.dailyStatus === "LEAVE") summary.leave++;
+      else if (log.dailyStatus === "ABSENT") summary.absent++;
+
+      const formatTime = (timeStr?: string | null) => {
+        if (!timeStr) return "--:--";
+        const d = new Date(timeStr);
+        return d.toLocaleTimeString("en-GB", {
+          timeZone: "Asia/Bangkok",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      };
+
+      const inTime = formatTime(log.checkIn?.time);
+      const outTime = formatTime(log.checkOut?.time);
+
+      let displayStatus = log.dailyStatus;
+      if (
+        (log.dailyStatus === "PRESENT" || log.dailyStatus === "LATE") &&
+        log.checkInId &&
+        !log.checkOutId
+      ) {
+        displayStatus = "MISSING_OUT";
+      }
+
+      return {
+        id: log.id,
+        workDate: log.workDate,
+        displayStatus: displayStatus,
+        checkInTime: inTime,
+        checkOutTime: outTime,
+      };
+    });
+
+    return {
+      period: { year: targetYear, month: targetMonth },
+      summary: summary,
+      records: records,
+    };
   }
 }
