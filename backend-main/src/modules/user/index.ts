@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { isAuthenticated } from "@/middlewares/auth.middleware";
+import { isAuthenticated, ROLE_IDS } from "@/middlewares/auth.middleware";
 import { UserService } from "./service";
 
 const userService = new UserService();
@@ -87,5 +87,22 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
         startDate: t.Optional(t.String()),
         endDate: t.Optional(t.String()),
       }),
+    }
+  )
+  .get(
+    "/student/total-hours",
+    async ({ user, set }) => {
+      const result = await userService.getStudentProgress(user.id);
+
+      set.status = 200;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.STUDENT],
+      detail: {
+        summary: "สรุปชั่วโมงการฝึกงาน (Progress Bar)",
+        description:
+          "ดึงข้อมูลชั่วโมงที่ทำไปแล้ว และชั่วโมงที่ต้องทำทั้งหมด สำหรับหน้า Dashboard",
+      },
     }
   );

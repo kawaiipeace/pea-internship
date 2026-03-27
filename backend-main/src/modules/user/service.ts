@@ -1,8 +1,10 @@
 import { and, desc, eq } from "drizzle-orm";
+import { NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
   applicationInformations,
   applicationStatuses,
+  studentAttendanceSummary,
   studentProfiles,
   users,
 } from "@/db/schema";
@@ -335,5 +337,32 @@ export class UserService {
         endDate: updatedApplicationInfo?.endDate ?? null,
       };
     });
+  }
+
+  async getStudentProgress(userId: string) {
+    const [summary] = await db
+      .select({
+        accumulatedHours: studentAttendanceSummary.totalAccumulatedHours,
+        totalHoursGoal: studentAttendanceSummary.totalHoursGoal,
+      })
+      .from(studentAttendanceSummary)
+      .where(eq(studentAttendanceSummary.userId, userId));
+
+    if (!summary) {
+      throw new NotFoundError("ไม่พบข้อมูลสรุปเวลาฝึกงานของนักศึกษา");
+    }
+
+    const accumulated = Number(summary.accumulatedHours || 0);
+    const goal = Number(summary.totalHoursGoal || 0);
+
+    let percentage = goal > 0 ? (accumulated / goal) * 100 : 0;
+
+    if (percentage > 100) percentage = 100;
+
+    return {
+      accumulatedHours: accumulated,
+      totalHoursGoal: goal,
+      percentage: Number(percentage.toFixed(2)),
+    };
   }
 }
