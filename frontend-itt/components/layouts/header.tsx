@@ -33,12 +33,57 @@ import IconMenuPages from '@/components/icon/menu/icon-menu-pages';
 import IconMenuMore from '@/components/icon/menu/icon-menu-more';
 import { usePathname, useRouter } from 'next/navigation';
 import { getTranslation } from '@/i18n';
+import Swal from 'sweetalert2';
 
 const Header = () => {
     const pathname = usePathname();
     const dispatch = useDispatch();
     const router = useRouter();
     const { t, i18n } = getTranslation();
+    const handleLogout = async () => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/sign-out`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ออกจากระบบสำเร็จ',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    customClass: {
+                        popup: 'rounded-[20px]',
+                    },
+                });
+                router.push('/');
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ออกจากระบบล้มเหลว',
+                    text: 'กรุณาลองใหม่อีกครั้ง',
+                    customClass: {
+                        popup: 'rounded-[20px]',
+                        confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
+                    },
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                customClass: {
+                    popup: 'rounded-[20px]',
+                    confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
+                },
+            });
+        }
+    };
 
     useEffect(() => {
         const selector = document.querySelector('ul.horizontal-menu a[href="' + window.location.pathname + '"]');
@@ -317,10 +362,10 @@ const Header = () => {
                                         </Link>
                                     </li>
                                     <li className="border-t border-white-light dark:border-white-light/10">
-                                        <Link href="/auth/boxed-signin" className="!py-3 text-danger">
+                                        <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-white-light/10" onClick={handleLogout}>
                                             <IconLogout className="h-4.5 w-4.5 shrink-0 rotate-90 ltr:mr-2 rtl:ml-2" />
                                             Sign Out
-                                        </Link>
+                                        </button>
                                     </li>
                                 </ul>
                             </Dropdown>

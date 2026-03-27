@@ -1,161 +1,156 @@
 'use client';
-import React, { useState, useRef } from 'react';
+
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import IconUser from '@/components/icon/icon-user';
+import Swal from 'sweetalert2';
 
-export default function ProfileSetup() {
+interface CustomLoginFormProps {
+    onSuccess?: () => void;
+}
+
+export default function CustomLoginForm({ onSuccess }: CustomLoginFormProps) {
     const router = useRouter();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [nickname, setNickname] = useState('');
-    const [profileImage, setProfileImage] = useState<string | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfileImage(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/sign-in/intern`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phoneNumber,
+                    password,
+                }),
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'เข้าสู่ระบบสำเร็จ',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    customClass: {
+                        popup: 'rounded-[20px]',
+                    },
+                });
+                
+                if (onSuccess) {
+                    onSuccess();
+                } else {
+                    router.push('/user');
+                }
+            } else {
+                let errorMessage = 'เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    // Fallback if response is not JSON
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เข้าสู่ระบบล้มเหลว',
+                    text: errorMessage,
+                    customClass: {
+                        popup: 'rounded-[20px]',
+                        confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
+                    },
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                customClass: {
+                    popup: 'rounded-[20px]',
+                    confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
+                },
+            });
         }
     };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfileImage(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleSubmit = () => {
-        if (!nickname.trim()) return;
-        // TODO: save profile data to API
-        router.push('/analytics');
-    };
-
-    const isFormValid = nickname.trim().length > 0;
 
     return (
         <div
             className="flex min-h-screen items-center justify-center font-nunito"
             style={{ background: 'linear-gradient(135deg, #fcca6b 0%, #c465f0 40%, #b1078c 75%, #ffffff 100%)' }}
         >
-            <div className="relative z-10 w-full max-w-md px-4">
-                {/* Card */}
-                <div className="rounded-2xl border border-white/60 bg-white/80 p-8 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-[#0e1726]/80">
-                    {/* Header */}
-                    <div className="mb-8 text-center">
-                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                        </div>
-                        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">ตั้งค่าโปรไฟล์</h1>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">เพิ่มรูปภาพและชื่อเล่นของคุณ</p>
+        <div className="w-full max-w-[340px] mx-auto bg-white rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-8 relative border border-white/40">
+            {/* Logo area */}
+            <div className="flex justify-center mb-10 mt-2">
+                <div className="relative flex items-baseline">
+                    <span className="text-[52px] font-black text-[#680C55] uppercase tracking-tighter drop-shadow-md leading-none">PEA</span>
+                    <div className="relative flex items-baseline ml-1">
+                        <span className="text-[38px] font-black text-[#680C55] uppercase tracking-tighter drop-shadow-md leading-none">iTT</span>
+                        <div className="absolute -top-1 left-[5px] w-2.5 h-2.5 bg-[#D4AE5E] shadow-sm"></div>
                     </div>
+                </div>
+            </div>
 
-                    {/* Profile Image Upload */}
-                    <div className="mb-6 flex flex-col items-center">
-                        <div
-                            className={`group relative mb-3 h-32 w-32 cursor-pointer overflow-hidden rounded-full border-2 border-dashed transition-all duration-300 ${isDragging
-                                    ? 'border-primary bg-primary/5 scale-105'
-                                    : profileImage
-                                        ? 'border-primary/40 hover:border-primary'
-                                        : 'border-gray-300 hover:border-primary dark:border-gray-600'
-                                }`}
-                            onClick={() => fileInputRef.current?.click()}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                        >
-                            {profileImage ? (
-                                <>
-                                    <img src={profileImage} alt="Profile" className="h-full w-full object-cover" />
-                                    {/* Hover overlay */}
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="flex h-full flex-col items-center justify-center text-gray-400 transition-colors group-hover:text-primary dark:text-gray-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="mb-1 h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    <span className="text-xs font-medium">อัพโหลดรูป</span>
-                                </div>
-                            )}
-                        </div>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="hidden"
-                        />
-                        <p className="text-xs text-gray-400 dark:text-gray-500">คลิกหรือลากรูปภาพมาวาง</p>
-                    </div>
-
-                    {/* Nickname Input */}
-                    <div className="mb-8">
-                        <label htmlFor="nickname" className="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            ชื่อเล่น
-                        </label>
-                        <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
-                                <IconUser className="h-5 w-5" />
-                            </span>
-                            <input
-                                id="nickname"
-                                type="text"
-                                placeholder="กรอกชื่อเล่นของคุณ"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && isFormValid && handleSubmit()}
-                                className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm outline-none transition-all duration-200 placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-[#1a1f3c] dark:text-white dark:placeholder:text-gray-500 dark:focus:border-primary"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={!isFormValid}
-                        className={`w-full rounded-xl py-3 text-sm font-bold tracking-wide text-white shadow-lg transition-all duration-300 ${isFormValid
-                                ? 'bg-[#b1078c] hover:bg-[#b1078c]/90 hover:shadow-[#b1078c]/30 active:scale-[0.98]'
-                                : 'cursor-not-allowed bg-gray-300 shadow-none dark:bg-gray-700'
-                            }`}
-                    >
-                        เริ่มต้นใช้งาน
-                    </button>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                    <label htmlFor="phoneNumber" className="block text-[15px] font-bold text-[#333741] mb-2">
+                        เบอร์โทร
+                    </label>
+                    <input
+                        id="phoneNumber"
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="เบอร์โทรศัพท์"
+                        className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#9A0D8A] text-sm text-[#333741] placeholder-gray-400"
+                    />
                 </div>
 
-                {/* Footer text */}
-                <p className="mt-6 text-center text-xs text-gray-400 dark:text-gray-600">
-                    Intern-iTT © {new Date().getFullYear()}
-                </p>
-            </div>
+                <div>
+                    <label htmlFor="password" className="block text-[15px] font-bold text-[#333741] mb-2">
+                        รหัสผ่าน
+                    </label>
+                    <div className="relative">
+                        <input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="รหัสผ่าน"
+                            className="w-full px-4 py-3 bg-white/50 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-[#9A0D8A] text-sm text-[#333741] placeholder-gray-400"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                        >
+                            {showPassword ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="pt-2 pb-2">
+                    <button
+                        type="submit"
+                        className="w-full py-3 px-4 bg-[#9A0D8A] hover:bg-[#7D0A6F] text-white rounded-[10px] text-[16px] font-semibold transition-all shadow-[0_4px_10px_rgba(154,13,138,0.3)] hover:-translate-y-[1px]"
+                    >
+                        เข้าสู่ระบบ
+                    </button>
+                </div>
+            </form>
+        </div>
         </div>
     );
 }
