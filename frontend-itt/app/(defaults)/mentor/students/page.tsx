@@ -9,7 +9,6 @@ import IconXCircle from '@/components/icon/icon-x-circle';
 import IconClock from '@/components/icon/icon-clock';
 import IconShare from '@/components/icon/icon-share';
 import IconExport from '@/components/icon/icon-export';
-import IconArrowForward from '@/components/icon/icon-arrow-forward';
 import dynamic from 'next/dynamic';
 const Flatpickr = dynamic(() => import('react-flatpickr'), { ssr: false });
 import 'flatpickr/dist/flatpickr.css';
@@ -187,25 +186,25 @@ const StudentsPage = () => {
     };
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-bold text-[#111827]">นักศึกษาในความดูแล</h1>
-                <p className="text-[#6B7280]">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษาในความดูแล</p>
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
+            <div className="flex flex-col gap-1.5">
+                <h1 className="text-xl sm:text-2xl font-bold text-[#111827]">นักศึกษาในความดูแล</h1>
+                <p className="text-sm sm:text-base text-[#6B7280]">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษาในความดูแล</p>
             </div>
 
             <div className="flex flex-col gap-4">
-                <div className="relative group">
+                <div className="relative group w-full">
                     <span className="absolute inset-y-0 left-4 flex items-center text-[#9CA3AF] group-focus-within:text-primary transition-colors">
                         <IconSearch className="w-5 h-5" />
                     </span>
                     <input
                         type="text"
                         placeholder="ค้นหาชื่อนักศึกษาหรือตำแหน่ง..."
-                        className="form-input pl-12 h-12 bg-white border-[#E5E7EB] rounded-lg focus:ring-primary/10 transition-all text-base"
+                        className="form-input w-full pl-12 h-12 bg-white border-[#E5E7EB] rounded-lg focus:ring-primary/10 transition-all text-[14px] sm:text-[15px]"
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                     <div className="relative">
                         <Flatpickr
                             value={dateRange}
@@ -239,7 +238,7 @@ const StudentsPage = () => {
                             }
                         >
                             <div 
-                                className="bg-white border border-[#E5E7EB] rounded-xl shadow-2xl w-[400px] py-4"
+                                className="bg-white border border-[#E5E7EB] rounded-xl shadow-2xl w-[90vw] sm:w-[400px] max-w-full py-4"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <div className="px-4 mb-4">
@@ -346,8 +345,8 @@ const StudentsPage = () => {
             </div>
 
             <div className="panel p-0 border-[#E5E7EB] shadow-sm overflow-hidden rounded-xl">
-                <div className="w-full">
-                    <table className="w-full border-collapse table-auto">
+                <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <table className="w-full border-collapse table-auto min-w-[1100px]">
                         <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                             <tr>
                                 <th className="py-5 px-6 text-left text-[#6B7280] font-semibold text-[15px] whitespace-nowrap">ชื่อนักศึกษา</th>
@@ -418,9 +417,9 @@ const StudentsPage = () => {
                                                     <span className="text-[12px] font-bold text-[#6B7280] whitespace-nowrap">{student.progress.current} / {student.progress.total} ชั่วโมง</span>
                                                     <span className="text-[12px] font-bold text-[#6B7280] whitespace-nowrap">{student.progress.percent} %</span>
                                                 </div>
-                                                <div className="w-full h-2.5 bg-[#F3F4F6] rounded-full overflow-hidden shadow-inner shrink-0">
+                                                <div className="w-full h-3 bg-[#F3F4F6] rounded-full overflow-hidden shrink-0 border border-[#E5E7EB]/50">
                                                     <div 
-                                                        className="h-full bg-gradient-to-r from-[#A80689] to-[#D63384] rounded-full transition-all duration-700 shadow-sm"
+                                                        className="h-full bg-[#FDBAF0] rounded-full transition-all duration-700 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]"
                                                         style={{ width: `${student.progress.percent}%` }}
                                                     />
                                                 </div>
@@ -433,24 +432,19 @@ const StudentsPage = () => {
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-center">
-                                        <div className="flex items-center justify-end gap-6 pr-4 group">
-                                            <div className="flex flex-col items-center flex-1">
-                                                {student.isFinished ? (
-                                                    <span className="text-[#F04438] font-bold text-[16px] whitespace-nowrap">สิ้นสุดวันฝึกแล้ว</span>
-                                                ) : student.needsCompensation ? (
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <span className="text-[#F04438] font-bold text-[20px] whitespace-nowrap">{student.daysLeft} วัน</span>
-                                                        <button className="px-5 py-2 border-2 border-[#A80689] text-[#A80689] rounded-xl text-[13px] font-bold hover:bg-[#A80689] hover:text-white transition-all shadow-sm whitespace-nowrap">
-                                                            ชดเชยวันทำงาน
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[#4B5563] font-bold text-[16px] whitespace-nowrap">{student.daysLeft} วัน</span>
-                                                )}
-                                            </div>
-                                            <div className="cursor-pointer shrink-0">
-                                                <IconArrowForward className="w-5 h-5 text-[#E5E7EB] group-hover:text-[#A80689] transition-all transform group-hover:translate-x-1" />
-                                            </div>
+                                        <div className="flex flex-col items-center justify-center w-full">
+                                            {student.isFinished ? (
+                                                <span className="text-[#F04438] font-bold text-[16px] whitespace-nowrap">สิ้นสุดวันฝึกแล้ว</span>
+                                            ) : student.needsCompensation ? (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <span className="text-[#F04438] font-bold text-[20px] whitespace-nowrap">{student.daysLeft} วัน</span>
+                                                    <button className="px-5 py-2 border-2 border-[#A80689] text-[#A80689] rounded-xl text-[13px] font-bold hover:bg-[#A80689] hover:text-white transition-all shadow-sm whitespace-nowrap">
+                                                        ชดเชยวันทำงาน
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-[#4B5563] font-bold text-[16px] whitespace-nowrap">{student.daysLeft} วัน</span>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -460,13 +454,13 @@ const StudentsPage = () => {
                 </div>
             </div>
 
-            <div className="flex items-center justify-between mt-6 pb-10">
-                <button className="flex items-center gap-2 text-[#A80689] font-bold text-[15px] hover:opacity-80 transition-opacity">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-6 pb-10 gap-6">
+                <button className="flex items-center justify-center sm:justify-start gap-2 text-[#A80689] font-bold text-[15px] hover:opacity-80 transition-opacity w-full sm:w-auto py-3 sm:py-0 border border-[#A80689]/20 sm:border-none rounded-xl sm:rounded-none bg-[#A80689]/5 sm:bg-transparent">
                     <IconExport className="w-5 h-5 stroke-[2.5px]" />
                     ส่งออกตาราง
                 </button>
 
-                <div className="flex flex-row items-center">
+                <div className="flex flex-row items-center justify-center w-full sm:w-auto overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <button
                         onClick={() => setPage(Math.max(1, page - 1))}
                         disabled={page === 1}
