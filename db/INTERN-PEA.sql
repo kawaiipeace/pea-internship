@@ -33,7 +33,7 @@ CREATE TYPE public.gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
 
 CREATE TYPE public.institutions_types AS ENUM ('UNIVERSITY', 'VOCATIONAL', 'SCHOOL', 'OTHERS');
 
-CREATE TYPE public.check_time_status_type AS ENUM ('PRESENT', 'LATE', 'ABSENT', 'LEAVE');
+CREATE TYPE public.check_time_status_type AS ENUM ('PRESENT', 'LATE', 'ABSENT', 'LEAVE' , 'MISSING_OUT');
 
 CREATE TYPE public.leave_period_enum AS ENUM ('FULL_DAY', 'MORNING', 'AFTERNOON');
 

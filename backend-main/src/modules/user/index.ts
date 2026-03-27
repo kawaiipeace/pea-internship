@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
-import { isAuthenticated } from "@/middlewares/auth.middleware";
+import { isAuthenticated, ROLE_IDS } from "@/middlewares/auth.middleware";
+import { createProfile } from "./model";
 import { UserService } from "./service";
 
 const userService = new UserService();
@@ -87,5 +88,39 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
         startDate: t.Optional(t.String()),
         endDate: t.Optional(t.String()),
       }),
+    }
+  )
+  .get(
+    "/student/total-hours",
+    async ({ user, set }) => {
+      const result = await userService.getStudentProgress(user.id);
+
+      set.status = 200;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.STUDENT],
+      detail: {
+        summary: "สรุปชั่วโมงการฝึกงาน (Progress Bar)",
+        description:
+          "ดึงข้อมูลชั่วโมงที่ทำไปแล้ว และชั่วโมงที่ต้องทำทั้งหมด สำหรับหน้า Dashboard",
+      },
+    }
+  )
+  .put(
+    "/student/itt/profile",
+    async ({ set, body, user }) => {
+      const result = await userService.updateProfile(user.id, body);
+
+      set.status = 200;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.STUDENT],
+      body: createProfile,
+      detail: {
+        summary: "ตั้งค่าโปรไฟล์นักศึกษา",
+        description: "อัปโหลดรูปภาพโปรไฟล์ใหม่ (รองรับไฟล์รูปภาพ) และแก้ไขชื่อเล่น",
+      },
     }
   );

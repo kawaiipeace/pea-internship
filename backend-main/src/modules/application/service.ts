@@ -90,7 +90,11 @@ export class ApplicationService {
       message,
     });
 
-    await mailService.sendEmail(student.email, title, html);
+    setImmediate(() => {
+      mailService.sendEmail(student.email!, title, html).catch((err) => {
+        console.error("[MAIL ERROR]", err);
+      });
+    });
   }
 
   private async resolveStudentInternshipStatusAfterComplete(

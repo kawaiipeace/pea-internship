@@ -1,11 +1,16 @@
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, desc, eq } from "drizzle-orm";
+import { NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
   applicationInformations,
   applicationStatuses,
+  studentAttendanceSummary,
   studentProfiles,
   users,
 } from "@/db/schema";
+import { s3Client } from "../../lib/s3";
+import type * as userModel from "./model";
 
 const ROLE_STAFF = 2;
 const ROLE_INTERN = 3;
@@ -333,6 +338,84 @@ export class UserService {
         hours: updatedApplicationInfo?.hours ?? null,
         startDate: updatedApplicationInfo?.startDate ?? null,
         endDate: updatedApplicationInfo?.endDate ?? null,
+      };
+    });
+  }
+
+  async getStudentProgress(userId: string) {
+    const [summary] = await db
+      .select({
+        accumulatedHours: studentAttendanceSummary.totalAccumulatedHours,
+        totalHoursGoal: studentAttendanceSummary.totalHoursGoal,
+      })
+      .from(studentAttendanceSummary)
+      .where(eq(studentAttendanceSummary.userId, userId));
+
+    if (!summary) {
+      throw new NotFoundError("ไม่พบข้อมูลสรุปเวลาฝึกงานของนักศึกษา");
+    }
+
+    const accumulated = Number(summary.accumulatedHours || 0);
+    const goal = Number(summary.totalHoursGoal || 0);
+
+    let percentage = goal > 0 ? (accumulated / goal) * 100 : 0;
+
+    if (percentage > 100) percentage = 100;
+
+    return {
+      accumulatedHours: accumulated,
+      totalHoursGoal: goal,
+      percentage: Number(percentage.toFixed(2)),
+    };
+  }
+  async updateProfile(userId: string, data: userModel.createProfile) {
+    return await db.transaction(async (tx) => {
+      const user = await tx.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!user) throw new NotFoundError("ไม่พบผู้ใช้งานในระบบ");
+
+      let imagePath: string | undefined;
+
+      if (data.image) {
+        const fileExt = data.image.name.split(".").pop() || "png";
+        const fileName = `profiles/${userId}-${Date.now()}.${fileExt}`;
+
+        const arrayBuffer = await data.image.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const uploadCommand = new PutObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME!,
+          Key: fileName,
+          Body: buffer,
+          ContentType: data.image.type,
+        });
+
+        await s3Client.send(uploadCommand);
+
+        imagePath = fileName;
+
+        await tx
+          .update(studentProfiles)
+          .set({ image: imagePath })
+          .where(eq(studentProfiles.userId, userId));
+      }
+
+      if (data.nickname) {
+        await tx
+          .update(users)
+          .set({ displayUsername: data.nickname })
+          .where(eq(users.id, userId));
+      }
+
+      return {
+        success: true,
+        message: "ตั้งค่าโปรไฟล์และอัปโหลดรูปภาพสำเร็จ",
+        data: {
+          nickname: data.nickname || user.displayUsername,
+          imageUrl: imagePath,
+        },
       };
     });
   }

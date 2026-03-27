@@ -28,7 +28,7 @@ export class MailService {
     title: string;
     studentName?: string | null;
     message: string;
-    }) {
+  }) {
     const { title, studentName, message } = params;
 
     return `
@@ -79,5 +79,5 @@ export class MailService {
         </table>
     </div>
     `;
-    }
+  }
 }
