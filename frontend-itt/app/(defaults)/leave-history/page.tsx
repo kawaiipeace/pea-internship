@@ -13,6 +13,9 @@ import IconX from '@/components/icon/icon-x';
 import IconArchive from '@/components/icon/icon-archive';
 import IconPlusCircle from '@/components/icon/icon-plus-circle';
 import IconTrash from '@/components/icon/icon-trash';
+import IconFileText from '@/components/icon/icon-file-text';
+import IconBriefcase from '@/components/icon/icon-briefcase';
+import IconMedicalCross from '@/components/icon/icon-medical-cross';
 import EditTimeForm from '@/components/history/edit-time-form';
 import MonthPicker from '@/components/history/month-picker';
 import { useRouter } from 'next/navigation';
@@ -25,10 +28,55 @@ const LeaveHistoryPage = () => {
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
     const [isEditingTime, setIsEditingTime] = useState(false);
 
+    // Swipe to close state
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchTranslateY, setTouchTranslateY] = useState(0);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchStart(e.targetTouches[0].clientY);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (touchStart !== null) {
+            const currentY = e.targetTouches[0].clientY;
+            const diff = currentY - touchStart;
+            if (diff > 0) {
+                setTouchTranslateY(diff);
+            }
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (touchTranslateY > 100) {
+            setIsDetailModalOpen(false);
+            setIsEditingTime(false);
+        }
+        setTouchStart(null);
+        setTouchTranslateY(0);
+    };
+
     // Thai month names
     const thaiMonthsFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const [currentMonth, setCurrentMonth] = useState(0); // Jan
     const [currentYear, setCurrentYear] = useState(2569);
+
+    const handleViewFile = (filename: string) => {
+        Swal.fire({
+            title: 'ดูไฟล์แนบ',
+            html: `<div className="text-gray-500 mb-2">${filename}</div>`,
+            imageUrl: '/assets/images/profile-34.jpeg',
+            imageWidth: 400,
+            imageHeight: 400,
+            imageAlt: filename,
+            confirmButtonText: 'ปิด',
+            buttonsStyling: false,
+            customClass: {
+                popup: 'rounded-[20px] p-6 bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center',
+                confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] mt-4'
+            }
+        });
+    };
 
     const handleMonthSelect = (month: number, year: number) => {
         setCurrentMonth(month);
@@ -55,9 +103,9 @@ const LeaveHistoryPage = () => {
 
     // Summary Data for Leave History
     const summaryData = [
-        { title: 'ลาทั้งหมด', days: 4, icon: <IconFile />, bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
-        { title: 'ลากิจ', days: 2, icon: <IconArchive />, bgColor: 'bg-[#E8EAF6] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#3F51B5]', hoverBorderClass: 'hover:border-[#3F51B5]' },
-        { title: 'ลาป่วย', days: 2, icon: <IconPlusCircle />, bgColor: 'bg-[#FCE4EC] dark:bg-rose-900/20', textColor: 'text-[#E91E63]', activeBorderClass: 'border-[#E91E63]', hoverBorderClass: 'hover:border-[#E91E63]' },
+        { title: 'ลาทั้งหมด', days: 4, icon: <IconFileText />, bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
+        { title: 'ลากิจ', days: 2, icon: <IconBriefcase />, bgColor: 'bg-[#E8EAF6] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#3F51B5]', hoverBorderClass: 'hover:border-[#3F51B5]' },
+        { title: 'ลาป่วย', days: 2, icon: <IconMedicalCross />, bgColor: 'bg-[#FCE4EC] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
     ];
 
     const [historyData, setHistoryData] = useState([
@@ -317,18 +365,20 @@ const LeaveHistoryPage = () => {
 
                                         <div className="inline-flex mt-0.5">
                                             {item.leaveType === 'ลากิจ' ? (
-                                                <div className="inline-flex items-center px-2 py-0.5 bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE] rounded-full text-[11px] font-bold gap-1">
-                                                    <div className="w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                        <IconArchive className="w-2h-2 text-white stroke-[2.5px]" />
+                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
+                                                        <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
                                                     </div>
-                                                    {item.leaveType}
+                                                    <span className="leading-none">ลากิจ</span>
                                                 </div>
                                             ) : (
-                                                <div className="inline-flex items-center px-2 py-0.5 bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3] rounded-full text-[11px] font-bold gap-1">
-                                                    <div className="w-[14px] h-[14px] rounded-full flex items-center justify-center shrink-0 bg-[#E11D48]">
-                                                        <IconPlusCircle className="w-2 h-2 text-white stroke-[2.5px]" />
+                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M12 5v14M5 12h14" />
+                                                        </svg>
                                                     </div>
-                                                    {item.leaveType}
+                                                    <span className="leading-none">ลาป่วย</span>
                                                 </div>
                                             )}
                                         </div>
@@ -347,14 +397,20 @@ const LeaveHistoryPage = () => {
                                             <div className="font-bold text-[14px] sm:text-[15px] text-gray-800 dark:text-gray-200">{item.time}</div>
                                             <div className="inline-flex self-start">
                                                 {item.leaveType === 'ลากิจ' ? (
-                                                    <div className="inline-flex items-center px-3 py-1 bg-[#eef2ff] text-[#4F46E5] border border-[#c7d2fe] rounded-full text-xs font-bold gap-1.5">
-                                                        <IconArchive className="w-3.5 h-3.5" />
-                                                        {item.leaveType}
+                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                        <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
+                                                            <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
+                                                        </div>
+                                                        <span className="leading-none">ลากิจ</span>
                                                     </div>
                                                 ) : item.leaveType === 'ลาป่วย' ? (
-                                                    <div className="inline-flex items-center px-3 py-1 bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3] rounded-full text-xs font-bold gap-1.5">
-                                                        <IconPlusCircle className="w-3.5 h-3.5" />
-                                                        {item.leaveType}
+                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                        <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M12 5v14M5 12h14" />
+                                                            </svg>
+                                                        </div>
+                                                        <span className="leading-none">ลาป่วย</span>
                                                     </div>
                                                 ) : (
                                                     <div className="inline-flex items-center px-3 py-1 bg-[#f0f9ff] text-[#0ea5e9] border border-[#bae6fd] rounded-full text-xs font-bold gap-1.5">
@@ -479,11 +535,26 @@ const LeaveHistoryPage = () => {
                                         leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                                         leaveTo="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
                                       >
-                                        <Dialog.Panel as="div" className={`w-full sm:max-w-[700px] transform overflow-hidden text-left align-middle shadow-xl transition-all overflow-y-auto rounded-t-[20px] sm:rounded-[20px] bg-[#ffffff] dark:bg-[#1A1A1A] p-5 sm:p-6 h-[606px] sm:h-[623px] max-h-[90vh] sm:max-h-none`}>
+                                        <Dialog.Panel
+                                            as="div"
+                                            className={`w-full ${isEditingTime ? 'sm:max-w-[880px]' : 'sm:max-w-[700px]'} transform text-left align-middle shadow-xl transition-all ${isEditingTime
+                                                    ? "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] px-6 pb-6 pt-2 h-[calc(100vh-48px)] mt-12 sm:mt-0 sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden sm:block sm:overflow-y-auto"
+                                                    : "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] p-6 h-[62vh] sm:h-auto max-h-[62vh] sm:max-h-none flex flex-col overflow-hidden sm:block sm:overflow-y-auto sm:overflow-visible"
+                                                }`}
+                                            style={{
+                                                transform: touchTranslateY > 0 ? `translateY(${touchTranslateY}px)` : undefined,
+                                                transition: touchStart === null ? 'transform 0.3s ease-out' : 'none'
+                                            }}
+                                        >
 
                                             {/* Drawer Handle for mobile */}
-                                            <div className="flex justify-center mb-4 sm:hidden">
-                                                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                                            <div 
+                                                className="flex justify-center py-3 sm:hidden cursor-grab active:cursor-grabbing touch-none"
+                                                onTouchStart={handleTouchStart}
+                                                onTouchMove={handleTouchMove}
+                                                onTouchEnd={handleTouchEnd}
+                                            >
+                                                <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
                                             </div>
 
                                             {/* Close button for desktop */}
@@ -492,113 +563,259 @@ const LeaveHistoryPage = () => {
                                             </button>
 
                                             {selectedHistoryItem && (
-                                                <div className="text-black dark:text-white-light h-full w-full flex flex-col items-center">
-                                                    {/* Header */}
-                                                    <div className="w-full sm:w-[636px] h-auto sm:h-[153px] flex flex-col pt-2">
-                                                        <div className="flex items-center justify-between mt-2 mb-3">
-                                                            <div className="text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                {selectedHistoryItem.date} {selectedHistoryItem.month}
-                                                            </div>
-                                                            <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                                                                selectedHistoryItem.statusType === 'success' ? 'bg-[#E6F4EA] text-[#0D652D]' :
-                                                                selectedHistoryItem.statusType === 'danger' ? 'bg-[#FFE4E6] text-[#E11D48]' :
-                                                                selectedHistoryItem.statusType === 'warning' ? 'bg-[#F0F1F1] text-[#61646C]' :
-                                                                'bg-[#F3F4F6] text-gray-600'
-                                                            }`}>
-                                                                {selectedHistoryItem.status}
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="text-[18px] sm:text-[22px] font-bold text-[#1A1A1A] dark:text-white mb-2">
-                                                            {selectedHistoryItem.leaveDuration === 'ลาเต็มวัน' ? 'ลางานเต็มวัน' : selectedHistoryItem.time}
-                                                        </div>
-
-                                                        {/* Tag */}
-                                                        <div>
-                                                            <div className="inline-flex items-center px-2 py-1 bg-[#E0F2FE] text-[#0284C7] rounded-full text-[12px] font-bold gap-1 mt-0.5">
-                                                                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#0284C7]">
-                                                                    <IconFile className="w-3 h-3 text-white stroke-[2px]" />
-                                                                </div>
-                                                                {selectedHistoryItem.leaveType === 'ลากิจ' ? 'ลา' : selectedHistoryItem.leaveType}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Divider */}
-                                                        <hr className="w-full sm:w-[353px] h-[1px] bg-[#CECFD2] border-none mt-3 sm:mt-3 mb-1 self-start" />
-                                                    </div>
-
-                                                    {/* Card 1: Details */}
-                                                    <div className="w-full sm:w-[636px] sm:h-[168px] bg-[#FEFBF6] dark:bg-[#1C1710] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <IconMapPin className="w-[18px] h-[18px] text-gray-800 dark:text-gray-300 stroke-[1.5px]" />
-                                                            <div className="font-bold text-[14px] text-gray-800 dark:text-gray-100">อยู่นอกสถานที่</div>
-                                                        </div>
-                                                        
-                                                        <div className="space-y-0.5">
-                                                            <div className="text-[12px] font-bold text-gray-400">ระยะเวลาการลา :</div>
-                                                            <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200">
-                                                                <IconClock className="w-[18px] h-[18px] stroke-[1.5px]" />
-                                                                <div className="font-bold text-[14px]">{selectedHistoryItem.leaveDuration}</div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-0.5">
-                                                            <div className="text-[12px] font-bold text-gray-400">ประเภทการลา :</div>
-                                                            <div className="pt-0.5">
-                                                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold ${
-                                                                    selectedHistoryItem.leaveType === 'ลากิจ' ? 'bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE]' : 
-                                                                    selectedHistoryItem.leaveType === 'ลาป่วย' ? 'bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3]' :
-                                                                    'bg-[#F0F9FF] text-[#0EA5E9] border border-[#BAE6FD]'
-                                                                }`}>
-                                                                    {selectedHistoryItem.leaveType === 'ลากิจ' ? (
-                                                                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                                            <IconArchive className="w-3 h-3 text-white" />
+                                                    <div className="flex-1 overflow-y-auto sm:overflow-visible space-y-4 text-black dark:text-white-light sm:pb-0 pb-6 pr-0.5 custom-scrollbar">
+                                                        {/* Mobile Bottom Sheet (Restored & Refined) */}
+                                                        <div className="sm:hidden flex flex-col items-center">
+                                                            {/* Header Region */}
+                                                            <div className="w-full h-auto flex flex-col pt-2 touch-none">
+                                                                <div className="flex items-center justify-between mt-2 mb-3">
+                                                                    <div className="text-[17px] font-bold text-gray-800 dark:text-gray-200">
+                                                                        {selectedHistoryItem.date} {thaiMonthsFull[currentMonth]} {currentYear}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className={`px-3 py-1 rounded-full text-[12px] font-bold ${
+                                                                            selectedHistoryItem.status === 'อนุมัติการลา' ? 'bg-[#E6F4EA] text-[#0D652D]' :
+                                                                            selectedHistoryItem.status === 'ไม่อนุมัติการลา' ? 'bg-[#FFE4E6] text-[#E11D48]' :
+                                                                            'bg-[#F0F1F1] text-[#61646C]'
+                                                                        }`}>
+                                                                            {selectedHistoryItem.status}
                                                                         </div>
-                                                                    ) : selectedHistoryItem.leaveType === 'ลาป่วย' ? (
-                                                                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#e11d48]">
-                                                                            <IconPlusCircle className="w-3 h-3 text-white" />
+                                                                        {selectedHistoryItem.status === 'รอการอนุมัติ' || selectedHistoryItem.status === 'รออนุมัติการลา' ? (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="text-gray-500 hover:text-red-500 transition-colors p-1"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    Swal.fire({
+                                                                                        title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
+                                                                                        icon: 'error',
+                                                                                        showCancelButton: true,
+                                                                                        confirmButtonText: 'ตกลง',
+                                                                                        cancelButtonText: 'ย้อนกลับ',
+                                                                                        buttonsStyling: false,
+                                                                                        reverseButtons: true,
+                                                                                        customClass: {
+                                                                                            popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                                                                                            title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
+                                                                                            actions: 'flex gap-3 w-full justify-center mt-3',
+                                                                                            confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
+                                                                                            cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
+                                                                                        }
+                                                                                    }).then((result) => {
+                                                                                        if (result.isConfirmed) {
+                                                                                            setHistoryData(prev => prev.filter(h => h.id !== selectedHistoryItem.id));
+                                                                                            setIsDetailModalOpen(false);
+                                                                                            Swal.fire({
+                                                                                                title: 'ยกเลิกสำเร็จ!',
+                                                                                                icon: 'success',
+                                                                                                buttonsStyling: false,
+                                                                                                customClass: {
+                                                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                                                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                                                                                                    htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+                                                                                                    confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                                                                                                },
+                                                                                                confirmButtonText: 'ตกลง'
+                                                                                            });
+                                                                                        }
+                                                                                    });
+                                                                                }}
+                                                                            >
+                                                                                <IconTrash className="w-[20px] h-[20px]" />
+                                                                            </button>
+                                                                        ) : null}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="text-[20px] font-bold text-[#1A1A1A] dark:text-white mb-2">
+                                                                    {selectedHistoryItem.leaveDuration === 'ลาเต็มวัน' ? 'ลางานเต็มวัน' : selectedHistoryItem.time}
+                                                                </div>
+
+                                                                {/* Leave Type Tag */}
+                                                                <div className="mb-4">
+                                                                    {selectedHistoryItem.leaveType === 'ลากิจ' ? (
+                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
+                                                                                <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
+                                                                            </div>
+                                                                            <span className="leading-none text-gray-500">ลากิจ</span>
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#0ea5e9]">
-                                                                            <IconFile className="w-3 h-3 text-white" />
+                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
+                                                                                <IconMedicalCross className="w-2.5 h-2.5 text-white stroke-[1.5px]" />
+                                                                            </div>
+                                                                            <span className="leading-none text-gray-500">ลาป่วย</span>
                                                                         </div>
                                                                     )}
-                                                                    <span className="pr-1">{selectedHistoryItem.leaveType}</span>
+                                                                </div>
+
+                                                                {/* Divider */}
+                                                                <hr className="w-full h-[1px] bg-[#ECECED] border-none mb-4" />
+                                                            </div>
+
+                                                            {/* Reasoning Section */}
+                                                            <div className="w-full space-y-3 mb-6">
+                                                                <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
+                                                                    <IconFileText className="w-5 h-5 text-gray-800 dark:text-gray-300" />
+                                                                    รายละเอียดการลา
+                                                                </div>
+                                                                <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-3 min-h-[48px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
+                                                                    {selectedHistoryItem.leaveReason}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Evidence Section */}
+                                                            <div className="w-full space-y-3">
+                                                                <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
+                                                                    <span className="whitespace-nowrap">ไฟล์แนบ :</span>
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => handleViewFile(selectedHistoryItem.evidence)}
+                                                                        className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                                    >
+                                                                        <div className="flex items-center justify-center shrink-0">
+                                                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M7 18H17V20H7V18Z" fill="black" />
+                                                                                <path d="M17 14H7V16H17V14Z" fill="black" />
+                                                                                <path d="M7 10H14V12H7V10Z" fill="black" />
+                                                                                <path fillRule="evenodd" clipRule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9L14 2H6ZM13 4L19 10V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4H13Z" fill="black" />
+                                                                                <rect x="14.5" y="10.5" width="4" height="3" rx="1" fill="white" stroke="black" />
+                                                                                <text x="15" y="12.5" fontSize="2.5" fontWeight="bold" fill="black">PDF</text>
+                                                                            </svg>
+                                                                        </div>
+                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-gray-200 truncate">
+                                                                            {selectedHistoryItem.evidence}
+                                                                        </div>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Desktop Layout (Maintained exactly as was) */}
+                                                        <div className="hidden sm:flex flex-col items-center">
+                                                            {/* Header */}
+                                                            <div className="w-full sm:w-[636px] h-auto sm:h-[153px] flex flex-col pt-2 transition-all">
+                                                                <div className="flex items-center justify-between mt-2 mb-3">
+                                                                    <div className="text-[14px] font-bold text-gray-800 dark:text-gray-200">
+                                                                        {selectedHistoryItem.date} {selectedHistoryItem.month}
+                                                                    </div>
+                                                                    <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                                                                        selectedHistoryItem.statusType === 'success' ? 'bg-[#E6F4EA] text-[#0D652D]' :
+                                                                        selectedHistoryItem.statusType === 'danger' ? 'bg-[#FFE4E6] text-[#E11D48]' :
+                                                                        selectedHistoryItem.statusType === 'warning' ? 'bg-[#F0F1F1] text-[#61646C]' :
+                                                                        'bg-[#F3F4F6] text-gray-600'
+                                                                    }`}>
+                                                                        {selectedHistoryItem.status}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="text-[18px] sm:text-[22px] font-bold text-[#1A1A1A] dark:text-white mb-2">
+                                                                    {selectedHistoryItem.leaveDuration === 'ลาเต็มวัน' ? 'ลางานเต็มวัน' : selectedHistoryItem.time}
+                                                                </div>
+
+                                                                {/* Tag */}
+                                                                <div>
+                                                                    <div className="inline-flex items-center px-2.5 py-1.5 bg-[#EEF4FF] text-[#1C1C1C] border border-[#4386F9] rounded-full text-[12.5px] font-bold gap-1 mt-0.5">
+                                                                        <div className="w-5 h-5 rounded-full bg-[#4386F9] flex items-center justify-center text-white shrink-0">
+                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <rect x="5" y="4" width="14" height="16" rx="2" stroke="white" strokeWidth="2.5"/>
+                                                                                <path d="M9 9H15" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                                                                                <path d="M9 13H15" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                                                                                <path d="M9 17H12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                                                                            </svg>
+                                                                        </div>
+                                                                        ลา
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Divider */}
+                                                                <hr className="w-full sm:w-[353px] h-[1px] bg-[#CECFD2] border-none mt-3 sm:mt-3 mb-1 self-start" />
+                                                            </div>
+
+                                                            {/* Card 1: Details */}
+                                                            <div className="w-full sm:w-[636px] sm:h-[168px] bg-[#FEFBF6] dark:bg-[#1C1710] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <IconMapPin className="w-[18px] h-[18px] text-gray-800 dark:text-gray-300 stroke-[1.5px]" />
+                                                                    <div className="font-bold text-[14px] text-gray-800 dark:text-gray-100">อยู่นอกสถานที่</div>
+                                                                </div>
+                                                                
+                                                                <div className="space-y-0.5">
+                                                                    <div className="text-[12px] font-bold text-gray-400">ระยะเวลาการลา :</div>
+                                                                    <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200">
+                                                                        <IconClock className="w-[18px] h-[18px] stroke-[1.5px]" />
+                                                                        <div className="font-bold text-[14px]">{selectedHistoryItem.leaveDuration}</div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-0.5">
+                                                                    <div className="text-[12px] font-bold text-gray-400">ประเภทการลา :</div>
+                                                                    <div className="pt-0.5">
+                                                                        {selectedHistoryItem.leaveType === 'ลากิจ' ? (
+                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4B5E71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
+                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#4F46E5] flex items-center justify-center text-white shrink-0">
+                                                                                    <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
+                                                                                </div>
+                                                                                ลากิจ
+                                                                            </div>
+                                                                        ) : selectedHistoryItem.leaveType === 'ลาป่วย' ? (
+                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4B5E71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
+                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#FF1A7D] flex items-center justify-center text-white shrink-0">
+                                                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                        <path d="M12 6V18" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+                                                                                        <path d="M6 12H18" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+                                                                                    </svg>
+                                                                                </div>
+                                                                                ลาป่วย
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="inline-flex items-center w-[75px] justify-center px-2 py-1 bg-[#F0F9FF] text-[#0EA5E9] border border-[#BAE6FD] rounded-full text-[10px] font-bold gap-1 mt-0.5">
+                                                                                <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-[#0ea5e9]">
+                                                                                    <IconFileText className="w-2.5 h-2.5 text-white" />
+                                                                                </div>
+                                                                                {selectedHistoryItem.leaveType}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Card 2: Evidence & Reason */}
+                                                            <div className="w-full sm:w-[636px] sm:h-[190px] bg-[#FEFBF6] dark:bg-[#1A1A1A] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
+                                                                <div className="space-y-1.5">
+                                                                    <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
+                                                                        <IconCamera className="w-[18px] h-[18px]" />
+                                                                        หลักฐานการลางาน
+                                                                    </div>
+                                                                    <div className="flex items-center bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 py-2 gap-3 w-[450px] h-[45px]">
+                                                                        <div className="w-8 h-8 rounded-[4px] overflow-hidden flex items-center justify-center shrink-0 bg-gray-100">
+                                                                            <img src="/assets/images/profile-34.jpeg" alt="thumbnail" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                                                        </div>
+                                                                        <div className="text-[13px] font-bold text-gray-700 dark:text-gray-300">
+                                                                            {selectedHistoryItem.evidence || 'ลากิจ.jpg'} <span className="font-normal text-gray-400">({selectedHistoryItem.evidenceSize || '2MB'})</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-1.5 mt-2">
+                                                                    <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
+                                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                            <rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="2.5"/>
+                                                                            <path d="M9 9H15" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                                                                            <path d="M9 13H15" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                                                                            <path d="M9 17H12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                                                                        </svg>
+                                                                        รายละเอียดการลา
+                                                                    </div>
+                                                                    <div className="bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 w-[450px] h-[45px] text-[13px] text-gray-600 dark:text-gray-300 font-medium flex items-center">
+                                                                        {selectedHistoryItem.leaveReason || 'เข้าร่วมประชุมกับทางมหาวิทยาลัย ขาดไม่ได้'}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-
-                                                    {/* Card 2: Evidence & Reason */}
-                                                    <div className="w-full sm:w-[636px] sm:h-[168px] bg-[#FEFBF6] dark:bg-[#1A1A1A] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
-                                                        <div className="space-y-1.5">
-                                                            <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                <IconCamera className="w-[18px] h-[18px]" />
-                                                                หลักฐานการลงชื่อเข้างาน
-                                                            </div>
-                                                            <div className="flex items-center bg-[#F1F5F9] dark:bg-gray-800 border border-gray-100 rounded-md px-2 py-1.5 gap-2 h-[44px]">
-                                                                <div className="w-8 h-8 rounded-sm overflow-hidden flex items-center justify-center shrink-0 bg-gray-200">
-                                                                    <img src="/assets/images/profile-34.jpeg" alt="thumbnail" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                                                </div>
-                                                                <div className="text-[13px] font-bold text-gray-600 dark:text-gray-400">
-                                                                    ลากิจ.jpg <span className="font-normal text-gray-400">(2MB)</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-1.5 mt-2">
-                                                            <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                <IconFile className="w-[18px] h-[18px]" />
-                                                                รายละเอียดการลา
-                                                            </div>
-                                                            <div className="text-[13px] text-gray-600 font-medium pt-0.5">
-                                                                    เข้าร่วมประชุมกับทางมหาวิทยาลัย ขาดไม่ได้
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </Dialog.Panel>
+                                        )}
+                                    </Dialog.Panel>
                                     </Transition.Child>
                                 </div>
                             </div>
