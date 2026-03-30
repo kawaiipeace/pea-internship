@@ -4,10 +4,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { authApi, authStorage, notificationApi, type NotificationItem } from "@/services/api";
+import {
+  authApi,
+  authStorage,
+  notificationApi,
+  type NotificationItem,
+} from "@/services/api";
 import Toast from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
-import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
+import NotificationStatusIcon, {
+  detectNotificationTone,
+} from "@/components/ui/NotificationStatusIcon";
 
 // Helper function to format relative time
 const formatRelativeTime = (date: string | Date): string => {
@@ -49,7 +56,9 @@ export default function NavbarIntern({
   const [unreadCount, setUnreadCount] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">(
+    "success",
+  );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isClearAllConfirm, setIsClearAllConfirm] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
@@ -59,7 +68,7 @@ export default function NavbarIntern({
     try {
       const data = await notificationApi.getMyNotifications();
       setNotifications(data);
-      setUnreadCount(data.filter(n => !n.isRead).length);
+      setUnreadCount(data.filter((n) => !n.isRead).length);
     } catch (error) {
       console.error("Failed to load notifications:", error);
     }
@@ -69,7 +78,7 @@ export default function NavbarIntern({
   const markAllAsRead = useCallback(async () => {
     try {
       await notificationApi.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
       console.error("Failed to mark all as read:", error);
@@ -80,12 +89,10 @@ export default function NavbarIntern({
   const markAsRead = useCallback(async (notificationId: number) => {
     try {
       await notificationApi.markAsRead(notificationId, true);
-      setNotifications(prev =>
-        prev.map(n =>
-          n.id === notificationId ? { ...n, isRead: true } : n
-        )
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n)),
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
     }
@@ -142,11 +149,13 @@ export default function NavbarIntern({
       ids.map(async (id) => {
         await notificationApi.deleteNotification(id);
         return id;
-      })
+      }),
     );
 
     const failedIds = results
-      .map((result, index) => (result.status === "rejected" ? ids[index] : null))
+      .map((result, index) =>
+        result.status === "rejected" ? ids[index] : null,
+      )
       .filter((id): id is number => id !== null);
 
     const successCount = ids.length - failedIds.length;
@@ -186,9 +195,9 @@ export default function NavbarIntern({
   const handleOpenNotifications = useCallback(
     (isMobile: boolean) => {
       if (isMobile) {
-        setIsMobileNotificationOpen(prev => !prev);
+        setIsMobileNotificationOpen((prev) => !prev);
       } else {
-        setIsNotificationOpen(prev => !prev);
+        setIsNotificationOpen((prev) => !prev);
       }
       if (unreadCount > 0) {
         markAllAsRead();
@@ -263,8 +272,8 @@ export default function NavbarIntern({
       // ล้าง token และ user data จาก localStorage และ cookie
       authStorage.clearAuth();
       // ลบ localStorage ทั้งหมดที่เกี่ยวกับ user
-      localStorage.removeItem('current_user');
-      localStorage.removeItem('registered_interns');
+      localStorage.removeItem("current_user");
+      localStorage.removeItem("registered_interns");
       // Redirect ไปหน้าแรก (ใช้ replace เพื่อไม่ให้กดย้อนกลับได้)
       router.replace("/");
     }
@@ -294,28 +303,31 @@ export default function NavbarIntern({
             <div className="hidden md:flex items-center gap-8 mr-4">
               <Link
                 href="/intern-home"
-                className={`font-medium transition-colors ${pathname === "/intern-home"
-                  ? "text-primary-600 hover:text-primary-700"
-                  : "text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`font-medium transition-colors ${
+                  pathname === "/intern-home"
+                    ? "text-primary-600 hover:text-primary-700"
+                    : "text-gray-600 hover:text-primary-600"
+                }`}
               >
                 ตำแหน่งฝึกงาน
               </Link>
               <Link
                 href="/intern-pea-info"
-                className={`font-medium transition-colors ${pathname === "/intern-pea-info"
-                  ? "text-primary-600 hover:text-primary-700"
-                  : "text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`font-medium transition-colors ${
+                  pathname === "/intern-pea-info"
+                    ? "text-primary-600 hover:text-primary-700"
+                    : "text-gray-600 hover:text-primary-600"
+                }`}
               >
                 ข้อมูลกฟภ.
               </Link>
               <Link
                 href="/favorites"
-                className={`font-medium transition-colors relative ${pathname === "/favorites"
-                  ? "text-primary-600 hover:text-primary-700"
-                  : "text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`font-medium transition-colors relative ${
+                  pathname === "/favorites"
+                    ? "text-primary-600 hover:text-primary-700"
+                    : "text-gray-600 hover:text-primary-600"
+                }`}
               >
                 รายการโปรด
                 {favoritesCount > 0 && (
@@ -324,10 +336,11 @@ export default function NavbarIntern({
               </Link>
               <Link
                 href="/faqs"
-                className={`font-medium transition-colors ${pathname === "/faqs"
-                  ? "text-primary-600 hover:text-primary-700"
-                  : "text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`font-medium transition-colors ${
+                  pathname === "/faqs"
+                    ? "text-primary-600 hover:text-primary-700"
+                    : "text-gray-600 hover:text-primary-600"
+                }`}
               >
                 FAQs
               </Link>
@@ -337,7 +350,7 @@ export default function NavbarIntern({
             <div className="relative hidden md:block" ref={notificationRef}>
               <button
                 onClick={() => handleOpenNotifications(false)}
-                className={`relative p-2 transition-colors ${isNotificationOpen ? 'text-primary-600' : 'text-gray-600 hover:text-primary-600'}`}
+                className={`relative p-2 transition-colors ${isNotificationOpen ? "text-primary-600" : "text-gray-600 hover:text-primary-600"}`}
               >
                 <svg
                   className="w-6 h-6"
@@ -406,7 +419,7 @@ export default function NavbarIntern({
                             setIsNotificationOpen(false);
                             router.push("/application-status");
                           }}
-                          className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${!notification.isRead ? 'bg-primary-50/50' : ''}`}
+                          className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${!notification.isRead ? "bg-primary-50/50" : ""}`}
                         >
                           <button
                             onClick={(event) => {
@@ -420,7 +433,10 @@ export default function NavbarIntern({
                           </button>
                           <div className="flex items-start gap-2">
                             <NotificationStatusIcon
-                              tone={detectNotificationTone(notification.title, notification.message)}
+                              tone={detectNotificationTone(
+                                notification.title,
+                                notification.message,
+                              )}
                               className="mt-0.5 shrink-0"
                             />
                             <div>
@@ -450,7 +466,7 @@ export default function NavbarIntern({
             {/* Notification Bell - Mobile */}
             <button
               onClick={() => handleOpenNotifications(true)}
-              className={`relative p-2 transition-colors md:hidden ${isMobileNotificationOpen ? 'text-primary-600' : 'text-gray-600 hover:text-primary-600'}`}
+              className={`relative p-2 transition-colors md:hidden ${isMobileNotificationOpen ? "text-primary-600" : "text-gray-600 hover:text-primary-600"}`}
             >
               <svg
                 className="w-6 h-6"
@@ -475,7 +491,7 @@ export default function NavbarIntern({
             {/* User Profile Icon - Mobile Only */}
             <button
               onClick={() => setIsMobileProfileOpen(true)}
-              className={`p-2 transition-colors md:hidden ${isMobileProfileOpen ? 'text-primary-600' : 'text-gray-600 hover:text-primary-600'}`}
+              className={`p-2 transition-colors md:hidden ${isMobileProfileOpen ? "text-primary-600" : "text-gray-600 hover:text-primary-600"}`}
             >
               <svg
                 className="w-6 h-6"
@@ -496,7 +512,7 @@ export default function NavbarIntern({
             <div className="relative hidden md:block" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className={`p-2 transition-colors ${isDropdownOpen ? 'text-primary-600' : 'text-gray-600 hover:text-primary-600'}`}
+                className={`p-2 transition-colors ${isDropdownOpen ? "text-primary-600" : "text-gray-600 hover:text-primary-600"}`}
               >
                 <svg
                   className="w-6 h-6"
@@ -519,16 +535,20 @@ export default function NavbarIntern({
                   <Link
                     href="/intern-profile"
                     onClick={() => setIsDropdownOpen(false)}
-                    className={`group flex items-center gap-3 px-4 py-2 transition-colors ${pathname === "/intern-profile" || pathname === "/intern-profile/edit"
-                      ? "bg-primary-100 text-primary-600"
-                      : "text-gray-700 hover:bg-primary-100 hover:text-primary-600"
-                      }`}
+                    className={`group flex items-center gap-3 px-4 py-2 transition-colors ${
+                      pathname === "/intern-profile" ||
+                      pathname === "/intern-profile/edit"
+                        ? "bg-primary-100 text-primary-600"
+                        : "text-gray-700 hover:bg-primary-100 hover:text-primary-600"
+                    }`}
                   >
                     <svg
-                      className={`w-5 h-5 transition-colors ${pathname === "/intern-profile" || pathname === "/intern-profile/edit"
-                        ? "text-primary-600"
-                        : "text-gray-500 group-hover:text-primary-600"
-                        }`}
+                      className={`w-5 h-5 transition-colors ${
+                        pathname === "/intern-profile" ||
+                        pathname === "/intern-profile/edit"
+                          ? "text-primary-600"
+                          : "text-gray-500 group-hover:text-primary-600"
+                      }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -547,16 +567,20 @@ export default function NavbarIntern({
                   <Link
                     href="/application-history"
                     onClick={() => setIsDropdownOpen(false)}
-                    className={`group flex items-center gap-3 px-4 py-2 transition-colors ${pathname === "/application-history" || pathname?.startsWith("/application-history/")
-                      ? "bg-primary-100 text-primary-600"
-                      : "text-gray-700 hover:bg-primary-100 hover:text-primary-600"
-                      }`}
+                    className={`group flex items-center gap-3 px-4 py-2 transition-colors ${
+                      pathname === "/application-history" ||
+                      pathname?.startsWith("/application-history/")
+                        ? "bg-primary-100 text-primary-600"
+                        : "text-gray-700 hover:bg-primary-100 hover:text-primary-600"
+                    }`}
                   >
                     <svg
-                      className={`w-4 h-4 transition-colors ${pathname === "/application-history" || pathname?.startsWith("/application-history/")
-                        ? "text-primary-600"
-                        : "text-gray-500 group-hover:text-primary-600"
-                        }`}
+                      className={`w-4 h-4 transition-colors ${
+                        pathname === "/application-history" ||
+                        pathname?.startsWith("/application-history/")
+                          ? "text-primary-600"
+                          : "text-gray-500 group-hover:text-primary-600"
+                      }`}
                       viewBox="0 0 16 20"
                       fill="currentColor"
                       xmlns="http://www.w3.org/2000/svg"
@@ -571,10 +595,12 @@ export default function NavbarIntern({
                   <Link
                     href="/application-status"
                     onClick={() => setIsDropdownOpen(false)}
-                    className={`group flex items-center gap-3 px-4 py-2 transition-colors ${pathname === "/application-status" || pathname?.startsWith("/application-status/")
-                      ? "bg-primary-100 text-primary-600"
-                      : "text-gray-700 hover:bg-primary-100 hover:text-primary-600"
-                      }`}
+                    className={`group flex items-center gap-3 px-4 py-2 transition-colors ${
+                      pathname === "/application-status" ||
+                      pathname?.startsWith("/application-status/")
+                        ? "bg-primary-100 text-primary-600"
+                        : "text-gray-700 hover:bg-primary-100 hover:text-primary-600"
+                    }`}
                   >
                     <svg
                       width="19"
@@ -582,10 +608,12 @@ export default function NavbarIntern({
                       viewBox="0 0 21 21"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
-                      className={`transition-colors ${pathname === "/application-status" || pathname?.startsWith("/application-status/")
-                        ? "text-primary-600"
-                        : "text-gray-500 group-hover:text-primary-600"
-                        }`}
+                      className={`transition-colors ${
+                        pathname === "/application-status" ||
+                        pathname?.startsWith("/application-status/")
+                          ? "text-primary-600"
+                          : "text-gray-500 group-hover:text-primary-600"
+                      }`}
                     >
                       <path
                         d="M2 19C1.45 19 0.979167 18.8042 0.5875 18.4125C0.195833 18.0208 0 17.55 0 17V6C0 5.45 0.195833 4.97917 0.5875 4.5875C0.979167 4.19583 1.45 4 2 4H6V2C6 1.45 6.19583 0.979167 6.5875 0.5875C6.97917 0.195833 7.45 0 8 0H12C12.55 0 13.0208 0.195833 13.4125 0.5875C13.8042 0.979167 14 1.45 14 2V4H18C18.55 4 19.0208 4.19583 19.4125 4.5875C19.8042 4.97917 20 5.45 20 6V9C20 9.28333 19.9042 9.51667 19.7125 9.7C19.5208 9.88333 19.2833 9.975 19 9.975C18.7167 9.975 18.4792 9.87917 18.2875 9.6875C18.0958 9.49583 18 9.25833 18 8.975V6H2V17H8.5C8.78333 17 9.02083 17.0958 9.2125 17.2875C9.40417 17.4792 9.5 17.7167 9.5 18C9.5 18.2833 9.40417 18.5208 9.2125 18.7125C9.02083 18.9042 8.78333 19 8.5 19H2ZM8 4H12V2H8V4ZM16 21C14.6167 21 13.4375 20.5125 12.4625 19.5375C11.4875 18.5625 11 17.3833 11 16C11 14.6167 11.4875 13.4375 12.4625 12.4625C13.4375 11.4875 14.6167 11 16 11C17.3833 11 18.5625 11.4875 19.5375 12.4625C20.5125 13.4375 21 14.6167 21 16C21 17.3833 20.5125 18.5625 19.5375 19.5375C18.5625 20.5125 17.3833 21 16 21ZM16.5 15.8V13.5C16.5 13.3667 16.45 13.25 16.35 13.15C16.25 13.05 16.1333 13 16 13C15.8667 13 15.75 13.05 15.65 13.15C15.55 13.25 15.5 13.3667 15.5 13.5V15.775C15.5 15.9083 15.525 16.0375 15.575 16.1625C15.625 16.2875 15.7 16.4 15.8 16.5L17.3 18C17.4 18.1 17.5167 18.15 17.65 18.15C17.7833 18.15 17.9 18.1 18 18C18.1 17.9 18.15 17.7833 18.15 17.65C18.15 17.5167 18.1 17.4 18 17.3L16.5 15.8Z"
@@ -699,10 +727,11 @@ export default function NavbarIntern({
               <Link
                 href="/intern-home"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/intern-home"
-                  ? "text-primary-600 font-medium bg-primary-50"
-                  : ""
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/intern-home"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -722,10 +751,11 @@ export default function NavbarIntern({
               <Link
                 href="/intern-pea-info"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/intern-pea-info"
-                  ? "text-primary-600 font-medium bg-primary-50"
-                  : ""
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/intern-pea-info"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -745,10 +775,11 @@ export default function NavbarIntern({
               <Link
                 href="/favorites"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`relative flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/favorites"
-                  ? "text-primary-600 font-medium bg-primary-50"
-                  : ""
-                  }`}
+                className={`relative flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/favorites"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -773,10 +804,11 @@ export default function NavbarIntern({
               <Link
                 href="/faqs"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`relative flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors  ${pathname === "/faqs"
+                className={`relative flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors  ${
+                  pathname === "/faqs"
                     ? "bg-primary-50 text-primary-600"
                     : "text-gray-600 hover:bg-gray-50"
-                  }`}
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -894,18 +926,20 @@ export default function NavbarIntern({
             <Link
               href="/intern-profile"
               onClick={() => setIsMobileProfileOpen(false)}
-              className={`group flex items-center gap-4 py-4 px-8 -mx-8 transition-colors w-[calc(100%+4rem)] ${pathname === "/intern-profile" ||
+              className={`group flex items-center gap-4 py-4 px-8 -mx-8 transition-colors w-[calc(100%+4rem)] ${
+                pathname === "/intern-profile" ||
                 pathname === "/intern-profile/edit"
-                ? "bg-primary-50 text-primary-600"
-                : "text-gray-700 hover:bg-primary-50 hover:text-primary-600 active:bg-primary-100 active:text-primary-600"
-                }`}
+                  ? "bg-primary-50 text-primary-600"
+                  : "text-gray-700 hover:bg-primary-50 hover:text-primary-600 active:bg-primary-100 active:text-primary-600"
+              }`}
             >
               <svg
-                className={`w-6 h-6 ${pathname === "/intern-profile" ||
+                className={`w-6 h-6 ${
+                  pathname === "/intern-profile" ||
                   pathname === "/intern-profile/edit"
-                  ? "text-primary-600"
-                  : "text-gray-500 group-hover:text-primary-600 group-active:text-primary-600"
-                  }`}
+                    ? "text-primary-600"
+                    : "text-gray-500 group-hover:text-primary-600 group-active:text-primary-600"
+                }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -924,18 +958,20 @@ export default function NavbarIntern({
             <Link
               href="/application-history"
               onClick={() => setIsMobileProfileOpen(false)}
-              className={`group flex items-center gap-4 py-4 px-8 -mx-8 transition-colors w-[calc(100%+4rem)] ${pathname === "/application-history" ||
+              className={`group flex items-center gap-4 py-4 px-8 -mx-8 transition-colors w-[calc(100%+4rem)] ${
+                pathname === "/application-history" ||
                 pathname === "/application-history/job-detail"
-                ? "bg-primary-50 text-primary-600"
-                : "text-gray-700 hover:bg-primary-50 hover:text-primary-600 active:bg-primary-100 active:text-primary-600"
-                }`}
+                  ? "bg-primary-50 text-primary-600"
+                  : "text-gray-700 hover:bg-primary-50 hover:text-primary-600 active:bg-primary-100 active:text-primary-600"
+              }`}
             >
               <svg
-                className={`w-6 h-6 ${pathname === "/application-history" ||
+                className={`w-6 h-6 ${
+                  pathname === "/application-history" ||
                   pathname === "/application-history/job-detail"
-                  ? "text-primary-600"
-                  : "text-gray-500 group-hover:text-primary-600 group-active:text-primary-600"
-                  }`}
+                    ? "text-primary-600"
+                    : "text-gray-500 group-hover:text-primary-600 group-active:text-primary-600"
+                }`}
                 viewBox="0 0 16 20"
                 fill="currentColor"
                 xmlns="http://www.w3.org/2000/svg"
@@ -949,11 +985,12 @@ export default function NavbarIntern({
             <Link
               href="/application-status"
               onClick={() => setIsMobileProfileOpen(false)}
-              className={`group flex items-center gap-4 py-4 px-8 -mx-8 transition-colors w-[calc(100%+4rem)] ${pathname === "/application-status" ||
+              className={`group flex items-center gap-4 py-4 px-8 -mx-8 transition-colors w-[calc(100%+4rem)] ${
+                pathname === "/application-status" ||
                 pathname === "/application-status/document-list"
-                ? "bg-primary-50 text-primary-600"
-                : "text-gray-700 hover:bg-primary-50 hover:text-primary-600 active:bg-primary-100 active:text-primary-600"
-                }`}
+                  ? "bg-primary-50 text-primary-600"
+                  : "text-gray-700 hover:bg-primary-50 hover:text-primary-600 active:bg-primary-100 active:text-primary-600"
+              }`}
             >
               <svg
                 width="24"
@@ -961,11 +998,12 @@ export default function NavbarIntern({
                 viewBox="0 0 21 21"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className={`${pathname === "/application-status" ||
+                className={`${
+                  pathname === "/application-status" ||
                   pathname === "/application-status/document-list"
-                  ? "text-primary-600"
-                  : "text-gray-500 group-hover:text-primary-600 group-active:text-primary-600"
-                  }`}
+                    ? "text-primary-600"
+                    : "text-gray-500 group-hover:text-primary-600 group-active:text-primary-600"
+                }`}
               >
                 <path
                   d="M2 19C1.45 19 0.979167 18.8042 0.5875 18.4125C0.195833 18.0208 0 17.55 0 17V6C0 5.45 0.195833 4.97917 0.5875 4.5875C0.979167 4.19583 1.45 4 2 4H6V2C6 1.45 6.19583 0.979167 6.5875 0.5875C6.97917 0.195833 7.45 0 8 0H12C12.55 0 13.0208 0.195833 13.4125 0.5875C13.8042 0.979167 14 1.45 14 2V4H18C18.55 4 19.0208 4.19583 19.4125 4.5875C19.8042 4.97917 20 5.45 20 6V9C20 9.28333 19.9042 9.51667 19.7125 9.7C19.5208 9.88333 19.2833 9.975 19 9.975C18.7167 9.975 18.4792 9.87917 18.2875 9.6875C18.0958 9.49583 18 9.25833 18 8.975V6H2V17H8.5C8.78333 17 9.02083 17.0958 9.2125 17.2875C9.40417 17.4792 9.5 17.7167 9.5 18C9.5 18.2833 9.40417 18.5208 9.2125 18.7125C9.02083 18.9042 8.78333 19 8.5 19H2ZM8 4H12V2H8V4ZM16 21C14.6167 21 13.4375 20.5125 12.4625 19.5375C11.4875 18.5625 11 17.3833 11 16C11 14.6167 11.4875 13.4375 12.4625 12.4625C13.4375 11.4875 14.6167 11 16 11C17.3833 11 18.5625 11.4875 19.5375 12.4625C20.5125 13.4375 21 14.6167 21 16C21 17.3833 20.5125 18.5625 19.5375 19.5375C18.5625 20.5125 17.3833 21 16 21ZM16.5 15.8V13.5C16.5 13.3667 16.45 13.25 16.35 13.15C16.25 13.05 16.1333 13 16 13C15.8667 13 15.75 13.05 15.65 13.15C15.55 13.25 15.5 13.3667 15.5 13.5V15.775C15.5 15.9083 15.525 16.0375 15.575 16.1625C15.625 16.2875 15.7 16.4 15.8 16.5L17.3 18C17.4 18.1 17.5167 18.15 17.65 18.15C17.7833 18.15 17.9 18.1 18 18C18.1 17.9 18.15 17.7833 18.15 17.65C18.15 17.5167 18.1 17.4 18 17.3L16.5 15.8Z"
@@ -1095,22 +1133,30 @@ export default function NavbarIntern({
           {/* Notification Content */}
           <div className="px-4 py-4">
             {/* Notification Header */}
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+              <svg
+                className="h-5 w-5 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
               <span className="text-lg font-semibold text-gray-900">
                 การแจ้งเตือน
               </span>
               {notifications.length > 0 && (
                 <button
                   onClick={requestClearAllNotifications}
-                  className="text-xs text-red-600 hover:text-red-700"
+                  className="ml-auto text-sm font-medium text-red-600 hover:text-red-700"
                 >
-                  Clear all
+                  ลบทั้งหมด
                 </button>
-              )}
-              {notifications.length > 0 && (
-                <span className="bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                  {notifications.length}
-                </span>
               )}
             </div>
 
@@ -1125,7 +1171,7 @@ export default function NavbarIntern({
                       setIsMobileNotificationOpen(false);
                       router.push("/application-status");
                     }}
-                    className={`relative rounded-lg px-4 py-3 pr-14 cursor-pointer transition-colors ${!notification.isRead ? 'bg-primary-100 hover:bg-primary-150' : 'bg-primary-50 hover:bg-primary-100'}`}
+                    className={`relative rounded-lg px-4 py-3 pr-14 cursor-pointer transition-colors ${!notification.isRead ? "bg-primary-100 hover:bg-primary-150" : "bg-primary-50 hover:bg-primary-100"}`}
                   >
                     <button
                       onClick={(event) => {
@@ -1139,7 +1185,10 @@ export default function NavbarIntern({
                     </button>
                     <div className="flex items-start gap-2">
                       <NotificationStatusIcon
-                        tone={detectNotificationTone(notification.title, notification.message)}
+                        tone={detectNotificationTone(
+                          notification.title,
+                          notification.message,
+                        )}
                         className="mt-0.5 shrink-0"
                       />
                       <div>
@@ -1175,15 +1224,19 @@ export default function NavbarIntern({
 
       <ConfirmModal
         isOpen={showDeleteConfirm}
-        title={isClearAllConfirm ? "ยืนยันการลบทั้งหมด" : "ยืนยันการลบการแจ้งเตือน"}
+        title={
+          isClearAllConfirm ? "ยืนยันการลบทั้งหมด" : "ยืนยันการลบการแจ้งเตือน"
+        }
         message={
           isClearAllConfirm
             ? "คุณต้องการลบการแจ้งเตือนทั้งหมดใช่หรือไม่"
             : "คุณต้องการลบการแจ้งเตือนนี้ใช่หรือไม่"
         }
-        confirmText={isClearAllConfirm ? "Clear all" : "ลบ"}
+        confirmText={isClearAllConfirm ? "ลบทั้งหมด" : "ลบ"}
         cancelText="ยกเลิก"
-        onConfirm={isClearAllConfirm ? clearAllNotifications : deleteNotification}
+        onConfirm={
+          isClearAllConfirm ? clearAllNotifications : deleteNotification
+        }
         onCancel={() => {
           setShowDeleteConfirm(false);
           setIsClearAllConfirm(false);
