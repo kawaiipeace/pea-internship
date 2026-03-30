@@ -19,9 +19,8 @@ const adminRoutes = ["/admin"];
 // หน้าที่ไม่ควรเข้าได้ถ้า login แล้ว (Auth Routes)
 const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
 
-// Better Auth cookie names
+// Better Auth cookie name
 const BETTER_AUTH_SESSION_COOKIE = "better-auth.session_token";
-const BETTER_AUTH_SESSION_COOKIE_SECURE = "__Secure-better-auth.session_token";
 
 // Helper: ดึง home page ตาม role สำหรับ ITT
 function getHomeByRole(role: string | undefined): string {
@@ -42,9 +41,8 @@ export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const forceLogin = searchParams.get("forceLogin") === "1";
 
-  // ดึง session token (ลองทั้งแบบธรรมดาและแบบ Secure สำหรับ Production)
-  const sessionToken = request.cookies.get(BETTER_AUTH_SESSION_COOKIE_SECURE)?.value || 
-                       request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value;
+  // ดึง session token และ role
+  const sessionToken = request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value;
   const userRole = request.cookies.get("user_role")?.value;
 
   // isAuthenticated คือต้องมีทั้งคู่ (เพื่อป้องกันอาการค้าง)

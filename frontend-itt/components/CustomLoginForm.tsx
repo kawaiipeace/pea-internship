@@ -40,8 +40,8 @@ export default function CustomLoginForm({ onSuccess }: CustomLoginFormProps) {
                     },
                 });
                 
-                // Set user_role cookie สำหรับ middleware (เพิ่ม Secure และ SameSite สำหรับ PWA/HTTPS)
-                document.cookie = `user_role=intern; path=/; max-age=86400; SameSite=Lax; Secure`;
+                // Set user_role cookie สำหรับ middleware
+                document.cookie = `user_role=intern; path=/; max-age=86400`;
 
                 if (onSuccess) {
                     onSuccess();
