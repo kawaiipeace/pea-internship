@@ -41,7 +41,7 @@ export default function CustomLoginForm({ onSuccess }: CustomLoginFormProps) {
                 });
                 
                 // Set user_role cookie สำหรับ middleware
-                document.cookie = `user_role=student; path=/; max-age=86400`;
+                document.cookie = `user_role=intern; path=/; max-age=86400`;
 
                 if (onSuccess) {
                     onSuccess();
@@ -81,10 +81,6 @@ export default function CustomLoginForm({ onSuccess }: CustomLoginFormProps) {
     };
 
     return (
-        <div
-            className="flex min-h-screen items-center justify-center font-nunito"
-            style={{ background: 'linear-gradient(135deg, #fcca6b 0%, #c465f0 40%, #b1078c 75%, #ffffff 100%)' }}
-        >
         <div className="w-full max-w-[340px] mx-auto bg-white rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-8 relative border border-white/40">
             {/* Logo area */}
             <div className="flex justify-center mb-10 mt-2">
@@ -153,7 +149,6 @@ export default function CustomLoginForm({ onSuccess }: CustomLoginFormProps) {
                     </button>
                 </div>
             </form>
-        </div>
         </div>
     );
 }

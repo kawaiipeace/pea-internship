@@ -51,6 +51,11 @@ const Header = () => {
             });
 
             if (response.ok) {
+                // ลบ Cookie ในฝั่ง Client เพื่อความชัวร์ (รวมถึงกรณี API ลบไม่สำเร็จ)
+                document.cookie = 'better-auth.session_token=; path=/; max-age=0';
+                document.cookie = 'user_role=; path=/; max-age=0';
+                document.cookie = 'auth_token=; path=/; max-age=0';
+
                 Swal.fire({
                     icon: 'success',
                     title: 'ออกจากระบบสำเร็จ',
@@ -60,7 +65,7 @@ const Header = () => {
                         popup: 'rounded-[20px]',
                     },
                 });
-                router.push('/');
+                router.push('/login');
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -73,10 +78,16 @@ const Header = () => {
                 });
             }
         } catch (error) {
+            // แม้จะเกิด Error จาก Network ก็ลองเคลียร์ Cookie และ Redirect ไปที่ Login อยู่ดี
+            document.cookie = 'better-auth.session_token=; path=/; max-age=0';
+            document.cookie = 'user_role=; path=/; max-age=0';
+            document.cookie = 'auth_token=; path=/; max-age=0';
+            router.push('/login');
+            
             Swal.fire({
                 icon: 'error',
                 title: 'เกิดข้อผิดพลาด',
-                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ แต่ระบบจะทำการออกจากระบบให้',
                 customClass: {
                     popup: 'rounded-[20px]',
                     confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
