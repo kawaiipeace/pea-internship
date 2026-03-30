@@ -1,4 +1,4 @@
-import CustomLoginForm from '@/app/page';
+import CustomLoginForm from '@/components/CustomLoginForm';
 import { Metadata } from 'next';
 import React from 'react';
 
