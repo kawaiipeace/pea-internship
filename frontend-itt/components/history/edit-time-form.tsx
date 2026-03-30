@@ -160,7 +160,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                         <div className="relative w-full max-w-[450px]">
                             <input
                                 type="text"
-                                defaultValue={selectedHistoryItem?.checkInTime || "08:30"}
+                                defaultValue={(!selectedHistoryItem?.checkInTime || selectedHistoryItem?.checkInTime === "-" || selectedHistoryItem?.checkInTime === "ไม่ลงเวลา") ? "08:30" : selectedHistoryItem.checkInTime}
                                 className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
                             />
                             <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]">
@@ -175,7 +175,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                         <div className="relative w-full max-w-[450px]">
                             <input
                                 type="text"
-                                defaultValue={(selectedHistoryItem?.status === "ไม่ลงเวลาออก" || selectedHistoryItem?.checkOutTime === "ไม่ลงเวลา") ? "ไม่ลงเวลา" : (selectedHistoryItem?.checkOutTime || "16:30")}
+                                defaultValue={(!selectedHistoryItem?.checkOutTime || selectedHistoryItem?.checkOutTime === "-" || selectedHistoryItem?.checkOutTime === "ไม่ลงเวลา") ? "16:30" : selectedHistoryItem.checkOutTime}
                                 className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
                             />
                             <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]">
@@ -192,7 +192,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* สรุปชั่วโมง */}
                     <div className="mt-3 mb-[18px]">
                         <div className="text-[13px] font-bold text-[#828282]">
-                            ชั่วโมงที่เข้าทำงาน : {selectedHistoryItem?.status === "ไม่ลงเวลาออก" ? "0 ชั่วโมง" : (selectedHistoryItem?.workingHours || "7 ชั่วโมง")}
+                            ชั่วโมงที่เข้าทำงาน : {(selectedHistoryItem?.workingHours && selectedHistoryItem?.workingHours !== "-" && selectedHistoryItem?.workingHours !== "0 ชั่วโมง") ? selectedHistoryItem.workingHours : "7 ชั่วโมง"}
                         </div>
                     </div>
 
@@ -359,7 +359,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             <div className="relative">
                                 <input
                                     type="text"
-                                    defaultValue={selectedHistoryItem?.checkInTime || "08:30"}
+                                    defaultValue={(!selectedHistoryItem?.checkInTime || selectedHistoryItem?.checkInTime === "-" || selectedHistoryItem?.checkInTime === "ไม่ลงเวลา") ? "08:30" : selectedHistoryItem.checkInTime}
                                     className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
                                 />
                                 <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]">
@@ -372,7 +372,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             <div className="relative">
                                 <input
                                     type="text"
-                                    defaultValue={(selectedHistoryItem?.status === "ไม่ลงเวลาออก" || selectedHistoryItem?.checkOutTime === "ไม่ลงเวลา") ? "ไม่ลงเวลา" : (selectedHistoryItem?.checkOutTime || "16:30")}
+                                    defaultValue={(!selectedHistoryItem?.checkOutTime || selectedHistoryItem?.checkOutTime === "-" || selectedHistoryItem?.checkOutTime === "ไม่ลงเวลา") ? "16:30" : selectedHistoryItem.checkOutTime}
                                     className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
                                 />
                                 <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]">
@@ -393,7 +393,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                     {/* Result Text */}
                     <div className="text-[15px] font-bold text-gray-800">
-                        ชั่วโมงที่เข้าทำงาน : {selectedHistoryItem?.status === "ไม่ลงเวลาออก" ? "0 ชั่วโมง" : (selectedHistoryItem?.workingHours || "7 ชั่วโมง")}
+                        ชั่วโมงที่เข้าทำงาน : {(selectedHistoryItem?.workingHours && selectedHistoryItem?.workingHours !== "-" && selectedHistoryItem?.workingHours !== "0 ชั่วโมง") ? selectedHistoryItem.workingHours : "7 ชั่วโมง"}
                     </div>
 
                     {/* Reason Section */}
