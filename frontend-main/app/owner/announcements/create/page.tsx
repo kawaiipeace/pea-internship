@@ -566,6 +566,20 @@ export default function CreateAnnouncementPage() {
           alert("ไม่สามารถบันทึกเบอร์โทรได้ เบอร์โทรนี้อาจถูกใช้งานในระบบแล้ว");
         }
       }
+      // Save mentor phone numbers (non-blocking, skip if mentor is same as current user)
+      for (const mentor of mentors) {
+        if (
+          mentor.staffProfileId != null &&
+          mentor.phone &&
+          mentor.staffProfileId !== currentUser?.staffProfileId
+        ) {
+          try {
+            await userApi.updateStaffPhone(mentor.staffProfileId, mentor.phone);
+          } catch (err) {
+            console.warn(`Failed to update mentor phone for staffProfileId ${mentor.staffProfileId}:`, err);
+          }
+        }
+      }
       await positionApi.createPosition(apiData);
       // Show success modal then redirect
       setShowPublishSuccessModal(true);

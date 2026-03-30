@@ -70,6 +70,25 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
     }
   )
   .put(
+    "/staff/:staffProfileId/phone",
+    async ({ body, set, params }) => {
+      const staffProfileId = Number(params.staffProfileId);
+      const response = await userService.updateStaffPhone(staffProfileId, body.phoneNumber);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+      params: t.Object({
+        staffProfileId: t.String(),
+      }),
+      body: t.Object({
+        phoneNumber: t.String(),
+      }),
+    }
+  )
+  .put(
     "/student-profile",
     async ({ body, set, session }) => {
       const userId = session.userId;

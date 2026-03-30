@@ -294,7 +294,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
         const position = await positionApi.getPositionById(positionId);
         if (position) {
-          const announcement = positionToAnnouncement(position);
+          // ดึง profile ของ user ที่ login อยู่เพื่อใช้เป็นข้อมูลผู้ประกาศ
+          const userProfile = await userApi.getUserProfile();
+          const announcement = positionToAnnouncement(position, userProfile);
           setAcceptedCount(position.acceptedCount ?? 0);
 
           const formatDateForInput = (
@@ -575,6 +577,20 @@ export default function EditAnnouncementPage({ params }: PageProps) {
             message:
               "ไม่สามารถบันทึกเบอร์โทรได้ เบอร์โทรนี้อาจถูกใช้งานในระบบแล้ว",
           });
+        }
+      }
+      // บันทึกเบอร์โทรของพี่เลี้ยง (ข้ามถ้าพี่เลี้ยงเป็นคนเดียวกับผู้ประกาศ)
+      for (const mentor of mentors) {
+        if (
+          mentor.staffProfileId != null &&
+          mentor.phone &&
+          mentor.staffProfileId !== currentUser?.staffProfileId
+        ) {
+          try {
+            await userApi.updateStaffPhone(mentor.staffProfileId, mentor.phone);
+          } catch (err) {
+            console.warn(`Failed to update mentor phone for staffProfileId ${mentor.staffProfileId}:`, err);
+          }
         }
       }
       await positionApi.updatePosition(positionId, updateData);

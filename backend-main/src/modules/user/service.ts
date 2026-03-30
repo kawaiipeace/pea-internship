@@ -5,6 +5,7 @@ import { db } from "@/db";
 import {
   applicationInformations,
   applicationStatuses,
+  staffProfiles,
   studentAttendanceSummary,
   studentProfiles,
   users,
@@ -151,6 +152,31 @@ export class UserService {
 
     if (!updated) {
       throw new Error("User not found");
+    }
+
+    return updated;
+  }
+
+  async updateStaffPhone(staffProfileId: number, phoneNumber: string) {
+    // lookup userId จาก staffProfileId
+    const [profile] = await db
+      .select({ userId: staffProfiles.userId })
+      .from(staffProfiles)
+      .where(eq(staffProfiles.id, staffProfileId))
+      .limit(1);
+
+    if (!profile) {
+      throw new NotFoundError(`ไม่พบ staffProfile รหัส ${staffProfileId}`);
+    }
+
+    const [updated] = await db
+      .update(users)
+      .set({ phoneNumber })
+      .where(eq(users.id, profile.userId))
+      .returning();
+
+    if (!updated) {
+      throw new NotFoundError("ไม่พบผู้ใช้งานในระบบ");
     }
 
     return updated;

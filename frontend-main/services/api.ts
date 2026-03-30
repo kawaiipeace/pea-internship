@@ -272,6 +272,11 @@ export const userApi = {
     return response.data;
   },
 
+  // อัปเดตเบอร์โทรของ staff คนอื่น (ใช้ staffProfileId) — สำหรับ owner/admin เท่านั้น
+  updateStaffPhone: async (staffProfileId: number, phoneNumber: string): Promise<void> => {
+    await api.put(`/user/staff/${staffProfileId}/phone`, { phoneNumber });
+  },
+
   // อัปเดต student profile
   updateStudentProfile: async (data: UpdateStudentProfileData): Promise<unknown> => {
     const response = await api.put("/user/student-profile", data);
@@ -783,8 +788,13 @@ export const positionToJob = (position: Position): {
   // ใช้ข้อมูล department ที่ join มาจาก backend
   const departmentName = position.department?.deptFull || position.department?.deptShort || `กองงาน ${position.departmentId || "-"}`;
 
-  // ใช้ข้อมูล owner ที่ join มาจาก backend (ลอง owner ก่อน ถ้าไม่มีใช้ owners[0])
-  const ownerData = position.owner || (position.owners && position.owners.length > 0 ? position.owners[0] : null);
+  // ใช้ข้อมูล owner ที่ join มาจาก backend
+  // owners[] = ทุกคนที่ roleId=2 ใน department เดียวกัน → เลือกคนที่มีเบอร์โทร (ผู้สร้างจะบันทึกเบอร์ตอน create)
+  const ownerData = position.owner || (() => {
+    if (!position.owners || position.owners.length === 0) return null;
+    const withPhone = position.owners.find(o => o.phoneNumber);
+    return withPhone || position.owners[0];
+  })();
   const ownerName = ownerData
     ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
     : undefined;
@@ -870,7 +880,8 @@ export const positionToJobWithStaff = (
 };
 
 // Helper function to convert Position to JobAnnouncement format (for Owner pages)
-export const positionToAnnouncement = (position: Position): {
+// currentUser: ถ้าส่งมา จะใช้เป็นข้อมูลผู้ประกาศแทน owners[0]
+export const positionToAnnouncement = (position: Position, currentUser?: { fname?: string; lname?: string; email?: string; phoneNumber?: string } | null): {
   id: string;
   title: string;
   department: string;
@@ -899,8 +910,13 @@ export const positionToAnnouncement = (position: Position): {
   const departmentName = position.department?.deptFull || position.department?.deptShort || `กองงาน ${position.departmentId || "-"}`;
   const departmentLocation = position.department?.location || "";
 
-  // Owner info (ลอง owner ก่อน ถ้าไม่มีใช้ owners[0])
-  const ownerData = position.owner || (position.owners && position.owners.length > 0 ? position.owners[0] : null);
+  // Owner info: ถ้ามี currentUser ให้ใช้ก่อน (ผู้ที่ login อยู่คือผู้ประกาศ)
+  // fallback: เลือก owner ที่มีเบอร์โทร (ผู้สร้างจะบันทึกเบอร์ตอน create)
+  const ownerData = currentUser || position.owner || (() => {
+    if (!position.owners || position.owners.length === 0) return null;
+    const withPhone = position.owners.find(o => o.phoneNumber);
+    return withPhone || position.owners[0];
+  })();
   const ownerName = ownerData
     ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
     : "";
