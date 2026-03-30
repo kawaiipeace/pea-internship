@@ -52,9 +52,10 @@ const Header = () => {
 
             if (response.ok) {
                 // ลบ Cookie ในฝั่ง Client เพื่อความชัวร์ (รวมถึงกรณี API ลบไม่สำเร็จ)
-                document.cookie = 'better-auth.session_token=; path=/; max-age=0';
-                document.cookie = 'user_role=; path=/; max-age=0';
-                document.cookie = 'auth_token=; path=/; max-age=0';
+                document.cookie = 'better-auth.session_token=; path=/; max-age=0; SameSite=Lax; Secure';
+                document.cookie = '__Secure-better-auth.session_token=; path=/; max-age=0; SameSite=Lax; Secure';
+                document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax; Secure';
+                document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax; Secure';
 
                 Swal.fire({
                     icon: 'success',
@@ -67,21 +68,28 @@ const Header = () => {
                 });
                 router.push('/login');
             } else {
+                // แม้ API จะไม่ตอบกลับ OK (เช่น 404) ก็ควรลบ Cookie ในเครื่องทิ้งอยู่ดี เพื่อหาทางแก้ปัญหาหน้าค้าง
+                document.cookie = 'better-auth.session_token=; path=/; max-age=0; SameSite=Lax; Secure';
+                document.cookie = '__Secure-better-auth.session_token=; path=/; max-age=0; SameSite=Lax; Secure';
+                document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax; Secure';
+                
                 Swal.fire({
                     icon: 'error',
-                    title: 'ออกจากระบบล้มเหลว',
-                    text: 'กรุณาลองใหม่อีกครั้ง',
+                    title: 'ออกจากระบบล้มเหลว (API)',
+                    text: 'ระบบขัดข้องทางเทคนิค แต่ได้ทำการเคลียร์ข้อมูลในเครื่องให้แล้ว',
                     customClass: {
                         popup: 'rounded-[20px]',
                         confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
                     },
                 });
+                router.push('/login');
             }
         } catch (error) {
             // แม้จะเกิด Error จาก Network ก็ลองเคลียร์ Cookie และ Redirect ไปที่ Login อยู่ดี
-            document.cookie = 'better-auth.session_token=; path=/; max-age=0';
-            document.cookie = 'user_role=; path=/; max-age=0';
-            document.cookie = 'auth_token=; path=/; max-age=0';
+            document.cookie = 'better-auth.session_token=; path=/; max-age=0; SameSite=Lax; Secure';
+            document.cookie = '__Secure-better-auth.session_token=; path=/; max-age=0; SameSite=Lax; Secure';
+            document.cookie = 'user_role=; path=/; max-age=0; SameSite=Lax; Secure';
+            document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax; Secure';
             router.push('/login');
             
             Swal.fire({
