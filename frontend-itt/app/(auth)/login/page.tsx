@@ -1,4 +1,4 @@
-import ComponentsAuthLoginForm from '@/components/auth/components-auth-login-form';
+import CustomLoginForm from '@/app/CustomLoginForm';
 import { Metadata } from 'next';
 import React from 'react';
 
@@ -15,7 +15,7 @@ export default function LoginPage() {
             </div>
 
             <div className="relative z-10 w-full flex justify-center items-center">
-                <ComponentsAuthLoginForm />
+                <CustomLoginForm />
             </div>
         </div>
     );
