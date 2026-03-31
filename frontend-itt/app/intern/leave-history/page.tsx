@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, Fragment } from 'react';
 import Swal from 'sweetalert2';
 import IconCircleCheck from '@/components/icon/icon-circle-check';
@@ -289,7 +290,7 @@ const LeaveHistoryPage = () => {
                         </h2>
                         <button 
                             className="w-[130px] h-[35px] bg-[#A80689] text-white rounded-[10px] text-[13px] font-bold shadow-sm hover:bg-[#900b45] transition-colors flex items-center justify-center gap-1 shrink-0"
-                            onClick={() => router.push('/leave-request')}
+                            onClick={() => router.push('/intern/leave-history/leave-form')}
                         >
                             <span className="text-xl font-normal mb-0.5">+</span> ส่งคำขอการลา
                         </button>

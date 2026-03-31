@@ -3,11 +3,11 @@ import type { NextRequest } from "next/server";
 
 // หน้าสำหรับ intern ที่ต้อง login (Protected Routes)
 const internRoutes = [
-  "/check-in",       // ลงเวลาเข้า-ออก
-  "/history",        // ประวัติการลงเวลา
-  "/leave-request",  // ยื่นคำขอลา
-  "/leave-history",  // ประวัติการลา
-  "/user",           // ตั้งค่าโปรไฟล์
+  "/intern",       // ลงเวลาเข้า-ออก
+  "/intern/history",        // ประวัติการลงเวลา
+  "/intern/leave-request",  // ยื่นคำขอลา
+  "/intern/leave-history",  // ประวัติการลา
+  "/intern/user",           // ตั้งค่าโปรไฟล์
 ];
 
 // หน้าสำหรับ mentor (พี่เลี้ยง)
@@ -19,8 +19,9 @@ const adminRoutes = ["/admin"];
 // หน้าที่ไม่ควรเข้าได้ถ้า login แล้ว (Auth Routes)
 const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
 
-// Better Auth cookie name
-const BETTER_AUTH_SESSION_COOKIE = "better-auth.session_token";
+// Token session cookie name
+const SESSION_COOKIE = "token";
+const BETTER_AUTH_COOKIE = "better-auth.session_token";
 
 // Helper: ดึง home page ตาม role สำหรับ ITT
 function getHomeByRole(role: string | undefined): string {
@@ -33,7 +34,7 @@ function getHomeByRole(role: string | undefined): string {
     case "intern":
     case "student":
     default:
-      return "/check-in";
+      return "/intern";
   }
 }
 
@@ -42,7 +43,7 @@ export function middleware(request: NextRequest) {
   const forceLogin = searchParams.get("forceLogin") === "1";
 
   // ดึง session token และ role
-  const sessionToken = request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value;
+  const sessionToken = request.cookies.get(SESSION_COOKIE)?.value || request.cookies.get(BETTER_AUTH_COOKIE)?.value;
   const userRole = request.cookies.get("user_role")?.value;
 
   // isAuthenticated คือต้องมีทั้งคู่ (เพื่อป้องกันอาการค้าง)
@@ -90,7 +91,7 @@ export function middleware(request: NextRequest) {
     }
     // Intern พยายามเข้า Mentor/Admin routes
     if ((userRole === "intern" || userRole === "student") && (isMentorRoute || isAdminRoute)) {
-      return NextResponse.redirect(new URL("/check-in", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
     // Admin พยายามเข้าหน้าอื่นๆ
     if (userRole === "admin" && (isInternRoute || isMentorRoute)) {
