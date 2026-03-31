@@ -51,27 +51,20 @@ export const auth = betterAuth({
             "email",
           ],
           mapProfileToUser: async (profile) => {
-            const employeeId =
-              profile.employee_id || profile.preferred_username;
-
-            if (employeeId && profile.email) {
-              tempStaffData.set(profile.email, employeeId);
-            }
+            const nameParts = profile.name ? profile.name.split(" ") : [];
+            const thaiFname = nameParts[0] || "Unknown";
+            const thaiLname = nameParts.slice(1).join(" ") || "";
+            const englishName = profile.family_name || profile.preferred_username;
 
             return {
               roleId: 2,
               departmentId: null,
-              fname:
-                profile.given_name || profile.name?.split(" ")[0] || "Unknown",
-              lname:
-                profile.family_name ||
-                profile.name?.split(" ").slice(1).join(" ") ||
-                "",
+              fname: thaiFname,
+              lname: thaiLname,
               emailVerified: profile.email_verified || false,
               gender: "OTHER",
-              username:
-                profile.preferred_username || profile.email?.split("@")[0],
-              displayUsername: profile.name || profile.preferred_username,
+              username: profile.preferred_username || profile.email?.split("@")[0],
+              displayUsername: englishName,
               phoneNumber: profile.phone_number || null,
             };
           },
