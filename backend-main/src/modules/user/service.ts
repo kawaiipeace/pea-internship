@@ -1,5 +1,5 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
@@ -13,7 +13,8 @@ import {
 import { s3Client } from "../../lib/s3";
 import type * as userModel from "./model";
 
-const ROLE_STAFF = 2;
+const ROLE_ADMIN = 1;
+const ROLE_OWNER = 2;
 const ROLE_INTERN = 3;
 
 export class UserService {
@@ -101,10 +102,10 @@ export class UserService {
     const staffUsers = await db.query.users.findMany({
       where: departmentId
         ? and(
-            eq(users.roleId, ROLE_STAFF),
+            or(eq(users.roleId, ROLE_ADMIN), eq(users.roleId, ROLE_OWNER)),
             eq(users.departmentId, departmentId)
           )
-        : eq(users.roleId, ROLE_STAFF),
+        : or(eq(users.roleId, ROLE_ADMIN), eq(users.roleId, ROLE_OWNER)),
       with: {
         staffProfiles: true,
       },
@@ -115,9 +116,10 @@ export class UserService {
       const profile = Array.isArray(staffProfiles)
         ? staffProfiles[0]
         : staffProfiles;
+
       return {
         ...userData,
-        staffProfileId: profile?.id || null,
+        staffProfileId: profile?.id ?? null,
       };
     });
   }
@@ -158,7 +160,6 @@ export class UserService {
   }
 
   async updateStaffPhone(staffProfileId: number, phoneNumber: string) {
-    // lookup userId จาก staffProfileId
     const [profile] = await db
       .select({ userId: staffProfiles.userId })
       .from(staffProfiles)
@@ -394,6 +395,7 @@ export class UserService {
       percentage: Number(percentage.toFixed(2)),
     };
   }
+
   async updateProfile(userId: string, data: userModel.createProfile) {
     return await db.transaction(async (tx) => {
       const user = await tx.query.users.findFirst({

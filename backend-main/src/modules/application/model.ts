@@ -33,6 +33,7 @@ export const UploadDocumentBody = t.Object({
 export const ReviewDocumentBody = t.Object({
   status: t.Union([t.Literal("VERIFIED"), t.Literal("INVALID")]),
   note: t.Optional(t.String()),
+  invalidReasons: t.Optional(t.Array(t.String({ minLength: 1 }))),
 });
 
 export const reviewDocByNameParams = t.Object({
@@ -84,6 +85,7 @@ export type UpdateApplicationInformationBodyType =
   typeof UpdateApplicationInformationBody.static;
 export type ApplicationInformationBodyType =
   typeof ApplicationInformationBody.static;
+export type ReviewDocumentBodyType = typeof ReviewDocumentBody.static;
 export type HistoryQueryType = typeof HistoryQuery.static;
 export type CancelByOwnerBodyType = typeof CancelByOwnerBody.static;
 export type AllStudentsHistoryQueryType = typeof AllStudentsHistoryQuery.static;
