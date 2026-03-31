@@ -51,22 +51,24 @@ export const auth = betterAuth({
             "email",
           ],
           mapProfileToUser: async (profile) => {
-            const nameParts = profile.name ? profile.name.split(" ") : [];
-            const thaiFname = nameParts[0] || "Unknown";
-            const thaiLname = nameParts.slice(1).join(" ") || "";
-            const englishName =
-              profile.family_name || profile.preferred_username;
+            const employeeId =
+              profile.employee_id || profile.preferred_username;
+
+            if (employeeId && profile.email) {
+              tempStaffData.set(profile.email, employeeId);
+            }
 
             return {
               roleId: 2,
               departmentId: null,
-              fname: thaiFname,
-              lname: thaiLname,
+              fname:
+                profile.given_name.split(" ")[0],
+              lname: profile.given_name.split(" ")[0],
               emailVerified: profile.email_verified || false,
               gender: "OTHER",
               username:
                 profile.preferred_username || profile.email?.split("@")[0],
-              displayUsername: englishName,
+              displayUsername: profile.given_name,
               phoneNumber: profile.phone_number || null,
             };
           },
