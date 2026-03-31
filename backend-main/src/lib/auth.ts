@@ -62,16 +62,13 @@ export const auth = betterAuth({
               roleId: 2,
               departmentId: null,
               fname:
-                profile.given_name || profile.name?.split(" ")[0] || "Unknown",
-              lname:
-                profile.family_name ||
-                profile.name?.split(" ").slice(1).join(" ") ||
-                "",
+                profile.given_name.split(" ")[0],
+              lname: profile.given_name.split(" ")[0],
               emailVerified: profile.email_verified || false,
               gender: "OTHER",
               username:
                 profile.preferred_username || profile.email?.split("@")[0],
-              displayUsername: profile.name || profile.preferred_username,
+              displayUsername: profile.given_name,
               phoneNumber: profile.phone_number || null,
             };
           },
@@ -162,7 +159,12 @@ export const auth = betterAuth({
 
   baseURL: Bun.env.BETTER_AUTH_BASE_URL,
   secret: Bun.env.BETTER_AUTH_SECRET,
-  trustedOrigins: ["http://localhost:2701", "http://127.0.0.1:2701", "http://localhost:2702", "http://127.0.0.1:2702"],
+  trustedOrigins: [
+    "http://localhost:2701",
+    "http://127.0.0.1:2701",
+    "http://localhost:2702",
+    "http://127.0.0.1:2702",
+  ],
 });
 
 export type Auth = typeof auth;

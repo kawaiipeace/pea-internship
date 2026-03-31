@@ -135,7 +135,6 @@ function getValidationBadge(status: string) {
 type ViewMode =
   | "pending_review"
   | "docs_invalid"
-  | "awaiting"
   | "active"
   | "completed"
   | "cancelled";
@@ -147,19 +146,12 @@ function getViewMode(app: AllStudentsHistoryItem): ViewMode {
   if (hasInvalidDocs) return "docs_invalid";
   if (app.applicationStatus === "PENDING_REVIEW") return "pending_review";
   if (app.applicationStatus === "COMPLETE") {
-    switch (app.studentInternshipStatus) {
-      case "CANCEL":
-        return "cancelled";
-      case "COMPLETE":
-        return "completed";
-      case "AWAITING":
-      case "ACCEPT":
-        return "awaiting";
-      case "ACTIVE":
-        return "active";
-      default:
-        return "active";
-    }
+    if (app.studentInternshipStatus === "CANCEL") return "cancelled";
+    if (app.studentInternshipStatus === "COMPLETE") return "completed";
+    // Check if end date has passed (frontend fallback for active students)
+    if (app.infoEndDate && new Date(app.infoEndDate) <= new Date())
+      return "completed";
+    return "active";
   }
   return "pending_review";
 }
@@ -324,8 +316,7 @@ export default function AdminApplicationDetailPage() {
   const breadcrumbTab =
     viewMode === "docs_invalid"
       ? "rejected"
-      : viewMode === "awaiting" ||
-          viewMode === "active" ||
+      : viewMode === "active" ||
           viewMode === "completed" ||
           viewMode === "cancelled"
         ? "approved"
@@ -343,32 +334,29 @@ export default function AdminApplicationDetailPage() {
             text: "เอกสารไม่ผ่าน",
             className: "bg-[#FEE4E2] text-[#912018] border border-[#FECDCA]",
           }
-        : null;
+        : {
+            text: "เอกสารผ่าน",
+            className: "bg-[#DCFAE6] text-[#085D3A] border border-[#DCFAE6]",
+          };
 
   // Secondary badge (only for COMPLETE status)
   const secondaryBadge =
-    viewMode === "awaiting"
+    viewMode === "active"
       ? {
-          text: "รอเริ่มฝึกงาน",
-          className: "bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]",
+          text: "อยู่ระหว่างฝึกงาน",
+          className: "bg-[#FEF0C7] text-[#7A2E0E] border border-[#FEDF89]",
         }
-      : viewMode === "active"
+      : viewMode === "completed"
         ? {
-            text: "อยู่ระหว่างฝึกงาน",
-            className: "bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]",
+            text: "ฝึกงานเสร็จสิ้น",
+            className: "bg-[#DCFAE6] text-[#085D3A] border border-[#DCFAE6]",
           }
-        : viewMode === "completed"
+        : viewMode === "cancelled"
           ? {
-              text: "ฝึกงานเสร็จสิ้น",
-              className: "bg-[#DCFAE6] text-[#085D3A] border border-[#A9EFC5]",
+              text: "ยกเลิกฝึกงาน",
+              className: "bg-[#FEE4E2] text-[#912018] border border-[#FECDCA]",
             }
-          : viewMode === "cancelled"
-            ? {
-                text: "ยกเลิกฝึกงาน",
-                className:
-                  "bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA]",
-              }
-            : null;
+          : null;
 
   // Reason box
   const showReasonBox =
@@ -437,13 +425,11 @@ export default function AdminApplicationDetailPage() {
                 {application.fname} {application.lname}
               </h2>
               <div className="mt-2 flex flex-wrap justify-center gap-2">
-                {primaryBadge && (
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${primaryBadge.className}`}
-                  >
-                    {primaryBadge.text}
-                  </span>
-                )}
+                <span
+                  className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${primaryBadge.className}`}
+                >
+                  {primaryBadge.text}
+                </span>
                 {secondaryBadge && (
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${secondaryBadge.className}`}
