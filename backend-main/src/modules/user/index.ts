@@ -73,7 +73,10 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
     "/staff/:staffProfileId/phone",
     async ({ body, set, params }) => {
       const staffProfileId = Number(params.staffProfileId);
-      const response = await userService.updateStaffPhone(staffProfileId, body.phoneNumber);
+      const response = await userService.updateStaffPhone(
+        staffProfileId,
+        body.phoneNumber
+      );
 
       set.status = 200;
       return response;

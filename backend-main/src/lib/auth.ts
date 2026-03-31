@@ -54,7 +54,8 @@ export const auth = betterAuth({
             const nameParts = profile.name ? profile.name.split(" ") : [];
             const thaiFname = nameParts[0] || "Unknown";
             const thaiLname = nameParts.slice(1).join(" ") || "";
-            const englishName = profile.family_name || profile.preferred_username;
+            const englishName =
+              profile.family_name || profile.preferred_username;
 
             return {
               roleId: 2,
@@ -63,7 +64,8 @@ export const auth = betterAuth({
               lname: thaiLname,
               emailVerified: profile.email_verified || false,
               gender: "OTHER",
-              username: profile.preferred_username || profile.email?.split("@")[0],
+              username:
+                profile.preferred_username || profile.email?.split("@")[0],
               displayUsername: englishName,
               phoneNumber: profile.phone_number || null,
             };
@@ -155,7 +157,12 @@ export const auth = betterAuth({
 
   baseURL: Bun.env.BETTER_AUTH_BASE_URL,
   secret: Bun.env.BETTER_AUTH_SECRET,
-  trustedOrigins: ["http://localhost:2701", "http://127.0.0.1:2701", "http://localhost:2702", "http://127.0.0.1:2702"],
+  trustedOrigins: [
+    "http://localhost:2701",
+    "http://127.0.0.1:2701",
+    "http://localhost:2702",
+    "http://127.0.0.1:2702",
+  ],
 });
 
 export type Auth = typeof auth;
