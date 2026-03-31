@@ -736,6 +736,7 @@ export const applicationDocuments = pgTable(
     docFile: varchar("doc_file", { length: 255 }).notNull(),
     validationStatus: validationStatusEnum("validation_status").notNull(),
     note: text(),
+    invalidReasons: text("invalid_reasons").array(),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

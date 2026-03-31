@@ -421,6 +421,7 @@ CREATE TABLE -- intern
     doc_file VARCHAR(255) NOT NULL,
     validation_status public.validation_status_enum NOT NULL,
     note TEXT,
+    invalid_reasons TEXT[],
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (application_status_id, doc_type_id),

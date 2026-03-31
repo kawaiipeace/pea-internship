@@ -1082,7 +1082,8 @@ export class ApplicationService {
     applicationId: number,
     docTypeId: 1 | 2 | 3 | 4,
     status: "VERIFIED" | "INVALID",
-    note?: string
+    note?: string,
+    invalidReasons?: string[]
   ) {
     return await db.transaction(async (tx) => {
       const [adminUser] = await tx
@@ -1125,11 +1126,28 @@ export class ApplicationService {
 
       if (!doc) throw new NotFoundError("ไม่พบเอกสาร");
 
+      const normalizedInvalidReasons =
+        status === "INVALID"
+          ? (invalidReasons ?? [])
+              .map((reason) => reason.trim())
+              .filter((reason) => reason.length > 0)
+          : null;
+
+      if (
+        status === "INVALID" &&
+        (!normalizedInvalidReasons || normalizedInvalidReasons.length === 0)
+      ) {
+        throw new BadRequestError(
+          "กรุณาระบุเหตุผลในการตีกลับเอกสารอย่างน้อย 1 ข้อ"
+        );
+      }
+
       await tx
         .update(applicationDocuments)
         .set({
           validationStatus: status,
           note: status === "INVALID" ? (note ?? null) : null,
+          invalidReasons: status === "INVALID" ? normalizedInvalidReasons : null,
           updatedAt: new Date(),
         })
         .where(eq(applicationDocuments.id, doc.id));
@@ -1149,7 +1167,10 @@ export class ApplicationService {
             .update(applicationStatuses)
             .set({
               applicationStatus: "PENDING_REQUEST",
-              statusNote: note ?? null,
+              statusNote:
+                normalizedInvalidReasons && normalizedInvalidReasons.length > 0
+                  ? normalizedInvalidReasons.join(", ")
+                  : (note ?? null),
               updatedAt: new Date(),
             })
             .where(eq(applicationStatuses.id, applicationId));
@@ -1175,10 +1196,16 @@ export class ApplicationService {
             `APPLICATION_STATUS_CHANGE applicationId=${applicationId} to=PENDING_REQUEST`
           );
 
-          return { applicationStatus: "PENDING_REQUEST" };
+          return {
+            applicationStatus: "PENDING_REQUEST",
+            invalidReasons: normalizedInvalidReasons,
+          };
         }
 
-        return { applicationStatus: app.status };
+        return {
+          applicationStatus: app.status,
+          invalidReasons: normalizedInvalidReasons,
+        };
       }
 
       if (status === "VERIFIED" && isAfterRequestStage) {
@@ -1247,6 +1274,7 @@ export class ApplicationService {
     });
   }
 
+
   async getMyHistory(userId: string, includeCanceled = true) {
     return await db.transaction(async (tx) => {
       const [me] = await tx
@@ -1256,14 +1284,11 @@ export class ApplicationService {
 
       if (!me) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
 
-      // Auto-complete expired internships for this user
-      // await this.autoCompleteInternships(tx, userId);
-
       const whereClause = includeCanceled
         ? eq(applicationStatuses.userId, userId)
         : and(
             eq(applicationStatuses.userId, userId),
-            eq(applicationStatuses.applicationStatus, "CANCEL")
+            ne(applicationStatuses.applicationStatus, "CANCEL")
           );
 
       const rows = await tx
@@ -1298,7 +1323,6 @@ export class ApplicationService {
         .where(whereClause)
         .orderBy(desc(applicationStatuses.internshipRound));
 
-      // Fetch documents for all applications
       const appIds = rows.map((r) => r.applicationId);
       const allDocs = appIds.length
         ? await tx
@@ -1306,6 +1330,8 @@ export class ApplicationService {
               applicationStatusId: applicationDocuments.applicationStatusId,
               docTypeId: applicationDocuments.docTypeId,
               docFile: applicationDocuments.docFile,
+              validationStatus: applicationDocuments.validationStatus,
+              invalidReasons: applicationDocuments.invalidReasons,
             })
             .from(applicationDocuments)
             .where(inArray(applicationDocuments.applicationStatusId, appIds))
@@ -1323,6 +1349,8 @@ export class ApplicationService {
         documents: (docsMap.get(row.applicationId) ?? []).map((d) => ({
           docTypeId: d.docTypeId,
           docFile: d.docFile,
+          validationStatus: d.validationStatus,
+          invalidReasons: d.invalidReasons ?? [],
         })),
       }));
     });
@@ -1359,9 +1387,6 @@ export class ApplicationService {
         throw new ForbiddenError("ไม่ใช่กองของตน");
       }
 
-      // Auto-complete expired internships for this student
-      // await this.autoCompleteInternships(tx, studentUserId);
-
       const rows = await tx
         .select({
           applicationId: applicationStatuses.id,
@@ -1385,7 +1410,37 @@ export class ApplicationService {
         .where(eq(applicationStatuses.userId, studentUserId))
         .orderBy(desc(applicationStatuses.internshipRound));
 
-      return rows;
+      const appIds = rows.map((row) => row.applicationId);
+
+      const allDocs = appIds.length
+        ? await tx
+            .select({
+              applicationStatusId: applicationDocuments.applicationStatusId,
+              docTypeId: applicationDocuments.docTypeId,
+              docFile: applicationDocuments.docFile,
+              validationStatus: applicationDocuments.validationStatus,
+              invalidReasons: applicationDocuments.invalidReasons,
+            })
+            .from(applicationDocuments)
+            .where(inArray(applicationDocuments.applicationStatusId, appIds))
+        : [];
+
+      const docsMap = new Map<number, typeof allDocs>();
+      for (const doc of allDocs) {
+        const arr = docsMap.get(doc.applicationStatusId) ?? [];
+        arr.push(doc);
+        docsMap.set(doc.applicationStatusId, arr);
+      }
+
+      return rows.map((row) => ({
+        ...row,
+        documents: (docsMap.get(row.applicationId) ?? []).map((d) => ({
+          docTypeId: d.docTypeId,
+          docFile: d.docFile,
+          validationStatus: d.validationStatus,
+          invalidReasons: d.invalidReasons,
+        })),
+      }));
     });
   }
 
@@ -1407,7 +1462,6 @@ export class ApplicationService {
       if (req.roleId !== 1 && req.roleId !== 2)
         throw new ForbiddenError("อนุญาตเฉพาะ Admin/Owner");
 
-      // Auto-complete expired internships for all active students
       await this.updateCompletedInternshipsStatus(tx);
 
       const page = query.page ?? 1;
@@ -1426,9 +1480,7 @@ export class ApplicationService {
       }
 
       if (query.status) {
-        conditions.push(
-          eq(applicationStatuses.applicationStatus, query.status)
-        );
+        conditions.push(eq(applicationStatuses.applicationStatus, query.status));
       }
 
       if (query.positionId) {
@@ -1513,6 +1565,7 @@ export class ApplicationService {
         .offset(offset);
 
       const appIds = rows.map((r) => r.applicationId);
+
       const allDocs = appIds.length
         ? await tx
             .select({
@@ -1520,6 +1573,7 @@ export class ApplicationService {
               docTypeId: applicationDocuments.docTypeId,
               docFile: applicationDocuments.docFile,
               validationStatus: applicationDocuments.validationStatus,
+              invalidReasons: applicationDocuments.invalidReasons,
             })
             .from(applicationDocuments)
             .where(inArray(applicationDocuments.applicationStatusId, appIds))
@@ -1550,6 +1604,7 @@ export class ApplicationService {
         arr.push(doc);
         docsMap.set(doc.applicationStatusId, arr);
       }
+
       const mentorsMap = new Map<number, typeof allMentors>();
       for (const m of allMentors) {
         const arr = mentorsMap.get(m.applicationStatusId) ?? [];
@@ -1593,6 +1648,7 @@ export class ApplicationService {
           docTypeId: d.docTypeId,
           docFile: d.docFile,
           validationStatus: d.validationStatus,
+          invalidReasons: d.invalidReasons,
         })),
         mentors: (mentorsMap.get(row.applicationId) ?? []).map((m) => ({
           fname: m.mentorFname,
@@ -1628,9 +1684,17 @@ export class ApplicationService {
     adminUserId: string,
     applicationId: number,
     status: "VERIFIED" | "INVALID",
-    note?: string
+    note?: string,
+    invalidReasons?: string[]
   ) {
-    return this.reviewDocument(adminUserId, applicationId, 4, status, note);
+    return this.reviewDocument(
+      adminUserId,
+      applicationId,
+      4,
+      status,
+      note,
+      invalidReasons
+    );
   }
 
   async cancelByStudent(userId: string, applicationId: number) {

@@ -135,10 +135,10 @@ export class ApplicationDocumentsService {
     if (query.q && query.q.trim().length > 0) {
       const like = `%${query.q.trim()}%`;
       conditions.push(
-        sql`(${ilike(applicationDocuments.docFile, like)} OR ${ilike(
-          applicationDocuments.note,
-          like
-        )})`
+        sql`(
+          ${ilike(applicationDocuments.docFile, like)}
+          OR ${ilike(applicationDocuments.note, like)}
+        )`
       );
     }
 
@@ -155,6 +155,7 @@ export class ApplicationDocumentsService {
         docFile: applicationDocuments.docFile,
         validationStatus: applicationDocuments.validationStatus,
         note: applicationDocuments.note,
+        invalidReasons: applicationDocuments.invalidReasons,
 
         createdAt: applicationDocuments.createdAt,
         updatedAt: applicationDocuments.updatedAt,
@@ -173,6 +174,7 @@ export class ApplicationDocumentsService {
       ...r,
       docType: docTypeName(r.docTypeId),
       filename: r.docFile?.split("/").pop() ?? "file",
+      invalidReasons: r.invalidReasons,
     }));
   }
 

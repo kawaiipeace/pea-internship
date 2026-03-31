@@ -238,7 +238,8 @@ export const application = new Elysia({
         Number(id),
         docTypeId,
         body.status,
-        body.note
+        body.note,
+        body.invalidReasons
       );
 
       set.status = 200;
