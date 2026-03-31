@@ -45,8 +45,16 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
   )
 
   .get("/sign-in/keycloak", async ({ request }) => {
-    // ต้อง return full Response จาก Better Auth เพื่อให้ Set-Cookie headers (state cookie) ถูกส่งไปยัง browser
-    return await authService.loginWithKeycloak(request.headers);
+    const authResponse = await authService.loginWithKeycloak(request.headers);
+    // Better Auth returns JSON {url, redirect: true} as 200 - need to issue proper 302
+    // while preserving Set-Cookie headers (state cookie for OAuth verification)
+    const body = await authResponse.clone().json().catch(() => null);
+    if (body?.url) {
+      const headers = new Headers(authResponse.headers);
+      headers.set("Location", body.url);
+      return new Response(null, { status: 302, headers });
+    }
+    return authResponse;
   })
 
   .post("/sign-out", async ({ request, set }) => {
