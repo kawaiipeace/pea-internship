@@ -34,28 +34,19 @@ import IconMenuMore from '@/components/icon/menu/icon-menu-more';
 import { usePathname, useRouter } from 'next/navigation';
 import { getTranslation } from '@/i18n';
 import Swal from 'sweetalert2';
+import useAuthStore from '@/store/authStore';
 
 const Header = () => {
     const pathname = usePathname();
     const dispatch = useDispatch();
     const router = useRouter();
     const { t, i18n } = getTranslation();
+    const logout = useAuthStore((state) => state.actionLogout);
+
+
     const handleLogout = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/sign-out`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-            });
-
-            if (response.ok) {
-                // ลบ Cookie ในฝั่ง Client เพื่อความชัวร์ (รวมถึงกรณี API ลบไม่สำเร็จ)
-                document.cookie = 'better-auth.session_token=; path=/; max-age=0';
-                document.cookie = 'user_role=; path=/; max-age=0';
-                document.cookie = 'auth_token=; path=/; max-age=0';
-
+            logout().then(() => {
                 Swal.fire({
                     icon: 'success',
                     title: 'ออกจากระบบสำเร็จ',
@@ -66,24 +57,15 @@ const Header = () => {
                     },
                 });
                 router.push('/login');
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'ออกจากระบบล้มเหลว',
-                    text: 'กรุณาลองใหม่อีกครั้ง',
-                    customClass: {
-                        popup: 'rounded-[20px]',
-                        confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
-                    },
-                });
-            }
+            });
+
         } catch (error) {
             // แม้จะเกิด Error จาก Network ก็ลองเคลียร์ Cookie และ Redirect ไปที่ Login อยู่ดี
             document.cookie = 'better-auth.session_token=; path=/; max-age=0';
             document.cookie = 'user_role=; path=/; max-age=0';
             document.cookie = 'auth_token=; path=/; max-age=0';
             router.push('/login');
-            
+
             Swal.fire({
                 icon: 'error',
                 title: 'เกิดข้อผิดพลาด',
@@ -223,10 +205,9 @@ const Header = () => {
                         <div>
                             {themeConfig.theme === 'light' ? (
                                 <button
-                                    className={`${
-                                        themeConfig.theme === 'light' &&
+                                    className={`${themeConfig.theme === 'light' &&
                                         'flex items-center rounded-full bg-white-light/40 p-2 hover:bg-white-light/90 hover:text-primary dark:bg-dark/40 dark:hover:bg-dark/60'
-                                    }`}
+                                        }`}
                                     onClick={() => dispatch(toggleTheme('dark'))}
                                 >
                                     <IconSun />
@@ -236,10 +217,9 @@ const Header = () => {
                             )}
                             {themeConfig.theme === 'dark' && (
                                 <button
-                                    className={`${
-                                        themeConfig.theme === 'dark' &&
+                                    className={`${themeConfig.theme === 'dark' &&
                                         'flex items-center rounded-full bg-white-light/40 p-2 hover:bg-white-light/90 hover:text-primary dark:bg-dark/40 dark:hover:bg-dark/60'
-                                    }`}
+                                        }`}
                                     onClick={() => dispatch(toggleTheme('system'))}
                                 >
                                     <IconMoon />
@@ -247,10 +227,9 @@ const Header = () => {
                             )}
                             {themeConfig.theme === 'system' && (
                                 <button
-                                    className={`${
-                                        themeConfig.theme === 'system' &&
+                                    className={`${themeConfig.theme === 'system' &&
                                         'flex items-center rounded-full bg-white-light/40 p-2 hover:bg-white-light/90 hover:text-primary dark:bg-dark/40 dark:hover:bg-dark/60'
-                                    }`}
+                                        }`}
                                     onClick={() => dispatch(toggleTheme('light'))}
                                 >
                                     <IconLaptop />
