@@ -44,14 +44,9 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
     }
   )
 
-  .get("/sign-in/keycloak", async ({ request, redirect }) => {
-    const response = await authService.loginWithKeycloak(request.headers);
-
-    if (response.url) {
-      return redirect(response.url);
-    }
-
-    return response;
+  .get("/sign-in/keycloak", async ({ request }) => {
+    // ต้อง return full Response จาก Better Auth เพื่อให้ Set-Cookie headers (state cookie) ถูกส่งไปยัง browser
+    return await authService.loginWithKeycloak(request.headers);
   })
 
   .post("/sign-out", async ({ request, set }) => {

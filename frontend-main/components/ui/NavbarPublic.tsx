@@ -5,14 +5,9 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { authApi } from "@/services/api";
 
-// Helper: fetch Keycloak SSO URL and redirect
-const handleKeycloakRedirect = async () => {
-  try {
-    const url = await authApi.signInKeycloak();
-    window.location.href = url;
-  } catch {
-    window.location.href = "/login/owner";
-  }
+// Helper: navigate browser directly to Keycloak SSO (must be browser navigation, not AJAX)
+const handleKeycloakRedirect = () => {
+  window.location.href = authApi.signInKeycloak();
 };
 
 export default function NavbarPublic() {

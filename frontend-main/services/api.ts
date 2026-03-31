@@ -163,18 +163,9 @@ export const authApi = {
   },
 
   // เข้าสู่ระบบผ่าน Keycloak SSO (สำหรับพนักงาน)
-  signInKeycloak: async (): Promise<string> => {
-    // This endpoint returns a redirect URL to Keycloak SSO
-    // We need to navigate the browser to that URL
-    const response = await api.get("/auth/sign-in/keycloak", {
-      maxRedirects: 0,
-      validateStatus: (status: number) => status >= 200 && status < 400,
-    });
-    // The backend returns { url, redirect: true }
-    if (response.data?.url) {
-      return response.data.url;
-    }
-    throw new Error("ไม่สามารถเชื่อมต่อ Keycloak ได้");
+  // ต้องใช้ browser navigation โดยตรง (ไม่ใช่ AJAX) เพื่อให้ state cookie ถูก set เป็น first-party cookie
+  signInKeycloak: (): string => {
+    return `${API_BASE_URL}/auth/sign-in/keycloak`;
   },
 };
 

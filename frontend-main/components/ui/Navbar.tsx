@@ -7,15 +7,9 @@ import { useState, useRef, useEffect } from "react";
 import { authApi, authStorage } from "@/services/api";
 import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
 
-// Helper: fetch Keycloak SSO URL and redirect
-const handleKeycloakRedirect = async () => {
-  try {
-    const url = await authApi.signInKeycloak();
-    window.location.href = url;
-  } catch {
-    // fallback: navigate to login/owner page
-    window.location.href = "/login/owner";
-  }
+// Helper: navigate browser directly to Keycloak SSO (must be browser navigation, not AJAX)
+const handleKeycloakRedirect = () => {
+  window.location.href = authApi.signInKeycloak();
 };
 
 interface NavbarProps {
