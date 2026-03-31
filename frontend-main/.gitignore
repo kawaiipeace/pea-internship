@@ -61,9 +61,6 @@ Thumbs.db
 .next/cache/
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-
 # vercel
 .vercel
 

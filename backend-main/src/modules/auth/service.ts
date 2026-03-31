@@ -139,12 +139,15 @@ export class AuthService {
 
   async loginWithKeycloak(headers: Headers) {
     const api = auth.api as Auth["api"];
+    const callbackURL =
+      Bun.env.KEYCLOAK_CALLBACK_URL ??
+      "http://localhost:2700/login/owner/callback";
 
     return await api.signInSocial({
       headers: headers,
       body: {
         provider: "keycloak",
-        callbackURL: "http://localhost:2700/login/owner/callback",
+        callbackURL,
       },
       asResponse: true,
     });

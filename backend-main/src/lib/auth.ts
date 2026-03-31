@@ -147,10 +147,10 @@ export const auth = betterAuth({
 
   advanced: {
     cookiePrefix: "better-auth",
-    useSecureCookies: false,
+    useSecureCookies: Bun.env.NODE_ENV === "production",
     defaultCookieAttributes: {
-      sameSite: "lax",
-      secure: false,
+      sameSite: "none",
+      secure: Bun.env.NODE_ENV === "production",
     },
     crossDomain: {
       enabled: true,
@@ -160,10 +160,14 @@ export const auth = betterAuth({
   baseURL: Bun.env.BETTER_AUTH_BASE_URL,
   secret: Bun.env.BETTER_AUTH_SECRET,
   trustedOrigins: [
+    "http://localhost:2700",
     "http://localhost:2701",
     "http://127.0.0.1:2701",
     "http://localhost:2702",
     "http://127.0.0.1:2702",
+    "https://pea-internship-main.vercel.app",
+    "https://pea-internship-itt.vercel.app",
+    ...(Bun.env.BETTER_AUTH_BASE_URL ? [Bun.env.BETTER_AUTH_BASE_URL] : []),
   ],
 });
 
