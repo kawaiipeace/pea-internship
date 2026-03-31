@@ -1137,9 +1137,7 @@ export class ApplicationService {
         status === "INVALID" &&
         (!normalizedInvalidReasons || normalizedInvalidReasons.length === 0)
       ) {
-        throw new BadRequestError(
-          "กรุณาระบุเหตุผลในการตีกลับเอกสารอย่างน้อย 1 ข้อ"
-        );
+        throw new BadRequestError("กรุณาระบุเหตุผลในการตีกลับเอกสารอย่างน้อย 1 ข้อ");
       }
 
       await tx
@@ -1147,7 +1145,8 @@ export class ApplicationService {
         .set({
           validationStatus: status,
           note: status === "INVALID" ? (note ?? null) : null,
-          invalidReasons: status === "INVALID" ? normalizedInvalidReasons : null,
+          invalidReasons:
+            status === "INVALID" ? normalizedInvalidReasons : null,
           updatedAt: new Date(),
         })
         .where(eq(applicationDocuments.id, doc.id));
@@ -1273,7 +1272,6 @@ export class ApplicationService {
       return { applicationStatus: app.status };
     });
   }
-
 
   async getMyHistory(userId: string, includeCanceled = true) {
     return await db.transaction(async (tx) => {
@@ -1480,7 +1478,9 @@ export class ApplicationService {
       }
 
       if (query.status) {
-        conditions.push(eq(applicationStatuses.applicationStatus, query.status));
+        conditions.push(
+          eq(applicationStatuses.applicationStatus, query.status)
+        );
       }
 
       if (query.positionId) {
