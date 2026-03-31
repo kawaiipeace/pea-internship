@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2702/api";
+// In production (Vercel), use relative URL so requests go through Next.js rewrite proxy
+// This makes all API calls same-origin, solving cross-domain cookie issues
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 // สร้าง axios instance
 const api = axios.create({

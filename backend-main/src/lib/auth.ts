@@ -147,13 +147,10 @@ export const auth = betterAuth({
 
   advanced: {
     cookiePrefix: "better-auth",
-    useSecureCookies: Bun.env.BETTER_AUTH_BASE_URL?.startsWith("https://") ?? false,
+    // When proxied through Next.js rewrites, cookies are same-origin (first-party)
+    // so we don't need SameSite=None or Secure for cross-domain
     defaultCookieAttributes: {
-      sameSite: Bun.env.BETTER_AUTH_BASE_URL?.startsWith("https://") ? "none" : "lax",
-      secure: Bun.env.BETTER_AUTH_BASE_URL?.startsWith("https://") ?? false,
-    },
-    crossDomain: {
-      enabled: true,
+      sameSite: "lax",
     },
   },
 
