@@ -11,10 +11,22 @@ import { applicationTranscriptTimeoutCron } from "./cron/application-transcript-
 import { awaitingCron } from "./cron/awaiting-cron";
 
 const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
+
+// Parse extra allowed origins from env (comma-separated)
+const extraOrigins = Bun.env.ALLOWED_ORIGINS
+  ? Bun.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+  : [];
+
 const app = new Elysia()
   .use(
     cors({
-      origin: ["http://localhost:2700", "http://localhost:2701", "https://pea-internship-main.vercel.app", "https://pea-internship-itt.vercel.app"],
+      origin: [
+        "http://localhost:2700",
+        "http://localhost:2701",
+        "https://pea-internship-main.vercel.app",
+        "https://pea-internship-itt.vercel.app",
+        ...extraOrigins,
+      ],
       credentials: true,
       allowedHeaders: ["Content-Type", "Authorization"],
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

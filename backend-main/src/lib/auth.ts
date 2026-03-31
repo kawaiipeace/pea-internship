@@ -168,6 +168,10 @@ export const auth = betterAuth({
     "https://pea-internship-main.vercel.app",
     "https://pea-internship-itt.vercel.app",
     ...(Bun.env.BETTER_AUTH_BASE_URL ? [Bun.env.BETTER_AUTH_BASE_URL] : []),
+    // Extra trusted origins from env (comma-separated) - use this for K8s/PEA domain
+    ...(Bun.env.ALLOWED_ORIGINS
+      ? Bun.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+      : []),
   ],
 });
 
