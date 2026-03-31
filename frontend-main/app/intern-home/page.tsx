@@ -9,6 +9,7 @@ import JobCard, { Job } from "@/components/ui/JobCard";
 import JobDetailPanel from "@/components/ui/JobDetailPanel";
 import Pagination from "@/components/ui/Pagination";
 import Toast from "@/components/ui/Toast";
+import CongratsModal from "@/components/ui/CongratsModal";
 import {
   positionApi,
   positionToJobWithStaff,
@@ -38,6 +39,7 @@ export default function InternHomePage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchResetKey, setSearchResetKey] = useState(0);
+  const [showCongratsModal, setShowCongratsModal] = useState(false);
 
   // Load jobs from API on mount
   useEffect(() => {
@@ -87,6 +89,40 @@ export default function InternHomePage() {
     };
     loadJobs();
   }, []);
+
+  // Check if student passed selection (PENDING_REQUEST) and show congrats modal
+  useEffect(() => {
+    const checkCongratsStatus = async () => {
+      try {
+        const app = await applicationApi.getMyLatestApplication();
+        if (
+          app &&
+          (app.applicationStatus === "PENDING_REQUEST" ||
+            app.applicationStatus === "PENDING_REVIEW" ||
+            app.applicationStatus === "COMPLETE") &&
+          !app.statusNote
+        ) {
+          const seenKey = `congrats_seen_${app.applicationId}`;
+          if (!localStorage.getItem(seenKey)) {
+            setShowCongratsModal(true);
+          }
+        }
+      } catch {
+        // Not logged in or no application
+      }
+    };
+    checkCongratsStatus();
+  }, []);
+
+  const handleCloseCongratsModal = async () => {
+    try {
+      const app = await applicationApi.getMyLatestApplication();
+      if (app) {
+        localStorage.setItem(`congrats_seen_${app.applicationId}`, "true");
+      }
+    } catch {}
+    setShowCongratsModal(false);
+  };
 
   // Detect mobile screen
   useEffect(() => {
@@ -426,6 +462,12 @@ export default function InternHomePage() {
         isVisible={showToast}
         onClose={() => setShowToast(false)}
         type={toastType}
+      />
+
+      {/* Congrats Modal */}
+      <CongratsModal
+        isOpen={showCongratsModal}
+        onClose={handleCloseCongratsModal}
       />
     </div>
   );

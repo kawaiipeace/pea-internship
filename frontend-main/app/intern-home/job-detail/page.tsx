@@ -105,6 +105,8 @@ export default function InternJobDetailPage() {
               ? `${parsedJob.startDate} - ${parsedJob.endDate}`
               : defaultJobDetail.applicationPeriod),
           positions: parsedJob.positions || ((parsedJob.maxApplicants || 0) === 0 ? "ไม่จำกัดจำนวน" : `${parsedJob.currentApplicants ?? 0}/${parsedJob.maxApplicants || 1} ตำแหน่ง`),
+          maxApplicants: parsedJob.maxApplicants ?? 0,
+          currentApplicants: parsedJob.currentApplicants ?? 0,
           responsibilities: parsedJob.responsibilities || defaultJobDetail.responsibilities,
           qualifications: parsedJob.qualifications || defaultJobDetail.qualifications,
           benefits: parsedJob.benefits || defaultJobDetail.benefits,
@@ -361,7 +363,7 @@ export default function InternJobDetailPage() {
                         }`}
                       title={(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0) ? "ตำแหน่งนี้รับสมัครเต็มแล้ว" : undefined}
                     >
-                      {(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0) ? "รับสมัครเต็มแล้ว" : "สมัคร"}
+                      สมัคร
                     </button>
                   </div>
                 </div>
@@ -533,7 +535,7 @@ export default function InternJobDetailPage() {
                     : "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-700"
                   }`}
               >
-                {(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0) ? "รับสมัครเต็มแล้ว" : "สมัคร"}
+                สมัคร
               </button>
               <button
                 onClick={handleToggleFavorite}

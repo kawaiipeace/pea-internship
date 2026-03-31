@@ -671,19 +671,19 @@ export default function InternProfilePage() {
             {/* Mobile: Status badge - only show if status exists */}
             {currentStatus && (
               <div className="flex items-center gap-2 mt-2 sm:hidden">
-                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-100 border border-orange-300" :
-                    currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-100 border border-red-300" :
-                      currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-100 border border-green-300" :
+                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#FEF0C7] border border-[#FEDF89]" :
+                    currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#FEE4E2] border border-[#FECDCA]" :
+                      currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#DCFAE6] border border-[#A9EFC5]" :
                         "bg-yellow-100 border border-yellow-300"
                   }`}>
-                  <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-500" :
-                      currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-500" :
-                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-500" :
+                  <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#B54708]" :
+                      currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#912018]" :
+                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#085D3A]" :
                           "bg-yellow-500"
                     }`}></span>
-                  <span className={`text-xs font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-orange-700" :
-                      currentStatus === "ยกเลิกฝึกงาน" ? "text-red-700" :
-                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-green-700" :
+                  <span className={`text-xs font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-[#B54708]" :
+                      currentStatus === "ยกเลิกฝึกงาน" ? "text-[#912018]" :
+                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-[#085D3A]" :
                           "text-yellow-700"
                     }`}>
                     {currentStatus}
@@ -700,19 +700,19 @@ export default function InternProfilePage() {
                 </h1>
                 {currentStatus && (
                   <div className="flex items-center gap-2 mt-3">
-                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-100 border border-orange-300" :
-                        currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-100 border border-red-300" :
-                          currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-100 border border-green-300" :
+                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#FEF0C7] border border-[#FEDF89]" :
+                        currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#FEE4E2] border border-[#FECDCA]" :
+                          currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#DCFAE6] border border-[#A9EFC5]" :
                             "bg-yellow-100 border border-yellow-300"
                       }`}>
-                      <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-orange-500" :
-                          currentStatus === "ยกเลิกฝึกงาน" ? "bg-red-500" :
-                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-green-500" :
+                      <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#B54708]" :
+                          currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#912018]" :
+                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#085D3A]" :
                               "bg-yellow-500"
                         }`}></span>
-                      <span className={`text-sm font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-orange-700" :
-                          currentStatus === "ยกเลิกฝึกงาน" ? "text-red-700" :
-                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-green-700" :
+                      <span className={`text-sm font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-[#B54708]" :
+                          currentStatus === "ยกเลิกฝึกงาน" ? "text-[#912018]" :
+                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-[#085D3A]" :
                               "text-yellow-700"
                         }`}>
                         {currentStatus}
