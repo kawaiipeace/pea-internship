@@ -147,10 +147,10 @@ export const auth = betterAuth({
 
   advanced: {
     cookiePrefix: "better-auth",
-    useSecureCookies: Bun.env.NODE_ENV === "production",
+    useSecureCookies: Bun.env.BETTER_AUTH_BASE_URL?.startsWith("https://") ?? false,
     defaultCookieAttributes: {
-      sameSite: "none",
-      secure: Bun.env.NODE_ENV === "production",
+      sameSite: Bun.env.BETTER_AUTH_BASE_URL?.startsWith("https://") ? "none" : "lax",
+      secure: Bun.env.BETTER_AUTH_BASE_URL?.startsWith("https://") ?? false,
     },
     crossDomain: {
       enabled: true,
