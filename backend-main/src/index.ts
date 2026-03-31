@@ -14,7 +14,12 @@ const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
 const app = new Elysia()
   .use(
     cors({
-      origin: ["http://localhost:2700", "http://localhost:2701", "https://pea-internship-main.vercel.app/", "https://pea-internship-itt.vercel.app/"],
+      origin: [
+        "http://localhost:2700",
+        "http://localhost:2701",
+        "https://pea-internship-main.vercel.app",
+        "https://pea-internship-itt.vercel.app"
+      ],
       credentials: true,
       allowedHeaders: ["Content-Type", "Authorization"],
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
