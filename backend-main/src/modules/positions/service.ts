@@ -213,7 +213,7 @@ export class PositionService {
             .from(users)
             .where(
               and(
-                eq(users.roleId, 2),
+                or(eq(users.roleId, 1), eq(users.roleId, 2)),
                 or(...departmentIds.map((dId) => eq(users.departmentId, dId)))
               )
             )
