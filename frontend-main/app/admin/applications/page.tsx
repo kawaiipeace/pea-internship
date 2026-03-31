@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  Suspense,
+} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
@@ -16,6 +23,24 @@ type AdminDocStatus =
   | "pending_review"
   | "approved"
   | "rejected";
+
+type ApprovedInternStatusFilter =
+  | "all"
+  | "awaiting"
+  | "active"
+  | "completed"
+  | "cancelled";
+
+const APPROVED_STATUS_FILTER_OPTIONS: Array<{
+  value: ApprovedInternStatusFilter;
+  label: string;
+}> = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "awaiting", label: "รอเริ่มฝึกงาน" },
+  { value: "active", label: "อยู่ระหว่างฝึกงาน" },
+  { value: "completed", label: "ฝึกงานเสร็จสิ้น" },
+  { value: "cancelled", label: "ยกเลิกฝึกงาน" },
+];
 
 function getDocStatus(app: AllStudentsHistoryItem): AdminDocStatus {
   if (app.applicationStatus === "PENDING_REQUEST") {
@@ -56,6 +81,94 @@ const thaiMonths = [
   "พฤศจิกายน",
   "ธันวาคม",
 ];
+
+const thaiMonthsShort = [
+  "ม.ค",
+  "ก.พ",
+  "มี.ค",
+  "เม.ย",
+  "พ.ค",
+  "มิ.ย",
+  "ก.ค",
+  "ส.ค",
+  "ก.ย",
+  "ต.ค",
+  "พ.ย",
+  "ธ.ค",
+];
+
+function toDateOnly(dateString?: string | null): Date | null {
+  if (!dateString) return null;
+
+  const datePart = dateString.split("T")[0]?.trim();
+  const plainMatch = datePart.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  let parsedDate: Date;
+  if (plainMatch) {
+    const [, year, month, day] = plainMatch;
+    parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
+  } else {
+    parsedDate = new Date(dateString);
+  }
+
+  if (Number.isNaN(parsedDate.getTime())) return null;
+  parsedDate.setHours(0, 0, 0, 0);
+  return parsedDate;
+}
+
+function parseISODate(value?: string | null): Date | null {
+  if (!value) return null;
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const [, y, m, d] = match;
+  return new Date(Number(y), Number(m) - 1, Number(d));
+}
+
+function toISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatShortThaiDate(dateString?: string | null): string {
+  const d = toDateOnly(dateString);
+  if (!d) return "-";
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = thaiMonthsShort[d.getMonth()];
+  const buddhistYear = d.getFullYear() + 543;
+
+  return `${day} ${month} ${buddhistYear}`;
+}
+
+function getApprovedInternStatus(
+  app: AllStudentsHistoryItem,
+): Exclude<ApprovedInternStatusFilter, "all"> {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
+  const endDate = toDateOnly(app.infoEndDate || app.profileEndDate);
+
+  if (app.studentInternshipStatus === "CANCEL") return "cancelled";
+  if (app.studentInternshipStatus === "AWAITING") return "awaiting";
+  if (app.studentInternshipStatus === "COMPLETE") return "completed";
+
+  if (endDate && now.getTime() > endDate.getTime()) return "completed";
+
+  const isActiveByPeriod =
+    !!startDate &&
+    !!endDate &&
+    now.getTime() >= startDate.getTime() &&
+    now.getTime() <= endDate.getTime();
+
+  if (app.studentInternshipStatus === "ACTIVE" || isActiveByPeriod) {
+    return "active";
+  }
+
+  return "active";
+}
 
 function formatDateThai(dateStr: string | null): string {
   if (!dateStr) return "-";
@@ -107,25 +220,31 @@ function getBadge(app: AllStudentsHistoryItem, tab: ActiveTab) {
     if (app.studentInternshipStatus === "CANCEL") {
       return {
         text: "ยกเลิกฝึกงาน",
-        className: "bg-[#FEE4E2] text-[#912018] border border-[#FECDCA]",
+        className: "bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA]",
+      };
+    }
+    if (app.studentInternshipStatus === "AWAITING") {
+      return {
+        text: "รอเริ่มฝึกงาน",
+        className: "bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]",
       };
     }
     if (app.studentInternshipStatus === "COMPLETE") {
       return {
         text: "ฝึกงานเสร็จสิ้น",
-        className: "bg-[#DCFAE6] text-[#085D3A] border border-[#DCFAE6]",
+        className: "bg-[#DCFAE6] text-[#085D3A] border border-[#A9EFC5]",
       };
     }
     if (app.infoEndDate && new Date(app.infoEndDate) <= new Date()) {
       return {
         text: "ฝึกงานเสร็จสิ้น",
-        className: "bg-[#DCFAE6] text-[#085D3A] border border-[#DCFAE6]",
+        className: "bg-[#DCFAE6] text-[#085D3A] border border-[#A9EFC5]",
       };
     }
 
     return {
       text: "อยู่ระหว่างฝึกงาน",
-      className: "bg-[#FEF0C7] text-[#7A2E0E] border border-[#FEDF89]",
+      className: "bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]",
     };
   }
 
@@ -171,12 +290,58 @@ function AdminApplicationsPage() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [selectedApprovedStartDate, setSelectedApprovedStartDate] =
+    useState("");
+  const [selectedApprovedEndDate, setSelectedApprovedEndDate] = useState("");
+  const [draftApprovedStartDate, setDraftApprovedStartDate] = useState("");
+  const [draftApprovedEndDate, setDraftApprovedEndDate] = useState("");
+  const [selectedApprovedStatusFilter, setSelectedApprovedStatusFilter] =
+    useState<ApprovedInternStatusFilter>("all");
+  const [showApprovedDateDropdown, setShowApprovedDateDropdown] =
+    useState(false);
+  const [showApprovedStatusDropdown, setShowApprovedStatusDropdown] =
+    useState(false);
+  const [approvedDateViewMonth, setApprovedDateViewMonth] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  );
+  const approvedDateDropdownRef = useRef<HTMLDivElement>(null);
+  const approvedStatusDropdownRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (
+        approvedDateDropdownRef.current &&
+        !approvedDateDropdownRef.current.contains(target)
+      ) {
+        setShowApprovedDateDropdown(false);
+      }
+
+      if (
+        approvedStatusDropdownRef.current &&
+        !approvedStatusDropdownRef.current.contains(target)
+      ) {
+        setShowApprovedStatusDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   const setActiveTab = (tab: ActiveTab) => {
     router.push(`/admin/applications?tab=${tab}`);
     setCurrentPage(1);
     setSearchQuery("");
+    setSelectedApprovedStartDate("");
+    setSelectedApprovedEndDate("");
+    setDraftApprovedStartDate("");
+    setDraftApprovedEndDate("");
+    setSelectedApprovedStatusFilter("all");
+    setShowApprovedDateDropdown(false);
+    setShowApprovedStatusDropdown(false);
   };
 
   const fetchData = useCallback(async () => {
@@ -243,8 +408,127 @@ function AdminApplicationsPage() {
         `${app.fname || ""} ${app.lname || ""}`.toLowerCase().includes(q),
       );
     }
+
+    if (activeTab === "approved") {
+      const filterStart = parseISODate(selectedApprovedStartDate);
+      const filterEnd = parseISODate(selectedApprovedEndDate);
+
+      result = result.filter((app) => {
+        const appStatus = getApprovedInternStatus(app);
+        const matchStatus =
+          selectedApprovedStatusFilter === "all"
+            ? true
+            : appStatus === selectedApprovedStatusFilter;
+
+        const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
+        const matchStartDate = (() => {
+          if (!filterStart && !filterEnd) return true;
+          if (!startDate) return false;
+          if (filterStart && startDate.getTime() < filterStart.getTime()) {
+            return false;
+          }
+          if (filterEnd && startDate.getTime() > filterEnd.getTime()) {
+            return false;
+          }
+          return true;
+        })();
+
+        return matchStatus && matchStartDate;
+      });
+    }
+
     return result;
-  }, [applications, searchQuery, activeTab]);
+  }, [
+    applications,
+    searchQuery,
+    activeTab,
+    selectedApprovedStatusFilter,
+    selectedApprovedStartDate,
+    selectedApprovedEndDate,
+  ]);
+
+  useEffect(() => {
+    if (activeTab === "approved") {
+      setCurrentPage(1);
+    }
+  }, [
+    activeTab,
+    selectedApprovedStatusFilter,
+    selectedApprovedStartDate,
+    selectedApprovedEndDate,
+  ]);
+
+  const selectedApprovedStatusFilterLabel =
+    selectedApprovedStatusFilter === "all"
+      ? "สถานะ"
+      : APPROVED_STATUS_FILTER_OPTIONS.find(
+          (option) => option.value === selectedApprovedStatusFilter,
+        )?.label || "สถานะ";
+
+  const getApprovedStartDateDisplayText = () => {
+    if (!selectedApprovedStartDate && !selectedApprovedEndDate) {
+      return "วันที่เริ่มฝึกงาน";
+    }
+
+    if (selectedApprovedStartDate && selectedApprovedEndDate) {
+      if (selectedApprovedStartDate === selectedApprovedEndDate) {
+        return formatShortThaiDate(selectedApprovedStartDate);
+      }
+      return `${formatShortThaiDate(selectedApprovedStartDate)} - ${formatShortThaiDate(selectedApprovedEndDate)}`;
+    }
+
+    if (selectedApprovedStartDate) {
+      return formatShortThaiDate(selectedApprovedStartDate);
+    }
+
+    return formatShortThaiDate(selectedApprovedEndDate);
+  };
+
+  const openApprovedDateDropdown = () => {
+    const selectedDate =
+      parseISODate(selectedApprovedStartDate) ||
+      parseISODate(selectedApprovedEndDate);
+    const base = selectedDate || new Date();
+    setDraftApprovedStartDate(selectedApprovedStartDate);
+    setDraftApprovedEndDate(selectedApprovedEndDate);
+    setApprovedDateViewMonth(new Date(base.getFullYear(), base.getMonth(), 1));
+    setShowApprovedDateDropdown(true);
+  };
+
+  const approvedDateWeekdayLabels = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+
+  const approvedDateCells = useMemo(() => {
+    const year = approvedDateViewMonth.getFullYear();
+    const month = approvedDateViewMonth.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const startWeekDay = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    const cells: { date: Date; inCurrentMonth: boolean }[] = [];
+
+    for (let i = startWeekDay - 1; i >= 0; i--) {
+      cells.push({
+        date: new Date(year, month - 1, prevMonthDays - i),
+        inCurrentMonth: false,
+      });
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push({ date: new Date(year, month, d), inCurrentMonth: true });
+    }
+
+    while (cells.length % 7 !== 0) {
+      const nextDay = cells.length - (startWeekDay + daysInMonth) + 1;
+      cells.push({
+        date: new Date(year, month + 1, nextDay),
+        inCurrentMonth: false,
+      });
+    }
+
+    return cells;
+  }, [approvedDateViewMonth]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -472,33 +756,311 @@ function AdminApplicationsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-gray-300 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-300 overflow-visible">
           {/* Search */}
           <div className="p-4 border-b border-gray-200">
-            <div className="relative max-w-sm">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            <div
+              className={
+                activeTab === "approved"
+                  ? "grid grid-cols-1 md:grid-cols-3 gap-3"
+                  : "relative max-w-sm"
+              }
+            >
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="ชื่อ-นามสกุล..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                 />
-              </svg>
-              <input
-                type="text"
-                placeholder="ชื่อ-นามสกุล..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-              />
+              </div>
+
+              {activeTab === "approved" && (
+                <>
+                  <div className="relative" ref={approvedDateDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (showApprovedDateDropdown) {
+                          setShowApprovedDateDropdown(false);
+                          return;
+                        }
+                        setShowApprovedStatusDropdown(false);
+                        openApprovedDateDropdown();
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 bg-white flex items-center justify-between cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
+                    >
+                      <span
+                        className={`truncate ${selectedApprovedStartDate || selectedApprovedEndDate ? "text-gray-700" : "text-gray-500"}`}
+                      >
+                        {getApprovedStartDateDisplayText()}
+                      </span>
+                      <div className="flex items-center gap-2 ml-2">
+                        <svg
+                          className="w-5 h-5 text-gray-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        {(selectedApprovedStartDate ||
+                          selectedApprovedEndDate) && (
+                          <span
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedApprovedStartDate("");
+                              setSelectedApprovedEndDate("");
+                              setDraftApprovedStartDate("");
+                              setDraftApprovedEndDate("");
+                            }}
+                            className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                            title="ล้างช่วงวันที่"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    </button>
+
+                    {showApprovedDateDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-3">
+                        <div className="flex items-center justify-between mb-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setApprovedDateViewMonth(
+                                (prev) =>
+                                  new Date(
+                                    prev.getFullYear(),
+                                    prev.getMonth() - 1,
+                                    1,
+                                  ),
+                              )
+                            }
+                            className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                            aria-label="เดือนก่อนหน้า"
+                          >
+                            ←
+                          </button>
+                          <div className="text-lg font-semibold text-gray-800">
+                            {thaiMonths[approvedDateViewMonth.getMonth()]}{" "}
+                            {approvedDateViewMonth.getFullYear() + 543}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setApprovedDateViewMonth(
+                                (prev) =>
+                                  new Date(
+                                    prev.getFullYear(),
+                                    prev.getMonth() + 1,
+                                    1,
+                                  ),
+                              )
+                            }
+                            className="w-9 h-9 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                            aria-label="เดือนถัดไป"
+                          >
+                            →
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {approvedDateWeekdayLabels.map((label) => (
+                            <div
+                              key={label}
+                              className="text-center text-gray-500 text-xs font-medium py-1.5"
+                            >
+                              {label}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1">
+                          {approvedDateCells.map(({ date, inCurrentMonth }) => {
+                            const iso = toISODate(date);
+                            const hasStart = !!draftApprovedStartDate;
+                            const hasEnd = !!draftApprovedEndDate;
+                            const isStart = draftApprovedStartDate === iso;
+                            const isEnd = draftApprovedEndDate === iso;
+                            const isInRange =
+                              hasStart &&
+                              hasEnd &&
+                              iso > draftApprovedStartDate &&
+                              iso < draftApprovedEndDate;
+
+                            return (
+                              <button
+                                key={iso}
+                                type="button"
+                                onClick={() => {
+                                  if (
+                                    !draftApprovedStartDate ||
+                                    draftApprovedEndDate
+                                  ) {
+                                    setDraftApprovedStartDate(iso);
+                                    setDraftApprovedEndDate("");
+                                  } else if (iso < draftApprovedStartDate) {
+                                    setDraftApprovedEndDate(
+                                      draftApprovedStartDate,
+                                    );
+                                    setDraftApprovedStartDate(iso);
+                                  } else {
+                                    setDraftApprovedEndDate(iso);
+                                  }
+
+                                  if (!inCurrentMonth) {
+                                    setApprovedDateViewMonth(
+                                      new Date(
+                                        date.getFullYear(),
+                                        date.getMonth(),
+                                        1,
+                                      ),
+                                    );
+                                  }
+                                }}
+                                className={`h-8 rounded-md text-xs font-medium transition ${
+                                  isStart || isEnd
+                                    ? "bg-primary-600 text-white"
+                                    : isInRange
+                                      ? "bg-gray-100 text-gray-700"
+                                      : inCurrentMonth
+                                        ? "text-gray-700 hover:bg-gray-100"
+                                        : "text-gray-300 hover:bg-gray-100"
+                                }`}
+                              >
+                                {date.getDate()}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDraftApprovedStartDate("");
+                              setDraftApprovedEndDate("");
+                            }}
+                            className="py-2.5 rounded-lg border border-gray-300 text-gray-600 bg-gray-50 hover:bg-gray-100 transition font-medium text-sm"
+                          >
+                            เคลียร์
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const normalizedEndDate =
+                                draftApprovedEndDate || draftApprovedStartDate;
+                              setSelectedApprovedStartDate(
+                                draftApprovedStartDate,
+                              );
+                              setSelectedApprovedEndDate(normalizedEndDate);
+                              setShowApprovedDateDropdown(false);
+                            }}
+                            className="py-2.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition font-medium text-sm"
+                          >
+                            ตกลง
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative" ref={approvedStatusDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!showApprovedStatusDropdown) {
+                          setShowApprovedDateDropdown(false);
+                        }
+                        setShowApprovedStatusDropdown((prev) => !prev);
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 bg-white flex items-center justify-between cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
+                    >
+                      <span
+                        className={`truncate ${selectedApprovedStatusFilter === "all" ? "text-gray-500" : "text-gray-700"}`}
+                      >
+                        {selectedApprovedStatusFilterLabel}
+                      </span>
+                      <svg
+                        className={`w-5 h-5 text-gray-500 transition-transform ${showApprovedStatusDropdown ? "rotate-180" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {showApprovedStatusDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
+                        {APPROVED_STATUS_FILTER_OPTIONS.map((option) => {
+                          const isActive =
+                            selectedApprovedStatusFilter === option.value;
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                setSelectedApprovedStatusFilter(option.value);
+                                setShowApprovedStatusDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                                isActive
+                                  ? "bg-primary-50 text-primary-700 font-medium"
+                                  : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
