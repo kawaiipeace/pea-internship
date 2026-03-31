@@ -147,8 +147,10 @@ export const auth = betterAuth({
 
   advanced: {
     cookiePrefix: "better-auth",
-    // When proxied through Next.js rewrites, cookies are same-origin (first-party)
-    // so we don't need SameSite=None or Secure for cross-domain
+    // Explicitly disable __Secure- prefix so cookie name stays "better-auth.session_token"
+    // regardless of whether baseURL is http or https.
+    // Cookies are same-origin when proxied through Next.js rewrites.
+    useSecureCookies: false,
     defaultCookieAttributes: {
       sameSite: "lax",
     },

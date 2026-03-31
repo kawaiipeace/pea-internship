@@ -24,8 +24,11 @@ const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"
 // OAuth callback routes ที่ต้องอนุญาตเสมอ (ไม่ redirect แม้ login แล้ว)
 const oauthCallbackRoutes = ["/login/owner/callback"];
 
-// Better Auth cookie name (prefix + ".session_token")
+// Better Auth cookie names
+// With useSecureCookies: false, the name is always "better-auth.session_token"
+// but we also check the __Secure- variant as a safety net
 const BETTER_AUTH_SESSION_COOKIE = "better-auth.session_token";
+const BETTER_AUTH_SESSION_COOKIE_SECURE = "__Secure-better-auth.session_token";
 
 // Helper: ดึง home page ตาม role
 function getHomeByRole(role: string | undefined): string {
@@ -44,8 +47,10 @@ export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const forceLogin = searchParams.get("forceLogin") === "1";
 
-  // ดึง session token จาก Better Auth cookie
-  const sessionToken = request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value;
+  // ดึง session token จาก Better Auth cookie (check both variants)
+  const sessionToken =
+    request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value ||
+    request.cookies.get(BETTER_AUTH_SESSION_COOKIE_SECURE)?.value;
 
   // Fallback: ตรวจสอบ auth_token ด้วย (สำหรับ backward compatibility)
   const legacyToken = request.cookies.get("auth_token")?.value;
