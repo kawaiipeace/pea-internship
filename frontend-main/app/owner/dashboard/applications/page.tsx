@@ -2986,6 +2986,156 @@ function ApplicationsContent() {
                 "ตำแหน่งงาน"}
             </span>
           </div>
+          {isDocPassed && (
+            <div className="mb-4 rounded-2xl border border-[#D0D5DD] bg-[#FCFAFF] p-4 md:p-5">
+              <div className="flex gap-3 md:gap-4">
+                <div className="shrink-0 pt-1">
+                  <svg
+                    width="88"
+                    height="63"
+                    viewBox="0 0 88 63"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-14 w-auto"
+                  >
+                    <path
+                      d="M34.5 58.5269L27.2879 42.7734L17.5 46.1492C18.8737 50.6502 22.6515 60.2148 26.7727 62.4653C32.1303 63.8156 34.1566 60.4023 34.5 58.5269Z"
+                      fill="url(#acceptedDocInfoPaint0)"
+                    />
+                    <path
+                      d="M0.774907 39.2339C-2.04881 31.8468 3.52019 30 6.65765 30C3.12621 41.9497 12.5422 45.2088 10.7774 46.2951C9.01255 47.3814 4.30455 48.4678 0.774907 39.2339Z"
+                      fill="url(#acceptedDocInfoPaint1)"
+                    />
+                    <path
+                      d="M53.1597 45.5C42.3597 34.3 42.3264 16.5 43.6597 9C41.6593 12 29.6602 19 20.1597 23.5C17.6597 35.5 23.6597 41.5 26.1597 44.5C36.6597 42 42.1597 43 53.1597 45.5Z"
+                      fill="url(#acceptedDocInfoPaint2)"
+                    />
+                    <path
+                      d="M6.10256 39.2929C1.49647 27.4532 12.8565 24.98 20 23.5C19.485 28.4332 20.377 39.7641 26.5 44.5L18.3344 46.6928C15.4524 47.515 8.97134 47.1861 6.10256 39.2929Z"
+                      fill="url(#acceptedDocInfoPaint3)"
+                    />
+                    <path
+                      d="M60.7415 50.5722C37.7422 39.0723 43.2414 2.07227 50.232 2.07218C52.9005 1.40552 60.7422 5.07227 66.2375 25.0722C68.4068 34.2388 70.3446 52.1722 60.7415 50.5722Z"
+                      fill="#C0C5D8"
+                      stroke="url(#acceptedDocInfoPaint4)"
+                      strokeWidth="4"
+                    />
+                    <path
+                      d="M57.1861 26.2241C58.1382 29.6564 57.6884 32.8911 56.1816 33.4492C54.6748 34.0072 52.6814 31.6771 51.7294 28.2448C50.7774 24.8126 51.2271 21.5778 52.7339 21.0198C54.2408 20.4618 56.2341 22.7918 57.1861 26.2241Z"
+                      fill="#670C55"
+                    />
+                    <rect
+                      x="71"
+                      y="12.541"
+                      width="11"
+                      height="2"
+                      rx="1"
+                      transform="rotate(-43.2814 71 12.541)"
+                      fill="#D9D9D9"
+                    />
+                    <rect
+                      x="75"
+                      y="21.9609"
+                      width="11"
+                      height="2"
+                      rx="1"
+                      transform="rotate(-15.6136 75 21.9609)"
+                      fill="#D9D9D9"
+                    />
+                    <rect
+                      x="76.293"
+                      y="31"
+                      width="11"
+                      height="2"
+                      rx="1"
+                      transform="rotate(8.39785 76.293 31)"
+                      fill="#D9D9D9"
+                    />
+                    <defs>
+                      <linearGradient
+                        id="acceptedDocInfoPaint0"
+                        x1="24.5471"
+                        y1="54.0259"
+                        x2="29.6789"
+                        y2="47.6656"
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop offset="0.0410507" stopColor="#930878" />
+                        <stop offset="1" stopColor="#300B29" />
+                      </linearGradient>
+                      <linearGradient
+                        id="acceptedDocInfoPaint1"
+                        x1="-0.588274"
+                        y1="31.0863"
+                        x2="7.65653"
+                        y2="50.0614"
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop offset="0.583158" stopColor="#D9D9D9" />
+                        <stop offset="0.627148" stopColor="#B5BACB" />
+                        <stop offset="0.948115" stopColor="#AFB3C3" />
+                      </linearGradient>
+                      <linearGradient
+                        id="acceptedDocInfoPaint2"
+                        x1="30.6602"
+                        y1="31"
+                        x2="36.3611"
+                        y2="45.5"
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop stopColor="#D9D9D9" />
+                        <stop offset="0.107118" stopColor="#A8ACBC" />
+                        <stop offset="1" stopColor="#C8CDE0" />
+                      </linearGradient>
+                      <linearGradient
+                        id="acceptedDocInfoPaint3"
+                        x1="10.6887"
+                        y1="25.7421"
+                        x2="18.59"
+                        y2="47.4073"
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop stopColor="#A80689" />
+                        <stop offset="0.610612" stopColor="#380F31" />
+                        <stop offset="1" stopColor="#280723" />
+                      </linearGradient>
+                      <linearGradient
+                        id="acceptedDocInfoPaint4"
+                        x1="54.5"
+                        y1="24"
+                        x2="41"
+                        y2="30.5"
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop stopColor="#A80689" />
+                        <stop offset="0.95965" stopColor="#350E2D" />
+                        <stop offset="1" stopColor="#74045F" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+                <div className="min-w-0 text-[#86126E]">
+                  <p className="text-lg font-semibold leading-snug">
+                    ส่งเอกสารรับนักศึกษาฝึกงานผ่าน DDOC หา กพค.
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[#A80689]">
+                    หลังจากรับนักศึกษาฝึกงานเสร็จ คุณต้องส่งเอกสาร
+                    รับนักศึกษาไปที่ กองพัฒนาบุคลากร(กพค.) ผ่าน DDOC ภายใน 15 วัน
+                    ก่อนวันเข้าฝึกงาน หากมีข้อสงสัยสามารถสอบถามได้ที่ เบอร์ภายใน
+                    5866, 5858
+                  </p>
+                  <a
+                    href={encodeURI("/ตัวอย่าง ตอบรับนักศึกษาฝึกงาน.pdf")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center text-sm font-semibold text-[#A80689] underline underline-offset-2 hover:text-[#86126E]"
+                  >
+                    ตัวอย่างเอกสาร
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Cancel button */}
           {isDocPassed && (
             <button
@@ -3436,19 +3586,7 @@ function ApplicationsContent() {
               </div>
             </div>
           </div>
-          {isDocPassed && (
-            <div className="mb-6">
-              <h4 className="text-md font-semibold text-gray-900 mb-3">
-                หมายเหตุเพิ่มเติม
-              </h4>
-              <div className="rounded-xl border border-gray-200 font-semibold bg-white p-4">
-                <p className="text-sm  text-[#079455]">
-                  ขณะนี้ขั้นตอนการรับเข้าฝึกงานเสร็จสิ้นแล้ว
-                  โปรดส่งเอกสารยินยอมไปที่ฝ่ายพัฒนาบุคคล
-                </p>
-              </div>
-            </div>
-          )}
+
           {/* Personal Info */}
           <div className="mb-6">
             <h4 className="text-md font-semibold text-gray-900 mb-4">

@@ -9,7 +9,7 @@ import { JobAnnouncement } from "@/types/announcement";
 import { formatDateThai } from "../../../data/mockAnnouncements";
 import { mockApplications, Application } from "../../../data/mockApplications";
 import OwnerSearchSection from "@/components/ui/OwnerSearchSection";
-import { positionApi, positionToAnnouncement } from "@/services/api";
+import { positionApi, positionToAnnouncement, userApi } from "@/services/api";
 import {
   highSchools,
   vocationalSchools,
@@ -172,7 +172,9 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
 
         const position = await positionApi.getPositionById(positionId);
         if (position) {
-          const announcementData = positionToAnnouncement(position);
+          // ดึง profile ของ user ที่ login อยู่เพื่อใช้เป็นข้อมูลผู้ประกาศ
+          const userProfile = await userApi.getUserProfile();
+          const announcementData = positionToAnnouncement(position, userProfile);
           setAnnouncement(announcementData);
         }
       } catch (error) {

@@ -105,6 +105,18 @@ type InternTableStatus =
   | "cancelled"
   | "accepted";
 
+type InternStatusFilter = "all" | "awaiting" | "active" | "cancelled";
+
+const INTERN_STATUS_FILTER_OPTIONS: Array<{
+  value: InternStatusFilter;
+  label: string;
+}> = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "awaiting", label: "รอเริ่มฝึกงาน" },
+  { value: "active", label: "อยู่ระหว่างฝึกงาน" },
+  { value: "cancelled", label: "ยกเลิกฝึกงาน" },
+];
+
 type InternTableRow = {
   id: number;
   fullName: string;
@@ -187,13 +199,18 @@ export default function OwnerDashboard() {
     useState("");
   const [draftInternTrainingEndDate, setDraftInternTrainingEndDate] =
     useState("");
+  const [selectedInternStatusFilter, setSelectedInternStatusFilter] =
+    useState<InternStatusFilter>("all");
   const [showInternPeriodDropdown, setShowInternPeriodDropdown] =
+    useState(false);
+  const [showInternStatusDropdown, setShowInternStatusDropdown] =
     useState(false);
   const [internTrainingDateViewMonth, setInternTrainingDateViewMonth] =
     useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [internPage, setInternPage] = useState(1);
   const internsPerPage = 5;
   const internPeriodDropdownRef = useRef<HTMLDivElement>(null);
+  const internStatusDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -203,6 +220,12 @@ export default function OwnerDashboard() {
         !internPeriodDropdownRef.current.contains(target)
       ) {
         setShowInternPeriodDropdown(false);
+      }
+      if (
+        internStatusDropdownRef.current &&
+        !internStatusDropdownRef.current.contains(target)
+      ) {
+        setShowInternStatusDropdown(false);
       }
     };
 
@@ -432,9 +455,7 @@ export default function OwnerDashboard() {
         // Accepted + document passed flow for this dashboard view.
         if (app.applicationStatus !== "COMPLETE") return null;
 
-        const isAwaiting =
-          (startDate && now.getTime() < startDate.getTime()) ||
-          app.studentInternshipStatus === "AWAITING";
+        const isAwaiting = app.studentInternshipStatus === "AWAITING";
         if (isAwaiting) {
           return {
             id: app.applicationId,
@@ -520,13 +541,19 @@ export default function OwnerDashboard() {
         return true;
       })();
 
-      return matchName && matchPosition && matchPeriod;
+      const matchStatus =
+        selectedInternStatusFilter === "all"
+          ? true
+          : row.statusType === selectedInternStatusFilter;
+
+      return matchName && matchPosition && matchPeriod && matchStatus;
     });
   }, [
     internSearch,
     internPositionSearch,
     selectedInternTrainingStartDate,
     selectedInternTrainingEndDate,
+    selectedInternStatusFilter,
     internTableData,
   ]);
 
@@ -537,12 +564,23 @@ export default function OwnerDashboard() {
     internPositionSearch,
     selectedInternTrainingStartDate,
     selectedInternTrainingEndDate,
+    selectedInternStatusFilter,
   ]);
+
+  const selectedInternStatusFilterLabel =
+    selectedInternStatusFilter === "all"
+      ? "สถานะ"
+      : INTERN_STATUS_FILTER_OPTIONS.find(
+          (option) => option.value === selectedInternStatusFilter,
+        )?.label || "สถานะ";
 
   const getInternTrainingDateDisplayText = () => {
     if (!selectedInternTrainingStartDate && !selectedInternTrainingEndDate)
       return "ระยะเวลาฝึกงาน";
     if (selectedInternTrainingStartDate && selectedInternTrainingEndDate) {
+      if (selectedInternTrainingStartDate === selectedInternTrainingEndDate) {
+        return formatShortThaiDate(selectedInternTrainingStartDate);
+      }
       return `${formatShortThaiDate(selectedInternTrainingStartDate)} - ${formatShortThaiDate(selectedInternTrainingEndDate)}`;
     }
     if (selectedInternTrainingStartDate)
@@ -606,6 +644,17 @@ export default function OwnerDashboard() {
   const currentInternRows = filteredInternTableData.slice(
     (currentInternPage - 1) * internsPerPage,
     currentInternPage * internsPerPage,
+  );
+
+  const totalCurrentInterns = useMemo(
+    () =>
+      internTableData.filter(
+        (row) =>
+          row.statusType === "accepted" ||
+          row.statusType === "awaiting" ||
+          row.statusType === "active",
+      ).length,
+    [internTableData],
   );
 
   const getInternStatusBadgeClass = (statusType: InternTableStatus) => {
@@ -847,7 +896,7 @@ export default function OwnerDashboard() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 mt-4">
           <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-3">
             <div className="text-primary-600">
               <svg
@@ -914,6 +963,29 @@ export default function OwnerDashboard() {
                 {apiStats.totalApplicants}
               </p>
               <p className="text-gray-500 text-sm">ผู้สมัครทั้งหมด</p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-3">
+            <div className="text-primary-600">
+              <svg
+                width="22"
+                height="16"
+                viewBox="0 0 22 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16.55 5.175L20.075 1.625C20.275 1.425 20.5125 1.325 20.7875 1.325C21.0625 1.325 21.3 1.425 21.5 1.625C21.7 1.825 21.8 2.0625 21.8 2.3375C21.8 2.6125 21.7 2.85 21.5 3.05L17.25 7.3C17.05 7.5 16.8167 7.6 16.55 7.6C16.2833 7.6 16.05 7.5 15.85 7.3L13.725 5.175C13.525 4.975 13.425 4.7375 13.425 4.4625C13.425 4.1875 13.525 3.95 13.725 3.75C13.925 3.55 14.1583 3.45 14.425 3.45C14.6917 3.45 14.925 3.55 15.125 3.75L16.55 5.175ZM5.175 6.825C4.39167 6.04167 4 5.1 4 4C4 2.9 4.39167 1.95833 5.175 1.175C5.95833 0.391667 6.9 0 8 0C9.1 0 10.0417 0.391667 10.825 1.175C11.6083 1.95833 12 2.9 12 4C12 5.1 11.6083 6.04167 10.825 6.825C10.0417 7.60833 9.1 8 8 8C6.9 8 5.95833 7.60833 5.175 6.825ZM0 14V13.2C0 12.6333 0.145833 12.1125 0.4375 11.6375C0.729167 11.1625 1.11667 10.8 1.6 10.55C2.63333 10.0333 3.68333 9.64583 4.75 9.3875C5.81667 9.12917 6.9 9 8 9C9.1 9 10.1833 9.12917 11.25 9.3875C12.3167 9.64583 13.3667 10.0333 14.4 10.55C14.8833 10.8 15.2708 11.1625 15.5625 11.6375C15.8542 12.1125 16 12.6333 16 13.2V14C16 14.55 15.8042 15.0208 15.4125 15.4125C15.0208 15.8042 14.55 16 14 16H2C1.45 16 0.979167 15.8042 0.5875 15.4125C0.195833 15.0208 0 14.55 0 14ZM2 14H14V13.2C14 13.0167 13.9542 12.85 13.8625 12.7C13.7708 12.55 13.65 12.4333 13.5 12.35C12.6 11.9 11.6917 11.5625 10.775 11.3375C9.85833 11.1125 8.93333 11 8 11C7.06667 11 6.14167 11.1125 5.225 11.3375C4.30833 11.5625 3.4 11.9 2.5 12.35C2.35 12.4333 2.22917 12.55 2.1375 12.7C2.04583 12.85 2 13.0167 2 13.2V14ZM9.4125 5.4125C9.80417 5.02083 10 4.55 10 4C10 3.45 9.80417 2.97917 9.4125 2.5875C9.02083 2.19583 8.55 2 8 2C7.45 2 6.97917 2.19583 6.5875 2.5875C6.19583 2.97917 6 3.45 6 4C6 4.55 6.19583 5.02083 6.5875 5.4125C6.97917 5.80417 7.45 6 8 6C8.55 6 9.02083 5.80417 9.4125 5.4125Z"
+                  fill="#A80689"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-primary-600">
+                {totalCurrentInterns}
+              </p>
+              <p className="text-gray-500 text-sm">นักศึกษาฝึกงานทั้งหมด</p>
             </div>
           </div>
         </div>
@@ -1122,7 +1194,7 @@ export default function OwnerDashboard() {
             รายการรายชื่อนักศึกษาฝึกงาน
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <svg
@@ -1176,11 +1248,14 @@ export default function OwnerDashboard() {
             <div className="relative" ref={internPeriodDropdownRef}>
               <button
                 type="button"
-                onClick={() =>
-                  showInternPeriodDropdown
-                    ? setShowInternPeriodDropdown(false)
-                    : openInternTrainingDateDropdown()
-                }
+                onClick={() => {
+                  if (showInternPeriodDropdown) {
+                    setShowInternPeriodDropdown(false);
+                    return;
+                  }
+                  setShowInternStatusDropdown(false);
+                  openInternTrainingDateDropdown();
+                }}
                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 shadow-sm hover:border-primary-600 outline-none text-gray-700 bg-white flex items-center justify-between cursor-pointer text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-100 transition"
               >
                 <span
@@ -1361,12 +1436,13 @@ export default function OwnerDashboard() {
                     <button
                       type="button"
                       onClick={() => {
+                        const normalizedEndDate =
+                          draftInternTrainingEndDate ||
+                          draftInternTrainingStartDate;
                         setSelectedInternTrainingStartDate(
                           draftInternTrainingStartDate,
                         );
-                        setSelectedInternTrainingEndDate(
-                          draftInternTrainingEndDate,
-                        );
+                        setSelectedInternTrainingEndDate(normalizedEndDate);
                         setShowInternPeriodDropdown(false);
                       }}
                       className="py-2.5 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition font-medium text-sm"
@@ -1374,6 +1450,64 @@ export default function OwnerDashboard() {
                       ตกลง
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+
+            <div className="relative" ref={internStatusDropdownRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!showInternStatusDropdown) {
+                    setShowInternPeriodDropdown(false);
+                  }
+                  setShowInternStatusDropdown((prev) => !prev);
+                }}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 shadow-sm hover:border-primary-600 outline-none text-gray-700 bg-white flex items-center justify-between cursor-pointer text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-100 transition"
+              >
+                <span
+                  className={`truncate ${selectedInternStatusFilter === "all" ? "text-gray-500" : "text-gray-700"}`}
+                >
+                  {selectedInternStatusFilterLabel}
+                </span>
+                <svg
+                  className={`w-5 h-5 text-gray-500 transition-transform ${showInternStatusDropdown ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {showInternStatusDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
+                  {INTERN_STATUS_FILTER_OPTIONS.map((option) => {
+                    const isActive =
+                      selectedInternStatusFilter === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedInternStatusFilter(option.value);
+                          setShowInternStatusDropdown(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                          isActive
+                            ? "bg-primary-50 text-primary-700 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -22,10 +22,10 @@ const Page = () => {
 
     return (
 
-        <div className="-m-6 min-h-screen bg-white dark:bg-black flex justify-center p-6">
+        <div className="-m-6 min-h-screen bg-[#FCFAEE] lg:bg-white dark:bg-black flex justify-center p-0 lg:p-6">
 
 
-            <div className="w-full max-w-[840px] p-6 flex flex-col gap-6">
+            <div className="w-full max-w-[840px] p-4 lg:p-6 flex flex-col gap-6">
 
                 <EditTimeForm
                     selectedHistoryItem={data}

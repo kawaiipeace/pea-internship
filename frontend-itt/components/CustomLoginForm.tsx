@@ -2,21 +2,86 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Swal from 'sweetalert2';
 
-export default function CustomLoginForm() {
+interface CustomLoginFormProps {
+    onSuccess?: () => void;
+}
+
+export default function CustomLoginForm({ onSuccess }: CustomLoginFormProps) {
     const router = useRouter();
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Placeholder for real logic
-        router.push('/');
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/sign-in/intern`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phoneNumber,
+                    password,
+                }),
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'เข้าสู่ระบบสำเร็จ',
+                    showConfirmButton: false,
+                    timer: 1500,
+                    customClass: {
+                        popup: 'rounded-[20px]',
+                    },
+                });
+                
+                // Set user_role cookie สำหรับ middleware
+                document.cookie = `user_role=intern; path=/; max-age=86400`;
+
+                if (onSuccess) {
+                    onSuccess();
+                } else {
+                    router.push('/user');
+                }
+            } else {
+                let errorMessage = 'เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    // Fallback if response is not JSON
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เข้าสู่ระบบล้มเหลว',
+                    text: errorMessage,
+                    customClass: {
+                        popup: 'rounded-[20px]',
+                        confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
+                    },
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                customClass: {
+                    popup: 'rounded-[20px]',
+                    confirmButton: 'bg-[#9A0D8A] rounded-[10px]',
+                },
+            });
+        }
     };
 
     return (
-        <div className="w-full max-w-[340px] mx-auto bg-white/70 backdrop-blur-[10px] backdrop-saturate-[150%] rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-8 relative border border-white/40">
+        <div className="w-full max-w-[340px] mx-auto bg-white rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-8 relative border border-white/40">
             {/* Logo area */}
             <div className="flex justify-center mb-10 mt-2">
                 <div className="relative flex items-baseline">
