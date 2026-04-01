@@ -439,9 +439,20 @@ export default function AdminApplicationDetailPage() {
             : null;
 
   // Reason box
+  const latestInvalidReason = (() => {
+    if (viewMode !== "docs_invalid") return null;
+    const invalidDoc = application.documents.find(
+      (d) => d.validationStatus === "INVALID" && d.invalidReasons?.length,
+    );
+    if (!invalidDoc?.invalidReasons?.length) return null;
+    return invalidDoc.invalidReasons[invalidDoc.invalidReasons.length - 1];
+  })();
+  const reasonText =
+    viewMode === "docs_invalid"
+      ? latestInvalidReason || application.statusNote
+      : application.statusNote;
   const showReasonBox =
-    (viewMode === "docs_invalid" || viewMode === "cancelled") &&
-    application.statusNote;
+    (viewMode === "docs_invalid" || viewMode === "cancelled") && reasonText;
   const reasonTitle =
     viewMode === "docs_invalid"
       ? "เหตุผลที่เอกสารไม่ผ่าน"
@@ -552,7 +563,7 @@ export default function AdminApplicationDetailPage() {
                       {reasonTitle}
                     </p>
                     <p className="text-sm text-gray-800 mt-1">
-                      {application.statusNote}
+                      {reasonText}
                     </p>
                   </div>
                 </div>
@@ -999,25 +1010,44 @@ export default function AdminApplicationDetailPage() {
               ) : (
                 <div className="space-y-4">
                   {(() => {
-                    let invalidCount = 0;
+                    // Sort newest first for display
                     const sorted = [...docHistoryData].sort(
                       (a, b) =>
                         new Date(b.createdAt).getTime() -
                         new Date(a.createdAt).getTime(),
                     );
-                    // Count total invalids for numbering (newest first → reverse index)
-                    const totalInvalids = sorted.filter(
-                      (log) => parseReviewAction(log.action).status === "INVALID",
-                    ).length;
+
+                    // Build per-docType reason mapping from chronological order
+                    const chronological = [...docHistoryData].sort(
+                      (a, b) =>
+                        new Date(a.createdAt).getTime() -
+                        new Date(b.createdAt).getTime(),
+                    );
+                    const invalidCountByDocType: Record<number, number> = {};
+                    const reasonByLogId = new Map<number, string>();
+                    const invalidNumberByLogId = new Map<number, number>();
+                    for (const log of chronological) {
+                      const { docTypeId: dtId, status: st } = parseReviewAction(log.action);
+                      if (st === "INVALID" && dtId) {
+                        const count = invalidCountByDocType[dtId] ?? 0;
+                        invalidCountByDocType[dtId] = count + 1;
+                        invalidNumberByLogId.set(log.id, count + 1);
+                        const doc = application?.documents.find(
+                          (d) => d.docTypeId === dtId,
+                        );
+                        const reason = doc?.invalidReasons?.[count];
+                        if (reason) reasonByLogId.set(log.id, reason);
+                      }
+                    }
 
                     return sorted.map((log) => {
                       const { docTypeId, status } = parseReviewAction(log.action);
                       const docInfo = docTypeId ? DOC_TYPE_MAP[docTypeId] : null;
                       const isInvalid = status === "INVALID";
-                      if (isInvalid) invalidCount++;
                       const invalidNumber = isInvalid
-                        ? totalInvalids - invalidCount + 1
+                        ? (invalidNumberByLogId.get(log.id) ?? 0)
                         : 0;
+                      const reasonText = reasonByLogId.get(log.id) ?? null;
 
                       return (
                         <div
@@ -1109,7 +1139,7 @@ export default function AdminApplicationDetailPage() {
                           </h4>
 
                           {/* Reason box for INVALID */}
-                          {isInvalid && application?.statusNote && (
+                          {isInvalid && reasonText && (
                             <div className="mt-2 bg-[#FEE4E2] border border-[#FECDCA] rounded-xl p-3">
                               <div className="flex items-start gap-2">
                                 <svg
@@ -1124,7 +1154,7 @@ export default function AdminApplicationDetailPage() {
                                     เหตุผลที่ไม่ผ่านการคัดเลือก
                                   </p>
                                   <p className="text-sm text-gray-800 mt-1">
-                                    {application.statusNote}
+                                    {reasonText}
                                   </p>
                                 </div>
                               </div>

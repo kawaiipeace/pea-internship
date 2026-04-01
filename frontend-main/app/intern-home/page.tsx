@@ -105,17 +105,14 @@ export default function InternHomePage() {
     loadJobs();
   }, []);
 
-  // Check if student passed selection (PENDING_REQUEST) and show congrats modal
+  // Check if student passed selection (COMPLETE = รับเข้าฝึกงาน + เอกสารผ่าน) and show congrats modal
   useEffect(() => {
     const checkCongratsStatus = async () => {
       try {
         const app = await applicationApi.getMyLatestApplication();
         if (
           app &&
-          (app.applicationStatus === "PENDING_REQUEST" ||
-            app.applicationStatus === "PENDING_REVIEW" ||
-            app.applicationStatus === "COMPLETE") &&
-          !app.statusNote
+          app.applicationStatus === "COMPLETE"
         ) {
           const seenKey = `congrats_seen_${app.applicationId}`;
           if (!localStorage.getItem(seenKey)) {

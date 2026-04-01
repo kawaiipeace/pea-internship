@@ -1172,6 +1172,7 @@ export interface AllStudentsHistoryItem {
     docTypeId: number;
     docFile: string;
     validationStatus: string;
+    invalidReasons?: string[];
   }[];
   mentors: {
     fname: string | null;
