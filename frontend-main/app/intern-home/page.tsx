@@ -13,7 +13,6 @@ import CongratsModal from "@/components/ui/CongratsModal";
 import {
   positionApi,
   positionToJobWithStaff,
-  userApi,
   StaffUser,
   favoriteApi,
   jobIdToPositionId,
@@ -28,6 +27,9 @@ export default function InternHomePage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [majorOptions, setMajorOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
 
@@ -77,12 +79,25 @@ export default function InternHomePage() {
 
         // Combine API jobs with mock jobs (API jobs first)
         const combinedJobs = [...apiJobs];
+        const majors = Array.from(
+          new Set(
+            combinedJobs
+              .flatMap((job) => job.tags || [])
+              .map((tag) => tag.trim())
+              .filter((tag) => tag.length > 0),
+          ),
+        ).sort((a, b) => a.localeCompare(b, "th"));
+
         setAllJobs(combinedJobs);
         setFilteredJobs(combinedJobs);
+        setMajorOptions(
+          majors.map((major) => ({ value: major, label: major })),
+        );
       } catch {
         // Fallback to mock jobs if API fails
         setAllJobs([]);
         setFilteredJobs([]);
+        setMajorOptions([]);
       } finally {
         setIsLoading(false);
       }
@@ -325,7 +340,11 @@ export default function InternHomePage() {
       <NavbarIntern favoritesCount={favorites.length} />
 
       {/* Search Section */}
-      <SearchSection onSearch={handleSearch} resetKey={searchResetKey} />
+      <SearchSection
+        onSearch={handleSearch}
+        resetKey={searchResetKey}
+        jobTypeOptions={majorOptions}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

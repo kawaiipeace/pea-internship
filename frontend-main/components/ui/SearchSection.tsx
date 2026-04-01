@@ -6,9 +6,10 @@ import { relatedFieldOptions } from "@/app/data/mockAnnouncements";
 interface SearchSectionProps {
   onSearch?: (keyword: string, jobTypes: string[]) => void;
   resetKey?: number;
+  jobTypeOptions?: Array<{ value: string; label: string }>;
 }
 
-const jobTypeOptions = [
+const defaultJobTypeOptions = [
   ...relatedFieldOptions.map((field) => ({
     value: field,
     label: field,
@@ -18,11 +19,24 @@ const jobTypeOptions = [
 export default function SearchSection({
   onSearch,
   resetKey,
+  jobTypeOptions,
 }: SearchSectionProps) {
+  const normalizedJobTypeOptions =
+    jobTypeOptions && jobTypeOptions.length > 0
+      ? jobTypeOptions
+      : defaultJobTypeOptions;
   const [keyword, setKeyword] = useState("");
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [isJobTypeOpen, setIsJobTypeOpen] = useState(false);
   const [jobTypeSearch, setJobTypeSearch] = useState("");
+
+  useEffect(() => {
+    setSelectedJobTypes((prev) =>
+      prev.filter((value) =>
+        normalizedJobTypeOptions.some((option) => option.value === value),
+      ),
+    );
+  }, [normalizedJobTypeOptions]);
 
   // Reset all filters when resetKey changes
   useEffect(() => {
@@ -78,7 +92,7 @@ export default function SearchSection({
   const getJobTypeLabel = () => {
     if (selectedJobTypes.length === 0) return "สาขาวิชาทั้งหมด";
     if (selectedJobTypes.length === 1) {
-      const selected = jobTypeOptions.find(
+      const selected = normalizedJobTypeOptions.find(
         (opt) => opt.value === selectedJobTypes[0],
       );
       return selected?.label || "สาขาวิชาทั้งหมด";
@@ -194,7 +208,7 @@ export default function SearchSection({
 
                 {/* Options List */}
                 <div className="overflow-y-auto max-h-56">
-                  {jobTypeOptions
+                  {normalizedJobTypeOptions
                     .filter((option) =>
                       option.label
                         .toLowerCase()
@@ -216,7 +230,7 @@ export default function SearchSection({
                         </span>
                       </label>
                     ))}
-                  {jobTypeOptions.filter((option) =>
+                  {normalizedJobTypeOptions.filter((option) =>
                     option.label
                       .toLowerCase()
                       .includes(jobTypeSearch.toLowerCase()),
