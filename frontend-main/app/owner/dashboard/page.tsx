@@ -268,7 +268,13 @@ export default function OwnerDashboard() {
           limit: 500,
           includeCanceled: true,
         });
-        const apps = appsRes.data || [];
+        const allAppsRaw = appsRes.data || [];
+
+        // กรองเฉพาะใบสมัครที่อยู่ใน position ของ department นี้
+        const deptPositionIds = new Set(positionsList.map((p) => p.id));
+        const apps = allAppsRaw.filter(
+          (app) => app.positionId && deptPositionIds.has(app.positionId)
+        );
         setAllApps(apps);
 
         setApiStats({

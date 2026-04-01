@@ -153,8 +153,14 @@ function JobDetailContent() {
         );
 
         // Store rejection reason if cancelled/rejected/doc-failed
-        if (matchedApp.statusNote) {
-          setRejectionReason(matchedApp.statusNote);
+        const hasInvalidDoc = matchedApp.documents?.some((d) => d.validationStatus === "INVALID");
+        const invalidDocNote = hasInvalidDoc
+          ? (matchedApp.documents as { note?: string | null; validationStatus?: string }[])?.find((d) => d.validationStatus === "INVALID" && d.note)?.note || null
+          : null;
+        if (matchedApp.applicationStatus === "CANCEL" || matchedApp.applicationStatus === "ABORT") {
+          if (matchedApp.statusNote) setRejectionReason(matchedApp.statusNote);
+        } else if (hasInvalidDoc && invalidDocNote) {
+          setRejectionReason(invalidDocNote);
         }
 
         const position = await positionApi.getPositionById(posId);
@@ -448,23 +454,20 @@ function JobDetailContent() {
           </div>
         </div>
         {/* Rejection Reason */}
-        {(status === "rejected" ||
-          status === "cancelled" ||
-          status === "accepted-doc-failed") &&
-          rejectionReason && (
+        {rejectionReason && (status === "rejected" || status === "cancelled" || status === "accepted-doc-failed") && (
             <div className="mt-4">
               <h4 className="font-bold text-gray-800 text-sm mb-1.5">
-                {status === "accepted-doc-failed"
-                  ? "เหตุผลที่เอกสารไม่ผ่าน"
-                  : status === "rejected"
-                    ? "เหตุผลที่ไม่ผ่าน"
-                    : "เหตุผลที่ยกเลิก"}
+                {status === "rejected"
+                  ? "เหตุผลที่ไม่ผ่าน"
+                  : status === "cancelled"
+                    ? "เหตุผลที่ยกเลิก"
+                    : "เหตุผลที่เอกสารไม่ผ่าน"}
               </h4>
               <div
-                className={`${status === "rejected" || status === "accepted-doc-failed" ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200"} border rounded-lg p-3`}
+                className={`${status === "rejected" || status === "accepted-doc-failed" ? "bg-red-50 border-red-200" : status === "cancelled" ? "bg-gray-50 border-gray-200" : "bg-red-50 border-red-200"} border rounded-lg p-3`}
               >
                 <p
-                  className={`${status === "rejected" || status === "accepted-doc-failed" ? "text-red-700" : "text-gray-600"} text-sm`}
+                  className={`${status === "rejected" || status === "accepted-doc-failed" ? "text-red-700" : status === "cancelled" ? "text-gray-600" : "text-red-700"} text-sm`}
                 >
                   {rejectionReason}
                 </p>
