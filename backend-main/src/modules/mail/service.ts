@@ -1268,10 +1268,10 @@ export class MailService {
   }
 
   buildPositionFilledEmail(params: {
-  firstname: string;
-  lastname: string;
-  positionName: string;
-  departmentName: string;
+    firstname: string;
+    lastname: string;
+    positionName: string;
+    departmentName: string;
   }) {
     let html = POSITION_FILLED_TEMPLATE;
 

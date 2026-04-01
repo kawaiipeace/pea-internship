@@ -5,9 +5,9 @@ const getTokenFromCookie = () => {
     const match = document.cookie.match(/(?:^|; )token=([^;]*)/);
     return match ? match[1] : null;
 };
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 const axiosInstance: AxiosInstance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    baseURL: API_BASE_URL,
     timeout: 10000,
     withCredentials: true,
     headers: {

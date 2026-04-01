@@ -274,7 +274,7 @@ export class ApplicationService {
         this.sendEmailAsync(student.email, mail.subject, mail.html);
       }
     }
-}
+  }
 
   async apply(userId: string, positionId: number) {
     return await db.transaction(async (tx) => {

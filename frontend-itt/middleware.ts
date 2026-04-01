@@ -46,8 +46,8 @@ export function middleware(request: NextRequest) {
   const sessionToken = request.cookies.get(SESSION_COOKIE)?.value || request.cookies.get(BETTER_AUTH_COOKIE)?.value;
   const userRole = request.cookies.get("user_role")?.value;
 
-  // isAuthenticated คือต้องมีทั้งคู่ (เพื่อป้องกันอาการค้าง)
-  const isAuthenticated = !!sessionToken && !!userRole;
+  // isAuthenticated แค่มี session token ก็พอ แล้วเดี๋ยว fallback ไปหน้า intern ถ้ายกเว้นไม่เจอ role
+  const isAuthenticated = !!sessionToken;
 
   // ตรวจสอบประเภท route
   const isInternRoute = internRoutes.some(
@@ -76,9 +76,7 @@ export function middleware(request: NextRequest) {
 
   // 2. ถ้า login แล้วแต่อยากเข้าหน้า Login/Register → ไปหน้า Home ตาม Role
   if (isAuthenticated && isAuthRoute && !forceLogin) {
-    if (userRole) {
-        return NextResponse.redirect(new URL(getHomeByRole(userRole), request.url));
-    }
+    return NextResponse.redirect(new URL(getHomeByRole(userRole), request.url));
   }
 
   // 3. ตรวจสอบสิทธิ์ราย Role (RBAC)
@@ -91,7 +89,7 @@ export function middleware(request: NextRequest) {
     }
     // Intern พยายามเข้า Mentor/Admin routes
     if ((userRole === "intern" || userRole === "student") && (isMentorRoute || isAdminRoute)) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/intern", request.url));
     }
     // Admin พยายามเข้าหน้าอื่นๆ
     if (userRole === "admin" && (isInternRoute || isMentorRoute)) {
@@ -101,9 +99,7 @@ export function middleware(request: NextRequest) {
 
   // 4. หน้า Public (/) -> ส่งไป Home ตาม Role
   if (isAuthenticated && pathname === "/") {
-    if (userRole) {
-        return NextResponse.redirect(new URL(getHomeByRole(userRole), request.url));
-    }
+    return NextResponse.redirect(new URL(getHomeByRole(userRole), request.url));
   }
 
   return NextResponse.next();
