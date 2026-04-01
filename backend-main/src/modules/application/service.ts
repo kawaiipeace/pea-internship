@@ -181,8 +181,15 @@ export class ApplicationService {
       .select({
         positionCount: internshipPositions.positionCount,
         acceptedCount: internshipPositions.acceptedCount,
+        departmentId: internshipPositions.departmentId,
+        positionName: internshipPositions.name,
+        departmentName: departments.deptFull,
       })
       .from(internshipPositions)
+      .leftJoin(
+        departments,
+        eq(departments.deptSap, internshipPositions.departmentId)
+      )
       .where(eq(internshipPositions.id, positionId));
 
     if (!position) return;
@@ -248,8 +255,26 @@ export class ApplicationService {
         "การสมัครถูกยกเลิก",
         "การสมัครของคุณถูกยกเลิกเนื่องจากตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว"
       );
+
+      const student = await this.getStudentEmailPayload(tx, app.userId);
+
+      if (
+        student?.email &&
+        student.fname &&
+        student.lname &&
+        position.positionName
+      ) {
+        const mail = mailService.buildPositionFilledEmail({
+          firstname: student.fname,
+          lastname: student.lname,
+          positionName: position.positionName,
+          departmentName: position.departmentName ?? "-",
+        });
+
+        this.sendEmailAsync(student.email, mail.subject, mail.html);
+      }
     }
-  }
+}
 
   async apply(userId: string, positionId: number) {
     return await db.transaction(async (tx) => {
