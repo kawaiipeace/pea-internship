@@ -1076,7 +1076,10 @@ export class ApplicationService {
       }
 
       const [doc] = await tx
-        .select({ id: applicationDocuments.id })
+        .select({
+          id: applicationDocuments.id,
+          invalidReasons: applicationDocuments.invalidReasons,
+        })
         .from(applicationDocuments)
         .where(
           and(
@@ -1101,13 +1104,17 @@ export class ApplicationService {
         throw new BadRequestError("กรุณาระบุเหตุผลในการตีกลับเอกสารอย่างน้อย 1 ข้อ");
       }
 
+      const mergedInvalidReasons =
+        status === "INVALID"
+          ? [...(doc.invalidReasons ?? []), ...(normalizedInvalidReasons ?? [])]
+          : null;
+
       await tx
         .update(applicationDocuments)
         .set({
           validationStatus: status,
           note: status === "INVALID" ? (note ?? null) : null,
-          invalidReasons:
-            status === "INVALID" ? normalizedInvalidReasons : null,
+          invalidReasons: mergedInvalidReasons,
           updatedAt: new Date(),
         })
         .where(eq(applicationDocuments.id, doc.id));
@@ -1128,8 +1135,8 @@ export class ApplicationService {
             .set({
               applicationStatus: "PENDING_REQUEST",
               statusNote:
-                normalizedInvalidReasons && normalizedInvalidReasons.length > 0
-                  ? normalizedInvalidReasons.join(", ")
+                mergedInvalidReasons && mergedInvalidReasons.length > 0
+                  ? mergedInvalidReasons.join(", ")
                   : (note ?? null),
               updatedAt: new Date(),
             })
@@ -1168,13 +1175,13 @@ export class ApplicationService {
 
           return {
             applicationStatus: "PENDING_REQUEST",
-            invalidReasons: normalizedInvalidReasons,
+            invalidReasons: mergedInvalidReasons,
           };
         }
 
         return {
           applicationStatus: app.status,
-          invalidReasons: normalizedInvalidReasons,
+          invalidReasons: mergedInvalidReasons,
         };
       }
 
