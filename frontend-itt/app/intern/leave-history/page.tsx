@@ -8,7 +8,7 @@ import IconFile from '@/components/icon/icon-file';
 import IconXCircle from '@/components/icon/icon-x-circle';
 import IconShare from '@/components/icon/icon-share';
 import { Transition, Dialog } from '@headlessui/react';
-import IconMapPin from '@/components/icon/icon-map-pin';
+
 import IconCamera from '@/components/icon/icon-camera';
 import IconX from '@/components/icon/icon-x';
 import IconArchive from '@/components/icon/icon-archive';
@@ -736,8 +736,8 @@ const LeaveHistoryPage = () => {
 
                                                             {/* Card 1: Details */}
                                                             <div className="w-full sm:w-[636px] sm:h-[168px] bg-[#FEFBF6] dark:bg-[#1C1710] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <IconMapPin className="w-[18px] h-[18px] text-gray-800 dark:text-gray-300 stroke-[1.5px]" />
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="material-symbols-rounded text-[20px] text-gray-800 dark:text-gray-300">location_on</span>
                                                                     <div className="font-bold text-[14px] text-gray-800 dark:text-gray-100">อยู่นอกสถานที่</div>
                                                                 </div>
                                                                 

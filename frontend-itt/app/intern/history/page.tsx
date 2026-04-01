@@ -7,7 +7,7 @@ import IconXCircle from "@/components/icon/icon-x-circle";
 import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import IconShare from "@/components/icon/icon-share";
 import { Transition, Dialog } from "@headlessui/react";
-import IconMapPin from "@/components/icon/icon-map-pin";
+
 import IconCamera from "@/components/icon/icon-camera";
 import IconX from "@/components/icon/icon-x";
 import IconArchive from "@/components/icon/icon-archive";
@@ -1098,8 +1098,8 @@ const AttendanceHistoryPage = () => {
                                                                             <div className="space-y-3">
                                                                                 {/* Card 1: Original */}
                                                                                 <div className="bg-white border border-[#ECECED] rounded-[16px] p-4 shadow-sm space-y-2">
-                                                                                    <div className="flex items-center w-[92px] h-[21px] gap-2 text-[#000000] font-bold text-[14px] leading-none shrink-0 border-none">
-                                                                                        <IconMapPin className="w-4 h-4 text-[#000000] shrink-0" />
+                                                                                    <div className="flex items-center w-[92px] h-[21px] gap-1 text-[#000000] font-bold text-[14px] leading-none shrink-0 border-none">
+                                                                                        <span className="material-symbols-rounded text-[18px] text-[#000000]">location_on</span>
                                                                                         <span className="whitespace-nowrap">อยู่ในสถานที่</span>
                                                                                     </div>
                                                                                     <div className="space-y-2 pl-8">
@@ -1154,9 +1154,9 @@ const AttendanceHistoryPage = () => {
                                                                         ) : (
                                                                             /* Unified Detail Card */
                                                                             <div className="bg-white border border-[#ECECED] rounded-[16px] p-5 shadow-sm space-y-4">
-                                                                                <div className="flex items-start gap-3 border-none">
-                                                                                    <div className="flex items-center h-[21px] gap-2 text-[#000000] font-bold text-[15px] leading-none shrink-0">
-                                                                                        <IconMapPin className="w-5 h-5 text-[#000000] shrink-0" />
+                                                                                <div className="flex items-start gap-1 border-none">
+                                                                                    <div className="flex items-center h-[21px] gap-1 text-[#000000] font-bold text-[15px] leading-none shrink-0">
+                                                                                        <span className="material-symbols-rounded text-[20px] text-[#000000]">location_on</span>
                                                                                         <span className="whitespace-nowrap">{(selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.status === "สาย" || selectedHistoryItem.status === "ไม่ลงเวลาออก") ? "อยู่ในสถานที่" : selectedHistoryItem.location}</span>
                                                                                     </div>
                                                                                 </div>
@@ -1349,8 +1349,8 @@ const AttendanceHistoryPage = () => {
                                                                         <>
                                                                             {/* Card 1: Original */}
                                                                             <div className="bg-white dark:bg-[#1C1710] border border-[#ECECED] dark:border-[#3A2A1A] rounded-2xl p-4 space-y-3 shadow-sm">
-                                                                                <div className="flex items-center w-[92px] h-[21px] gap-2 text-[#000000] font-bold text-[14px] leading-none shrink-0 border-none">
-                                                                                    <IconMapPin className="w-4 h-4 text-[#000000] shrink-0" />
+                                                                                <div className="flex items-center w-[92px] h-[21px] gap-1 text-[#000000] font-bold text-[14px] leading-none shrink-0 border-none">
+                                                                                    <span className="material-symbols-rounded text-[18px] text-[#000000]">location_on</span>
                                                                                     <span className="whitespace-nowrap">อยู่ในสถานที่</span>
                                                                                 </div>
                                                                                 <div className="grid grid-cols-2 gap-y-2 pl-8">
@@ -1433,9 +1433,9 @@ const AttendanceHistoryPage = () => {
                                                                     ) : (
                                                                         /* Single Detail Card */
                                                                         <div className="bg-white dark:bg-[#1C1710] border border-[#ECECED] dark:border-[#3A2A1A] rounded-2xl p-4 space-y-3 shadow-sm">
-                                                                            <div className="flex items-start gap-3 border-none">
-                                                                                <div className="flex items-center h-[21px] gap-2 text-[#000000] font-bold text-[14px] leading-none shrink-0">
-                                                                                    <IconMapPin className="w-5 h-5 text-[#000000] shrink-0" />
+                                                                            <div className="flex items-start gap-1 border-none">
+                                                                                <div className="flex items-center h-[21px] gap-1 text-[#000000] font-bold text-[14px] leading-none shrink-0">
+                                                                                    <span className="material-symbols-rounded text-[20px] text-[#000000]">location_on</span>
                                                                                     <span className="whitespace-nowrap">{selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success" || selectedHistoryItem.status === "สาย" || selectedHistoryItem.statusType === "warning" || selectedHistoryItem.status === "ไม่ลงเวลาออก" ? "อยู่ในสถานที่" : selectedHistoryItem.location}</span>
                                                                                 </div>
                                                                             </div>
