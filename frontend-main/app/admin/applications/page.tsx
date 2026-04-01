@@ -309,6 +309,18 @@ function AdminApplicationsPage() {
   const itemsPerPage = 10;
 
   useEffect(() => {
+    const htmlEl = document.documentElement;
+    const previousScrollbarGutter = htmlEl.style.scrollbarGutter;
+
+    // Keep scrollbar gutter reserved to prevent page shift when dropdown opens.
+    htmlEl.style.scrollbarGutter = "stable";
+
+    return () => {
+      htmlEl.style.scrollbarGutter = previousScrollbarGutter;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node;
 
@@ -420,20 +432,27 @@ function AdminApplicationsPage() {
             ? true
             : appStatus === selectedApprovedStatusFilter;
 
-        const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
-        const matchStartDate = (() => {
+        const internshipStart = toDateOnly(
+          app.infoStartDate || app.profileStartDate,
+        );
+        const internshipEnd =
+          toDateOnly(app.infoEndDate || app.profileEndDate) || internshipStart;
+
+        const matchDateRange = (() => {
           if (!filterStart && !filterEnd) return true;
-          if (!startDate) return false;
-          if (filterStart && startDate.getTime() < filterStart.getTime()) {
-            return false;
-          }
-          if (filterEnd && startDate.getTime() > filterEnd.getTime()) {
-            return false;
-          }
-          return true;
+          if (!internshipStart || !internshipEnd) return false;
+
+          const normalizedFilterStart = filterStart || filterEnd;
+          const normalizedFilterEnd = filterEnd || filterStart;
+          if (!normalizedFilterStart || !normalizedFilterEnd) return false;
+
+          return (
+            internshipStart.getTime() <= normalizedFilterEnd.getTime() &&
+            internshipEnd.getTime() >= normalizedFilterStart.getTime()
+          );
         })();
 
-        return matchStatus && matchStartDate;
+        return matchStatus && matchDateRange;
       });
     }
 
