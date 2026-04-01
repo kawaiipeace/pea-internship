@@ -48,7 +48,10 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
     const authResponse = await authService.loginWithKeycloak(request.headers);
     // Better Auth returns JSON {url, redirect: true} as 200 - need to issue proper 302
     // while preserving Set-Cookie headers (state cookie for OAuth verification)
-    const body = await authResponse.clone().json().catch(() => null);
+    const body = await authResponse
+      .clone()
+      .json()
+      .catch(() => null);
     if (body?.url) {
       const headers = new Headers(authResponse.headers);
       headers.set("Location", body.url);

@@ -789,7 +789,7 @@ export class ApplicationService {
           userId: applicationStatuses.userId,
           positionId: applicationStatuses.positionId,
           positionName: internshipPositions.name,
-          departmentName: departments.deptFull, 
+          departmentName: departments.deptFull,
         })
         .from(applicationStatuses)
         .leftJoin(
@@ -797,7 +797,7 @@ export class ApplicationService {
           eq(internshipPositions.id, applicationStatuses.positionId)
         )
         .leftJoin(
-          departments, 
+          departments,
           eq(departments.deptSap, applicationStatuses.departmentId)
         )
         .where(eq(applicationStatuses.id, applicationId));
@@ -888,7 +888,12 @@ export class ApplicationService {
       );
 
       const student = await this.getStudentEmailPayload(tx, app.userId);
-      if (student?.email && student.fname && student.lname && app.positionName) {
+      if (
+        student?.email &&
+        student.fname &&
+        student.lname &&
+        app.positionName
+      ) {
         const mail = mailService.buildAcceptedForInternshipEmail({
           firstname: student.fname,
           lastname: student.lname,
@@ -1050,7 +1055,7 @@ export class ApplicationService {
           userId: applicationStatuses.userId,
           status: applicationStatuses.applicationStatus,
           positionName: internshipPositions.name,
-          departmentName: departments.deptFull, 
+          departmentName: departments.deptFull,
         })
         .from(applicationStatuses)
         .leftJoin(
@@ -1058,7 +1063,7 @@ export class ApplicationService {
           eq(internshipPositions.id, applicationStatuses.positionId)
         )
         .leftJoin(
-          departments, 
+          departments,
           eq(departments.deptSap, applicationStatuses.departmentId)
         )
         .where(eq(applicationStatuses.id, applicationId));
@@ -1223,7 +1228,12 @@ export class ApplicationService {
           );
 
           const student = await this.getStudentEmailPayload(tx, app.userId);
-          if (student?.email && student.fname && student.lname && app.positionName) {
+          if (
+            student?.email &&
+            student.fname &&
+            student.lname &&
+            app.positionName
+          ) {
             const mail = mailService.buildInternshipCompletedEmail({
               firstname: student.fname,
               lastname: student.lname,
@@ -1758,7 +1768,7 @@ export class ApplicationService {
           departmentId: applicationStatuses.departmentId,
           studentUserId: applicationStatuses.userId,
           positionName: internshipPositions.name,
-          departmentName: departments.deptFull, 
+          departmentName: departments.deptFull,
         })
         .from(applicationStatuses)
         .leftJoin(
@@ -1766,7 +1776,7 @@ export class ApplicationService {
           eq(internshipPositions.id, applicationStatuses.positionId)
         )
         .leftJoin(
-          departments, 
+          departments,
           eq(departments.deptSap, applicationStatuses.departmentId)
         )
         .where(eq(applicationStatuses.id, applicationId));
@@ -1816,7 +1826,12 @@ export class ApplicationService {
       );
 
       const student = await this.getStudentEmailPayload(tx, app.studentUserId);
-      if (student?.email && student.fname && student.lname && app.positionName) {
+      if (
+        student?.email &&
+        student.fname &&
+        student.lname &&
+        app.positionName
+      ) {
         const mail = mailService.buildRejectedByOwnerEmail({
           firstname: student.fname,
           lastname: student.lname,

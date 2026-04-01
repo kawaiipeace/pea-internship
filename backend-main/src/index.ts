@@ -14,7 +14,9 @@ const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
 
 // Parse extra allowed origins from env (comma-separated)
 const extraOrigins = Bun.env.ALLOWED_ORIGINS
-  ? Bun.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+  ? Bun.env.ALLOWED_ORIGINS.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean)
   : [];
 
 const ALLOWED_ORIGINS = [
@@ -28,7 +30,10 @@ const ALLOWED_ORIGINS = [
 // Elysia's CORS plugin does NOT merge set.headers into native Response objects returned
 // from handlers. Better Auth's auth.handler() returns native Responses, so we must
 // manually inject CORS headers to allow cross-domain credential requests from the frontend.
-function withCorsHeaders(response: Response, requestOrigin: string | null): Response {
+function withCorsHeaders(
+  response: Response,
+  requestOrigin: string | null
+): Response {
   const headers = new Headers(response.headers);
   if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
     headers.set("Access-Control-Allow-Origin", requestOrigin);

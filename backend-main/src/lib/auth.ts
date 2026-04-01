@@ -61,8 +61,7 @@ export const auth = betterAuth({
             return {
               roleId: 2,
               departmentId: null,
-              fname:
-                profile.given_name.split(" ")[0],
+              fname: profile.given_name.split(" ")[0],
               lname: profile.given_name.split(" ")[0],
               emailVerified: profile.email_verified || false,
               gender: "OTHER",
@@ -169,7 +168,9 @@ export const auth = betterAuth({
     ...(Bun.env.BETTER_AUTH_BASE_URL ? [Bun.env.BETTER_AUTH_BASE_URL] : []),
     // Extra trusted origins from env (comma-separated) - use this for K8s/PEA domain
     ...(Bun.env.ALLOWED_ORIGINS
-      ? Bun.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+      ? Bun.env.ALLOWED_ORIGINS.split(",")
+          .map((o) => o.trim())
+          .filter(Boolean)
       : []),
   ],
 });

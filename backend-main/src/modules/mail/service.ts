@@ -1051,10 +1051,7 @@ export class MailService {
   // ===============================
   // ADMIN REJECT DOC
   // ===============================
-  buildDocumentRejectedEmail(params: {
-    firstname: string;
-    lastname: string;
-  }) {
+  buildDocumentRejectedEmail(params: { firstname: string; lastname: string }) {
     let html = REJECT_DOC_TEMPLATE;
 
     html = html

@@ -7,19 +7,18 @@ import {
 import { db } from "@/db";
 import {
   applicationStatuses,
-  departments, 
+  departments,
   internshipPositions,
   notifications,
   studentProfiles,
   users,
 } from "@/db/schema";
-import { MailService } from "@/modules/mail/service"; 
+import { MailService } from "@/modules/mail/service";
 import type { UpdateStudentInternshipStatusBodyType } from "./model";
 
-const mailService = new MailService(); 
+const mailService = new MailService();
 
 export class OwnerStudentStatusService {
-  
   private sendEmailAsync(to: string, subject: string, html: string) {
     setImmediate(() => {
       mailService.sendEmail(to, subject, html).catch((err) => {
@@ -52,9 +51,9 @@ export class OwnerStudentStatusService {
           id: users.id,
           roleId: users.roleId,
           departmentId: users.departmentId,
-          fname: users.fname, 
-          lname: users.lname, 
-          email: users.email, 
+          fname: users.fname,
+          lname: users.lname,
+          email: users.email,
         })
         .from(users)
         .where(eq(users.id, studentUserId));
@@ -76,7 +75,6 @@ export class OwnerStudentStatusService {
 
       if (!sp) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
 
-      
       const allowedStatuses = new Set(["ACTIVE", "AWAITING"]);
       if (!allowedStatuses.has(sp.internshipStatus)) {
         throw new BadRequestError(
@@ -88,9 +86,9 @@ export class OwnerStudentStatusService {
         .select({
           id: applicationStatuses.id,
           positionId: applicationStatuses.positionId,
-          departmentId: applicationStatuses.departmentId, 
-          positionName: internshipPositions.name, 
-          departmentName: departments.deptFull, 
+          departmentId: applicationStatuses.departmentId,
+          positionName: internshipPositions.name,
+          departmentName: departments.deptFull,
         })
         .from(applicationStatuses)
         .leftJoin(
@@ -120,7 +118,6 @@ export class OwnerStudentStatusService {
         await tx
           .update(internshipPositions)
           .set({
-            
             acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
           })
           .where(eq(internshipPositions.id, app.positionId));
@@ -150,7 +147,6 @@ export class OwnerStudentStatusService {
           isRead: false,
         });
 
-        
         if (
           stuUser.email &&
           stuUser.fname &&
@@ -173,7 +169,6 @@ export class OwnerStudentStatusService {
       await tx
         .update(internshipPositions)
         .set({
-          
           acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
         })
         .where(eq(internshipPositions.id, app.positionId));
