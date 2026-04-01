@@ -56,6 +56,7 @@ export class StaffLogsService {
         createdAt: staffLogs.createdAt,
 
         userId: users.id,
+        username: users.username,
         fname: users.fname,
         lname: users.lname,
 

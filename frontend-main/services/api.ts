@@ -1366,9 +1366,10 @@ export const applicationApi = {
     applicationId: number,
     docType: "transcript" | "resume" | "portfolio" | "request-letter",
     status: "VERIFIED" | "INVALID",
-    note?: string
+    note?: string,
+    invalidReasons?: string[]
   ): Promise<unknown> => {
-    const response = await api.put(`/applications/${applicationId}/documents/${docType}/review`, { status, note });
+    const response = await api.put(`/applications/${applicationId}/documents/${docType}/review`, { status, note, invalidReasons });
     return response.data;
   },
 
@@ -1666,6 +1667,7 @@ export const applicationStatusActionsApi = {
 export interface StaffLog {
   id: number;
   userId: string;
+  username?: string;
   action: string;
   createdAt: string;
   // Joined user data

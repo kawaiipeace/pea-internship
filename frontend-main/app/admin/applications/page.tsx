@@ -12,6 +12,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
   applicationApi,
+  departmentApi,
   AllStudentsHistoryItem,
   AppStatusEnum,
 } from "@/services/api";
@@ -185,6 +186,28 @@ function formatDateRange(
   return `${formatDateThai(startStr)} - ${formatDateThai(endStr)}`;
 }
 
+function formatShortBuddhistDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const d = toDateOnly(dateStr);
+  if (!d) return "";
+  const day = d.getDate();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const buddhistYear = (d.getFullYear() + 543) % 100;
+  const yearStr = String(buddhistYear).padStart(2, "0");
+  return `${day}/${month}/${yearStr}`;
+}
+
+function formatShortDateRange(
+  startStr: string | null,
+  endStr: string | null,
+): string {
+  if (!startStr || !endStr) return "-";
+  const s = formatShortBuddhistDate(startStr);
+  const e = formatShortBuddhistDate(endStr);
+  if (!s || !e) return "-";
+  return `${s}-${e}`;
+}
+
 function getInstitutionDisplayName(app: AllStudentsHistoryItem): string {
   const rawNote = (app.studentNote || "").trim();
   if (rawNote) {
@@ -289,6 +312,7 @@ function AdminApplicationsPage() {
   const [applications, setApplications] = useState<AllStudentsHistoryItem[]>(
     [],
   );
+  const [deptMap, setDeptMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [selectedApprovedStartDate, setSelectedApprovedStartDate] =
     useState("");
@@ -373,7 +397,29 @@ function AdminApplicationsPage() {
           status: "COMPLETE" as AppStatusEnum,
         }),
       ]);
-      setApplications([...reqRes.data, ...revRes.data, ...compRes.data]);
+      const allApps = [...reqRes.data, ...revRes.data, ...compRes.data];
+      setApplications(allApps);
+
+      // Collect unique departmentIds that need lookup
+      const deptIds = new Set<number>();
+      for (const a of allApps) {
+        if (a.departmentId != null) deptIds.add(a.departmentId);
+      }
+
+      // Fetch each department by its deptSap
+      const map: Record<string, string> = {};
+      await Promise.all(
+        Array.from(deptIds).map(async (id) => {
+          const dept = await departmentApi.getDepartmentByDeptSap(id);
+          if (dept) {
+            const name = dept.deptFull || dept.deptShort;
+            if (name) {
+              map[String(id)] = name;
+            }
+          }
+        })
+      );
+      setDeptMap(map);
     } catch (err) {
       console.error("Failed to fetch applications:", err);
     } finally {
@@ -1163,7 +1209,7 @@ function AdminApplicationsPage() {
                           {getInstitutionDisplayName(app)}
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-600">
-                          {app.positionName || "-"}
+                          {(app.departmentId != null && deptMap[String(app.departmentId)]) || "-"}
                         </td>
                         {activeTab === "rejected" && (
                           <td className="px-4 py-4 text-sm text-gray-600">
@@ -1171,7 +1217,7 @@ function AdminApplicationsPage() {
                           </td>
                         )}
                         <td className="px-4 py-4 text-sm text-gray-600">
-                          {formatDateRange(
+                          {formatShortDateRange(
                             app.infoStartDate || app.profileStartDate,
                             app.infoEndDate || app.profileEndDate,
                           )}
