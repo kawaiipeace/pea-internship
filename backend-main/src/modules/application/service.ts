@@ -25,6 +25,7 @@ import {
   applicationMentors,
   applicationStatusActions,
   applicationStatuses,
+  departments,
   institutions,
   internshipPositionMentors,
   internshipPositions,
@@ -39,7 +40,6 @@ import { StaffLogsService } from "@/modules/staff-logs/service";
 import type * as model from "./model";
 
 const mailService = new MailService();
-
 const staffLogsService = new StaffLogsService();
 
 type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -60,12 +60,7 @@ export class ApplicationService {
     });
   }
 
-  private async notifyStudentWithEmail(
-    tx: DbTx,
-    userId: string,
-    title: string,
-    message: string
-  ) {
+  private async getStudentEmailPayload(tx: DbTx, userId: string) {
     const [student] = await tx
       .select({
         email: users.email,
@@ -75,23 +70,26 @@ export class ApplicationService {
       .from(users)
       .where(eq(users.id, userId));
 
+    return student ?? null;
+  }
+
+  private async notifyStudentOnly(
+    tx: DbTx,
+    userId: string,
+    title: string,
+    message: string
+  ) {
     await tx.insert(notifications).values({
       userId,
       title,
       message,
       isRead: false,
     });
+  }
 
-    if (!student?.email) return;
-
-    const html = mailService.buildStudentNotificationEmail({
-      title,
-      studentName: `${student.fname ?? ""} ${student.lname ?? ""}`,
-      message,
-    });
-
+  private sendEmailAsync(to: string, subject: string, html: string) {
     setImmediate(() => {
-      mailService.sendEmail(student.email!, title, html).catch((err) => {
+      mailService.sendEmail(to, subject, html).catch((err) => {
         console.error("[MAIL ERROR]", err);
       });
     });
@@ -116,62 +114,6 @@ export class ApplicationService {
 
     return "ACTIVE";
   }
-
-  // private async autoCompleteInternships(tx: DbTx, userId: string) {
-  //   const now = new Date();
-
-  //   const expired = await tx
-  //     .select({
-  //       applicationId: applicationStatuses.id,
-  //       positionId: applicationStatuses.positionId,
-  //     })
-  //     .from(applicationStatuses)
-  //     .innerJoin(
-  //       applicationInformations,
-  //       eq(applicationInformations.applicationStatusId, applicationStatuses.id)
-  //     )
-  //     .innerJoin(
-  //       studentProfiles,
-  //       eq(studentProfiles.userId, applicationStatuses.userId)
-  //     )
-  //     .where(
-  //       and(
-  //         eq(applicationStatuses.userId, userId),
-  //         eq(applicationStatuses.applicationStatus, "COMPLETE"),
-  //         eq(applicationStatuses.isActive, true),
-  //         eq(studentProfiles.internshipStatus, "ACTIVE"),
-  //         lte(applicationInformations.endDate, now)
-  //       )
-  //     );
-
-  //   for (const app of expired) {
-  //     await tx
-  //       .update(applicationStatuses)
-  //       .set({ isActive: false, updatedAt: new Date() })
-  //       .where(eq(applicationStatuses.id, app.applicationId));
-
-  //     await tx
-  //       .update(studentProfiles)
-  //       .set({ internshipStatus: "COMPLETE" })
-  //       .where(eq(studentProfiles.userId, userId));
-
-  //     if (app.positionId) {
-  //       await tx
-  //         .update(internshipPositions)
-  //         .set({
-  //           acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
-  //         })
-  //         .where(eq(internshipPositions.id, app.positionId));
-  //     }
-
-  //     await tx.insert(applicationStatusActions).values({
-  //       applicationStatusId: app.applicationId,
-  //       actionBy: "system",
-  //       oldStatus: "COMPLETE",
-  //       newStatus: "COMPLETE",
-  //     });
-  //   }
-  // }
 
   private async updateCompletedInternshipsStatus(tx: DbTx) {
     const now = new Date();
@@ -300,7 +242,7 @@ export class ApplicationService {
     }
 
     for (const app of pendingApps) {
-      await this.notifyStudentWithEmail(
+      await this.notifyStudentOnly(
         tx,
         app.userId,
         "การสมัครถูกยกเลิก",
@@ -520,7 +462,6 @@ export class ApplicationService {
         throw new NotFoundError("ไม่พบข้อมูล application information");
       }
 
-      // convert string -> Date
       const startDate =
         data.startDate !== undefined
           ? data.startDate
@@ -821,13 +762,6 @@ export class ApplicationService {
         .set({ internshipStatus: "REVIEW" })
         .where(eq(studentProfiles.userId, app.userId));
 
-      await this.notifyStudentWithEmail(
-        tx,
-        app.userId,
-        "อัปเดตสถานะการสมัคร",
-        `คุณผ่านขั้นตอนสัมภาษณ์แล้ว สำหรับตำแหน่ง ${app.positionName}`
-      );
-
       await staffLogsService.log(
         tx,
         ownerUserId,
@@ -855,11 +789,16 @@ export class ApplicationService {
           userId: applicationStatuses.userId,
           positionId: applicationStatuses.positionId,
           positionName: internshipPositions.name,
+          departmentName: departments.deptFull, 
         })
         .from(applicationStatuses)
         .leftJoin(
           internshipPositions,
           eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .leftJoin(
+          departments, 
+          eq(departments.deptSap, applicationStatuses.departmentId)
         )
         .where(eq(applicationStatuses.id, applicationId));
 
@@ -941,12 +880,24 @@ export class ApplicationService {
           .onConflictDoNothing();
       }
 
-      await this.notifyStudentWithEmail(
+      await this.notifyStudentOnly(
         tx,
         app.userId,
-        "อัปเดตสถานะการสมัคร",
-        `คุณได้รับการตอบรับแล้วในตำแหน่ง ${app.positionName} กรุณายื่นเอกสารขอความอนุเคราะห์`
+        "โปรดอัปโหลดเอกสารขอความอนุเคราะห์",
+        `คุณได้รับการตอบรับแล้วในตำแหน่ง ${app.positionName} กรุณาอัปโหลดเอกสารขอความอนุเคราะห์`
       );
+
+      const student = await this.getStudentEmailPayload(tx, app.userId);
+      if (student?.email && student.fname && student.lname && app.positionName) {
+        const mail = mailService.buildAcceptedForInternshipEmail({
+          firstname: student.fname,
+          lastname: student.lname,
+          positionName: app.positionName,
+          departmentName: app.departmentName ?? "-",
+        });
+
+        this.sendEmailAsync(student.email, mail.subject, mail.html);
+      }
 
       await staffLogsService.log(
         tx,
@@ -1099,11 +1050,16 @@ export class ApplicationService {
           userId: applicationStatuses.userId,
           status: applicationStatuses.applicationStatus,
           positionName: internshipPositions.name,
+          departmentName: departments.deptFull, 
         })
         .from(applicationStatuses)
         .leftJoin(
           internshipPositions,
           eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .leftJoin(
+          departments, 
+          eq(departments.deptSap, applicationStatuses.departmentId)
         )
         .where(eq(applicationStatuses.id, applicationId));
 
@@ -1182,12 +1138,22 @@ export class ApplicationService {
             "PENDING_REQUEST"
           );
 
-          await this.notifyStudentWithEmail(
+          await this.notifyStudentOnly(
             tx,
             app.userId,
             "เอกสารถูกตีกลับ",
             `เอกสารถูกตีกลับสำหรับตำแหน่ง ${app.positionName} กรุณาอัปโหลดใหม่`
           );
+
+          const student = await this.getStudentEmailPayload(tx, app.userId);
+          if (student?.email && student.fname && student.lname) {
+            const mail = mailService.buildDocumentRejectedEmail({
+              firstname: student.fname,
+              lastname: student.lname,
+            });
+
+            this.sendEmailAsync(student.email, mail.subject, mail.html);
+          }
 
           await staffLogsService.log(
             tx,
@@ -1247,7 +1213,7 @@ export class ApplicationService {
             .set({ internshipStatus: nextInternshipStatus })
             .where(eq(studentProfiles.userId, app.userId));
 
-          await this.notifyStudentWithEmail(
+          await this.notifyStudentOnly(
             tx,
             app.userId,
             "การสมัครเสร็จสมบูรณ์",
@@ -1255,6 +1221,18 @@ export class ApplicationService {
               ? `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์ กำลังรอถึงวันเริ่มฝึกงาน`
               : `เอกสารผ่านการตรวจสอบครบแล้ว การสมัครสำหรับตำแหน่ง ${app.positionName} เสร็จสมบูรณ์`
           );
+
+          const student = await this.getStudentEmailPayload(tx, app.userId);
+          if (student?.email && student.fname && student.lname && app.positionName) {
+            const mail = mailService.buildInternshipCompletedEmail({
+              firstname: student.fname,
+              lastname: student.lname,
+              positionName: app.positionName,
+              departmentName: app.departmentName ?? "-",
+            });
+
+            this.sendEmailAsync(student.email, mail.subject, mail.html);
+          }
 
           await staffLogsService.log(
             tx,
@@ -1780,11 +1758,16 @@ export class ApplicationService {
           departmentId: applicationStatuses.departmentId,
           studentUserId: applicationStatuses.userId,
           positionName: internshipPositions.name,
+          departmentName: departments.deptFull, 
         })
         .from(applicationStatuses)
         .leftJoin(
           internshipPositions,
           eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .leftJoin(
+          departments, 
+          eq(departments.deptSap, applicationStatuses.departmentId)
         )
         .where(eq(applicationStatuses.id, applicationId));
 
@@ -1825,12 +1808,24 @@ export class ApplicationService {
         .set({ internshipStatus: "IDLE" })
         .where(eq(studentProfiles.userId, app.studentUserId));
 
-      await this.notifyStudentWithEmail(
+      await this.notifyStudentOnly(
         tx,
         app.studentUserId,
-        "การสมัครถูกยกเลิก",
+        "ผลการสมัครฝึกงาน",
         `การสมัครในตำแหน่ง ${app.positionName} ถูกยกเลิกโดยกองงาน`
       );
+
+      const student = await this.getStudentEmailPayload(tx, app.studentUserId);
+      if (student?.email && student.fname && student.lname && app.positionName) {
+        const mail = mailService.buildRejectedByOwnerEmail({
+          firstname: student.fname,
+          lastname: student.lname,
+          positionName: app.positionName,
+          departmentName: app.departmentName ?? "-",
+        });
+
+        this.sendEmailAsync(student.email, mail.subject, mail.html);
+      }
 
       await staffLogsService.log(
         tx,

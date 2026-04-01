@@ -7,14 +7,27 @@ import {
 import { db } from "@/db";
 import {
   applicationStatuses,
+  departments, 
   internshipPositions,
   notifications,
   studentProfiles,
   users,
 } from "@/db/schema";
+import { MailService } from "@/modules/mail/service"; 
 import type { UpdateStudentInternshipStatusBodyType } from "./model";
 
+const mailService = new MailService(); 
+
 export class OwnerStudentStatusService {
+  
+  private sendEmailAsync(to: string, subject: string, html: string) {
+    setImmediate(() => {
+      mailService.sendEmail(to, subject, html).catch((err) => {
+        console.error("[MAIL ERROR]", err);
+      });
+    });
+  }
+
   async updateInternshipStatus(
     ownerUserId: string,
     studentUserId: string,
@@ -39,6 +52,9 @@ export class OwnerStudentStatusService {
           id: users.id,
           roleId: users.roleId,
           departmentId: users.departmentId,
+          fname: users.fname, 
+          lname: users.lname, 
+          email: users.email, 
         })
         .from(users)
         .where(eq(users.id, studentUserId));
@@ -60,9 +76,11 @@ export class OwnerStudentStatusService {
 
       if (!sp) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
 
-      if (sp.internshipStatus !== "ACTIVE") {
+      
+      const allowedStatuses = new Set(["ACTIVE", "AWAITING"]);
+      if (!allowedStatuses.has(sp.internshipStatus)) {
         throw new BadRequestError(
-          "เปลี่ยนสถานะได้เฉพาะนักศึกษาที่อยู่ในสถานะ ACTIVE เท่านั้น"
+          "เปลี่ยนสถานะได้เฉพาะนักศึกษาที่อยู่ในสถานะ ACTIVE หรือ AWAITING เท่านั้น"
         );
       }
 
@@ -70,8 +88,19 @@ export class OwnerStudentStatusService {
         .select({
           id: applicationStatuses.id,
           positionId: applicationStatuses.positionId,
+          departmentId: applicationStatuses.departmentId, 
+          positionName: internshipPositions.name, 
+          departmentName: departments.deptFull, 
         })
         .from(applicationStatuses)
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .leftJoin(
+          departments,
+          eq(departments.deptSap, applicationStatuses.departmentId)
+        )
         .where(
           and(
             eq(applicationStatuses.userId, studentUserId),
@@ -91,7 +120,8 @@ export class OwnerStudentStatusService {
         await tx
           .update(internshipPositions)
           .set({
-            acceptedCount: sql`${internshipPositions.acceptedCount} - 1`,
+            
+            acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
           })
           .where(eq(internshipPositions.id, app.positionId));
 
@@ -120,13 +150,31 @@ export class OwnerStudentStatusService {
           isRead: false,
         });
 
+        
+        if (
+          stuUser.email &&
+          stuUser.fname &&
+          stuUser.lname &&
+          app.positionName
+        ) {
+          const mail = mailService.buildInternshipCanceledEmail({
+            firstname: stuUser.fname,
+            lastname: stuUser.lname,
+            positionName: app.positionName,
+            departmentName: app.departmentName ?? "-",
+          });
+
+          this.sendEmailAsync(stuUser.email, mail.subject, mail.html);
+        }
+
         return { studentUserId, internshipStatus: "CANCEL" };
       }
 
       await tx
         .update(internshipPositions)
         .set({
-          acceptedCount: sql`${internshipPositions.acceptedCount} - 1`,
+          
+          acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
         })
         .where(eq(internshipPositions.id, app.positionId));
 
@@ -139,7 +187,10 @@ export class OwnerStudentStatusService {
 
       await tx
         .update(applicationStatuses)
-        .set({ isActive: false, updatedAt: new Date() })
+        .set({
+          isActive: false,
+          updatedAt: new Date(),
+        })
         .where(eq(applicationStatuses.id, app.id));
 
       await tx.insert(notifications).values({
