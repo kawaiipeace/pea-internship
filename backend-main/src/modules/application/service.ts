@@ -1134,11 +1134,16 @@ export class ApplicationService {
           ? [...(doc.invalidReasons ?? []), ...(normalizedInvalidReasons ?? [])]
           : null;
 
+      const latestReasonNote =
+        status === "INVALID"
+          ? normalizedInvalidReasons!.join(", ")
+          : null;
+
       await tx
         .update(applicationDocuments)
         .set({
           validationStatus: status,
-          note: status === "INVALID" ? (note ?? null) : null,
+          note: latestReasonNote,
           invalidReasons: mergedInvalidReasons,
           updatedAt: new Date(),
         })
@@ -1162,7 +1167,7 @@ export class ApplicationService {
               statusNote:
                 mergedInvalidReasons && mergedInvalidReasons.length > 0
                   ? mergedInvalidReasons.join(", ")
-                  : (note ?? null),
+                  : latestReasonNote,
               updatedAt: new Date(),
             })
             .where(eq(applicationStatuses.id, applicationId));
@@ -1201,12 +1206,14 @@ export class ApplicationService {
           return {
             applicationStatus: "PENDING_REQUEST",
             invalidReasons: mergedInvalidReasons,
+            note: latestReasonNote,
           };
         }
 
         return {
           applicationStatus: app.status,
           invalidReasons: mergedInvalidReasons,
+          note: latestReasonNote,
         };
       }
 
