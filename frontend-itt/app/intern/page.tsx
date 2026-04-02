@@ -123,7 +123,7 @@ const CheckInPage = () => {
         }
     };
 
-    const fetchProgress = async () => {
+    const fetchProgress = useCallback(async () => {
         try {
             const response = await axiosInstance.get('/user/student/total-hours');
             if (response.data) {
@@ -132,9 +132,9 @@ const CheckInPage = () => {
         } catch (error) {
             console.error('Error fetching progress:', error);
         }
-    };
+    }, []);
 
-    const fetchTodayStatus = async () => {
+    const fetchTodayStatus = useCallback(async () => {
         try {
             const response = await axiosInstance.get('/check-time/history');
             if (response.data && response.data.records) {
@@ -146,27 +146,56 @@ const CheckInPage = () => {
                 if (todayRecord) {
                     if (todayRecord.checkInTime && todayRecord.checkInTime !== '--:--') {
                         setHasCheckedInToday(true);
+                    } else {
+                        setHasCheckedInToday(false);
                     }
                     if (todayRecord.checkOutTime && todayRecord.checkOutTime !== '--:--') {
                         setHasClockedOutToday(true);
+                    } else {
+                        setHasClockedOutToday(false);
                     }
+                } else {
+                    setHasCheckedInToday(false);
+                    setHasClockedOutToday(false);
                 }
             }
         } catch (error) {
             console.error('Error fetching today status:', error);
         }
+    }, []);
+
+    const canClockOut = () => {
+        if (!currentTime) return false;
+        const h = currentTime.getHours();
+        const m = currentTime.getMinutes();
+        // Allowed from 16:30 (4:30 PM) onwards
+        return h > 16 || (h === 16 && m >= 30);
     };
 
     useEffect(() => {
         checkLocation();
         fetchProgress();
         fetchTodayStatus();
+        
+        let lastDate = new Date().toDateString();
         setCurrentTime(new Date());
+
         const timer = setInterval(() => {
-            setCurrentTime(new Date());
+            const now = new Date();
+            setCurrentTime(now);
+
+            // Midnight Reset Logic: If the date has changed, reset the status and re-fetch
+            if (now.toDateString() !== lastDate) {
+                lastDate = now.toDateString();
+                setHasCheckedInToday(false);
+                setHasClockedOutToday(false);
+                fetchTodayStatus();
+                fetchProgress();
+            }
         }, 1000);
+
         return () => clearInterval(timer);
-    }, [checkLocation]);
+    }, [checkLocation, fetchProgress, fetchTodayStatus]);
 
     // Desktop Location Status
     const renderDesktopLocationStatus = () => {
@@ -309,7 +338,7 @@ const CheckInPage = () => {
 
             {/* ----- Desktop Global Fixed Background ----- */}
             <div className="hidden md:block fixed inset-0 z-[1] pointer-events-none bg-[#fdfbfe]">
-                <div className="absolute inset-0 bg-[url('/bg-checkin.jpg')] bg-cover bg-center bg-no-repeat rotate-180 opacity-50"></div>
+                <div className="absolute inset-0 bg-[url('/bg-checkin2.jpg')] bg-cover bg-center bg-no-repeat rotate-180 -scale-x-100 opacity-50"></div>
             </div>
 
             {/* Desktop View */}
@@ -371,9 +400,9 @@ const CheckInPage = () => {
                                 type="button"
                                 onClick={() => handleCheckIn('in')}
                                 disabled={locationStatus !== 'found' || hasCheckedInToday}
-                                className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] transition-all ${(locationStatus !== 'found' || hasCheckedInToday)
-                                        ? 'bg-[#EAEAEA] text-[#9A9A9A] shadow-none cursor-not-allowed'
-                                        : 'hover:-translate-y-[1px] bg-[#A80689] text-white hover:bg-[#8B0374] shadow-[0_4px_15px_rgba(168,6,137,0.3)]'
+                                className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] border border-[#E5E7EB] transition-all ${(locationStatus !== 'found' || hasCheckedInToday)
+                                        ? 'bg-[#ECECED] text-[#9A9A9A] shadow-none cursor-not-allowed'
+                                        : 'bg-[#ECECED] text-[#475467] hover:-translate-y-[1px] hover:bg-[#DEDFE5] shadow-[0_2px_4px_rgba(0,0,0,0.02)]'
                                     }`}
                             >
                                 ลงเวลาเข้างาน
@@ -381,11 +410,12 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={handleClockOut}
-                                disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday}
-                                className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] border border-[#E5E7EB] transition-all ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday)
-                                        ? 'bg-[#F3F4F6] text-[#9A9A9A] shadow-none cursor-not-allowed'
-                                        : 'bg-[#F3F4F6] text-[#475467] hover:-translate-y-[1px] hover:bg-[#E5E7EB] shadow-[0_2px_4px_rgba(0,0,0,0.02)]'
+                                disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
+                                className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] border border-[#E5E7EB] transition-all ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                                        ? 'bg-[#ECECED] text-[#9A9A9A] shadow-none cursor-not-allowed'
+                                        : 'bg-[#ECECED] text-[#475467] hover:-translate-y-[1px] hover:bg-[#DEDFE5] shadow-[0_2px_4px_rgba(0,0,0,0.02)]'
                                     }`}
+                                title={!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : ""}
                             >
                                 ลงเวลาออกงาน
                             </button>
@@ -396,7 +426,7 @@ const CheckInPage = () => {
 
             {/* ----- Mobile Global Fixed Background ----- */}
             <div className="md:hidden fixed inset-0 z-[1] pointer-events-none bg-[#fdfbfe]">
-                <div className="absolute inset-0 bg-[url('/bg-checkin.jpg')] bg-cover bg-center bg-no-repeat opacity-50"></div>
+                <div className="absolute inset-0 bg-[url('/bg-checkin2.jpg')] bg-cover bg-center bg-no-repeat  opacity-50"></div>
             </div>
 
             {/* Mobile View (PWA) */}
@@ -454,7 +484,7 @@ const CheckInPage = () => {
                             disabled={locationStatus !== 'found' || hasCheckedInToday}
                             className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || hasCheckedInToday)
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
-                                    : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
+                                    : 'bg-[#ECECED] text-[#000000] hover:bg-[#E2E2E2]'
                                 }`}
                         >
                             ลงเวลาเข้างาน
@@ -462,8 +492,8 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={handleClockOut}
-                            disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday)
+                            disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
                                     : 'bg-[#ECECED] text-[#000000] hover:bg-[#E2E2E2]'
                                 }`}
