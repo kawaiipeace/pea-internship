@@ -9,9 +9,10 @@ interface LoginModalProps {
   onClose: () => void;
   redirectTo?: string;
   pendingBookmarkJobId?: string | null;
+  onLoginSuccess?: () => void;
 }
 
-export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home", pendingBookmarkJobId }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home", pendingBookmarkJobId, onLoginSuccess }: LoginModalProps) {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -112,6 +113,9 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
         // Login สำเร็จ
         console.log("Login สำเร็จ");
         
+        // Set user_role cookie สำหรับ middleware
+        document.cookie = `user_role=intern; path=/; max-age=86400`;
+        
         // ถ้ามี pending bookmark ให้เพิ่มใน favorites
         if (pendingBookmarkJobId) {
           const savedFavorites = localStorage.getItem("favorites");
@@ -123,7 +127,11 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
         }
         
         onClose();
-        router.push(redirectTo);
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          router.push(redirectTo);
+        }
       } catch (error: unknown) {
         console.error("Login error:", error);
         // แสดง error message

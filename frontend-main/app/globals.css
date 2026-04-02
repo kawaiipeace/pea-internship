@@ -78,6 +78,59 @@ body {
   background: #a0a0a0;
 }
 
+/* Marquee animations for credits page */
+@keyframes marquee-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-ltr {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Navbar blended into dark background for credits page */
+.credits-nav-glass nav {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.credits-nav-glass nav a,
+.credits-nav-glass nav button {
+  color: rgba(255, 255, 255, 0.85);
+}
+.credits-nav-glass nav a:hover,
+.credits-nav-glass nav button:hover {
+  color: #ffffff;
+}
+.credits-nav-glass nav .border-primary-600 {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.credits-nav-glass nav .bg-primary-600 {
+  background: rgba(168, 6, 137, 0.8);
+  border-color: rgba(168, 6, 137, 0.8);
+}
+
 /* Custom select styling */
 select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");

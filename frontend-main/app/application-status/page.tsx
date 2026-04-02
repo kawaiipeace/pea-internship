@@ -127,9 +127,10 @@ function ApplicationStatusContent() {
             setHasApplication(true);
 
             // When docs are rejected, status goes back to PENDING_REQUEST with a statusNote
-            if (app.applicationStatus === "PENDING_REQUEST" && app.statusNote) {
+            const docNote = app.documents?.find((d) => d.note)?.note;
+            if (app.applicationStatus === "PENDING_REQUEST" && (docNote || app.statusNote)) {
               setDocumentStatus("เอกสารไม่ผ่าน");
-              setDocumentError(app.statusNote);
+              setDocumentError(docNote || app.statusNote || "");
               setIsCourtesySubmitted(false);
               setCurrentStep("รอยื่นเอกสารขอความอนุเคราะห์");
             }

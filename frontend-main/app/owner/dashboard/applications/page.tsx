@@ -1266,6 +1266,21 @@ function ApplicationsContent() {
     return labels[education] || education;
   };
 
+  const getStudyPlanLabel = (app: Application): string => {
+    const major = app.major?.trim();
+    if (major) return major;
+
+    const raw = (app.studentNote || "").trim();
+    if (!raw) return "-";
+
+    const firstPart = raw
+      .split("|")
+      .map((p) => p.trim())
+      .find((p) => p && !p.startsWith("สถานศึกษา:"));
+
+    return firstPart || "-";
+  };
+
   // Helper: get mentor info from position data (first mentor added to the position)
   const getMentor = () => {
     const pm = positionInfo?.mentors?.[0];
@@ -2156,20 +2171,29 @@ function ApplicationsContent() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {selectedApplication.education === "high_school" ? (
                 <div>
-                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <span className="text-gray-500 text-sm">แผนการเรียน</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.faculty || "-"}
+                    {getStudyPlanLabel(selectedApplication)}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-500 text-sm">สาขา</span>
-                  <p className="text-gray-900 text-sm">
-                    {selectedApplication.major?.trim() || "-"}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">คณะ</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.faculty || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">สาขา</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.major?.trim() || "-"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
               <div>
                 <span className="text-gray-500 text-sm">
                   ทักษะด้านต่าง ๆ ของผู้สมัคร
@@ -2761,20 +2785,29 @@ function ApplicationsContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {selectedApplication.education === "high_school" ? (
                 <div>
-                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <span className="text-gray-500 text-sm">แผนการเรียน</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.faculty || "-"}
+                    {getStudyPlanLabel(selectedApplication)}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-500 text-sm">สาขา</span>
-                  <p className="text-gray-900 text-sm">
-                    {selectedApplication.major?.trim() || "-"}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">คณะ</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.faculty || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">สาขา</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.major?.trim() || "-"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <span className="text-gray-500 text-sm">
@@ -3120,9 +3153,9 @@ function ApplicationsContent() {
                   </p>
                   <p className="mt-2 text-sm leading-6 text-[#A80689]">
                     หลังจากรับนักศึกษาฝึกงานเสร็จ คุณต้องส่งเอกสาร
-                    รับนักศึกษาไปที่ กองพัฒนาบุคลากร(กพค.) ผ่าน DDOC ภายใน 15 วัน
-                    ก่อนวันเข้าฝึกงาน หากมีข้อสงสัยสามารถสอบถามได้ที่ เบอร์ภายใน
-                    5866, 5858
+                    รับนักศึกษาไปที่ กองพัฒนาบุคลากร(กพค.) ผ่าน DDOC ภายใน 15
+                    วัน ก่อนวันเข้าฝึกงาน หากมีข้อสงสัยสามารถสอบถามได้ที่
+                    เบอร์ภายใน 5866, 5858
                   </p>
                   <a
                     href={encodeURI("/ตัวอย่าง ตอบรับนักศึกษาฝึกงาน.pdf")}
@@ -3651,20 +3684,29 @@ function ApplicationsContent() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {selectedApplication.education === "high_school" ? (
                 <div>
-                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <span className="text-gray-500 text-sm">แผนการเรียน</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.faculty || "-"}
+                    {getStudyPlanLabel(selectedApplication)}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-500 text-sm">สาขา</span>
-                  <p className="text-gray-900 text-sm">
-                    {selectedApplication.major?.trim() || "-"}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">คณะ</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.faculty || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">สาขา</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.major?.trim() || "-"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
               <div>
                 <span className="text-gray-500 text-sm">
                   ทักษะด้านต่าง ๆ ของผู้สมัคร
@@ -4280,20 +4322,29 @@ function ApplicationsContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {selectedApplication.education === "high_school" ? (
               <div>
-                <span className="text-gray-500 text-sm">คณะ</span>
+                <span className="text-gray-500 text-sm">แผนการเรียน</span>
                 <p className="text-gray-900 text-sm">
-                  {selectedApplication.faculty || "-"}
+                  {getStudyPlanLabel(selectedApplication)}
                 </p>
               </div>
-              <div>
-                <span className="text-gray-500 text-sm">สาขา</span>
-                <p className="text-gray-900 text-sm">
-                  {selectedApplication.major?.trim() || "-"}
-                </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.faculty || "-"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">สาขา</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.major?.trim() || "-"}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <span className="text-gray-500 text-sm">

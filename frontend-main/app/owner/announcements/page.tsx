@@ -89,7 +89,11 @@ export default function AnnouncementsPage() {
         const acceptedStatuses = new Set(["PENDING_CONFIRMATION", "PENDING_REQUEST", "PENDING_REVIEW", "COMPLETE"]);
         try {
           const appResponse = await applicationApi.getAllStudentsHistory({ limit: 1000, includeCanceled: false });
-          const apps = appResponse.data || [];
+          // กรองเฉพาะใบสมัครที่อยู่ใน position ของ department นี้
+          const deptPositionIds = new Set(positions.map((p) => p.id));
+          const apps = (appResponse.data || []).filter(
+            (app) => app.positionId && deptPositionIds.has(app.positionId)
+          );
           const counts: Record<number, { total: number; accepted: number }> = {};
           for (const app of apps) {
             if (!app.positionId) continue;
@@ -105,10 +109,13 @@ export default function AnnouncementsPage() {
           const totalApplicantsReal = Object.values(counts).reduce((sum, c) => sum + c.total, 0);
 
           // Calculate stats from positions
-          const totalPositions = positions.reduce(
-            (sum, p) => sum + (p.positionCount || 0),
-            0,
-          );
+          // นับตำแหน่งที่ยังเปิดรับสมัครและยังไม่เต็ม โดยนับแต่ละตำแหน่งเป็น 1
+          const totalPositions = positions.filter((p) => {
+            if (p.recruitmentStatus !== "OPEN") return false;
+            if (p.positionCount === null || p.positionCount === 0) return true; // ไม่จำกัด
+            const accepted = counts[p.id]?.accepted ?? p.acceptedCount ?? 0;
+            return p.positionCount - accepted > 0;
+          }).length;
           setStats({
             totalAnnouncements: positions.length,
             totalOpenPositions: totalPositions,
@@ -116,10 +123,12 @@ export default function AnnouncementsPage() {
           });
         } catch {
           // If applications fail, still calculate position stats
-          const totalPositions = positions.reduce(
-            (sum, p) => sum + (p.positionCount || 0),
-            0,
-          );
+          const totalPositions = positions.filter((p) => {
+            if (p.recruitmentStatus !== "OPEN") return false;
+            if (p.positionCount === null || p.positionCount === 0) return true;
+            const accepted = p.acceptedCount ?? 0;
+            return p.positionCount - accepted > 0;
+          }).length;
           setStats({
             totalAnnouncements: positions.length,
             totalOpenPositions: totalPositions,

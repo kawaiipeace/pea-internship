@@ -119,9 +119,9 @@ export class AuthService {
 
     const profile = studentProfile[0];
 
-    if (!profile || profile.internshipStatus !== "ACCEPT") {
+    if (!profile || profile.internshipStatus !== "ACTIVE") {
       throw new ForbiddenError(
-        "การเข้าสู่ระบบถูกปฏิเสธ: สถานะการฝึกงานของคุณต้องเป็น ACCEPT เท่านั้น"
+        "การเข้าสู่ระบบถูกปฏิเสธ: สถานะการฝึกงานของคุณต้องเป็น ACTIVE เท่านั้น"
       );
     }
 

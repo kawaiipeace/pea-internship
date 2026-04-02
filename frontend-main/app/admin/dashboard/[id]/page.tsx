@@ -259,10 +259,9 @@ export default function AdminApplicationDetailPage() {
     try {
       const appId = Number(params.id);
       const logs = await staffLogsApi.getLogs({ limit: 500 });
-      const rows = Array.isArray(logs) ? logs : logs?.data ?? [];
-      const filtered = rows.filter(
-        (log: StaffLog) =>
-          log.action?.includes(`REVIEW_DOCUMENT applicationId=${appId}`),
+      const rows = Array.isArray(logs) ? logs : (logs?.data ?? []);
+      const filtered = rows.filter((log: StaffLog) =>
+        log.action?.includes(`REVIEW_DOCUMENT applicationId=${appId}`),
       );
       setDocHistoryData(filtered);
     } catch (err) {
@@ -467,6 +466,9 @@ export default function AdminApplicationDetailPage() {
     application.institutionType?.toUpperCase() === "OTHERS"
       ? parsedNote.educationText || "อื่น ๆ"
       : translateEducation(application.institutionType);
+  const isHighSchool = application.institutionType?.toUpperCase() === "SCHOOL";
+  const studyPlanDisplay =
+    application.major?.trim() || parsedNote.educationText || "-";
   const institutionDisplay =
     parsedNote.institutionText || application.institutionName?.trim() || "-";
 
@@ -562,9 +564,7 @@ export default function AdminApplicationDetailPage() {
                     <p className="text-sm font-semibold text-[#D92D20]">
                       {reasonTitle}
                     </p>
-                    <p className="text-sm text-gray-800 mt-1">
-                      {reasonText}
-                    </p>
+                    <p className="text-sm text-gray-800 mt-1">{reasonText}</p>
                   </div>
                 </div>
               </div>
@@ -786,18 +786,29 @@ export default function AdminApplicationDetailPage() {
                     {institutionDisplay}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-500">คณะ</span>
-                  <p className="font-medium text-gray-800 mt-0.5">
-                    {application.faculty || "-"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-gray-500">สาขา</span>
-                  <p className="font-medium text-gray-800 mt-0.5">
-                    {application.major || "-"}
-                  </p>
-                </div>
+                {isHighSchool ? (
+                  <div>
+                    <span className="text-gray-500">แผนการเรียน</span>
+                    <p className="font-medium text-gray-800 mt-0.5">
+                      {studyPlanDisplay}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <span className="text-gray-500">คณะ</span>
+                      <p className="font-medium text-gray-800 mt-0.5">
+                        {application.faculty || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">สาขา</span>
+                      <p className="font-medium text-gray-800 mt-0.5">
+                        {application.major || "-"}
+                      </p>
+                    </div>
+                  </>
+                )}
                 <div>
                   <span className="text-gray-500">ชั่วโมงที่ต้องฝึก</span>
                   <p className="font-medium text-gray-800 mt-0.5">
@@ -977,9 +988,7 @@ export default function AdminApplicationDetailPage() {
               {docHistoryLoading ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
-                  <p className="text-gray-500 text-sm">
-                    กำลังโหลดประวัติ...
-                  </p>
+                  <p className="text-gray-500 text-sm">กำลังโหลดประวัติ...</p>
                 </div>
               ) : docHistoryData.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
@@ -1027,7 +1036,9 @@ export default function AdminApplicationDetailPage() {
                     const reasonByLogId = new Map<number, string>();
                     const invalidNumberByLogId = new Map<number, number>();
                     for (const log of chronological) {
-                      const { docTypeId: dtId, status: st } = parseReviewAction(log.action);
+                      const { docTypeId: dtId, status: st } = parseReviewAction(
+                        log.action,
+                      );
                       if (st === "INVALID" && dtId) {
                         const count = invalidCountByDocType[dtId] ?? 0;
                         invalidCountByDocType[dtId] = count + 1;
@@ -1041,8 +1052,12 @@ export default function AdminApplicationDetailPage() {
                     }
 
                     return sorted.map((log) => {
-                      const { docTypeId, status } = parseReviewAction(log.action);
-                      const docInfo = docTypeId ? DOC_TYPE_MAP[docTypeId] : null;
+                      const { docTypeId, status } = parseReviewAction(
+                        log.action,
+                      );
+                      const docInfo = docTypeId
+                        ? DOC_TYPE_MAP[docTypeId]
+                        : null;
                       const isInvalid = status === "INVALID";
                       const invalidNumber = isInvalid
                         ? (invalidNumberByLogId.get(log.id) ?? 0)
@@ -1069,9 +1084,7 @@ export default function AdminApplicationDetailPage() {
                                   fill="#98A2B3"
                                 />
                               </svg>
-                              <span>
-                                {formatDateThaiShort(log.createdAt)}
-                              </span>
+                              <span>{formatDateThaiShort(log.createdAt)}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <svg
@@ -1124,9 +1137,7 @@ export default function AdminApplicationDetailPage() {
                                   fill="#98A2B3"
                                 />
                               </svg>
-                              <span>
-                                รหัสพนักงาน: {log.username || "-"}
-                              </span>
+                              <span>รหัสพนักงาน: {log.username || "-"}</span>
                             </div>
                           </div>
 

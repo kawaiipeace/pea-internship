@@ -9,6 +9,7 @@ import {
   fetchAllApplications,
   computeApplicationStats,
   getEducationDisplayText,
+  getStudyPlanDisplayText,
 } from "../utils/applicationMapper";
 import {
   applicationApi,
@@ -1479,20 +1480,29 @@ function AcceptedStatusPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {selectedApplication.education === "high_school" ? (
               <div>
-                <span className="text-gray-500 text-sm">คณะ</span>
+                <span className="text-gray-500 text-sm">แผนการเรียน</span>
                 <p className="text-gray-900 text-sm">
-                  {selectedApplication.faculty || "-"}
+                  {getStudyPlanDisplayText(selectedApplication)}
                 </p>
               </div>
-              <div>
-                <span className="text-gray-500 text-sm">สาขา</span>
-                <p className="text-gray-900 text-sm">
-                  {selectedApplication.major?.trim() || "-"}
-                </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.faculty || "-"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">สาขา</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.major?.trim() || "-"}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <span className="text-gray-500 text-sm">

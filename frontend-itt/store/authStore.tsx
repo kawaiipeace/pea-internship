@@ -67,7 +67,7 @@ const authStore: StateCreator<AuthStore> = (set) => ({
         document.cookie = `user_role=; path=/; max-age=0`;
     },
     actionLogin: async (form: FormLogin) => {
-        const res = await axios.post('/auth/sign-in/intern', form);
+        const res = await axios.post('/auth/sign-in/intern/itt', form);
         const data = res.data as any;
         const token = data.accessToken ?? data.token ?? data.session?.token ?? null;
 
