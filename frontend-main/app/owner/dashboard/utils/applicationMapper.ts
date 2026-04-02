@@ -43,6 +43,24 @@ export function getEducationDisplayText(app: {
   return labels[app.education] || app.education;
 }
 
+export function getStudyPlanDisplayText(app: {
+  major?: string;
+  studentNote?: string;
+}): string {
+  const major = app.major?.trim();
+  if (major) return major;
+
+  const raw = (app.studentNote || "").trim();
+  if (!raw) return "-";
+
+  const firstPart = raw
+    .split("|")
+    .map((p) => p.trim())
+    .find((p) => p && !p.startsWith("สถานศึกษา:"));
+
+  return firstPart || "-";
+}
+
 const statusMap: Record<
   AppStatusEnum,
   {

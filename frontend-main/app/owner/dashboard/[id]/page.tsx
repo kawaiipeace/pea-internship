@@ -9,6 +9,7 @@ import {
   fetchAllApplications,
   Mentor,
   getEducationDisplayText,
+  getStudyPlanDisplayText,
 } from "../utils/applicationMapper";
 import {
   applicationApi,
@@ -1830,18 +1831,29 @@ function ApplicationDetailContent() {
                     {application.institution}
                   </p>
                 </div>
-                <div>
-                  <p className="text-gray-400 text-sm mb-1">คณะ</p>
-                  <p className="font-medium text-gray-900">
-                    {application.faculty || "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-sm mb-1">สาขา</p>
-                  <p className="font-medium text-gray-900">
-                    {application.major?.trim() || "-"}
-                  </p>
-                </div>
+                {application.education === "high_school" ? (
+                  <div className="col-span-2">
+                    <p className="text-gray-400 text-sm mb-1">แผนการเรียน</p>
+                    <p className="font-medium text-gray-900">
+                      {getStudyPlanDisplayText(application)}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-gray-400 text-sm mb-1">คณะ</p>
+                      <p className="font-medium text-gray-900">
+                        {application.faculty || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm mb-1">สาขา</p>
+                      <p className="font-medium text-gray-900">
+                        {application.major?.trim() || "-"}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-6">
