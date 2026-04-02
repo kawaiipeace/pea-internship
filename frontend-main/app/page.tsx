@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
 import SearchSection from "@/components/ui/SearchSection";
 import JobCard, { Job } from "@/components/ui/JobCard";
@@ -8,15 +9,18 @@ import JobDetailPanel from "@/components/ui/JobDetailPanel";
 import Pagination from "@/components/ui/Pagination";
 import LoginModal from "@/components/ui/LoginModal";
 import { VideoLoading } from "@/components";
-import { positionApi, positionToJobWithStaff, StaffUser } from "@/services/api";
+import { positionApi, positionToJobWithStaff, favoriteApi, applicationApi, jobIdToPositionId, StaffUser } from "@/services/api";
 
 export default function Home() {
+  const router = useRouter();
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [loginRedirectTo, setLoginRedirectTo] = useState("/intern-home");
   const [pendingBookmarkJobId, setPendingBookmarkJobId] = useState<
     string | null
+  >(null);
+  const [pendingAction, setPendingAction] = useState<
+    "bookmark" | "apply" | "viewDetail" | null
   >(null);
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
@@ -252,7 +256,7 @@ export default function Home() {
                   navigateOnMobile={isMobile}
                   onBookmarkClick={(jobId) => {
                     setPendingBookmarkJobId(jobId);
-                    setLoginRedirectTo("/intern-home");
+                    setPendingAction("bookmark");
                     setIsLoginModalOpen(true);
                   }}
                 />
@@ -279,12 +283,12 @@ export default function Home() {
                   selectedJob={selectedJob}
                   onApplyClick={() => {
                     setPendingBookmarkJobId(null);
-                    setLoginRedirectTo("/intern-info");
+                    setPendingAction("apply");
                     setIsLoginModalOpen(true);
                   }}
                   onBookmarkClick={(jobId) => {
                     setPendingBookmarkJobId(jobId || null);
-                    setLoginRedirectTo("/intern-home");
+                    setPendingAction("bookmark");
                     setIsLoginModalOpen(true);
                   }}
                   onViewDetailClick={() => {
@@ -295,9 +299,7 @@ export default function Home() {
                       );
                     }
                     setPendingBookmarkJobId(null);
-                    setLoginRedirectTo(
-                      selectedJob ? `/intern-home/job-detail` : "/intern-info",
-                    );
+                    setPendingAction("viewDetail");
                     setIsLoginModalOpen(true);
                   }}
                 />
@@ -313,9 +315,43 @@ export default function Home() {
         onClose={() => {
           setIsLoginModalOpen(false);
           setPendingBookmarkJobId(null);
+          setPendingAction(null);
         }}
-        redirectTo={loginRedirectTo}
         pendingBookmarkJobId={pendingBookmarkJobId}
+        onLoginSuccess={async () => {
+          const action = pendingAction;
+          const bookmarkId = pendingBookmarkJobId;
+          const job = selectedJob;
+
+          setPendingAction(null);
+          setPendingBookmarkJobId(null);
+
+          if (action === "bookmark" && bookmarkId) {
+            const posId = jobIdToPositionId(bookmarkId);
+            if (posId) {
+              favoriteApi.addFavorite(posId).catch(console.error);
+            }
+            router.push("/intern-home");
+          } else if (action === "apply" && job) {
+            const positionId = jobIdToPositionId(job.id);
+            if (positionId) {
+              try {
+                await applicationApi.createApplication(positionId);
+                localStorage.setItem("currentPositionId", String(positionId));
+              } catch (err: unknown) {
+                const error = err as { response?: { data?: { message?: string } } };
+                alert(error?.response?.data?.message || "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง");
+                router.push("/intern-home");
+                return;
+              }
+            }
+            router.push("/intern-info");
+          } else if (action === "viewDetail" && job) {
+            router.push("/intern-home/job-detail");
+          } else {
+            router.push("/intern-home");
+          }
+        }}
       />
     </div>
   );
