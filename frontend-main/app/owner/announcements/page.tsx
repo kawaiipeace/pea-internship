@@ -109,10 +109,13 @@ export default function AnnouncementsPage() {
           const totalApplicantsReal = Object.values(counts).reduce((sum, c) => sum + c.total, 0);
 
           // Calculate stats from positions
-          const totalPositions = positions.reduce(
-            (sum, p) => sum + (p.positionCount || 0),
-            0,
-          );
+          // นับตำแหน่งที่ยังเปิดรับสมัครและยังไม่เต็ม โดยนับแต่ละตำแหน่งเป็น 1
+          const totalPositions = positions.filter((p) => {
+            if (p.recruitmentStatus !== "OPEN") return false;
+            if (p.positionCount === null || p.positionCount === 0) return true; // ไม่จำกัด
+            const accepted = counts[p.id]?.accepted ?? p.acceptedCount ?? 0;
+            return p.positionCount - accepted > 0;
+          }).length;
           setStats({
             totalAnnouncements: positions.length,
             totalOpenPositions: totalPositions,
@@ -120,10 +123,12 @@ export default function AnnouncementsPage() {
           });
         } catch {
           // If applications fail, still calculate position stats
-          const totalPositions = positions.reduce(
-            (sum, p) => sum + (p.positionCount || 0),
-            0,
-          );
+          const totalPositions = positions.filter((p) => {
+            if (p.recruitmentStatus !== "OPEN") return false;
+            if (p.positionCount === null || p.positionCount === 0) return true;
+            const accepted = p.acceptedCount ?? 0;
+            return p.positionCount - accepted > 0;
+          }).length;
           setStats({
             totalAnnouncements: positions.length,
             totalOpenPositions: totalPositions,

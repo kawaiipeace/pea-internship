@@ -5,6 +5,7 @@ import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
   applicationApi,
   departmentApi,
+  userApi,
   AllStudentsHistoryItem,
   Department,
 } from "@/services/api";
@@ -191,6 +192,7 @@ export default function AdminDashboardPage() {
   const [departmentsById, setDepartmentsById] = useState<
     Record<number, string>
   >({});
+  const [adminDeptName, setAdminDeptName] = useState("");
   const [hoveredEduSliceIndex, setHoveredEduSliceIndex] = useState<
     number | null
   >(null);
@@ -222,6 +224,15 @@ export default function AdminDashboardPage() {
         fetchAllStudentsHistory(),
         fetchAllDepartments(),
       ]);
+
+      // Fetch admin's dept name from profile
+      try {
+        const profile = await userApi.getUserProfile();
+        if (profile?.departmentId) {
+          const dept = await departmentApi.getDepartmentByDeptSap(profile.departmentId);
+          if (dept) setAdminDeptName(dept.deptFull || dept.deptShort || "");
+        }
+      } catch { /* ignore if profile not available */ }
 
       setApplications(all);
       setDepartmentsById(
@@ -260,7 +271,7 @@ export default function AdminDashboardPage() {
       ),
     ).sort((a, b) => b - a);
 
-    return years.map((year) => ({ year, label: `${toThaiYear(year)}` }));
+    return years.map((year) => ({ year, label: `ปี ${toThaiYear(year)}` }));
   }, [applications]);
 
   const filteredByYear = useMemo(() => {
@@ -489,18 +500,18 @@ export default function AdminDashboardPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">แดชบอร์ด</h1>
-            <p className="text-gray-500 text-sm mt-1">ภาพรวมระบบของการสมัคร</p>
+            <h1 className="text-2xl font-bold text-gray-800">แดชบอร์ด{adminDeptName ? ` ${adminDeptName}` : ""}</h1>
+            <p className="text-gray-500 mt-1">ภาพรวมของการรับสมัคร</p>
           </div>
 
-          <div className="w-full md:w-44 relative">
+          <div className="relative">
             <select
               value={selectedYear ?? ""}
-              onChange={(event) =>
-                setSelectedYear(Number(event.target.value) || null)
-              }
-              className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-700 appearance-none 
-             focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-primary-600"
+              onChange={(event) => {
+                setSelectedYear(Number(event.target.value) || null);
+                (event.target as HTMLSelectElement).blur();
+              }}
+              className="appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm cursor-pointer transition focus:outline-none focus:border-primary-600 focus:ring-0"
             >
               {yearOptions.map((option) => (
                 <option key={option.year} value={option.year}>

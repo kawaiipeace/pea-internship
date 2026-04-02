@@ -254,10 +254,13 @@ export default function OwnerDashboard() {
         const positionsList = response.data || [];
         setPositions(positionsList);
 
-        const totalPositions = positionsList.reduce(
-          (sum, p) => sum + (p.positionCount || 0),
-          0,
-        );
+        // นับตำแหน่งที่ยังเปิดรับสมัครและยังไม่เต็ม โดยนับแต่ละตำแหน่งเป็น 1
+        const totalPositions = positionsList.filter((p) => {
+          if (p.recruitmentStatus !== "OPEN") return false;
+          if (p.positionCount === null || p.positionCount === 0) return true; // ไม่จำกัด
+          const accepted = p.acceptedCount ?? 0;
+          return p.positionCount - accepted > 0;
+        }).length;
 
         // ดึงชื่อตำแหน่ง (position name) จาก API
         const names = positionsList.map((p) => p.name || "ตำแหน่งไม่ระบุ");
@@ -290,6 +293,29 @@ export default function OwnerDashboard() {
     };
     loadStats();
   }, []);
+
+  // Year options derived from real data
+  const ownerYearOptions = useMemo(() => {
+    const yearsSet = new Set(allApps.map((app) => new Date(app.createdAt).getFullYear() + 543));
+    yearsSet.add(currentYear);
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [allApps, currentYear]);
+
+  // Year-filtered applicant count for stats card
+  const yearFilteredApplicantsCount = useMemo(() => {
+    const ce = selectedYear - 543;
+    return allApps.filter((app) => new Date(app.createdAt).getFullYear() === ce).length;
+  }, [allApps, selectedYear]);
+
+  // Year-filtered intern count for stats card
+  const yearFilteredInternsCount = useMemo(() => {
+    const ce = selectedYear - 543;
+    return allApps.filter(
+      (app) =>
+        app.applicationStatus === "COMPLETE" &&
+        new Date(app.createdAt).getFullYear() === ce,
+    ).length;
+  }, [allApps, selectedYear]);
 
   // Monthly data: all applicants
   const monthlyApplicantsData = useMemo(() => {
@@ -892,7 +918,7 @@ export default function OwnerDashboard() {
               }}
               className="appearance-none bg-white border-2 border-gray-200 rounded-lg px-4 py-2 pr-8 text-sm cursor-pointer transition focus:outline-none focus:border-primary-600 focus:ring-0"
             >
-              {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
+              {ownerYearOptions.map((y) => (
                 <option key={y} value={y}>
                   ปี {y}
                 </option>
@@ -966,7 +992,7 @@ export default function OwnerDashboard() {
             </div>
             <div>
               <p className="text-3xl font-bold text-primary-600">
-                {apiStats.totalApplicants}
+                {yearFilteredApplicantsCount}
               </p>
               <p className="text-gray-500 text-sm">ผู้สมัครทั้งหมด</p>
             </div>
@@ -989,7 +1015,7 @@ export default function OwnerDashboard() {
             </div>
             <div>
               <p className="text-3xl font-bold text-primary-600">
-                {totalCurrentInterns}
+                {yearFilteredInternsCount}
               </p>
               <p className="text-gray-500 text-sm">นักศึกษาฝึกงานทั้งหมด</p>
             </div>
