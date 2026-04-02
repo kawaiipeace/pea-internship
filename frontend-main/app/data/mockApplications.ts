@@ -549,7 +549,7 @@ export const getDetailedStatusColor = (detailedStatus?: DetailedStatus): string 
 };
 
 // Filter applications by tab/status
-export type FilterTab = "all" | "waiting_document" | "waiting_interview" | "waiting_confirm" | "accepted" | "rejected" | "cancelled";
+export type FilterTab = "all" | "waiting_document" | "waiting_interview" | "waiting_confirm" | "accepted" | "rejected" | "cancelled" | "abort";
 
 export const filterApplicationsByTab = (tab: FilterTab): Application[] => {
   switch (tab) {
