@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import IconMapPin from '@/components/icon/icon-map-pin';
 import Swal from 'sweetalert2';
 import axiosInstance from '@/api/axios';
+import IconMapPin from '@/components/icon/icon-map-pin';
 
 const OFFICE_LAT = 13.851119091153935;
 const OFFICE_LNG = 100.55810839569543;
@@ -179,7 +179,7 @@ const CheckInPage = () => {
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#CECFD2]">
                         <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[20px] h-[20px]" />
+                            <span className="material-symbols-rounded text-[20px]">location_on</span>
                         </div>
                     </div>
                     <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
@@ -194,7 +194,7 @@ const CheckInPage = () => {
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#EDC878]">
                         <div className="bg-[#E2A727] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[20px] h-[20px]" />
+                            <span className="material-symbols-rounded text-[20px]">location_on</span>
                         </div>
                     </div>
                     <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">อยู่นอกสถานที่</div>
@@ -209,7 +209,7 @@ const CheckInPage = () => {
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#75E0A7]">
                         <div className="bg-[#42B86F] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[20px] h-[20px]" />
+                            <span className="material-symbols-rounded text-[20px]">location_on</span>
                         </div>
                     </div>
                     <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">อยู่ในสถานที่</div>
@@ -229,7 +229,7 @@ const CheckInPage = () => {
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] bg-[#CECFD2]">
                         <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[24px] h-[24px]" />
+                            <span className="material-symbols-rounded text-[24px]">location_on</span>
                         </div>
                     </div>
                     <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
@@ -244,7 +244,7 @@ const CheckInPage = () => {
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] bg-[#F97066]" >
                         <div className="bg-[#F04438] text-[#FEF3F2] rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[24px] h-[24px]" />
+                            <span className="material-symbols-rounded text-[24px]">location_on</span>
                         </div>
                     </div>
                     <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">อยู่นอกสถานที่</div>
@@ -259,7 +259,7 @@ const CheckInPage = () => {
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] bg-[#75E0A7]" >
                         <div className="bg-[#42B86F] text-[#E4F5EA] rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[24px] h-[24px]" />
+                            <span className="material-symbols-rounded text-[24px]">location_on</span>
                         </div>
                     </div>
                     <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">อยู่ในสถานที่</div>
