@@ -143,15 +143,18 @@ const INSTITUTION_TYPE_COLORS: Record<string, string> = {
 };
 
 // Status mapping for donut chart
-const STATUS_MAP: Record<AppStatusEnum, { label: string; color: string }> = {
-  PENDING_DOCUMENT: { label: "รอรับเอกสาร", color: "#F97316" },
-  PENDING_INTERVIEW: { label: "รอสัมภาษณ์", color: "#FACC15" },
-  PENDING_CONFIRMATION: { label: "รอการยืนยัน", color: "#60A5FA" },
+type StatusChartKey = AppStatusEnum | "INTERNSHIP_CANCELLED";
+
+const STATUS_MAP: Record<StatusChartKey, { label: string; color: string }> = {
+  PENDING_DOCUMENT: { label: "รอรับเอกสาร", color: "#F7AF1D" },
+  PENDING_INTERVIEW: { label: "รอสัมภาษณ์", color: "#ECD17E" },
+  PENDING_CONFIRMATION: { label: "รอการยืนยัน", color: "#F28C00" },
   PENDING_REQUEST: { label: "รอเอกสารขอความอนุเคราะห์", color: "#8B5CF6" },
   PENDING_REVIEW: { label: "รอตรวจเอกสาร", color: "#14B8A6" },
-  COMPLETE: { label: "รับเข้าฝึกงาน", color: "#22C55E" },
-  CANCEL: { label: "ไม่ผ่าน", color: "#EF4444" },
+  COMPLETE: { label: "รับเข้าฝึกงาน", color: "#0E9F58" },
+  CANCEL: { label: "ไม่ผ่าน", color: "#C02116" },
   ABORT: { label: "ยกเลิกการสมัคร", color: "#9CA3AF" },
+  INTERNSHIP_CANCELLED: { label: "ยกเลิกฝึกงาน", color: "#FF2D2D" },
 };
 
 export default function OwnerDashboard() {
@@ -276,7 +279,7 @@ export default function OwnerDashboard() {
         // กรองเฉพาะใบสมัครที่อยู่ใน position ของ department นี้
         const deptPositionIds = new Set(positionsList.map((p) => p.id));
         const apps = allAppsRaw.filter(
-          (app) => app.positionId && deptPositionIds.has(app.positionId)
+          (app) => app.positionId && deptPositionIds.has(app.positionId),
         );
         setAllApps(apps);
 
@@ -296,7 +299,9 @@ export default function OwnerDashboard() {
 
   // Year options derived from real data
   const ownerYearOptions = useMemo(() => {
-    const yearsSet = new Set(allApps.map((app) => new Date(app.createdAt).getFullYear() + 543));
+    const yearsSet = new Set(
+      allApps.map((app) => new Date(app.createdAt).getFullYear() + 543),
+    );
     yearsSet.add(currentYear);
     return Array.from(yearsSet).sort((a, b) => b - a);
   }, [allApps, currentYear]);
@@ -304,7 +309,8 @@ export default function OwnerDashboard() {
   // Year-filtered applicant count for stats card
   const yearFilteredApplicantsCount = useMemo(() => {
     const ce = selectedYear - 543;
-    return allApps.filter((app) => new Date(app.createdAt).getFullYear() === ce).length;
+    return allApps.filter((app) => new Date(app.createdAt).getFullYear() === ce)
+      .length;
   }, [allApps, selectedYear]);
 
   // Year-filtered intern count for stats card
@@ -374,18 +380,40 @@ export default function OwnerDashboard() {
 
   // Status distribution for donut chart (from real data)
   const statusData = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts: Partial<Record<StatusChartKey, number>> = {};
     allApps.forEach((app) => {
-      const status = app.applicationStatus as AppStatusEnum;
+      const isInternshipCancelled =
+        app.studentInternshipStatus === "CANCEL" ||
+        (app.applicationStatus === "CANCEL" && app.isActive === false);
+
+      if (isInternshipCancelled) {
+        counts.INTERNSHIP_CANCELLED = (counts.INTERNSHIP_CANCELLED || 0) + 1;
+        return;
+      }
+
+      const status = app.applicationStatus as StatusChartKey;
       counts[status] = (counts[status] || 0) + 1;
     });
-    return Object.entries(counts)
-      .map(([status, value]) => ({
-        label: STATUS_MAP[status as AppStatusEnum]?.label || status,
-        value,
-        color: STATUS_MAP[status as AppStatusEnum]?.color || "#6B7280",
-      }))
-      .filter((d) => d.value > 0);
+
+    const statusOrder: StatusChartKey[] = [
+      "CANCEL",
+      "INTERNSHIP_CANCELLED",
+      "PENDING_REQUEST",
+      "COMPLETE",
+      "PENDING_INTERVIEW",
+      "PENDING_DOCUMENT",
+      "PENDING_CONFIRMATION",
+      "PENDING_REVIEW",
+      "ABORT",
+    ];
+
+    return statusOrder
+      .filter((status) => (counts[status] || 0) > 0)
+      .map((status) => ({
+        label: STATUS_MAP[status].label,
+        value: counts[status] || 0,
+        color: STATUS_MAP[status].color,
+      }));
   }, [allApps]);
 
   // Education level distribution (from real data)
