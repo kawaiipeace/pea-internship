@@ -400,9 +400,9 @@ const CheckInPage = () => {
                                 type="button"
                                 onClick={() => handleCheckIn('in')}
                                 disabled={locationStatus !== 'found' || hasCheckedInToday}
-                                className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] border border-[#E5E7EB] transition-all ${(locationStatus !== 'found' || hasCheckedInToday)
-                                        ? 'bg-[#ECECED] text-[#9A9A9A] shadow-none cursor-not-allowed'
-                                        : 'bg-[#ECECED] text-[#475467] hover:-translate-y-[1px] hover:bg-[#DEDFE5] shadow-[0_2px_4px_rgba(0,0,0,0.02)]'
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${(locationStatus !== 'found' || hasCheckedInToday)
+                                        ? 'bg-[#ECECED] text-[#61646C]  border border-[#98A2B3]  shadow-none cursor-not-allowed'
+                                        : 'hover:-translate-y-[1px] bg-[#A80689] text-white'
                                     }`}
                             >
                                 ลงเวลาเข้างาน
@@ -411,9 +411,9 @@ const CheckInPage = () => {
                                 type="button"
                                 onClick={handleClockOut}
                                 disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
-                                className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] border border-[#E5E7EB] transition-all ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
-                                        ? 'bg-[#ECECED] text-[#9A9A9A] shadow-none cursor-not-allowed'
-                                        : 'bg-[#ECECED] text-[#475467] hover:-translate-y-[1px] hover:bg-[#DEDFE5] shadow-[0_2px_4px_rgba(0,0,0,0.02)]'
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                                        ? 'bg-[#ECECED] text-[#61646C] border border-[#98A2B3] shadow-none cursor-not-allowed'
+                                        : 'hover:-translate-y-[1px] bg-[#A80689] text-white '
                                     }`}
                                 title={!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : ""}
                             >
@@ -484,7 +484,7 @@ const CheckInPage = () => {
                             disabled={locationStatus !== 'found' || hasCheckedInToday}
                             className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || hasCheckedInToday)
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
-                                    : 'bg-[#ECECED] text-[#000000] hover:bg-[#E2E2E2]'
+                                    : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
                         >
                             ลงเวลาเข้างาน
@@ -495,7 +495,7 @@ const CheckInPage = () => {
                             disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
                             className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
-                                    : 'bg-[#ECECED] text-[#000000] hover:bg-[#E2E2E2]'
+                                    : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
                         >
                             ลงเวลาออกงาน
@@ -536,7 +536,7 @@ const CheckInPage = () => {
 
                                     {/* Check Icon with Circle */}
                                     <div className="w-[72px] h-[72px] shrink-0 rounded-full flex items-center justify-center mb-6 bg-[#25C277]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        <span className="material-symbols-outlined text-white text-[56px] select-none" style={{ fontSize: '56px' }}>check</span>
                                     </div>
 
                                     {/* Title & Subtitle */}
@@ -560,7 +560,7 @@ const CheckInPage = () => {
                                         {/* Location Row */}
                                         <div className="w-full flex items-center justify-between mb-4 mt-2">
                                             <div className="flex items-center gap-3 text-[#333741]">
-                                                <IconMapPin className="w-[20px] h-[20px] text-[#555555]" />
+                                                <span className="material-symbols-rounded text-[20px] text-[#555555] select-none">location_on</span>
                                                 <span className="text-[14px] font-medium text-[#444]">สถานที่</span>
                                             </div>
                                             <span className="text-[14px] font-medium text-[#333741]">อยู่ในสถานที่</span>
@@ -572,7 +572,7 @@ const CheckInPage = () => {
                                         {/* Status Row */}
                                         <div className="w-full flex items-center justify-between">
                                             <div className="flex items-center gap-3 text-[#333741]">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#555555]"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                                                <span className="material-symbols-rounded text-[20px] text-[#555555] select-none">planner_review</span>
                                                 <span className="text-[14px] font-medium text-[#444]">สถานะ</span>
                                             </div>
                                             <div className={`px-4 py-1.5 rounded-full text-[13px] font-medium ${getStatusDisplay().className}`}>
