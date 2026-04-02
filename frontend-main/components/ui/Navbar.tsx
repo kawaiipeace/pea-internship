@@ -340,6 +340,16 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                   >
                     FAQs
                   </Link>
+                  <Link
+                href="/credits"
+                className={`font-medium transition-colors ${
+                  pathname === "/credits"
+                    ? "text-primary-600 hover:text-primary-700"
+                    : "text-gray-600 hover:text-primary-600"
+                }`}
+              >
+                ผู้จัดทำ
+              </Link>
                 </div>
                 <Link
                   href="/login/intern"
