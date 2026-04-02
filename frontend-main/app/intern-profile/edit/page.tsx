@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { NavbarIntern } from "@/components";
 import VideoLoading from "@/components/ui/VideoLoading";
 import ThaiDateInput from "@/components/ui/ThaiDateInput";
-import { userApi, institutionApi, extractStudentProfile, applicationApi, positionApi, Position } from "@/services/api";
+import {
+  userApi,
+  institutionApi,
+  extractStudentProfile,
+  applicationApi,
+  positionApi,
+  Position,
+} from "@/services/api";
 
 // Helper functions
 const getEducationLabel = (value: string): string => {
@@ -146,7 +153,9 @@ export default function EditProfilePage() {
   const [endDate, setEndDate] = useState<string>("");
   const [hasApplication, setHasApplication] = useState(false);
   const [applicationId, setApplicationId] = useState<number | null>(null);
-  const [applicationPosition, setApplicationPosition] = useState<Position | null>(null);
+  const [applicationPosition, setApplicationPosition] =
+    useState<Position | null>(null);
+  const [isHoursLocked, setIsHoursLocked] = useState(false);
 
   // Thai month names for formatting
   const thaiMonthsArray = [
@@ -200,7 +209,9 @@ export default function EditProfilePage() {
           // ดึงข้อมูล institution จาก API ตาม institutionId
           if (studentProfile?.institutionId) {
             try {
-              const inst = await institutionApi.getInstitutionById(studentProfile.institutionId);
+              const inst = await institutionApi.getInstitutionById(
+                studentProfile.institutionId,
+              );
               if (inst) {
                 institutionName = inst.name;
                 const typeToEducation: { [key: string]: string } = {
@@ -209,7 +220,8 @@ export default function EditProfilePage() {
                   SCHOOL: "high_school",
                   OTHERS: "other",
                 };
-                const eduKey = typeToEducation[inst.institutionsType] || "other";
+                const eduKey =
+                  typeToEducation[inst.institutionsType] || "other";
                 setEducationType(eduKey);
                 educationLabel = getEducationLabel(eduKey);
                 // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
@@ -224,7 +236,9 @@ export default function EditProfilePage() {
           }
 
           setForm({
-            fullName: `${profileData.fname || ""} ${profileData.lname || ""}`.trim() || "",
+            fullName:
+              `${profileData.fname || ""} ${profileData.lname || ""}`.trim() ||
+              "",
             fname: profileData.fname || "",
             lname: profileData.lname || "",
             email: profileData.email || "",
@@ -235,10 +249,12 @@ export default function EditProfilePage() {
             institutionName: institutionName,
             faculty: studentProfile?.faculty || "",
             major: isHighSchool
-              ? (studentProfile?.studentNote || "")
-              : (studentProfile?.major || ""),
+              ? studentProfile?.studentNote || ""
+              : studentProfile?.major || "",
             internshipPeriod: internshipPeriod,
-            totalHours: studentProfile?.hours ? String(parseInt(studentProfile.hours)) : "",
+            totalHours: studentProfile?.hours
+              ? String(parseInt(studentProfile.hours))
+              : "",
             department: defaultFormData.department,
             supervisor: "",
             supervisorEmail: "",
@@ -251,24 +267,52 @@ export default function EditProfilePage() {
           // Fetch latest application to determine hasApplication and get position data
           try {
             const latestApp = await applicationApi.getMyLatestApplication();
-            if (latestApp && latestApp.applicationStatus !== "CANCEL" && latestApp.applicationStatus !== "ABORT") {
+            if (
+              latestApp &&
+              latestApp.applicationStatus !== "CANCEL" &&
+              latestApp.applicationStatus !== "ABORT"
+            ) {
               setHasApplication(true);
               setApplicationId(latestApp.applicationId);
+              setIsHoursLocked(
+                latestApp.applicationStatus === "COMPLETE" &&
+                  latestApp.isActive,
+              );
               if (latestApp.positionId) {
                 try {
-                  const pos = await positionApi.getPositionById(latestApp.positionId);
+                  const pos = await positionApi.getPositionById(
+                    latestApp.positionId,
+                  );
                   if (pos) {
                     setApplicationPosition(pos);
-                    const ownerData = pos.owner || (pos.owners && pos.owners.length > 0 ? pos.owners[0] : null);
-                    setForm(prev => ({
+                    const ownerData =
+                      pos.owner ||
+                      (pos.owners && pos.owners.length > 0
+                        ? pos.owners[0]
+                        : null);
+                    setForm((prev) => ({
                       ...prev,
-                      department: pos.department?.deptFull || pos.department?.deptShort || "",
-                      supervisor: ownerData ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim() : "",
+                      department:
+                        pos.department?.deptFull ||
+                        pos.department?.deptShort ||
+                        "",
+                      supervisor: ownerData
+                        ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
+                        : "",
                       supervisorEmail: ownerData?.email || "",
                       supervisorPhone: ownerData?.phoneNumber || "",
-                      mentorName: pos.mentors && pos.mentors.length > 0 ? (pos.mentors[0].name || "") : "",
-                      mentorEmail: pos.mentors && pos.mentors.length > 0 ? (pos.mentors[0].email || "") : "",
-                      mentorPhone: pos.mentors && pos.mentors.length > 0 ? (pos.mentors[0].phoneNumber || "") : "",
+                      mentorName:
+                        pos.mentors && pos.mentors.length > 0
+                          ? pos.mentors[0].name || ""
+                          : "",
+                      mentorEmail:
+                        pos.mentors && pos.mentors.length > 0
+                          ? pos.mentors[0].email || ""
+                          : "",
+                      mentorPhone:
+                        pos.mentors && pos.mentors.length > 0
+                          ? pos.mentors[0].phoneNumber || ""
+                          : "",
                     }));
                   }
                 } catch {
@@ -390,8 +434,13 @@ export default function EditProfilePage() {
   }, []);
 
   const canSave = useMemo(() => {
-    return (form.fullName || "").trim() && (form.email || "").trim() && (form.phone || "").trim();
+    return (
+      (form.fullName || "").trim() &&
+      (form.email || "").trim() &&
+      (form.phone || "").trim()
+    );
   }, [form]);
+  const isInternshipDataLocked = isHoursLocked;
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -416,27 +465,51 @@ export default function EditProfilePage() {
 
       // Update student profile data
       const profilePayload = {
-        hours: form.totalHours ? parseInt(form.totalHours) : undefined,
-        faculty: form.faculty || undefined,
-        major: educationType === "high_school" ? undefined : (form.major || undefined),
-        studentNote: educationType === "high_school"
-          ? (form.major || undefined)
-          : educationType === "other"
-            ? undefined
+        hours: isHoursLocked
+          ? undefined
+          : form.totalHours
+            ? parseInt(form.totalHours)
             : undefined,
-        startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        faculty: form.faculty || undefined,
+        major:
+          educationType === "high_school" ? undefined : form.major || undefined,
+        studentNote:
+          educationType === "high_school"
+            ? form.major || undefined
+            : educationType === "other"
+              ? undefined
+              : undefined,
+        startDate: isInternshipDataLocked
+          ? undefined
+          : startDate
+            ? new Date(startDate).toISOString()
+            : undefined,
+        endDate: isInternshipDataLocked
+          ? undefined
+          : endDate
+            ? new Date(endDate).toISOString()
+            : undefined,
       };
       console.log("Saving student profile:", profilePayload);
       await userApi.updateStudentProfile(profilePayload);
 
       // Update application_informations (hours/dates) so me() returns correct data
       if (applicationId) {
-        const appInfoPayload: { hours?: number | null; startDate?: string | null; endDate?: string | null } = {};
-        if (form.totalHours) appInfoPayload.hours = parseInt(form.totalHours);
-        if (startDate) appInfoPayload.startDate = new Date(startDate).toISOString();
-        if (endDate) appInfoPayload.endDate = new Date(endDate).toISOString();
-        await applicationApi.updateApplicationInformation(applicationId, appInfoPayload);
+        const appInfoPayload: {
+          hours?: number | null;
+          startDate?: string | null;
+          endDate?: string | null;
+        } = {};
+        if (!isHoursLocked && form.totalHours)
+          appInfoPayload.hours = parseInt(form.totalHours);
+        if (!isInternshipDataLocked && startDate)
+          appInfoPayload.startDate = new Date(startDate).toISOString();
+        if (!isInternshipDataLocked && endDate)
+          appInfoPayload.endDate = new Date(endDate).toISOString();
+        await applicationApi.updateApplicationInformation(
+          applicationId,
+          appInfoPayload,
+        );
       }
 
       setSaveSuccess(true);
@@ -496,7 +569,7 @@ export default function EditProfilePage() {
             <FieldBox label="เพศ">
               <InputWithClear
                 value={form.gender}
-                onChange={() => { }}
+                onChange={() => {}}
                 disabled
               />
             </FieldBox>
@@ -509,7 +582,7 @@ export default function EditProfilePage() {
             <FieldBox label="การศึกษาปัจจุบัน">
               <InputWithClear
                 value={form.education}
-                onChange={() => { }}
+                onChange={() => {}}
                 disabled
               />
             </FieldBox>
@@ -517,7 +590,7 @@ export default function EditProfilePage() {
             <FieldBox label="ชื่อสถาบัน">
               <InputWithClear
                 value={form.institutionName}
-                onChange={() => { }}
+                onChange={() => {}}
                 disabled
               />
             </FieldBox>
@@ -553,17 +626,37 @@ export default function EditProfilePage() {
               <div className="relative">
                 <div
                   ref={dateBoxRef}
-                  onClick={() => setShowDatePicker((s) => !s)}
+                  onClick={() => {
+                    if (!isInternshipDataLocked) {
+                      setShowDatePicker((s) => !s);
+                    }
+                  }}
                   className={[
-                    "w-full h-11 px-4 rounded-xl cursor-pointer transition-colors flex items-center justify-between border",
-                    showDatePicker
-                      ? "border-primary-600"
-                      : "border-gray-300 hover:border-gray-400",
+                    "w-full h-11 px-4 rounded-xl transition-colors flex items-center justify-between border",
+                    isInternshipDataLocked
+                      ? "bg-gray-100 border-gray-100 text-gray-500"
+                      : "cursor-pointer",
+                    isInternshipDataLocked
+                      ? ""
+                      : showDatePicker
+                        ? "border-primary-600"
+                        : "border-gray-300 hover:border-gray-400",
                   ].join(" ")}
                 >
-                  <span className="text-gray-900">{getDateRangeDisplay()}</span>
+                  <span
+                    className={
+                      isInternshipDataLocked ? "text-gray-500" : "text-gray-900"
+                    }
+                  >
+                    {getDateRangeDisplay()}
+                  </span>
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className={[
+                      "w-5 h-5",
+                      isInternshipDataLocked
+                        ? "text-gray-500"
+                        : "text-gray-400",
+                    ].join(" ")}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -577,7 +670,7 @@ export default function EditProfilePage() {
                   </svg>
                 </div>
 
-                {showDatePicker && (
+                {showDatePicker && !isInternshipDataLocked && (
                   <div
                     ref={datePickerRef}
                     className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-full"
@@ -633,6 +726,7 @@ export default function EditProfilePage() {
                 <input
                   type="text"
                   inputMode="numeric"
+                  disabled={isHoursLocked}
                   value={form.totalHours.replace(/[^0-9]/g, "")}
                   onChange={(e) => {
                     const onlyNum = e.target.value.replace(/[^0-9]/g, "");
@@ -642,7 +736,12 @@ export default function EditProfilePage() {
                     }));
                   }}
                   placeholder="จำนวนชั่วโมงที่ฝึก"
-                  className="w-full h-11 px-4 pr-20 rounded-xl border bg-white border-gray-300 focus:border-primary-600 focus:outline-none"
+                  className={[
+                    "w-full h-11 px-4 pr-20 rounded-xl border",
+                    isHoursLocked
+                      ? "bg-gray-100 border-gray-100 text-gray-500"
+                      : "bg-white border-gray-300 focus:border-primary-600 focus:outline-none",
+                  ].join(" ")}
                 />
 
                 {/* ✅ คำว่า "ชั่วโมง" โชว์เฉยๆ */}
@@ -664,7 +763,7 @@ export default function EditProfilePage() {
                 <FieldBox label="ชื่อกองงาน">
                   <InputWithClear
                     value={form.department}
-                    onChange={() => { }}
+                    onChange={() => {}}
                     disabled
                   />
                 </FieldBox>
@@ -672,7 +771,7 @@ export default function EditProfilePage() {
                 <FieldBox label="ชื่อผู้ติดต่อ">
                   <InputWithClear
                     value={form.supervisor}
-                    onChange={() => { }}
+                    onChange={() => {}}
                     disabled
                   />
                 </FieldBox>
@@ -680,7 +779,7 @@ export default function EditProfilePage() {
                 <FieldBox label="อีเมลผู้ติดต่อ">
                   <InputWithClear
                     value={form.supervisorEmail}
-                    onChange={() => { }}
+                    onChange={() => {}}
                     disabled
                   />
                 </FieldBox>
@@ -688,7 +787,7 @@ export default function EditProfilePage() {
                 <FieldBox label="เบอร์โทรกองงาน">
                   <InputWithClear
                     value={form.supervisorPhone}
-                    onChange={() => { }}
+                    onChange={() => {}}
                     disabled
                   />
                 </FieldBox>
@@ -697,46 +796,58 @@ export default function EditProfilePage() {
           )}
 
           {/* Mentor Info - only show if has application and mentors exist */}
-          {hasApplication && applicationPosition?.mentors && applicationPosition.mentors.length > 0 && (
-            <>
-              <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-6 sm:mt-8 mb-3 sm:mb-4">
-                ข้อมูลพี่เลี้ยง
-              </h2>
+          {hasApplication &&
+            applicationPosition?.mentors &&
+            applicationPosition.mentors.length > 0 && (
+              <>
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-6 sm:mt-8 mb-3 sm:mb-4">
+                  ข้อมูลพี่เลี้ยง
+                </h2>
 
-              <div className="grid grid-cols-1 gap-4 sm:gap-5">
-                <FieldBox label="ชื่อพี่เลี้ยง">
-                  <InputWithClear
-                    value={form.mentorName}
-                    onChange={() => { }}
-                    disabled
-                  />
-                </FieldBox>
+                <div className="grid grid-cols-1 gap-4 sm:gap-5">
+                  <FieldBox label="ชื่อพี่เลี้ยง">
+                    <InputWithClear
+                      value={form.mentorName}
+                      onChange={() => {}}
+                      disabled
+                    />
+                  </FieldBox>
 
-                <FieldBox label="อีเมลพี่เลี้ยง">
-                  <InputWithClear
-                    value={form.mentorEmail}
-                    onChange={() => { }}
-                    disabled
-                  />
-                </FieldBox>
+                  <FieldBox label="อีเมลพี่เลี้ยง">
+                    <InputWithClear
+                      value={form.mentorEmail}
+                      onChange={() => {}}
+                      disabled
+                    />
+                  </FieldBox>
 
-                <FieldBox label="เบอร์โทรติดต่อพี่เลี้ยง">
-                  <InputWithClear
-                    value={form.mentorPhone}
-                    onChange={() => { }}
-                    disabled
-                  />
-                </FieldBox>
-              </div>
-            </>
-          )}
+                  <FieldBox label="เบอร์โทรติดต่อพี่เลี้ยง">
+                    <InputWithClear
+                      value={form.mentorPhone}
+                      onChange={() => {}}
+                      disabled
+                    />
+                  </FieldBox>
+                </div>
+              </>
+            )}
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 sm:mt-8">
             {/* Error Message */}
             {saveError && (
               <div className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm order-3 sm:order-1">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 {saveError}
               </div>
@@ -768,14 +879,26 @@ export default function EditProfilePage() {
                 "cursor-pointer h-10 sm:h-11 px-4 sm:px-6 rounded-xl font-medium text-sm sm:text-base transition-colors order-1 sm:order-3 active:scale-95",
                 canSave && !isSaving
                   ? "bg-primary-600 text-white hover:bg-white hover:text-primary-600 border-2 border-primary-600"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed",
+                  : "bg-gray-200 text-gray-400",
               ].join(" ")}
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   กำลังบันทึก...
                 </span>
@@ -792,12 +915,26 @@ export default function EditProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-sm w-full mx-4 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">บันทึกสำเร็จ</h3>
-            <p className="text-sm text-gray-500 mb-6">ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              บันทึกสำเร็จ
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว
+            </p>
             <button
               type="button"
               onClick={() => router.push("/intern-profile")}
