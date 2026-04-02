@@ -382,6 +382,7 @@ export class CheckTimeService {
         .set({
           checkOutId: newCheckOut.id,
           actualHoursWorked: actualHoursWorked,
+          isVerified: isOnsite ? true : null,
         })
         .where(eq(attendanceLogs.id, existingLog.id));
 
