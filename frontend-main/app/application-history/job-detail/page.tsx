@@ -153,11 +153,22 @@ function JobDetailContent() {
         );
 
         // Store rejection reason if cancelled/rejected/doc-failed
-        const hasInvalidDoc = matchedApp.documents?.some((d) => d.validationStatus === "INVALID");
+        const hasInvalidDoc = matchedApp.documents?.some(
+          (d) => d.validationStatus === "INVALID",
+        );
         const invalidDocNote = hasInvalidDoc
-          ? (matchedApp.documents as { note?: string | null; validationStatus?: string }[])?.find((d) => d.validationStatus === "INVALID" && d.note)?.note || null
+          ? (
+              matchedApp.documents as {
+                note?: string | null;
+                validationStatus?: string;
+              }[]
+            )?.find((d) => d.validationStatus === "INVALID" && d.note)?.note ||
+            null
           : null;
-        if (matchedApp.applicationStatus === "CANCEL" || matchedApp.applicationStatus === "ABORT") {
+        if (
+          matchedApp.applicationStatus === "CANCEL" ||
+          matchedApp.applicationStatus === "ABORT"
+        ) {
           if (matchedApp.statusNote) setRejectionReason(matchedApp.statusNote);
         } else if (hasInvalidDoc && invalidDocNote) {
           setRejectionReason(invalidDocNote);
@@ -250,12 +261,14 @@ function JobDetailContent() {
       case "active":
         return (
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-2 bg-green-100 text-green-500 rounded-full font-bold text-sm transition-transform">
-              รับเข้าฝึกงาน
-            </span>
             {applicationStep && (
               <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm transition-transform">
                 {applicationStep}
+              </span>
+            )}
+            {!applicationStep && (
+              <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm transition-transform">
+                กำลังดำเนินการ
               </span>
             )}
           </div>
@@ -454,7 +467,10 @@ function JobDetailContent() {
           </div>
         </div>
         {/* Rejection Reason */}
-        {rejectionReason && (status === "rejected" || status === "cancelled" || status === "accepted-doc-failed") && (
+        {rejectionReason &&
+          (status === "rejected" ||
+            status === "cancelled" ||
+            status === "accepted-doc-failed") && (
             <div className="mt-4">
               <h4 className="font-bold text-gray-800 text-sm mb-1.5">
                 {status === "rejected"
