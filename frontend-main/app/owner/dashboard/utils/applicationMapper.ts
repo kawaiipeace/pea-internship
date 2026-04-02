@@ -113,7 +113,7 @@ const statusMap: Record<
     stepDescription: "ไม่ผ่าน",
   },
   ABORT: {
-    step: 1,
+    step: 0,
     status: "cancelled",
     detailedStatus: "cancelled",
     stepDescription: "ยกเลิกการสมัคร",
@@ -160,6 +160,26 @@ export function mapApiToApplication(
       status: "cancelled",
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกฝึกงาน",
+    };
+  } else if (item.applicationStatus === "ABORT") {
+    // Determine step from statusNote set by cron
+    let abortStep = 1;
+    const note = item.statusNote || "";
+    if (note.includes("เอกสารขอความอนุเคราะห์")) {
+      // Was at PENDING_REQUEST (step 4)
+      abortStep = 4;
+    } else if (note.includes("สัมภาษณ์")) {
+      // Was at PENDING_INTERVIEW (step 2)
+      abortStep = 2;
+    } else if (note.includes("เอกสาร")) {
+      // Was at PENDING_DOCUMENT (step 1)
+      abortStep = 1;
+    }
+    mapped = {
+      step: abortStep,
+      status: "cancelled",
+      detailedStatus: "cancelled",
+      stepDescription: "ยกเลิกการสมัคร",
     };
   } else if (item.applicationStatus === "CANCEL" && item.statusNote) {
     // CANCEL + isActive=true + statusNote = owner rejected during application (ไม่ผ่าน)
@@ -223,8 +243,13 @@ export function mapApiToApplication(
       item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
         ? item.statusNote || undefined
         : undefined,
+    cancelledBy:
+      item.applicationStatus === "ABORT"
+        ? "ระบบ (อัตโนมัติ)"
+        : undefined,
     cancelledDate:
-      item.applicationStatus === "CANCEL" && item.isActive === false
+      (item.applicationStatus === "CANCEL" && item.isActive === false) ||
+      item.applicationStatus === "ABORT"
         ? item.updatedAt || undefined
         : undefined,
     mentors:

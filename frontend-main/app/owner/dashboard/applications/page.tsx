@@ -218,7 +218,7 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       stepDescription: "ไม่ผ่าน",
     },
     ABORT: {
-      step: 1,
+      step: 0,
       status: "cancelled",
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกการสมัคร",
@@ -235,6 +235,23 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       status: "cancelled",
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกฝึกงาน",
+    };
+  } else if (item.applicationStatus === "ABORT") {
+    // Determine step from statusNote set by cron
+    let abortStep = 1;
+    const note = item.statusNote || "";
+    if (note.includes("เอกสารขอความอนุเคราะห์")) {
+      abortStep = 4;
+    } else if (note.includes("สัมภาษณ์")) {
+      abortStep = 2;
+    } else if (note.includes("เอกสาร")) {
+      abortStep = 1;
+    }
+    mapped = {
+      step: abortStep,
+      status: "cancelled",
+      detailedStatus: "cancelled",
+      stepDescription: "ยกเลิกการสมัคร",
     };
   } else if (item.applicationStatus === "CANCEL" && item.statusNote) {
     // CANCEL + isActive=true + statusNote = owner rejected during application (ไม่ผ่าน)
@@ -323,6 +340,15 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
     cancellationReason:
       item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
         ? item.statusNote || undefined
+        : undefined,
+    cancelledBy:
+      item.applicationStatus === "ABORT"
+        ? "ระบบ (อัตโนมัติ)"
+        : undefined,
+    cancelledDate:
+      (item.applicationStatus === "CANCEL" && item.isActive === false) ||
+      item.applicationStatus === "ABORT"
+        ? item.updatedAt || undefined
         : undefined,
     mentors: item.mentors && item.mentors.length > 0 ? item.mentors : undefined,
     skill: item.infoSkill || undefined,
@@ -772,8 +798,9 @@ function ApplicationsContent() {
       } else if (app.status === "cancelled") {
         if (app.stepDescription === "ยกเลิกการสมัคร") {
           abort++;
+        } else {
+          cancelled++;
         }
-        cancelled++;
       } else if (app.status === "accepted") {
         accepted++;
       } else if (app.detailedStatus === "waiting_confirm") {
@@ -852,7 +879,7 @@ function ApplicationsContent() {
         case "rejected":
           return app.status === "rejected";
         case "cancelled":
-          return app.status === "cancelled";
+          return app.status === "cancelled" && app.stepDescription !== "ยกเลิกการสมัคร";
         case "abort":
           return app.status === "cancelled" && app.stepDescription === "ยกเลิกการสมัคร";
         default:
@@ -1498,7 +1525,22 @@ function ApplicationsContent() {
     let currentStep = 0;
 
     if (statusCat === "rejected") {
-      completedUpTo = 3;
+      // Use timeline actions to determine where the rejection happened
+      const rejectAction = timelineActions.find(
+        (a) => a.newStatus === "CANCEL"
+      );
+      if (rejectAction?.oldStatus) {
+        const rejectStepMap: Record<string, number> = {
+          PENDING_DOCUMENT: 0,
+          PENDING_INTERVIEW: 1,
+          PENDING_CONFIRMATION: 2,
+          PENDING_REQUEST: 3,
+          PENDING_REVIEW: 4,
+        };
+        completedUpTo = rejectStepMap[rejectAction.oldStatus] ?? 2;
+      } else {
+        completedUpTo = app.step > 0 ? app.step - 1 : 2;
+      }
       currentStep = 0;
     } else if (statusCat === "cancelled") {
       const effDetailed = getAcceptedEffectiveDetailed(app);
@@ -1511,8 +1553,28 @@ function ApplicationsContent() {
         completedUpTo = 4;
         currentStep = 5;
       } else {
-        completedUpTo = 3;
-        currentStep = 4;
+        // Use step from mapper which is based on statusNote/oldStatus for ABORT
+        const abortAction = timelineActions.find(
+          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+        );
+        if (abortAction?.oldStatus) {
+          const abortStepMap: Record<string, number> = {
+            PENDING_DOCUMENT: 0,
+            PENDING_INTERVIEW: 1,
+            PENDING_CONFIRMATION: 2,
+            PENDING_REQUEST: 3,
+            PENDING_REVIEW: 4,
+          };
+          completedUpTo =
+            abortStepMap[abortAction.oldStatus] ?? (app.step > 0 ? app.step - 1 : 0);
+          currentStep = 0;
+        } else if (app.step > 0) {
+          completedUpTo = app.step > 0 ? app.step - 1 : 0;
+          currentStep = 0;
+        } else {
+          completedUpTo = 0;
+          currentStep = 0;
+        }
       }
     } else if (statusCat === "accepted") {
       const effDetailed = getAcceptedEffectiveDetailed(app);
@@ -2620,11 +2682,19 @@ function ApplicationsContent() {
                         {stepCompletedInfo[currentStepIndex - 1].operator}
                       </p>
                     )}
-                    <p className="text-gray-400 text-sm">กำลังดำเนินการ</p>
-                    {nextStepLabel && (
+                    {selectedApplication.status === "cancelled" || selectedApplication.status === "rejected" ? (
                       <p className="text-gray-400 text-sm">
-                        ขั้นตอนถัดไป : {nextStepLabel}
+                        กระบวนการสมัครสิ้นสุดแล้ว
                       </p>
+                    ) : (
+                      <>
+                        <p className="text-gray-400 text-sm">กำลังดำเนินการ</p>
+                        {nextStepLabel && (
+                          <p className="text-gray-400 text-sm">
+                            ขั้นตอนถัดไป : {nextStepLabel}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -6845,6 +6915,9 @@ function ApplicationsContent() {
                               <h4 className="font-semibold text-gray-900 mb-1">
                                 {item.positionName || "ตำแหน่งไม่ระบุ"}
                               </h4>
+                              <p className="text-sm text-gray-500">
+                                รอบที่ {item.internshipRound}
+                              </p>
                             </div>
 
                             {item.statusNote && (

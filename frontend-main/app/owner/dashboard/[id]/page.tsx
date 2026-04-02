@@ -474,10 +474,17 @@ function ApplicationDetailContent() {
         cancelledBy: data.cancelledBy,
         cancelledDate: data.cancelledDate,
       };
+    // Fallback to API data + timeline actions
+    const cancelAction = timelineActions.find(
+      (a) => a.newStatus === "CANCEL" || a.newStatus === "ABORT"
+    );
+    const actorName = application?.cancelledBy || (cancelAction?.actor
+      ? [cancelAction.actor.fname, cancelAction.actor.lname].filter(Boolean).join(" ")
+      : "");
     return {
       reason: application?.cancellationReason,
-      cancelledBy: application?.cancelledBy,
-      cancelledDate: application?.cancelledDate,
+      cancelledBy: actorName,
+      cancelledDate: application?.cancelledDate || cancelAction?.createdAt || "",
     };
   };
 
@@ -489,10 +496,17 @@ function ApplicationDetailContent() {
         rejectedBy: data.rejectedBy,
         rejectedDate: data.rejectedDate,
       };
+    // Fallback to API data + timeline actions
+    const cancelAction = timelineActions.find(
+      (a) => a.newStatus === "CANCEL"
+    );
+    const actorName = cancelAction?.actor
+      ? [cancelAction.actor.fname, cancelAction.actor.lname].filter(Boolean).join(" ")
+      : "";
     return {
-      reason: "",
-      rejectedBy: "",
-      rejectedDate: "",
+      reason: application?.cancellationReason || "",
+      rejectedBy: actorName,
+      rejectedDate: cancelAction?.createdAt || "",
     };
   };
 
@@ -517,14 +531,50 @@ function ApplicationDetailContent() {
         completedUpTo = 4;
         currentStep = 5;
       } else {
-        completedUpTo = 3;
-        currentStep = 4;
+        // Use timeline actions to determine actual step for ABORT
+        const abortAction = timelineActions.find(
+          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+        );
+        if (abortAction?.oldStatus) {
+          const abortStepMap: Record<string, number> = {
+            PENDING_DOCUMENT: 0,
+            PENDING_INTERVIEW: 1,
+            PENDING_CONFIRMATION: 2,
+            PENDING_REQUEST: 3,
+            PENDING_REVIEW: 4,
+          };
+          completedUpTo =
+            abortStepMap[abortAction.oldStatus] ?? (application.step > 0 ? application.step - 1 : 0);
+          currentStep = 0;
+        } else if (application.step > 0) {
+          // Fallback: use the step from applicationMapper
+          completedUpTo = application.step > 0 ? application.step - 1 : 0;
+          currentStep = 0;
+        } else {
+          completedUpTo = 0;
+          currentStep = 0;
+        }
       }
     } else if (
       rejectedApps.includes(application.id) ||
       application.status === "rejected"
     ) {
-      completedUpTo = 3;
+      // Use timeline actions to determine where the rejection happened
+      const rejectAction = timelineActions.find(
+        (a) => a.newStatus === "CANCEL"
+      );
+      if (rejectAction?.oldStatus) {
+        const rejectStepMap: Record<string, number> = {
+          PENDING_DOCUMENT: 0,
+          PENDING_INTERVIEW: 1,
+          PENDING_CONFIRMATION: 2,
+          PENDING_REQUEST: 3,
+          PENDING_REVIEW: 4,
+        };
+        completedUpTo = rejectStepMap[rejectAction.oldStatus] ?? 2;
+      } else {
+        completedUpTo = application.step > 0 ? application.step - 1 : 2;
+      }
       currentStep = 0;
     } else if (
       docApprovedApps.includes(application.id) ||
@@ -856,7 +906,7 @@ function ApplicationDetailContent() {
                     href: `/owner/dashboard/rejected${positionQuery}`,
                   },
                   cancelled: {
-                    label: "สถานะยกเลิกฝึกงาน",
+                    label: "สถานะยกเลิก",
                     href: `/owner/dashboard/cancelled${positionQuery}`,
                   },
                   "near-start": {
@@ -1234,8 +1284,7 @@ function ApplicationDetailContent() {
                             เหตุผลที่ไม่ผ่านการคัดเลือก
                           </p>
                           <p className="text-gray-700 text-sm">
-                            {rejectData.reason ||
-                              "คุณสมบัติไม่ตรงตามที่หน่วยงานกำหนด"}
+                            {rejectData.reason || "-"}
                           </p>
                         </div>
                       </div>
@@ -1243,7 +1292,7 @@ function ApplicationDetailContent() {
                         <div>
                           <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                           <p className="text-gray-900 text-sm">
-                            {rejectData.rejectedBy || "นายสมนึก วงค์สวัสดิ"}
+                            {rejectData.rejectedBy || "-"}
                           </p>
                         </div>
                         <div>
@@ -1251,9 +1300,9 @@ function ApplicationDetailContent() {
                             วันที่ดำเนินการ:
                           </p>
                           <p className="text-gray-900 text-sm">
-                            {formatDateThai(
-                              rejectData.rejectedDate || "2568-10-24",
-                            )}
+                            {rejectData.rejectedDate
+                              ? formatDateThai(rejectData.rejectedDate)
+                              : "-"}
                           </p>
                         </div>
                       </div>
@@ -1290,8 +1339,7 @@ function ApplicationDetailContent() {
                               : "เหตุผลประกอบการยกเลิกฝึกงาน"}
                           </p>
                           <p className="text-gray-700 text-sm">
-                            {cancelData.reason ||
-                              "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"}
+                            {cancelData.reason || "ไม่ได้ระบุ"}
                           </p>
                         </div>
                       </div>
@@ -1300,15 +1348,22 @@ function ApplicationDetailContent() {
                         <div>
                           <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                           <p className="text-gray-900 text-sm">
-                            {cancelData.cancelledBy || (isAbort ? "ระบบ" : "นายมั่นคง ทรงดี")}
+                            {cancelData.cancelledBy || (
+                              isAbort
+                                ? "ระบบ (อัตโนมัติ)"
+                                : (() => {
+                                    const od = positionInfo?.owner || (positionInfo?.owners && positionInfo.owners.length > 0 ? positionInfo.owners[0] : null);
+                                    return od ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-" : "-";
+                                  })()
+                            )}
                           </p>
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
                           <p className="text-gray-900 text-sm">
-                            {formatDateThai(
-                              cancelData.cancelledDate || "2568-11-15",
-                            )}
+                            {cancelData.cancelledDate
+                              ? formatDateThai(cancelData.cancelledDate)
+                              : "-"}
                           </p>
                         </div>
                       </div>
@@ -1394,6 +1449,9 @@ function ApplicationDetailContent() {
                 const circumference = 2 * Math.PI * 36;
                 const progress = (completedUpTo / totalSteps) * circumference;
 
+                const isCancelledOrAborted =
+                  application.status === "cancelled" || application.status === "rejected" || isCancelledViaStorage;
+
                 return (
                   <div>
                     <button
@@ -1449,7 +1507,38 @@ function ApplicationDetailContent() {
                         </span>
                       </div>
                       <div>
-                        {isAllCompleted ? (
+                        {isCancelledOrAborted ? (
+                          <>
+                            <p className="font-bold text-gray-900">
+                              {application.stepDescription === "ยกเลิกฝึกงาน" ? "ยกเลิกฝึกงาน" : application.status === "rejected" ? "ไม่ผ่านการคัดเลือก" : "ยกเลิกการสมัคร"}
+                            </p>
+                            {(() => {
+                              // For cancelled/rejected, show the actor from the cancel/abort action itself
+                              const termAction = timelineActions.find(
+                                (a) => a.newStatus === "CANCEL" || a.newStatus === "ABORT"
+                              );
+                              const actorLabel = termAction?.actor && termAction.actor.roleId !== 3
+                                ? `พนักงาน : ${[termAction.actor.fname, termAction.actor.lname].filter(Boolean).join(" ")}`
+                                : undefined;
+                              const actionDate = termAction?.createdAt
+                                ? formatActionDate(termAction.createdAt)
+                                : stepCompletedInfo[completedUpTo - 1]?.date;
+                              return (
+                                <>
+                                  {actorLabel && (
+                                    <p className="text-gray-400 text-sm">{actorLabel}</p>
+                                  )}
+                                  {actionDate && (
+                                    <p className="text-gray-400 text-sm">{actionDate}</p>
+                                  )}
+                                </>
+                              );
+                            })()}
+                            <p className="text-gray-400 text-sm">
+                              กระบวนการสมัครสิ้นสุดแล้ว
+                            </p>
+                          </>
+                        ) : isAllCompleted ? (
                           <>
                             <p className="font-bold text-gray-900">
                               การตรวจสอบเสร็จสิ้น

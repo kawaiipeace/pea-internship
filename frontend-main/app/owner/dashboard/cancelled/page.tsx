@@ -753,7 +753,25 @@ function CancelledApplicationsContent() {
     } else if (detailed === "doc_sent" || detailed === "waiting_send_doc") {
       completedUpTo = 4;
     } else {
-      completedUpTo = 3;
+      // Use timeline actions to determine actual step for ABORT
+      const abortAction = timelineActions.find(
+        (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+      );
+      if (abortAction?.oldStatus) {
+        const abortStepMap: Record<string, number> = {
+          PENDING_DOCUMENT: 0,
+          PENDING_INTERVIEW: 1,
+          PENDING_CONFIRMATION: 2,
+          PENDING_REQUEST: 3,
+          PENDING_REVIEW: 4,
+        };
+        completedUpTo =
+          abortStepMap[abortAction.oldStatus] ?? (app.step > 0 ? app.step - 1 : 0);
+      } else if (app.step > 0) {
+        completedUpTo = app.step > 0 ? app.step - 1 : 0;
+      } else {
+        completedUpTo = 0;
+      }
     }
     currentStep = 0;
 
@@ -1836,7 +1854,26 @@ function CancelledApplicationsContent() {
                         selectedApplication.step >= 6;
                       let completedSteps = 0;
                       if (isAbort) {
-                        completedSteps = 0;
+                        // Use timeline actions to determine actual step for ABORT
+                        const abortAction = timelineActions.find(
+                          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+                        );
+                        if (abortAction?.oldStatus) {
+                          const abortStepMap: Record<string, number> = {
+                            PENDING_DOCUMENT: 0,
+                            PENDING_INTERVIEW: 1,
+                            PENDING_CONFIRMATION: 2,
+                            PENDING_REQUEST: 3,
+                            PENDING_REVIEW: 4,
+                          };
+                          completedSteps =
+                            abortStepMap[abortAction.oldStatus] ??
+                            (selectedApplication.step > 0 ? selectedApplication.step - 1 : 0);
+                        } else if (selectedApplication.step > 0) {
+                          completedSteps = selectedApplication.step > 0 ? selectedApplication.step - 1 : 0;
+                        } else {
+                          completedSteps = 0;
+                        }
                       } else if (isCancelledInternship) {
                         completedSteps = 5;
                       } else if (
@@ -1951,7 +1988,9 @@ function CancelledApplicationsContent() {
                             {isAbort ? (
                               <>
                                 <p className="font-bold text-gray-900">
-                                  ยกเลิกการสมัคร
+                                  {completedSteps > 0
+                                    ? currentStepLabel[completedSteps - 1]
+                                    : currentStepLabel[0]}
                                 </p>
                                 <p className="text-gray-400 text-sm">
                                   กระบวนการสมัครสิ้นสุดแล้ว
@@ -2628,6 +2667,9 @@ function CancelledApplicationsContent() {
                               <h4 className="font-semibold text-gray-900 mb-1">
                                 {item.positionName || "ตำแหน่งไม่ระบุ"}
                               </h4>
+                              <p className="text-sm text-gray-500">
+                                รอบที่ {item.internshipRound}
+                              </p>
                             </div>
                             {item.statusNote && (
                               <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
