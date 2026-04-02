@@ -8,12 +8,7 @@ import JobDetailPanel from "@/components/ui/JobDetailPanel";
 import Pagination from "@/components/ui/Pagination";
 import LoginModal from "@/components/ui/LoginModal";
 import { VideoLoading } from "@/components";
-import {
-  positionApi,
-  positionToJobWithStaff,
-  userApi,
-  StaffUser,
-} from "@/services/api";
+import { positionApi, positionToJobWithStaff, StaffUser } from "@/services/api";
 
 export default function Home() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -25,6 +20,9 @@ export default function Home() {
   >(null);
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [majorOptions, setMajorOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchResetKey, setSearchResetKey] = useState(0);
@@ -63,12 +61,25 @@ export default function Home() {
 
         // Combine API jobs with mock jobs (API jobs first)
         const combinedJobs = [...apiJobs];
+        const majors = Array.from(
+          new Set(
+            combinedJobs
+              .flatMap((job) => job.tags || [])
+              .map((tag) => tag.trim())
+              .filter((tag) => tag.length > 0),
+          ),
+        ).sort((a, b) => a.localeCompare(b, "th"));
+
         setAllJobs(combinedJobs);
         setFilteredJobs(combinedJobs);
+        setMajorOptions(
+          majors.map((major) => ({ value: major, label: major })),
+        );
       } catch {
         // API requires auth - use mock jobs for public view
         setAllJobs([]);
         setFilteredJobs([]);
+        setMajorOptions([]);
       } finally {
         setIsLoading(false);
       }
@@ -170,7 +181,11 @@ export default function Home() {
       <Navbar />
 
       {/* Search Section */}
-      <SearchSection onSearch={handleSearch} resetKey={searchResetKey} />
+      <SearchSection
+        onSearch={handleSearch}
+        resetKey={searchResetKey}
+        jobTypeOptions={majorOptions}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
