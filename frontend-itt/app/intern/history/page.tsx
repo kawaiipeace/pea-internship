@@ -20,6 +20,7 @@ import MonthPicker from "@/components/history/month-picker";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import IconFileText from "@/components/icon/icon-file-text";
+import IconPaperclip from "@/components/icon/icon-paperclip";
 
 const AttendanceHistoryPage = () => {
     const router = useRouter();
@@ -106,19 +107,22 @@ const AttendanceHistoryPage = () => {
 
     const handleViewFile = (filename: string) => {
         Swal.fire({
-            title: 'ดูไฟล์แนบ',
+            title: "ดูไฟล์แนบ",
             html: `<div className="text-gray-500 mb-2">${filename}</div>`,
-            imageUrl: '/assets/images/profile-34.jpeg',
+            imageUrl: "/assets/images/profile-34.jpeg",
             imageWidth: 400,
             imageHeight: 400,
             imageAlt: filename,
-            confirmButtonText: 'ปิด',
+            confirmButtonText: "ปิด",
             buttonsStyling: false,
             customClass: {
-                popup: 'rounded-[20px] p-6 bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center',
-                confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] mt-4'
-            }
+                popup:
+                    "rounded-[20px] p-6 bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center",
+                title:
+                    "text-[18px] font-bold text-black dark:text-white pt-2 text-center",
+                confirmButton:
+                    "bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] mt-4",
+            },
         });
     };
 
@@ -137,8 +141,17 @@ const AttendanceHistoryPage = () => {
             title: "เข้างานปกติ",
             days: 14,
             icon: (
-                <svg fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
+                <svg
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                    ></path>
                 </svg>
             ),
             bgColor: "bg-[#e7faef]",
@@ -158,10 +171,16 @@ const AttendanceHistoryPage = () => {
             days: 4,
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z" fill="white" />
+                    <path
+                        d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z"
+                        fill="white"
+                    />
                     <rect x="8" y="7" width="8" height="2" rx="1" fill="#3B82F6" />
                     <rect x="8" y="11" width="8" height="2" rx="1" fill="#3B82F6" />
-                    <path d="M15.5 20V17C15.5 16.1716 16.1716 15.5 17 15.5H20L15.5 20Z" fill="#3B82F6" />
+                    <path
+                        d="M15.5 20V17C15.5 16.1716 16.1716 15.5 17 15.5H20L15.5 20Z"
+                        fill="#3B82F6"
+                    />
                 </svg>
             ),
             bgColor: "bg-[#eef8ff]",
@@ -172,7 +191,14 @@ const AttendanceHistoryPage = () => {
             title: "ขาด",
             days: 1,
             icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -219,7 +245,7 @@ const AttendanceHistoryPage = () => {
             reqCheckOutTime: "16:30",
             reqWorkingHours: "7 ชั่วโมง",
             reqReason: "ลืมกดออก",
-            evidence: "ลงชื่อเข้างาน.jpg",
+            evidence: "หลักฐาน.jpg",
             evidenceSize: "(5MB)",
         },
         {
@@ -347,48 +373,71 @@ const AttendanceHistoryPage = () => {
         if (type === "success" || status === "เข้างานปกติ") {
             icon = (
                 <div className="w-4 h-4 rounded-full bg-[#10b981] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm">
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
+                    <svg
+                        className="w-2.5 h-2.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                        ></path>
                     </svg>
                 </div>
             );
-            colorClass = "px-2 py-0.5 bg-[#e7faef] text-[#10b981] border border-[#10b981] rounded-full flex items-center text-[11px] font-bold";
+            colorClass =
+                "px-2 py-0.5 bg-[#e7faef] text-[#10b981] border border-[#10b981] rounded-full flex items-center text-[11px] font-bold";
         } else if (type === "warning" || status === "สาย") {
             icon = (
                 <div className="w-4 h-4 rounded-full bg-[#f59e0b] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm">
                     <IconClock className="w-2.5 h-2.5 text-white" />
                 </div>
             );
-            colorClass = "px-2 py-0.5 bg-[#fdf4d6] text-[#f59e0b] border border-[#f59e0b] rounded-full flex items-center text-[11px] font-bold";
+            colorClass =
+                "px-2 py-0.5 bg-[#fdf4d6] text-[#f59e0b] border border-[#f59e0b] rounded-full flex items-center text-[11px] font-bold";
         } else if (type === "info" || status === "ลา") {
             icon = (
                 <div className="w-4 h-4 rounded-full bg-[#3b82f6] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm">
-                    <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z" fill="white" />
+                    <svg
+                        className="w-2.5 h-2.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z"
+                            fill="white"
+                        />
                         <rect x="8" y="7" width="8" height="2" rx="1" fill="#3B82F6" />
                         <rect x="8" y="11" width="8" height="2" rx="1" fill="#3B82F6" />
-                        <path d="M15.5 20V17C15.5 16.1716 16.1716 15.5 17 15.5H20L15.5 20Z" fill="#3B82F6" />
+                        <path
+                            d="M15.5 20V17C15.5 16.1716 16.1716 15.5 17 15.5H20L15.5 20Z"
+                            fill="#3B82F6"
+                        />
                     </svg>
                 </div>
             );
-            colorClass = "px-2 py-0.5 bg-[#eef8ff] text-[#3b82f6] border border-[#3b82f6] rounded-full flex items-center text-[11px] font-bold";
+            colorClass =
+                "px-2 py-0.5 bg-[#eef8ff] text-[#3b82f6] border border-[#3b82f6] rounded-full flex items-center text-[11px] font-bold";
         } else if (type === "danger" || status === "ขาด") {
             icon = (
                 <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm focus:outline-none">
                     <IconX className="w-2.5 h-2.5" />
                 </div>
             );
-            colorClass = "px-2 py-0.5 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full flex items-center text-[11px] font-bold";
+            colorClass =
+                "px-2 py-0.5 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full flex items-center text-[11px] font-bold";
         } else if (type === "default" || status === "ไม่ลงเวลาออก") {
             icon = (
-                <div className="w-4 h-4 rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm relative overflow-hidden">
-                    <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-                        <path d="M6 2h12a1 1 0 011 1v4a1 1 0 01-.3.7l-4.7 4.7 4.7 4.7a1 1 0 01.3.7v4a1 1 0 01-1 1H6a1 1 0 01-1-1v-4a1 1 0 01.3-.7l4.7-4.7-4.7-4.7A1 1 0 015 7V3a1 1 0 011-1zm1 2v2.6l4.3 4.4L7 15.4V18h10v-2.6l-4.3-4.4 4.3-4.4V4H7z" />
-                    </svg>
-                    <div className="absolute w-[12px] h-[1px] bg-white rotate-[-45deg]"></div>
+                <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                    <span className="material-symbols-rounded !text-[12px] leading-none">hourglass_disabled</span>
                 </div>
             );
-            colorClass = "px-2 py-0.5 bg-[#F3F4F6] text-[#6B7280] border border-[#6B7280] rounded-full flex items-center text-[11px] font-bold";
+            colorClass =
+                "w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border border-[#6B7280] rounded-full flex items-center gap-1.5 text-[11px] font-bold shrink-0";
         }
 
         return (
@@ -489,7 +538,9 @@ const AttendanceHistoryPage = () => {
                                     }
                                     className={`panel ${item.bgColor} flex flex-col sm:flex-row justify-between sm:justify-start items-start sm:items-center p-3 sm:px-4 sm:py-5 rounded-[10px] shadow-none dark:bg-opacity-20 shrink-0 w-[100px] h-[120px] sm:w-[200px] sm:h-[90px] text-left transition-all ${isSelected ? `border-2 ${borderColorClass}` : "border-2 border-transparent hover:-translate-y-1"}`}
                                 >
-                                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center sm:mr-4 ${item.iconBg} shadow-sm sm:shadow-none`}>
+                                    <div
+                                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center sm:mr-4 ${item.iconBg} shadow-sm sm:shadow-none`}
+                                    >
                                         {React.cloneElement(item.icon as any, {
                                             className: "w-5 h-5 text-white",
                                         })}
@@ -713,13 +764,19 @@ const AttendanceHistoryPage = () => {
                                     >
                                         <Dialog.Panel
                                             as="div"
-                                            className={`w-full ${isEditingTime ? 'sm:max-w-[880px]' : 'max-w-lg'} transform text-left align-middle shadow-xl transition-all ${isEditingTime
+                                            className={`w-full ${isEditingTime ? "sm:max-w-[880px]" : "max-w-lg"} transform text-left align-middle shadow-xl transition-all ${isEditingTime
                                                 ? "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] px-6 pb-6 pt-2 h-[calc(100vh-48px)] mt-12 sm:mt-0 sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden sm:block sm:overflow-y-auto"
                                                 : "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] p-6 h-[62vh] sm:h-auto max-h-[62vh] sm:max-h-none flex flex-col overflow-hidden sm:block sm:overflow-y-auto sm:overflow-visible"
                                                 }`}
                                             style={{
-                                                transform: touchTranslateY > 0 ? `translateY(${touchTranslateY}px)` : undefined,
-                                                transition: touchStart === null ? 'transform 0.3s ease-out' : 'none'
+                                                transform:
+                                                    touchTranslateY > 0
+                                                        ? `translateY(${touchTranslateY}px)`
+                                                        : undefined,
+                                                transition:
+                                                    touchStart === null
+                                                        ? "transform 0.3s ease-out"
+                                                        : "none",
                                             }}
                                         >
                                             {/* Drawer Handle for mobile */}
@@ -742,7 +799,7 @@ const AttendanceHistoryPage = () => {
                                             </button>
 
                                             {selectedHistoryItem && (
-                                                <div className="flex-1 overflow-y-auto sm:overflow-visible space-y-4 text-black dark:text-white-light sm:pb-0 pb-6 pr-0.5 custom-scrollbar">
+                                                <div className="flex-1 overflow-y-auto sm:overflow-visible space-y-4 text-black dark:text-white-light sm:pb-0 pb-6 pr-0.5 scrollbar-hide">
                                                     {isEditingTime ? (
                                                         <EditTimeForm
                                                             selectedHistoryItem={selectedHistoryItem}
@@ -755,12 +812,13 @@ const AttendanceHistoryPage = () => {
                                                         !selectedHistoryItem.approvalStatus ? (
                                                         <div className="flex flex-col pb-2">
                                                             {/* Header (No longer Sticky) */}
-                                                            <div className="pb-2 pt-1 touch-none"
+                                                            <div
+                                                                className="pb-2 pt-1 touch-none"
                                                                 onTouchStart={handleTouchStart}
                                                                 onTouchMove={handleTouchMove}
                                                                 onTouchEnd={handleTouchEnd}
                                                             >
-                                                                <div className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">
+                                                                <div className="text-[20px] text-gray-800 dark:text-gray-200 mb-2">
                                                                     {selectedHistoryItem.labelMobile}
                                                                 </div>
                                                                 <div className="inline-flex items-center px-4 py-1.5 bg-[#FFEAEC] text-[#D92D20] border border-[#FCA5A5] rounded-full text-xs font-bold gap-1.5 w-fit">
@@ -774,23 +832,23 @@ const AttendanceHistoryPage = () => {
                                                             <hr className="mt-3 mb-6 h-[1px] bg-[#CECFD2] border-none dark:bg-gray-700" />
 
                                                             {/* Content */}
-                                                            <div className="flex flex-col items-center justify-start flex-1 pt-0 pb-8 px-4">
+                                                            <div className="flex flex-col items-center justify-start flex-1 pt-0 pb-4 px-4">
                                                                 {/* Custom CSS Absent Calendar Illustration */}
-                                                                <div className="relative w-44 h-44 mb-4 flex items-center justify-center">
+                                                                <div className="relative w-40 h-40 mb-2 flex items-center justify-center">
                                                                     {/* Soft red background circle */}
                                                                     <div className="absolute inset-2 bg-[#FFEAEC] dark:bg-red-900/30 rounded-full"></div>
                                                                     {/* Base shadow oval */}
                                                                     <div className="absolute w-[100px] h-3 bg-[#FCA5A5]/40 rounded-[100%] bottom-6 blur-[3px]"></div>
 
                                                                     {/* Calendar Body */}
-                                                                    <div className="relative w-[110px] h-[120px] bg-white dark:bg-[#202020] rounded-[18px] shadow-sm flex flex-col z-10 overflow-hidden">
+                                                                    <div className="relative w-[100px] h-[110px] bg-white dark:bg-[#202020] rounded-[16px] shadow-sm flex flex-col z-10 overflow-hidden">
                                                                         {/* Calendar Header */}
-                                                                        <div className="h-[36px] bg-[#EF4444] w-full shrink-0"></div>
+                                                                        <div className="h-[32px] bg-[#EF4444] w-full shrink-0"></div>
 
                                                                         {/* Calendar Content */}
-                                                                        <div className="flex-1 w-full flex items-center justify-center">
+                                                                        <div className="flex flex-1 w-full flex items-center justify-center">
                                                                             <svg
-                                                                                className="w-14 h-14 text-[#EF4444]"
+                                                                                className="w-12 h-12 text-[#EF4444]"
                                                                                 viewBox="0 0 24 24"
                                                                                 fill="none"
                                                                                 stroke="currentColor"
@@ -798,39 +856,29 @@ const AttendanceHistoryPage = () => {
                                                                                 strokeLinecap="round"
                                                                                 strokeLinejoin="round"
                                                                             >
-                                                                                <line
-                                                                                    x1="18"
-                                                                                    y1="6"
-                                                                                    x2="6"
-                                                                                    y2="18"
-                                                                                ></line>
-                                                                                <line
-                                                                                    x1="6"
-                                                                                    y1="6"
-                                                                                    x2="18"
-                                                                                    y2="18"
-                                                                                ></line>
+                                                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                                                <line x1="6" y1="6" x2="18" y2="18" />
                                                                             </svg>
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Calendar Rings (Absolute positioned over header) */}
-                                                                    <div className="absolute top-[40px] left-[52px] w-[14px] h-[22px] border-[3.5px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
-                                                                    <div className="absolute top-[40px] right-[52px] w-[14px] h-[22px] border-[3.5px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
+                                                                    {/* Calendar Rings */}
+                                                                    <div className="absolute top-[37px] left-[52px] w-[12px] h-[20px] border-[3px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
+                                                                    <div className="absolute top-[37px] right-[52px] w-[12px] h-[20px] border-[3px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
                                                                 </div>
-                                                                <div className="text-[17px] font-bold text-gray-700 dark:text-gray-200 mb-1">
+                                                                <div className="text-[14px] text-[#000000] dark:text-gray-200 mb-1">
                                                                     ไม่มีการลงเวลาในวันนี้
                                                                 </div>
-                                                                <div className="text-sm text-gray-500 font-medium text-center">
+                                                                <div className="text-[14px] text-[#000000] dark:text-gray-200 text-center">
                                                                     หากมาทำงานปกติ โปรดส่งคำขอแก้ไขเวลา
                                                                 </div>
                                                             </div>
 
                                                             {/* Button */}
-                                                            <div className="flex justify-center mt-8 mb-2">
+                                                            <div className="flex justify-center mt-4 mb-1">
                                                                 <button
                                                                     type="button"
-                                                                    className="w-[280px] max-w-full px-6 py-3.5 bg-[#A80689] text-white rounded-lg text-[15px] font-bold shadow-sm hover:bg-[#A80689]/90 transition-colors"
+                                                                    className="w-[375px] max-w-full h-[45px] bg-[#A80689] text-white rounded-[5px] text-[15px] font-bold shadow-sm hover:bg-[#A80689]/90 transition-colors flex items-center justify-center"
                                                                     onClick={() => {
                                                                         localStorage.setItem(
                                                                             "editItem",
@@ -846,76 +894,87 @@ const AttendanceHistoryPage = () => {
                                                     ) : (
                                                         <div className="flex flex-col h-full">
                                                             {/* Mobile Detail View */}
-                                                            <div className="sm:hidden flex flex-col gap-5">
-                                                                {/* Date & Time Header (No longer Sticky) */}
+                                                            <div className="sm:hidden flex flex-col gap-4 w-full max-w-[345px] mx-auto">
                                                                 {!selectedHistoryItem.isLeave && (
                                                                     <div
-                                                                        className="pb-2 touch-none"
+                                                                        className="pb-1 touch-none"
                                                                         onTouchStart={handleTouchStart}
                                                                         onTouchMove={handleTouchMove}
                                                                         onTouchEnd={handleTouchEnd}
                                                                     >
-                                                                        <div className="flex items-start justify-between mb-1">
-                                                                            <div className="text-[15px] font-bold text-gray-900">
-                                                                                {selectedHistoryItem.labelMobile}
-                                                                            </div>
-                                                                            {selectedHistoryItem.approvalStatus && (
-                                                                                <div
-                                                                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedHistoryItem.approvalStatus ===
-                                                                                        "approved"
-                                                                                        ? "bg-[#EBFBF3] text-[#10B981]"
-                                                                                        : selectedHistoryItem.approvalStatus ===
-                                                                                            "denied"
-                                                                                            ? "bg-[#FFEBEC] text-[#F97066]"
-                                                                                            : "bg-[#F3F4F6] text-[#6B7280]"
-                                                                                        }`}
-                                                                                >
-                                                                                    {selectedHistoryItem.approvalStatus ===
-                                                                                        "approved"
-                                                                                        ? "อนุมัติการแก้ไขเวลา"
-                                                                                        : selectedHistoryItem.approvalStatus ===
-                                                                                            "denied"
-                                                                                            ? "ไม่อนุมัติการแก้ไขเวลา"
-                                                                                            : "รออนุมัติการแก้ไขเวลา"}
+                                                                        <div className="flex flex-col gap-1">
+                                                                            <div className="flex items-start justify-between">
+                                                                                <div className="text-[14px] text-gray-900 leading-tight">
+                                                                                    {selectedHistoryItem.labelMobile}
                                                                                 </div>
-                                                                            )}
-                                                                        </div>
-                                                                        <div
-                                                                            className={`text-[17px] font-bold text-gray-900 ${selectedHistoryItem.statusType === "danger" ? "mb-2" : "mb-3"}`}
-                                                                        >
-                                                                            {selectedHistoryItem.statusType === "danger"
-                                                                                ? "ขาดงาน"
-                                                                                : selectedHistoryItem.isLeave
-                                                                                    ? "ลางานเต็มวัน"
-                                                                                    : selectedHistoryItem.time}
+                                                                                {selectedHistoryItem.approvalStatus && (
+                                                                                    <div
+                                                                                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedHistoryItem.approvalStatus ===
+                                                                                            "approved"
+                                                                                            ? "bg-[#EBFBF3] text-[#10B981]"
+                                                                                            : selectedHistoryItem.approvalStatus ===
+                                                                                                "denied"
+                                                                                                ? "bg-[#FFEBEC] text-[#F97066]"
+                                                                                                : "bg-[#F3F4F6] text-[#6B7280]"
+                                                                                            }`}
+                                                                                    >
+                                                                                        {selectedHistoryItem.approvalStatus ===
+                                                                                            "approved"
+                                                                                            ? "อนุมัติการแก้ไขเวลา"
+                                                                                            : selectedHistoryItem.approvalStatus ===
+                                                                                                "denied"
+                                                                                                ? "ไม่อนุมัติการแก้ไขเวลา"
+                                                                                                : "รออนุมัติการแก้ไขเวลา"}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="text-[17px] font-bold text-gray-900 leading-tight">
+                                                                                {selectedHistoryItem.statusType ===
+                                                                                    "danger"
+                                                                                    ? "ขาดงาน"
+                                                                                    : selectedHistoryItem.isLeave
+                                                                                        ? "ลางานเต็มวัน"
+                                                                                        : selectedHistoryItem.time.includes(
+                                                                                            "เวลาทำงาน",
+                                                                                        )
+                                                                                            ? selectedHistoryItem.time
+                                                                                            : `เวลาทำงาน ${selectedHistoryItem.time}`}
+                                                                            </div>
                                                                         </div>
 
                                                                         {/* Status Badge */}
                                                                         <div
-                                                                            className={`inline-flex items-center w-fit min-w-[75px] justify-center px-2 py-1 rounded-full text-[10px] font-bold gap-1 border ${selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success"
+                                                                            className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold gap-1.5 border mt-2 shrink-0 ${selectedHistoryItem.status === "ไม่ลงเวลาออก"
+                                                                                ? "w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]"
+                                                                                : `w-fit min-w-[75px] px-2 py-1 ${selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                                                    selectedHistoryItem.statusType === "success"
                                                                                     ? "bg-[#E7FAEF] text-[#10B981] border-[#10B981]"
-                                                                                    : selectedHistoryItem.status === "สาย" || selectedHistoryItem.statusType === "warning"
+                                                                                    : selectedHistoryItem.status === "สาย" ||
+                                                                                        selectedHistoryItem.statusType === "warning"
                                                                                         ? "bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]"
-                                                                                        : selectedHistoryItem.status === "ขาด" || selectedHistoryItem.statusType === "danger"
+                                                                                        : selectedHistoryItem.status === "ขาด" ||
+                                                                                            selectedHistoryItem.statusType === "danger"
                                                                                             ? "bg-[#FCEDED] text-[#EF4444] border-[#EF4444]"
                                                                                             : selectedHistoryItem.leaveType === "ลาป่วย"
                                                                                                 ? "bg-[#FFEBF5] text-[#D42A8C] border-[#D42A8C]"
-                                                                                                : selectedHistoryItem.status === "ลา" || selectedHistoryItem.isLeave
-                                                                                                    ? "bg-[#EEF4FF] text-[#4386F9] border-[#4386F9]"
-                                                                                                    : "bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]"
+                                                                                                : "bg-[#EEF4FF] text-[#4386F9] border-[#4386F9]"
+                                                                                }`
                                                                                 }`}
                                                                         >
-                                                                            {selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success" ? (
+                                                                            {selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                                                selectedHistoryItem.statusType === "success" ? (
                                                                                 <div className="w-5 h-5 bg-[#10B981] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
                                                                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
-                                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                                                                     </svg>
                                                                                 </div>
-                                                                            ) : selectedHistoryItem.status === "สาย" || selectedHistoryItem.statusType === "warning" ? (
+                                                                            ) : selectedHistoryItem.status === "สาย" ||
+                                                                                selectedHistoryItem.statusType === "warning" ? (
                                                                                 <div className="w-5 h-5 bg-[#F59E0B] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
                                                                                     <IconClock className="w-3 h-3 text-white" />
                                                                                 </div>
-                                                                            ) : selectedHistoryItem.status === "ขาด" || selectedHistoryItem.statusType === "danger" ? (
+                                                                            ) : selectedHistoryItem.status === "ขาด" ||
+                                                                                selectedHistoryItem.statusType === "danger" ? (
                                                                                 <div className="w-5 h-5 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
                                                                                     <IconX className="w-3 h-3 text-white" />
                                                                                 </div>
@@ -926,7 +985,8 @@ const AttendanceHistoryPage = () => {
                                                                                         <path d="M6 12H18" stroke="white" strokeWidth="4" strokeLinecap="round" />
                                                                                     </svg>
                                                                                 </div>
-                                                                            ) : selectedHistoryItem.status === "ลา" || selectedHistoryItem.isLeave ? (
+                                                                            ) : selectedHistoryItem.status === "ลา" ||
+                                                                                selectedHistoryItem.isLeave ? (
                                                                                 <div className="w-5 h-5 bg-[#4386F9] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
                                                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                                                         <path d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z" fill="white" />
@@ -936,20 +996,15 @@ const AttendanceHistoryPage = () => {
                                                                                     </svg>
                                                                                 </div>
                                                                             ) : (
-                                                                                <div className="w-5 h-5 rounded-full bg-[#6B7280] flex items-center justify-center text-white shadow-sm relative overflow-hidden shrink-0">
-                                                                                    <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                                                                                        <path d="M6 2h12a1 1 0 011 1v4a1 1 0 01-.3.7l-4.7 4.7 4.7 4.7a1 1 0 01.3.7v4a1 1 0 01-1 1H6a1 1 0 01-1-1v-4a1 1 0 01.3-.7l4.7-4.7-4.7-4.7A1 1 0 015 7V3a1 1 0 011-1zm1 2v2.6l4.3 4.4L7 15.4V18h10v-2.6l-4.3-4.4 4.3-4.4V4H7z" />
-                                                                                    </svg>
-                                                                                    <div className="absolute w-[18px] h-[1.5px] bg-white rotate-[-45deg]"></div>
+                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                                                                    <span className="material-symbols-rounded !text-[12px] leading-none">hourglass_disabled</span>
                                                                                 </div>
                                                                             )}
-                                                                            <span>
+                                                                            <span className="text-[11px] font-bold">
                                                                                 {selectedHistoryItem.status === "ลา"
                                                                                     ? selectedHistoryItem.leaveType
-                                                                                    : selectedHistoryItem.status ===
-                                                                                        "เข้างานปกติ" ||
-                                                                                        selectedHistoryItem.statusType ===
-                                                                                        "success"
+                                                                                    : selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                                                        selectedHistoryItem.statusType === "success"
                                                                                         ? "เข้างานปกติ"
                                                                                         : selectedHistoryItem.status}
                                                                             </span>
@@ -958,54 +1013,10 @@ const AttendanceHistoryPage = () => {
                                                                 )}
 
                                                                 {/* Conditional Content based on Status */}
-                                                                {selectedHistoryItem.statusType === "danger" &&
-                                                                    !selectedHistoryItem.approvalStatus ? (
-                                                                    /* Case: Absent */
-                                                                    <div className="flex flex-col items-center pt-2">
-                                                                        <hr className="w-full mb-8 h-[1px] bg-[#CECFD2] border-none" />
-                                                                        <div className="relative w-48 h-48 mb-6">
-                                                                            <div className="absolute inset-2 bg-[#FCEDED] rounded-full opacity-60"></div>
-                                                                            <div className="relative w-[120px] h-[130px] bg-white rounded-[20px] shadow-sm flex flex-col overflow-hidden mx-auto mt-6">
-                                                                                <div className="h-[40px] bg-[#EF4444] w-full"></div>
-                                                                                <div className="flex-1 flex items-center justify-center">
-                                                                                    <svg
-                                                                                        className="w-14 h-14 text-[#EF4444]"
-                                                                                        viewBox="0 0 24 24"
-                                                                                        fill="none"
-                                                                                        stroke="currentColor"
-                                                                                        strokeWidth="4"
-                                                                                        strokeLinecap="round"
-                                                                                        strokeLinejoin="round"
-                                                                                    >
-                                                                                        <line
-                                                                                            x1="18"
-                                                                                            y1="6"
-                                                                                            x2="6"
-                                                                                            y2="18"
-                                                                                        ></line>
-                                                                                        <line
-                                                                                            x1="6"
-                                                                                            y1="6"
-                                                                                            x2="18"
-                                                                                            y2="18"
-                                                                                        ></line>
-                                                                                    </svg>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="absolute top-[44px] left-[55px] w-[14px] h-[24px] border-[4px] border-[#CBD5E1] rounded-full bg-white"></div>
-                                                                            <div className="absolute top-[44px] right-[55px] w-[14px] h-[24px] border-[4px] border-[#CBD5E1] rounded-full bg-white"></div>
-                                                                        </div>
-                                                                        <div className="text-[17px] font-bold text-[#1C1C1C] mb-1">
-                                                                            ไม่มีการลงเวลาในวันนี้
-                                                                        </div>
-                                                                        <div className="text-[14px] text-gray-500 font-medium text-center">
-                                                                            หากมาทำงานปกติ โปรดส่งคำขอแก้ไขเวลา
-                                                                        </div>
-                                                                    </div>
-                                                                ) : selectedHistoryItem.isLeave ? (
+                                                                {selectedHistoryItem.isLeave ? (
                                                                     /* Case: Leave (Business/Sick) */
                                                                     <div className="flex flex-col">
-                                                                        <div className="flex items-center justify-between mb-4">
+                                                                        <div className="flex items-center justify-between mb-4 px-1">
                                                                             <div className="flex flex-col">
                                                                                 <div className="text-[14px] font-bold text-gray-800 dark:text-gray-200">
                                                                                     {selectedHistoryItem.labelMobile}
@@ -1014,66 +1025,124 @@ const AttendanceHistoryPage = () => {
                                                                                     ลางานเต็มวัน
                                                                                 </div>
                                                                             </div>
-                                                                            <div className={`px-3 py-1 rounded-full text-[12px] font-bold ${selectedHistoryItem.approvalStatus === 'approved'
-                                                                                    ? 'bg-[#EBFBF3] text-[#10B981]'
-                                                                                    : selectedHistoryItem.approvalStatus === 'denied'
-                                                                                        ? 'bg-[#FFEBEC] text-[#F97066]'
-                                                                                        : 'bg-[#F3F4F6] text-[#6B7280]'
-                                                                                }`}>
-                                                                                {selectedHistoryItem.approvalStatus === 'approved' ? 'อนุมัติการลา' : selectedHistoryItem.approvalStatus === 'denied' ? 'ไม่อนุมัติการลา' : 'รออนุมัติการลา'}
+                                                                            <div
+                                                                                className={`px-3 py-1 rounded-full text-[12px] font-bold ${selectedHistoryItem.approvalStatus ===
+                                                                                    "approved"
+                                                                                    ? "bg-[#EBFBF3] text-[#10B981]"
+                                                                                    : selectedHistoryItem.approvalStatus ===
+                                                                                        "denied"
+                                                                                        ? "bg-[#FFEBEC] text-[#F97066]"
+                                                                                        : "bg-[#F3F4F6] text-[#6B7280]"
+                                                                                    }`}
+                                                                            >
+                                                                                {selectedHistoryItem.approvalStatus ===
+                                                                                    "approved"
+                                                                                    ? "อนุมัติการลา"
+                                                                                    : selectedHistoryItem.approvalStatus ===
+                                                                                        "denied"
+                                                                                        ? "ไม่อนุมัติการลา"
+                                                                                        : "รออนุมัติการลา"}
                                                                             </div>
                                                                         </div>
 
                                                                         {/* Leave Type Tag */}
                                                                         <div className="mb-4">
-                                                                            {selectedHistoryItem.leaveType === 'ลากิจ' ? (
+                                                                            {selectedHistoryItem.leaveType ===
+                                                                                "ลากิจ" ? (
                                                                                 <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                                                     <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
                                                                                         <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
                                                                                     </div>
-                                                                                    <span className="leading-none text-gray-500">ลากิจ</span>
+                                                                                    <span className="leading-none text-gray-500">
+                                                                                        ลากิจ
+                                                                                    </span>
                                                                                 </div>
                                                                             ) : (
                                                                                 <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                                                     <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
                                                                                         <IconMedicalCross className="w-2.5 h-2.5 text-white stroke-[1.5px]" />
                                                                                     </div>
-                                                                                    <span className="leading-none text-gray-500">ลาป่วย</span>
+                                                                                    <span className="leading-none text-gray-500">
+                                                                                        ลาป่วย
+                                                                                    </span>
                                                                                 </div>
                                                                             )}
                                                                         </div>
 
-                                                                        <hr className="w-full h-[1px] bg-[#ECECED] border-none mb-6" />
+                                                                        <hr className="w-full h-[1px] bg-[#ECECED] border-none mb-3" />
 
                                                                         {/* Reasoning Section (Leave) */}
-                                                                        <div className="w-full space-y-3 mb-6">
+                                                                        <div className="w-full space-y-3 mb-3">
                                                                             <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
-                                                                                <IconFileText className="w-5 h-5 text-gray-800 dark:text-gray-300" />
+                                                                                <span className="material-symbols-rounded text-gray-800 dark:text-gray-300 text-[20px]">description</span>
                                                                                 รายละเอียดการลา
                                                                             </div>
-                                                                            <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-3 min-h-[48px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
-                                                                                {selectedHistoryItem.leaveReason || "เข้าร่วมประชุมกับทางมหาวิทยาลัย"}
+                                                                            <div className="w-[345px] h-[36px] bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
+                                                                                {selectedHistoryItem.leaveReason ||
+                                                                                    "เข้าร่วมประชุมกับทางมหาวิทยาลัย"}
                                                                             </div>
                                                                         </div>
 
                                                                         {/* Evidence Section (Leave) */}
                                                                         <div className="w-full">
                                                                             <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
-                                                                                <span className="whitespace-nowrap">ไฟล์แนบ :</span>
+                                                                                <span className="whitespace-nowrap">
+                                                                                    ไฟล์แนบ :
+                                                                                </span>
                                                                                 {selectedHistoryItem.evidence ? (
                                                                                     <button
                                                                                         type="button"
-                                                                                        onClick={() => handleViewFile(selectedHistoryItem.evidence)}
+                                                                                        onClick={() =>
+                                                                                            handleViewFile(
+                                                                                                selectedHistoryItem.evidence,
+                                                                                            )
+                                                                                        }
                                                                                         className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                                                                                     >
                                                                                         <div className="flex items-center justify-center shrink-0">
-                                                                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                                <path d="M7 18H17V20H7V18Z" fill="black" />
-                                                                                                <path d="M17 14H7V16H17V14Z" fill="black" />
-                                                                                                <path d="M7 10H14V12H7V10Z" fill="black" />
-                                                                                                <path fillRule="evenodd" clipRule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9L14 2H6ZM13 4L19 10V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4H13Z" fill="black" />
-                                                                                                <rect x="14.5" y="10.5" width="4" height="3" rx="1" fill="white" stroke="black" />
-                                                                                                <text x="15" y="12.5" fontSize="2.5" fontWeight="bold" fill="black">PDF</text>
+                                                                                            <svg
+                                                                                                width="22"
+                                                                                                height="22"
+                                                                                                viewBox="0 0 24 24"
+                                                                                                fill="none"
+                                                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                                            >
+                                                                                                <path
+                                                                                                    d="M7 18H17V20H7V18Z"
+                                                                                                    fill="black"
+                                                                                                />
+                                                                                                <path
+                                                                                                    d="M17 14H7V16H17V14Z"
+                                                                                                    fill="black"
+                                                                                                />
+                                                                                                <path
+                                                                                                    d="M7 10H14V12H7V10Z"
+                                                                                                    fill="black"
+                                                                                                />
+                                                                                                <path
+                                                                                                    fillRule="evenodd"
+                                                                                                    clipRule="evenodd"
+                                                                                                    d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9L14 2H6ZM13 4L19 10V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4H13Z"
+                                                                                                    fill="black"
+                                                                                                />
+                                                                                                <rect
+                                                                                                    x="14.5"
+                                                                                                    y="10.5"
+                                                                                                    width="4"
+                                                                                                    height="3"
+                                                                                                    rx="1"
+                                                                                                    fill="white"
+                                                                                                    stroke="black"
+                                                                                                />
+                                                                                                <text
+                                                                                                    x="15"
+                                                                                                    y="12.5"
+                                                                                                    fontSize="2.5"
+                                                                                                    fontWeight="bold"
+                                                                                                    fill="black"
+                                                                                                >
+                                                                                                    PDF
+                                                                                                </text>
                                                                                             </svg>
                                                                                         </div>
                                                                                         <div className="text-[12px] font-medium text-[#000000] dark:text-gray-200 truncate">
@@ -1083,142 +1152,267 @@ const AttendanceHistoryPage = () => {
                                                                                 ) : (
                                                                                     <div className="bg-[#F8F9FA] dark:bg-gray-800 border border-[#D1D5DB] dark:border-gray-700 rounded-[10px] px-3 h-[35px] flex items-center gap-2">
                                                                                         <IconGallery className="w-4 h-4 text-gray-500" />
-                                                                                        <span className="text-[12px] font-bold text-gray-500">ไม่มีไฟล์แนบ</span>
+                                                                                        <span className="text-[12px] font-bold text-gray-500">
+                                                                                            ไม่มีไฟล์แนบ
+                                                                                        </span>
                                                                                     </div>
                                                                                 )}
                                                                             </div>
                                                                         </div>
+
+
                                                                     </div>
                                                                 ) : (
                                                                     /* Case: Normal/Late/Default */
                                                                     <div className="flex flex-col gap-6">
                                                                         {/* Conditional Card Layout */}
+                                                                        {/* Conditional Card Layout */}
                                                                         {selectedHistoryItem.approvalStatus ? (
-                                                                            /* Dual Card: Original + Request */
+                                                                            /* Dual Card: Side-by-Side Comparison (Old vs New) */
                                                                             <div className="space-y-3">
-                                                                                {/* Card 1: Original */}
-                                                                                <div className="bg-white border border-[#ECECED] rounded-[16px] p-4 shadow-sm space-y-2">
-                                                                                    <div className="flex items-center w-[92px] h-[21px] gap-1 text-[#000000] font-bold text-[14px] leading-none shrink-0 border-none">
-                                                                                        <span className="material-symbols-rounded text-[18px] text-[#000000]">location_on</span>
-                                                                                        <span className="whitespace-nowrap">อยู่ในสถานที่</span>
+                                                                                <div className="flex items-center justify-between gap-1 w-full relative">
+                                                                                    {/* Card 1: Old Time */}
+                                                                                    <div className="flex-1 h-[175px] bg-white border border-[#CECFD2] rounded-[16px] p-3 shadow-sm flex flex-col min-w-0">
+                                                                                        <div className="inline-flex items-center gap-1.5 text-gray-500 font-bold text-[14px] mb-2.5">
+                                                                                            <div className="w-[30px] h-[30px] rounded-full bg-[#717171] flex items-center justify-center text-white shrink-0">
+                                                                                                <span className="material-symbols-rounded text-[20px]">calendar_clock</span>
+                                                                                            </div>
+                                                                                            <span className="whitespace-nowrap">
+                                                                                                เวลาเก่า
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="space-y-3">
+                                                                                            <div className="flex items-center gap-1 text-gray-700 font-bold text-[13px]">
+                                                                                                <span className="material-symbols-rounded text-[18px] text-gray-700">
+                                                                                                    location_on
+                                                                                                </span>
+                                                                                                <span className="whitespace-nowrap truncate font-bold">
+                                                                                                    อยู่ในสถานที่
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="space-y-1.5 text-[13px] text-gray-500 font-medium">
+                                                                                                <div>
+                                                                                                    เวลาเข้า :{" "}
+                                                                                                    {
+                                                                                                        selectedHistoryItem.checkInTime
+                                                                                                    }
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    เวลาออก :{" "}
+                                                                                                    {selectedHistoryItem.checkOutTime ===
+                                                                                                        "ไม่ลงเวลาออก"
+                                                                                                        ? "ไม่ลงเวลา"
+                                                                                                        : selectedHistoryItem.checkOutTime}
+                                                                                                </div>
+                                                                                                <div className="truncate">
+                                                                                                    ชั่วโมงทำงาน:{" "}
+                                                                                                    {
+                                                                                                        selectedHistoryItem.workingHours
+                                                                                                    }
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
                                                                                     </div>
-                                                                                    <div className="space-y-2 pl-8">
-                                                                                        <div className="text-[14px] font-medium text-gray-600">
-                                                                                            เวลาเข้างาน :{" "}
-                                                                                            {selectedHistoryItem.checkInTime}
+
+                                                                                    {/* Magenta Arrow Icon */}
+                                                                                    <div className="flex items-center justify-center shrink-0 z-10 px-0.5">
+                                                                                        <svg
+                                                                                            width="24"
+                                                                                            height="24"
+                                                                                            viewBox="0 0 24 24"
+                                                                                            fill="none"
+                                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                                        >
+                                                                                            <path
+                                                                                                d="M5 12H19M19 12L12 5M19 12L12 19"
+                                                                                                stroke="#A80689"
+                                                                                                strokeWidth="2.5"
+                                                                                                strokeLinecap="round"
+                                                                                                strokeLinejoin="round"
+                                                                                            />
+                                                                                        </svg>
+                                                                                    </div>
+
+                                                                                    {/* Card 2: New Time (Requested) */}
+                                                                                    <div className="flex-1 h-[175px] bg-[#FFF5FD] border border-[#A80689] rounded-[16px] p-3 shadow-sm flex flex-col min-w-0">
+                                                                                        <div className="inline-flex items-center gap-1.5 text-[#A80689] font-bold text-[14px] mb-2.5">
+                                                                                            <div className="w-[30px] h-[30px] rounded-full bg-[#A80689] flex items-center justify-center text-white shrink-0">
+                                                                                                <span className="material-symbols-rounded text-[20px]">calendar_clock</span>
+                                                                                            </div>
+                                                                                            <span className="whitespace-nowrap">
+                                                                                                เวลาใหม่
+                                                                                            </span>
                                                                                         </div>
-                                                                                        <div className="text-[14px] font-medium text-gray-600">
-                                                                                            เวลาออกงาน :{" "}
-                                                                                            {selectedHistoryItem.checkOutTime}
-                                                                                        </div>
-                                                                                        <div className="text-[14px] font-medium text-gray-600">
-                                                                                            ชั่วโมงที่เข้าทำงาน :{" "}
-                                                                                            {selectedHistoryItem.workingHours}
+                                                                                        <div className="space-y-3">
+                                                                                            <div className="flex items-center gap-1 text-[#A80689] font-bold text-[13px]">
+                                                                                                <span className="material-symbols-rounded text-[18px] text-[#A80689]">
+                                                                                                    location_on
+                                                                                                </span>
+                                                                                                <span className="whitespace-nowrap truncate font-bold">
+                                                                                                    อยู่ในสถานที่
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="space-y-1.5 text-[13px] text-[#A80689] font-medium">
+                                                                                                <div>
+                                                                                                    เวลาเข้า :{" "}
+                                                                                                    {
+                                                                                                        selectedHistoryItem.reqCheckInTime
+                                                                                                    }
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    เวลาออก :{" "}
+                                                                                                    {
+                                                                                                        selectedHistoryItem.reqCheckOutTime
+                                                                                                    }
+                                                                                                </div>
+                                                                                                <div className="truncate">
+                                                                                                    ชั่วโมงทำงาน:{" "}
+                                                                                                    {
+                                                                                                        selectedHistoryItem.reqWorkingHours
+                                                                                                    }
+                                                                                                </div>
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                                {/* Card 2: Request */}
-                                                                                <div className="bg-white border border-[#ECECED] rounded-[16px] p-4 shadow-sm space-y-2">
-                                                                                    <div className="inline-flex items-center w-[120px] h-[24px] gap-2 text-[#A80689] font-bold text-[16px] leading-none shrink-0">
-                                                                                        <div className="w-[22px] h-[22px] rounded-full bg-[#A80689] flex items-center justify-center text-white shrink-0">
-                                                                                            <IconCalendarClock className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                        <span className="whitespace-nowrap">คำขอแก้ไขเวลา</span>
+
+                                                                                {/* Separate Reason Section (Mobile) */}
+                                                                                <div className="w-full space-y-1">
+                                                                                    <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800">
+                                                                                        <span className="material-symbols-rounded text-gray-800">description</span>
+                                                                                        เหตุผลการแก้ไขเวลา
                                                                                     </div>
-                                                                                    <div className="space-y-2 pl-10">
-                                                                                        <div className="text-[14px] font-bold text-[#1C1C1C]">
-                                                                                            เวลาเข้างาน :{" "}
-                                                                                            {
-                                                                                                selectedHistoryItem.reqCheckInTime
-                                                                                            }
-                                                                                        </div>
-                                                                                        <div className="text-[14px] font-bold text-[#1C1C1C]">
-                                                                                            เวลาออกงาน :{" "}
-                                                                                            {
-                                                                                                selectedHistoryItem.reqCheckOutTime
-                                                                                            }
-                                                                                        </div>
-                                                                                        <div className="text-[14px] font-bold text-[#1C1C1C]">
-                                                                                            ชั่วโมงที่เข้าทำงาน :{" "}
-                                                                                            {
-                                                                                                selectedHistoryItem.reqWorkingHours
-                                                                                            }
-                                                                                        </div>
-                                                                                        <div className="text-[14px] font-medium text-gray-600">
-                                                                                            เหตุผลการแก้ไขเวลา :{" "}
-                                                                                            {selectedHistoryItem.reqReason}
-                                                                                        </div>
+                                                                                    <div className="w-[345px] h-[36px] bg-[#F9FAFB] border border-[#CECFD2] rounded-[8px] px-4 flex items-center text-[14px] text-gray-700 shadow-sm leading-relaxed">
+                                                                                        {selectedHistoryItem.reqReason ||
+                                                                                            "ไม่ได้ระบุ"}
                                                                                     </div>
                                                                                 </div>
+
+                                                                                {/* Evidence Section (Updated Mobile) */}
+                                                                                <div className="w-full">
+                                                                                    <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800">
+                                                                                        <span className="material-symbols-rounded text-gray-800">
+                                                                                            attach_file_add
+                                                                                        </span>
+                                                                                        <span className="whitespace-nowrap">
+                                                                                            ไฟล์แนบ :
+                                                                                        </span>
+                                                                                        {selectedHistoryItem.evidence ? (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() =>
+                                                                                                    handleViewFile(
+                                                                                                        selectedHistoryItem.evidence,
+                                                                                                    )
+                                                                                                }
+                                                                                                className="bg-[#F2F4F7] active:scale-95 transition-transform border border-[#CECFD2] rounded-[8px] px-2 flex items-center gap-1.5 h-[35px] shrink-0 shadow-sm hover:bg-gray-100 min-w-[120px]"
+                                                                                            >
+                                                                                                <div className="flex items-center justify-center shrink-0">
+                                                                                                    <span className="material-symbols-rounded text-[#4B5563] text-[20px]">
+                                                                                                        picture_as_pdf
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                <div className="text-[12px] font-bold text-gray-600 truncate max-w-[80px]">
+                                                                                                    {selectedHistoryItem.evidence}
+                                                                                                </div>
+                                                                                            </button>
+                                                                                        ) : (
+                                                                                            <span className="text-[13px] text-gray-400 italic">
+                                                                                                ไม่มีไฟล์แนบ
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+
+
                                                                             </div>
                                                                         ) : (
-                                                                            /* Unified Detail Card */
-                                                                            <div className="bg-white border border-[#ECECED] rounded-[16px] p-5 shadow-sm space-y-4">
-                                                                                <div className="flex items-start gap-1 border-none">
-                                                                                    <div className="flex items-center h-[21px] gap-1 text-[#000000] font-bold text-[15px] leading-none shrink-0">
-                                                                                        <span className="material-symbols-rounded text-[20px] text-[#000000]">location_on</span>
-                                                                                        <span className="whitespace-nowrap">{(selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.status === "สาย" || selectedHistoryItem.status === "ไม่ลงเวลาออก") ? "อยู่ในสถานที่" : selectedHistoryItem.location}</span>
+                                                                            /* Normal Detail View (Simplified Redesign) */
+                                                                            <div className="space-y-4 pt-1">
+                                                                                {/* Horizontal Divider */}
+                                                                                <hr className="w-full h-[1px] bg-gray-100 border-none" />
+
+                                                                                <div className="flex flex-col gap-1 px-1">
+                                                                                    {/* Location Row (Dynamic Icon) */}
+                                                                                    <div className="flex items-center gap-2 text-[#1C1C1C] font-bold text-[16px]">
+                                                                                        {selectedHistoryItem.status ===
+                                                                                            "เข้างานปกติ" ||
+                                                                                            selectedHistoryItem.status ===
+                                                                                            "สาย" ||
+                                                                                            selectedHistoryItem.status ===
+                                                                                            "ไม่ลงเวลาออก" ? (
+                                                                                            <span className="material-symbols-rounded text-[24px]">
+                                                                                                location_on
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="material-symbols-rounded text-[24px]">
+                                                                                                apartment
+                                                                                            </span>
+                                                                                        )}
+                                                                                        <span>
+                                                                                            {selectedHistoryItem.status ===
+                                                                                                "เข้างานปกติ" ||
+                                                                                                selectedHistoryItem.status ===
+                                                                                                "สาย" ||
+                                                                                                selectedHistoryItem.status ===
+                                                                                                "ไม่ลงเวลาออก"
+                                                                                                ? "อยู่ในสถานที่"
+                                                                                                : "อยู่นอกสถานที่"}
+                                                                                        </span>
                                                                                     </div>
-                                                                                </div>
-                                                                                <div className="space-y-3 pl-9">
-                                                                                    <div className="text-[15px] font-bold text-[#1C1C1C]">
-                                                                                        <span className="text-gray-400 font-normal">เวลาเข้างาน :</span>{" "}
-                                                                                        {selectedHistoryItem.checkInTime}
+
+                                                                                    {/* Time Rows (Right Aligned) */}
+                                                                                    <div className="space-y-1">
+                                                                                        <div className="flex justify-between items-center text-[15px]">
+                                                                                            <span className="text-gray-400 font-medium whitespace-nowrap">
+                                                                                                เวลาเข้า :
+                                                                                            </span>
+                                                                                            <span className="font-bold text-[#1C1C1C]">
+                                                                                                {
+                                                                                                    selectedHistoryItem.checkInTime
+                                                                                                }
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="flex justify-between items-center text-[15px]">
+                                                                                            <span className="text-gray-400 font-medium whitespace-nowrap">
+                                                                                                เวลาออก :
+                                                                                            </span>
+                                                                                            <span className="font-bold text-[#1C1C1C]">
+                                                                                                {selectedHistoryItem.checkOutTime ===
+                                                                                                    "ไม่ลงเวลาออก"
+                                                                                                    ? "ไม่ลงเวลา"
+                                                                                                    : selectedHistoryItem.checkOutTime}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="flex justify-between items-center text-[15px]">
+                                                                                            <span className="text-gray-400 font-medium whitespace-nowrap">
+                                                                                                ชั่วโมงทำงาน :
+                                                                                            </span>
+                                                                                            <span className="font-bold text-[#1C1C1C]">
+                                                                                                {selectedHistoryItem.status ===
+                                                                                                    "ไม่ลงเวลาออก"
+                                                                                                    ? "0 ชม."
+                                                                                                    : selectedHistoryItem.workingHours
+                                                                                                        ? selectedHistoryItem.workingHours
+                                                                                                            .replace(
+                                                                                                                " ชั่วโมง",
+                                                                                                                " ชม.",
+                                                                                                            )
+                                                                                                            .replace(
+                                                                                                                " นาที",
+                                                                                                                " นาที",
+                                                                                                            )
+                                                                                                        : "0 ชม."}
+                                                                                            </span>
+                                                                                        </div>
                                                                                     </div>
-                                                                                    <div className="text-[15px] font-bold text-[#1C1C1C]">
-                                                                                        <span className="text-gray-400 font-normal">เวลาออกงาน :</span>{" "}
-                                                                                        {selectedHistoryItem.checkOutTime}
-                                                                                    </div>
-                                                                                    <div className="text-[15px] font-bold text-[#1C1C1C]">
-                                                                                        <span className="text-gray-400 font-normal">ชั่วโมงที่เข้าทำงาน :</span>{" "}
-                                                                                        {selectedHistoryItem.workingHours}
-                                                                                    </div>
+
+                                                                                    {/* Evidence Section (Integrated) Removed for this specific view */}
+
+
                                                                                 </div>
                                                                             </div>
                                                                         )}
-
-                                                                        {/* Evidence Section */}
-                                                                        <div className="w-full">
-                                                                            {selectedHistoryItem.evidence ? (
-                                                                                <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
-                                                                                    <span className="whitespace-nowrap">ไฟล์แนบ :</span>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => handleViewFile(selectedHistoryItem.evidence)}
-                                                                                        className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                                                    >
-                                                                                        <div className="flex items-center justify-center shrink-0">
-                                                                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                                <path d="M7 18H17V20H7V18Z" fill="black" />
-                                                                                                <path d="M17 14H7V16H17V14Z" fill="black" />
-                                                                                                <path d="M7 10H14V12H7V10Z" fill="black" />
-                                                                                                <path fillRule="evenodd" clipRule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9L14 2H6ZM13 4L19 10V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4H13Z" fill="black" />
-                                                                                                <rect x="14.5" y="10.5" width="4" height="3" rx="1" fill="white" stroke="black" />
-                                                                                                <text x="15" y="12.5" fontSize="2.5" fontWeight="bold" fill="black">PDF</text>
-                                                                                            </svg>
-                                                                                        </div>
-                                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-gray-200 truncate">
-                                                                                            {selectedHistoryItem.evidence}
-                                                                                        </div>
-                                                                                    </button>
-                                                                                </div>
-                                                                            ) : (
-                                                                                <div className="w-full space-y-3">
-                                                                                    <div className="flex items-center gap-3 text-[15px] font-bold text-[#1C1C1C] dark:text-gray-200">
-                                                                                        <IconCamera className="w-6 h-6" />
-                                                                                        หลักฐานการเข้างาน
-                                                                                    </div>
-                                                                                    <div className="bg-[#F8F9FA] dark:bg-gray-800 border border-[#D1D5DB] dark:border-gray-700 rounded-[10px] p-2 flex items-center gap-3 w-full h-[52px]">
-                                                                                        <div className="w-8 h-8 rounded-[4px] bg-[#6B7280] flex items-center justify-center text-white shrink-0">
-                                                                                            <IconGallery className="w-5 h-5" />
-                                                                                        </div>
-                                                                                        <div className="text-[14px] font-bold text-[#1C1C1C] dark:text-gray-300">
-                                                                                            ไม่มีไฟล์แนบ
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
                                                                     </div>
                                                                 )}
 
@@ -1234,13 +1428,15 @@ const AttendanceHistoryPage = () => {
                                                                         <div className="mt-2">
                                                                             <button
                                                                                 type="button"
-                                                                                className="w-full py-4 bg-[#A80689] text-white rounded-[12px] text-[17px] font-bold"
+                                                                                className="w-[375px] h-[45px] bg-[#A80689] text-white rounded-[5px] text-[17px] font-bold flex items-center justify-center"
                                                                                 onClick={() => {
                                                                                     localStorage.setItem(
                                                                                         "editItem",
                                                                                         JSON.stringify(selectedHistoryItem),
                                                                                     );
-                                                                                    router.push("/intern/history/edit-time");
+                                                                                    router.push(
+                                                                                        "/intern/history/edit-time",
+                                                                                    );
                                                                                 }}
                                                                             >
                                                                                 ส่งคำขอแก้ไขเวลา
@@ -1254,7 +1450,7 @@ const AttendanceHistoryPage = () => {
                                                             <div className="hidden sm:block space-y-4">
                                                                 <div>
                                                                     <div className="flex items-center justify-between mb-1">
-                                                                        <div className="text-[14px] font-bold text-gray-800 dark:text-gray-200">
+                                                                        <div className="text-[14px] text-gray-800 dark:text-gray-200">
                                                                             {selectedHistoryItem.labelMobile}
                                                                         </div>
                                                                         {selectedHistoryItem.approvalStatus && (
@@ -1289,16 +1485,46 @@ const AttendanceHistoryPage = () => {
                                                                         {selectedHistoryItem.isLeave ? (
                                                                             <div className="inline-flex items-center px-2.5 py-1.5 bg-[#EEF4FF] text-[#1C1C1C] border border-[#4386F9] rounded-full text-[12.5px] font-bold gap-1.5 mt-1">
                                                                                 <div className="w-5 h-5 rounded-full bg-[#4386F9] flex items-center justify-center text-white shrink-0">
-                                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                        <rect x="5" y="4" width="14" height="16" rx="2" stroke="white" strokeWidth="2.5" />
-                                                                                        <path d="M9 9H15" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                                                                                        <path d="M9 13H15" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                                                                                        <path d="M9 17H12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                                                                                    <svg
+                                                                                        width="12"
+                                                                                        height="12"
+                                                                                        viewBox="0 0 24 24"
+                                                                                        fill="none"
+                                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                                    >
+                                                                                        <rect
+                                                                                            x="5"
+                                                                                            y="4"
+                                                                                            width="14"
+                                                                                            height="16"
+                                                                                            rx="2"
+                                                                                            stroke="white"
+                                                                                            strokeWidth="2.5"
+                                                                                        />
+                                                                                        <path
+                                                                                            d="M9 9H15"
+                                                                                            stroke="white"
+                                                                                            strokeWidth="2.5"
+                                                                                            strokeLinecap="round"
+                                                                                        />
+                                                                                        <path
+                                                                                            d="M9 13H15"
+                                                                                            stroke="white"
+                                                                                            strokeWidth="2.5"
+                                                                                            strokeLinecap="round"
+                                                                                        />
+                                                                                        <path
+                                                                                            d="M9 17H12"
+                                                                                            stroke="white"
+                                                                                            strokeWidth="2.5"
+                                                                                            strokeLinecap="round"
+                                                                                        />
                                                                                     </svg>
                                                                                 </div>
                                                                                 ลา
                                                                             </div>
-                                                                        ) : selectedHistoryItem.status === 'ขาด' || selectedHistoryItem.statusType === 'danger' ? (
+                                                                        ) : selectedHistoryItem.status === "ขาด" ||
+                                                                            selectedHistoryItem.statusType === "danger" ? (
                                                                             <div className="inline-flex items-center w-[75px] justify-center px-1 py-1 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full text-[10px] font-semibold gap-1 mt-1">
                                                                                 <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0">
                                                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
@@ -1308,34 +1534,72 @@ const AttendanceHistoryPage = () => {
                                                                                 </div>
                                                                                 ขาดงาน
                                                                             </div>
-                                                                        ) : selectedHistoryItem.statusType === 'default' || selectedHistoryItem.status === 'ไม่ลงเวลาออก' ? (
-                                                                            <div className="inline-flex items-center w-fit min-w-[75px] justify-center px-2 py-1 bg-[#F3F4F6] text-[#6B7280] border border-[#6B7280] rounded-full text-[10px] font-semibold gap-1 mt-1">
-                                                                                <div className="w-4 h-4 rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 relative overflow-hidden">
-                                                                                    <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24">
-                                                                                        <path d="M6 2h12a1 1 0 011 1v4a1 1 0 01-.3.7l-4.7 4.7 4.7 4.7a1 1 0 01.3.7v4a1 1 0 01-1 1H6a1 1 0 01-1-1v-4a1 1 0 01.3-.7l4.7-4.7-4.7-4.7A1 1 0 015 7V3a1 1 0 011-1zm1 2v2.6l4.3 4.4L7 15.4V18h10v-2.6l-4.3-4.4 4.3-4.4V4H7z" />
-                                                                                    </svg>
-                                                                                    <div className="absolute w-[12px] h-[1px] bg-white rotate-[-45deg]"></div>
-                                                                                </div>
-                                                                                ไม่ลงเวลาออก
-                                                                            </div>
                                                                         ) : (
-                                                                            <div className={`inline-flex items-center w-fit min-w-[75px] justify-center px-2 py-1 rounded-full text-[10px] font-semibold gap-1 mt-1 border ${selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success"
-                                                                                    ? "bg-[#E7FAEF] text-[#10B981] border-[#10B981]"
-                                                                                    : "bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]"
-                                                                                }`}
+                                                                            <div
+                                                                                className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold gap-1.5 border mt-1 shrink-0 ${selectedHistoryItem.status === "ไม่ลงเวลาออก"
+                                                                                    ? "w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]"
+                                                                                    : `w-fit min-w-[75px] px-2 py-1 ${selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                                                        selectedHistoryItem.statusType === "success"
+                                                                                        ? "bg-[#E7FAEF] text-[#10B981] border-[#10B981]"
+                                                                                        : selectedHistoryItem.status === "สาย" ||
+                                                                                            selectedHistoryItem.statusType === "warning"
+                                                                                            ? "bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]"
+                                                                                            : selectedHistoryItem.status === "ขาด" ||
+                                                                                                selectedHistoryItem.statusType === "danger"
+                                                                                                ? "bg-[#FCEDED] text-[#EF4444] border-[#EF4444]"
+                                                                                                : selectedHistoryItem.leaveType === "ลาป่วย"
+                                                                                                    ? "bg-[#FFEBF5] text-[#D42A8C] border-[#D42A8C]"
+                                                                                                    : "bg-[#EEF4FF] text-[#4386F9] border-[#4386F9]"
+                                                                                    }`
+                                                                                    }`}
                                                                             >
-                                                                                {selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success" ? (
-                                                                                    <div className="w-4 h-4 bg-[#10B981] rounded-full flex items-center justify-center text-white shrink-0">
-                                                                                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
+                                                                                {selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                                                    selectedHistoryItem.statusType === "success" ? (
+                                                                                    <div className="w-5 h-5 bg-[#10B981] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
+                                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                ) : selectedHistoryItem.status === "สาย" ||
+                                                                                    selectedHistoryItem.statusType === "warning" ? (
+                                                                                    <div className="w-5 h-5 bg-[#F59E0B] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
+                                                                                        <IconClock className="w-3 h-3 text-white" />
+                                                                                    </div>
+                                                                                ) : selectedHistoryItem.status === "ขาด" ||
+                                                                                    selectedHistoryItem.statusType === "danger" ? (
+                                                                                    <div className="w-5 h-5 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
+                                                                                        <IconX className="w-3 h-3 text-white" />
+                                                                                    </div>
+                                                                                ) : selectedHistoryItem.leaveType === "ลาป่วย" ? (
+                                                                                    <div className="w-5 h-5 bg-[#D42A8C] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
+                                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                            <path d="M12 6V18" stroke="white" strokeWidth="4" strokeLinecap="round" />
+                                                                                            <path d="M6 12H18" stroke="white" strokeWidth="4" strokeLinecap="round" />
+                                                                                        </svg>
+                                                                                    </div>
+                                                                                ) : selectedHistoryItem.status === "ลา" ||
+                                                                                    selectedHistoryItem.isLeave ? (
+                                                                                    <div className="w-5 h-5 bg-[#4386F9] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
+                                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                            <path d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z" fill="white" />
+                                                                                            <rect x="8" y="7" width="8" height="2" rx="0.5" fill="#4386F9" />
+                                                                                            <rect x="8" y="11" width="8" height="2" rx="0.5" fill="#4386F9" />
+                                                                                            <path d="M15.5 20V17C15.5 16.1716 16.1716 15.5 17 15.5H20L15.5 20Z" fill="#4386F9" />
                                                                                         </svg>
                                                                                     </div>
                                                                                 ) : (
-                                                                                    <div className="w-4 h-4 bg-[#F59E0B] rounded-full flex items-center justify-center text-white shrink-0">
-                                                                                        <IconClock className="w-2.5 h-2.5 text-white" />
+                                                                                    <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                                                                        <span className="material-symbols-rounded !text-[12px] leading-none">hourglass_disabled</span>
                                                                                     </div>
                                                                                 )}
-                                                                                {selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success" ? "เข้างานปกติ" : selectedHistoryItem.status}
+                                                                                <span className="text-[11px] font-bold">
+                                                                                    {selectedHistoryItem.status === "ลา"
+                                                                                        ? selectedHistoryItem.leaveType
+                                                                                        : selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                                                            selectedHistoryItem.statusType === "success"
+                                                                                            ? "เข้างานปกติ"
+                                                                                            : selectedHistoryItem.status}
+                                                                                </span>
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -1348,10 +1612,14 @@ const AttendanceHistoryPage = () => {
                                                                     {selectedHistoryItem.approvalStatus ? (
                                                                         <>
                                                                             {/* Card 1: Original */}
-                                                                            <div className="bg-white dark:bg-[#1C1710] border border-[#ECECED] dark:border-[#3A2A1A] rounded-2xl p-4 space-y-3 shadow-sm">
+                                                                            <div className="bg-white dark:bg-[#1C1710] border border-[#CECFD2] dark:border-[#3A2A1A] rounded-2xl p-4 space-y-3 shadow-sm">
                                                                                 <div className="flex items-center w-[92px] h-[21px] gap-1 text-[#000000] font-bold text-[14px] leading-none shrink-0 border-none">
-                                                                                    <span className="material-symbols-rounded text-[18px] text-[#000000]">location_on</span>
-                                                                                    <span className="whitespace-nowrap">อยู่ในสถานที่</span>
+                                                                                    <span className="material-symbols-rounded text-[18px] text-[#000000]">
+                                                                                        location_on
+                                                                                    </span>
+                                                                                    <span className="whitespace-nowrap">
+                                                                                        อยู่ในสถานที่
+                                                                                    </span>
                                                                                 </div>
                                                                                 <div className="grid grid-cols-2 gap-y-2 pl-8">
                                                                                     <div>
@@ -1381,12 +1649,14 @@ const AttendanceHistoryPage = () => {
                                                                                 </div>
                                                                             </div>
                                                                             {/* Card 2: Request */}
-                                                                            <div className="bg-white dark:bg-[#121212] border border-[#ECECED] dark:border-gray-700 rounded-2xl p-4 shadow-sm space-y-3">
+                                                                            <div className="bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-2xl p-4 shadow-sm space-y-3">
                                                                                 <div className="inline-flex items-center w-[120px] h-[24px] gap-2 text-[#A80689] font-bold text-[16px] leading-none shrink-0">
                                                                                     <div className="w-[22px] h-[22px] rounded-full bg-[#A80689] flex items-center justify-center text-white shrink-0">
-                                                                                        <IconCalendarClock className="w-3.5 h-3.5" />
+                                                                                        <span className="material-symbols-rounded text-[16px]">calendar_clock</span>
                                                                                     </div>
-                                                                                    <span className="whitespace-nowrap">คำขอแก้ไขเวลา</span>
+                                                                                    <span className="whitespace-nowrap">
+                                                                                        คำขอแก้ไขเวลา
+                                                                                    </span>
                                                                                 </div>
                                                                                 <div className="grid grid-cols-2 gap-y-2 pl-10">
                                                                                     <div>
@@ -1420,7 +1690,8 @@ const AttendanceHistoryPage = () => {
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="col-span-2 mt-1">
-                                                                                        <div className="text-xs text-gray-400">
+                                                                                        <div className="flex items-center gap-1 text-xs text-gray-400">
+                                                                                            <span className="material-symbols-rounded text-[16px]">description</span>
                                                                                             เหตุผลการแก้ไขเวลา :
                                                                                         </div>
                                                                                         <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -1432,11 +1703,26 @@ const AttendanceHistoryPage = () => {
                                                                         </>
                                                                     ) : (
                                                                         /* Single Detail Card */
-                                                                        <div className="bg-white dark:bg-[#1C1710] border border-[#ECECED] dark:border-[#3A2A1A] rounded-2xl p-4 space-y-3 shadow-sm">
+                                                                        <div className="bg-white dark:bg-[#1C1710] border border-[#CECFD2] dark:border-[#3A2A1A] rounded-2xl p-4 space-y-3 shadow-sm">
                                                                             <div className="flex items-start gap-1 border-none">
                                                                                 <div className="flex items-center h-[21px] gap-1 text-[#000000] font-bold text-[14px] leading-none shrink-0">
-                                                                                    <span className="material-symbols-rounded text-[20px] text-[#000000]">location_on</span>
-                                                                                    <span className="whitespace-nowrap">{selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success" || selectedHistoryItem.status === "สาย" || selectedHistoryItem.statusType === "warning" || selectedHistoryItem.status === "ไม่ลงเวลาออก" ? "อยู่ในสถานที่" : selectedHistoryItem.location}</span>
+                                                                                    <span className="material-symbols-rounded text-[20px] text-[#000000]">
+                                                                                        location_on
+                                                                                    </span>
+                                                                                    <span className="whitespace-nowrap">
+                                                                                        {selectedHistoryItem.status ===
+                                                                                            "เข้างานปกติ" ||
+                                                                                            selectedHistoryItem.statusType ===
+                                                                                            "success" ||
+                                                                                            selectedHistoryItem.status ===
+                                                                                            "สาย" ||
+                                                                                            selectedHistoryItem.statusType ===
+                                                                                            "warning" ||
+                                                                                            selectedHistoryItem.status ===
+                                                                                            "ไม่ลงเวลาออก"
+                                                                                            ? "อยู่ในสถานที่"
+                                                                                            : selectedHistoryItem.location}
+                                                                                    </span>
                                                                                 </div>
                                                                             </div>
                                                                             <div className="grid grid-cols-2 gap-y-2 pl-8">
@@ -1475,7 +1761,7 @@ const AttendanceHistoryPage = () => {
                                                                     )}
 
                                                                     {/* Evidence Section */}
-                                                                    <div className="bg-white dark:bg-[#1A1A1A] border border-[#ECECED] dark:border-[#333333] rounded-2xl p-4 space-y-4 shadow-sm">
+                                                                    <div className="bg-white dark:bg-[#1A1A1A] border border-[#CECFD2] dark:border-[#333333] rounded-2xl p-4 space-y-4 shadow-sm">
                                                                         <div>
                                                                             <div className="flex items-center gap-1.5 text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                                                                                 <IconCamera className="w-4 h-4 text-gray-400" />
@@ -1487,7 +1773,15 @@ const AttendanceHistoryPage = () => {
                                                                                 <div className="flex items-center justify-between gap-2">
                                                                                     <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[8px] p-2 flex-1 min-w-0">
                                                                                         <div className="w-10 h-10 rounded-[4px] overflow-hidden flex items-center justify-center shrink-0 bg-gray-100">
-                                                                                            <img src="/assets/images/profile-34.jpeg" alt="thumbnail" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                                                                                            <img
+                                                                                                src="/assets/images/profile-34.jpeg"
+                                                                                                alt="thumbnail"
+                                                                                                className="w-full h-full object-cover"
+                                                                                                onError={(e) => {
+                                                                                                    e.currentTarget.style.display =
+                                                                                                        "none";
+                                                                                                }}
+                                                                                            />
                                                                                         </div>
                                                                                         <div className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
                                                                                             {selectedHistoryItem.evidence}
@@ -1506,15 +1800,10 @@ const AttendanceHistoryPage = () => {
                                                                         {selectedHistoryItem.isLeave && (
                                                                             <div>
                                                                                 <div className="flex items-center gap-1.5 text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                        <rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="2" />
-                                                                                        <path d="M9 9H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                                                                        <path d="M9 13H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                                                                        <path d="M9 17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                                                                    </svg>
+                                                                                    <span className="material-symbols-rounded text-[20px]">description</span>
                                                                                     รายละเอียดการลา
                                                                                 </div>
-                                                                                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[8px] p-3 min-h-[50px] text-[14px] text-gray-600 dark:text-gray-300 font-medium">
+                                                                                <div className="w-[345px] h-[36px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[8px] px-3 flex items-center text-[14px] text-gray-600 dark:text-gray-300 font-medium">
                                                                                     {selectedHistoryItem.leaveReason}
                                                                                 </div>
                                                                             </div>
@@ -1540,7 +1829,9 @@ const AttendanceHistoryPage = () => {
                                                                                                 selectedHistoryItem,
                                                                                             ),
                                                                                         );
-                                                                                        router.push("/intern/history/edit-time");
+                                                                                        router.push(
+                                                                                            "/intern/history/edit-time",
+                                                                                        );
                                                                                     }}
                                                                                 >
                                                                                     ส่งคำขอแก้ไขเวลา
@@ -1566,3 +1857,18 @@ const AttendanceHistoryPage = () => {
 };
 
 export default AttendanceHistoryPage;
+
+// Custom CSS to hide scrollbar while keeping functionality
+if (typeof document !== "undefined") {
+    const style = document.createElement("style");
+    style.textContent = `
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    `;
+    document.head.append(style);
+}
