@@ -410,12 +410,12 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={handleClockOut}
-                                disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
+                               // disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
                                 className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
                                         ? 'bg-[#ECECED] text-[#61646C] border border-[#98A2B3] shadow-none cursor-not-allowed'
                                         : 'hover:-translate-y-[1px] bg-[#A80689] text-white '
                                     }`}
-                                title={!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : ""}
+                               // title={!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : ""}
                             >
                                 ลงเวลาออกงาน
                             </button>
