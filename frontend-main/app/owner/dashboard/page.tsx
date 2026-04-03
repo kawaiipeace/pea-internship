@@ -582,10 +582,16 @@ export default function OwnerDashboard() {
       };
     };
 
-    const selectedByUser = new Map<
+    const latestNonCancelledByUser = new Map<
       string,
       { row: InternTableRow; createdAt: number }
     >();
+    const cancelledEntries: Array<{
+      userKey: string;
+      row: InternTableRow;
+      createdAt: number;
+    }> = [];
+    const usersWithCancelled = new Set<string>();
 
     allApps.forEach((app) => {
       const row = buildInternRow(app);
@@ -599,32 +605,32 @@ export default function OwnerDashboard() {
         `app-${app.applicationId}`;
       const createdAt = new Date(app.createdAt).getTime() || 0;
 
-      const existing = selectedByUser.get(userKey);
+      if (row.statusType === "cancelled") {
+        // Keep every cancelled internship row (do not dedupe).
+        cancelledEntries.push({ userKey, row, createdAt });
+        usersWithCancelled.add(userKey);
+        return;
+      }
+
+      const existing = latestNonCancelledByUser.get(userKey);
       if (!existing) {
-        selectedByUser.set(userKey, { row, createdAt });
+        latestNonCancelledByUser.set(userKey, { row, createdAt });
         return;
       }
 
-      // If this user has a cancelled internship row, always show that one.
-      if (
-        row.statusType === "cancelled" &&
-        existing.row.statusType !== "cancelled"
-      ) {
-        selectedByUser.set(userKey, { row, createdAt });
-        return;
-      }
-
-      if (existing.row.statusType === "cancelled") {
-        return;
-      }
-
-      // Otherwise keep the latest row for that user.
+      // Keep the latest non-cancelled row for each user.
       if (createdAt > existing.createdAt) {
-        selectedByUser.set(userKey, { row, createdAt });
+        latestNonCancelledByUser.set(userKey, { row, createdAt });
       }
     });
 
-    return Array.from(selectedByUser.values()).map((entry) => entry.row);
+    const nonCancelledEntries = Array.from(latestNonCancelledByUser.entries())
+      .filter(([userKey]) => !usersWithCancelled.has(userKey))
+      .map(([, entry]) => entry);
+
+    return [...cancelledEntries, ...nonCancelledEntries]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((entry) => entry.row);
   }, [allApps]);
 
   const filteredInternTableData = useMemo(() => {
