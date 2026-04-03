@@ -248,8 +248,8 @@ export default function RegisterPage() {
         return undefined;
       case "phone":
         if (!value.trim()) return "จำเป็นต้องระบุ";
-        if (!/^[0-9]{9,10}$/.test(value.replace(/[-\s]/g, "")))
-          return "รูปแบบเบอร์โทรไม่ถูกต้อง";
+        if (!/^[0-9]{10}$/.test(value.replace(/\D/g, "")))
+          return "กรุณาระบุเบอร์โทร 10 หลัก";
         return undefined;
       case "gender":
         return !value ? "จำเป็นต้องระบุ" : undefined;
@@ -366,6 +366,17 @@ export default function RegisterPage() {
   };
 
   const handleChange = (name: keyof FormData, value: string) => {
+    if (name === "phone") {
+      const phoneOnlyDigits = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({ ...prev, phone: phoneOnlyDigits }));
+
+      if (touched.phone) {
+        const error = validateField("phone", phoneOnlyDigits);
+        setErrors((prev) => ({ ...prev, phone: error }));
+      }
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (touched[name]) {
       const error = validateField(name, value);
@@ -868,6 +879,8 @@ export default function RegisterPage() {
                   onChange={(e) => handleChange("phone", e.target.value)}
                   onBlur={() => handleBlur("phone")}
                   placeholder="เบอร์โทร"
+                  inputMode="numeric"
+                  maxLength={10}
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
                     hasError("phone")
                       ? "border-red-500 focus:border-red-500"
