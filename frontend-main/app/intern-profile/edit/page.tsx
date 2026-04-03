@@ -36,19 +36,9 @@ const getGenderLabel = (value: string): string => {
   return genderMap[value] || value;
 };
 
-const formatPhone = (phone: string): string => {
-  if (!phone || phone.length < 9) return phone || "";
-  // Remove existing dashes first
-  const cleaned = phone.replace(/-/g, "");
-  if (cleaned.length >= 10) {
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  }
-  return phone;
-};
-
 // Helper to clean phone number for API
 const cleanPhoneNumber = (phone: string): string => {
-  return phone.replace(/-/g, "");
+  return phone.replace(/\D/g, "");
 };
 
 function InputWithClear({
@@ -242,7 +232,7 @@ export default function EditProfilePage() {
             fname: profileData.fname || "",
             lname: profileData.lname || "",
             email: profileData.email || "",
-            phone: formatPhone(profileData.phoneNumber || ""),
+            phone: cleanPhoneNumber(profileData.phoneNumber || ""),
             gender: getGenderLabel(profileData.gender || ""),
             education: educationLabel,
             institutionId: studentProfile?.institutionId || 0,
@@ -434,16 +424,23 @@ export default function EditProfilePage() {
   }, []);
 
   const canSave = useMemo(() => {
+    const normalizedPhone = cleanPhoneNumber(form.phone || "");
     return (
       (form.fullName || "").trim() &&
       (form.email || "").trim() &&
-      (form.phone || "").trim()
+      normalizedPhone.length === 10
     );
   }, [form]);
   const isInternshipDataLocked = isHoursLocked;
 
   const handleSave = async () => {
     if (!canSave) return;
+
+    const normalizedPhone = cleanPhoneNumber(form.phone || "");
+    if (normalizedPhone.length !== 10) {
+      setSaveError("กรุณาระบุเบอร์โทร 10 หลัก");
+      return;
+    }
 
     setIsSaving(true);
     setSaveError(null);
@@ -460,7 +457,7 @@ export default function EditProfilePage() {
         fname,
         lname,
         email: form.email,
-        phoneNumber: cleanPhoneNumber(form.phone),
+        phoneNumber: normalizedPhone,
       });
 
       // Update student profile data
@@ -560,10 +557,7 @@ export default function EditProfilePage() {
             </FieldBox>
 
             <FieldBox label="เบอร์โทร">
-              <InputWithClear
-                value={form.phone}
-                onChange={(v) => setForm((p) => ({ ...p, phone: v }))}
-              />
+              <InputWithClear value={form.phone} onChange={() => {}} disabled />
             </FieldBox>
 
             <FieldBox label="เพศ">
