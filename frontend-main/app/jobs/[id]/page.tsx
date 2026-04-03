@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/ui/Navbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import LoginModal from "@/components/ui/LoginModal";
 import { getJobById } from "@/app/data/jobs";
 import { Job } from "@/components/ui/JobCard";
+import { applicationApi, jobIdToPositionId, favoriteApi } from "@/services/api";
 
 // Default job details for display
 const defaultResponsibilities = [
@@ -39,10 +40,12 @@ interface ExtendedJob extends Job {
 
 export default function JobDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const jobId = params.id as string;
     const [job, setJob] = useState<ExtendedJob | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [pendingAction, setPendingAction] = useState<"apply" | "bookmark" | null>(null);
 
     // Load job data from localStorage or mock data
     useEffect(() => {
@@ -231,7 +234,7 @@ export default function JobDetailPage() {
                         <div className="hidden lg:flex items-center gap-3">
                             {/* Bookmark Button */}
                             <button
-                                onClick={() => setIsLoginModalOpen(true)}
+                                onClick={() => { setPendingAction("bookmark"); setIsLoginModalOpen(true); }}
                                 className="p-2 rounded-2xl hover:bg-gray-100 transition-colors"
                             >
                                 <svg
@@ -249,7 +252,7 @@ export default function JobDetailPage() {
 
                             {/* Apply Button */}
                             <button
-                                onClick={() => setIsLoginModalOpen(true)}
+                                onClick={() => { setPendingAction("apply"); setIsLoginModalOpen(true); }}
                                 className="px-8 py-2 bg-primary-600 border-2 border-primary-600 text-white rounded-lg font-medium hover:bg-white hover:text-primary-600 transition-colors active:scale-95"
                             >
                                 สมัคร
@@ -581,20 +584,49 @@ export default function JobDetailPage() {
             {/* Login Modal */}
             <LoginModal
                 isOpen={isLoginModalOpen}
-                onClose={() => setIsLoginModalOpen(false)}
-                redirectTo="/intern-info"
+                onClose={() => {
+                    setIsLoginModalOpen(false);
+                    setPendingAction(null);
+                }}
+                onLoginSuccess={async () => {
+                    const action = pendingAction;
+                    setPendingAction(null);
+                    if (action === "apply" && job) {
+                        const positionId = jobIdToPositionId(job.id);
+                        if (positionId) {
+                            try {
+                                await applicationApi.createApplication(positionId);
+                                localStorage.setItem("currentPositionId", String(positionId));
+                            } catch (err: unknown) {
+                                const error = err as { response?: { data?: { message?: string } } };
+                                alert(error?.response?.data?.message || "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง");
+                                router.push("/intern-home");
+                                return;
+                            }
+                        }
+                        router.push("/intern-info");
+                    } else if (action === "bookmark" && job) {
+                        const positionId = jobIdToPositionId(job.id);
+                        if (positionId) {
+                            favoriteApi.addFavorite(positionId).catch(console.error);
+                        }
+                        router.push("/intern-home");
+                    } else {
+                        router.push("/intern-home");
+                    }
+                }}
             />
 
             {/* Fixed Bottom Bar - Mobile Only */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex items-center gap-3 lg:hidden z-40">
                 <button
-                    onClick={() => setIsLoginModalOpen(true)}
+                    onClick={() => { setPendingAction("apply"); setIsLoginModalOpen(true); }}
                     className="flex-1 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors text-lg active:scale-95"
                 >
                     สมัคร
                 </button>
                 <button
-                    onClick={() => setIsLoginModalOpen(true)}
+                    onClick={() => { setPendingAction("bookmark"); setIsLoginModalOpen(true); }}
                     className="p-3 border-2 border-gray-300 rounded-xl text-gray-500 hover:text-primary-600 hover:border-primary-600 transition-colors active:scale-95"
                 >
                     <svg

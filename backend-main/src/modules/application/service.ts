@@ -654,7 +654,6 @@ export class ApplicationService {
           set: {
             docFile: s3Key,
             validationStatus: nextValidationStatus,
-            note: null,
             updatedAt: new Date(),
           },
         });
@@ -1012,7 +1011,6 @@ export class ApplicationService {
           set: {
             docFile: s3Key,
             validationStatus: "PENDING",
-            note: null,
             updatedAt: new Date(),
           },
         });
@@ -1135,16 +1133,15 @@ export class ApplicationService {
           : null;
 
       const latestReasonNote =
-        status === "INVALID"
-          ? normalizedInvalidReasons!.join(", ")
-          : null;
+        status === "INVALID" ? normalizedInvalidReasons!.join(", ") : null;
 
       await tx
         .update(applicationDocuments)
         .set({
           validationStatus: status,
-          note: latestReasonNote,
-          invalidReasons: mergedInvalidReasons,
+          ...(status === "INVALID"
+            ? { note: latestReasonNote, invalidReasons: mergedInvalidReasons }
+            : {}),
           updatedAt: new Date(),
         })
         .where(eq(applicationDocuments.id, doc.id));
@@ -1357,6 +1354,7 @@ export class ApplicationService {
               docFile: applicationDocuments.docFile,
               validationStatus: applicationDocuments.validationStatus,
               invalidReasons: applicationDocuments.invalidReasons,
+              note: applicationDocuments.note,
             })
             .from(applicationDocuments)
             .where(inArray(applicationDocuments.applicationStatusId, appIds))
@@ -1376,6 +1374,7 @@ export class ApplicationService {
           docFile: d.docFile,
           validationStatus: d.validationStatus,
           invalidReasons: d.invalidReasons ?? [],
+          note: d.note,
         })),
       }));
     });
@@ -1445,6 +1444,7 @@ export class ApplicationService {
               docFile: applicationDocuments.docFile,
               validationStatus: applicationDocuments.validationStatus,
               invalidReasons: applicationDocuments.invalidReasons,
+              note: applicationDocuments.note,
             })
             .from(applicationDocuments)
             .where(inArray(applicationDocuments.applicationStatusId, appIds))
@@ -1464,6 +1464,7 @@ export class ApplicationService {
           docFile: d.docFile,
           validationStatus: d.validationStatus,
           invalidReasons: d.invalidReasons,
+          note: d.note,
         })),
       }));
     });

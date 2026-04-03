@@ -35,6 +35,8 @@ export class ApplicationInterviewTimeoutService {
             .set({
               applicationStatus: "ABORT",
               isActive: false,
+              statusNote:
+                "ไม่ดำเนินการสัมภาษณ์ภายในระยะเวลาที่กำหนด",
               updatedAt: new Date(),
             })
             .where(eq(applicationStatuses.id, app.id));

@@ -35,6 +35,8 @@ export class ApplicationTimeoutService {
             .set({
               applicationStatus: "ABORT",
               isActive: false,
+              statusNote:
+                "ผู้สมัครไม่ส่งเอกสารภายในระยะเวลาที่กำหนด",
               updatedAt: new Date(),
             })
             .where(eq(applicationStatuses.id, app.id));

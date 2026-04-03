@@ -9,6 +9,7 @@ import {
   fetchAllApplications,
   Mentor,
   getEducationDisplayText,
+  getStudyPlanDisplayText,
 } from "../utils/applicationMapper";
 import {
   applicationApi,
@@ -360,10 +361,15 @@ function ApplicationDetailContent() {
           color: "bg-red-50 text-red-600 border-red-200",
         };
       case "cancelled":
-        return {
-          label: "ยกเลิกฝึกงาน",
-          color: "bg-red-50 text-red-600 border-red-200",
-        };
+        return status === "ABORT"
+          ? {
+              label: "ยกเลิกการสมัคร",
+              color: "bg-gray-100 text-gray-600 border-gray-300",
+            }
+          : {
+              label: "ยกเลิกฝึกงาน",
+              color: "bg-red-50 text-red-600 border-red-200",
+            };
       default:
         return {
           label: "กำลังดำเนินการ",
@@ -468,10 +474,17 @@ function ApplicationDetailContent() {
         cancelledBy: data.cancelledBy,
         cancelledDate: data.cancelledDate,
       };
+    // Fallback to API data + timeline actions
+    const cancelAction = timelineActions.find(
+      (a) => a.newStatus === "CANCEL" || a.newStatus === "ABORT"
+    );
+    const actorName = application?.cancelledBy || (cancelAction?.actor
+      ? [cancelAction.actor.fname, cancelAction.actor.lname].filter(Boolean).join(" ")
+      : "");
     return {
       reason: application?.cancellationReason,
-      cancelledBy: application?.cancelledBy,
-      cancelledDate: application?.cancelledDate,
+      cancelledBy: actorName,
+      cancelledDate: application?.cancelledDate || cancelAction?.createdAt || "",
     };
   };
 
@@ -483,10 +496,17 @@ function ApplicationDetailContent() {
         rejectedBy: data.rejectedBy,
         rejectedDate: data.rejectedDate,
       };
+    // Fallback to API data + timeline actions
+    const cancelAction = timelineActions.find(
+      (a) => a.newStatus === "CANCEL"
+    );
+    const actorName = cancelAction?.actor
+      ? [cancelAction.actor.fname, cancelAction.actor.lname].filter(Boolean).join(" ")
+      : "";
     return {
-      reason: "",
-      rejectedBy: "",
-      rejectedDate: "",
+      reason: application?.cancellationReason || "",
+      rejectedBy: actorName,
+      rejectedDate: cancelAction?.createdAt || "",
     };
   };
 
@@ -511,14 +531,50 @@ function ApplicationDetailContent() {
         completedUpTo = 4;
         currentStep = 5;
       } else {
-        completedUpTo = 3;
-        currentStep = 4;
+        // Use timeline actions to determine actual step for ABORT
+        const abortAction = timelineActions.find(
+          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+        );
+        if (abortAction?.oldStatus) {
+          const abortStepMap: Record<string, number> = {
+            PENDING_DOCUMENT: 0,
+            PENDING_INTERVIEW: 1,
+            PENDING_CONFIRMATION: 2,
+            PENDING_REQUEST: 3,
+            PENDING_REVIEW: 4,
+          };
+          completedUpTo =
+            abortStepMap[abortAction.oldStatus] ?? (application.step > 0 ? application.step - 1 : 0);
+          currentStep = 0;
+        } else if (application.step > 0) {
+          // Fallback: use the step from applicationMapper
+          completedUpTo = application.step > 0 ? application.step - 1 : 0;
+          currentStep = 0;
+        } else {
+          completedUpTo = 0;
+          currentStep = 0;
+        }
       }
     } else if (
       rejectedApps.includes(application.id) ||
       application.status === "rejected"
     ) {
-      completedUpTo = 3;
+      // Use timeline actions to determine where the rejection happened
+      const rejectAction = timelineActions.find(
+        (a) => a.newStatus === "CANCEL"
+      );
+      if (rejectAction?.oldStatus) {
+        const rejectStepMap: Record<string, number> = {
+          PENDING_DOCUMENT: 0,
+          PENDING_INTERVIEW: 1,
+          PENDING_CONFIRMATION: 2,
+          PENDING_REQUEST: 3,
+          PENDING_REVIEW: 4,
+        };
+        completedUpTo = rejectStepMap[rejectAction.oldStatus] ?? 2;
+      } else {
+        completedUpTo = application.step > 0 ? application.step - 1 : 2;
+      }
       currentStep = 0;
     } else if (
       docApprovedApps.includes(application.id) ||
@@ -637,12 +693,19 @@ function ApplicationDetailContent() {
   } => {
     // Check for cancelled status first (including localStorage cancellation)
     if (application.status === "cancelled" || isCancelledViaStorage) {
-      return {
-        text: "ยกเลิกฝึกงาน",
-        bgColor: "bg-[#FEE4E2]",
-        textColor: "text-[#912018] font-semibold",
-        borderColor: "border-[#FECDCA]",
-      };
+      return application.stepDescription === "ยกเลิกการสมัคร"
+        ? {
+            text: "ยกเลิกการสมัคร",
+            bgColor: "bg-gray-100",
+            textColor: "text-gray-600 font-semibold",
+            borderColor: "border-gray-300",
+          }
+        : {
+            text: "ยกเลิกฝึกงาน",
+            bgColor: "bg-[#FEE4E2]",
+            textColor: "text-[#912018] font-semibold",
+            borderColor: "border-[#FECDCA]",
+          };
     }
     // Check doc approved/passed
     if (
@@ -787,12 +850,19 @@ function ApplicationDetailContent() {
           borderColor: "border-[#FECDCA]",
         };
       case "cancelled":
-        return {
-          text: "ยกเลิกฝึกงาน",
-          bgColor: "bg-[#FEE4E2]",
-          textColor: "text-[#912018] font-semibold",
-          borderColor: "border-[#FECDCA]",
-        };
+        return application.stepDescription === "ยกเลิกการสมัคร"
+          ? {
+              text: "ยกเลิกการสมัคร",
+              bgColor: "bg-gray-100",
+              textColor: "text-gray-600 font-semibold",
+              borderColor: "border-gray-300",
+            }
+          : {
+              text: "ยกเลิกฝึกงาน",
+              bgColor: "bg-[#FEE4E2]",
+              textColor: "text-[#912018] font-semibold",
+              borderColor: "border-[#FECDCA]",
+            };
       default:
         return {
           text: "รอดำเนินการ",
@@ -836,7 +906,7 @@ function ApplicationDetailContent() {
                     href: `/owner/dashboard/rejected${positionQuery}`,
                   },
                   cancelled: {
-                    label: "สถานะยกเลิกฝึกงาน",
+                    label: "สถานะยกเลิก",
                     href: `/owner/dashboard/cancelled${positionQuery}`,
                   },
                   "near-start": {
@@ -1214,8 +1284,7 @@ function ApplicationDetailContent() {
                             เหตุผลที่ไม่ผ่านการคัดเลือก
                           </p>
                           <p className="text-gray-700 text-sm">
-                            {rejectData.reason ||
-                              "คุณสมบัติไม่ตรงตามที่หน่วยงานกำหนด"}
+                            {rejectData.reason || "-"}
                           </p>
                         </div>
                       </div>
@@ -1223,7 +1292,7 @@ function ApplicationDetailContent() {
                         <div>
                           <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                           <p className="text-gray-900 text-sm">
-                            {rejectData.rejectedBy || "นายสมนึก วงค์สวัสดิ"}
+                            {rejectData.rejectedBy || "-"}
                           </p>
                         </div>
                         <div>
@@ -1231,9 +1300,9 @@ function ApplicationDetailContent() {
                             วันที่ดำเนินการ:
                           </p>
                           <p className="text-gray-900 text-sm">
-                            {formatDateThai(
-                              rejectData.rejectedDate || "2568-10-24",
-                            )}
+                            {rejectData.rejectedDate
+                              ? formatDateThai(rejectData.rejectedDate)
+                              : "-"}
                           </p>
                         </div>
                       </div>
@@ -1243,13 +1312,15 @@ function ApplicationDetailContent() {
 
               {/* Cancellation Reason Box */}
               {(application.status === "cancelled" || isCancelledViaStorage) &&
+                (application.stepDescription !== "ยกเลิกการสมัคร" || application.cancellationReason) &&
                 (() => {
+                  const isAbort = application.stepDescription === "ยกเลิกการสมัคร";
                   const cancelData = getCancellationData();
                   return (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+                    <div className={`${isAbort ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mt-4`}>
                       <div className="flex items-start gap-2">
                         <svg
-                          className="w-5 h-5 text-red-500 mt-0.5 shrink-0"
+                          className={`w-5 h-5 ${isAbort ? "text-gray-500" : "text-red-500"} mt-0.5 shrink-0`}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -1262,29 +1333,37 @@ function ApplicationDetailContent() {
                           />
                         </svg>
                         <div>
-                          <p className="font-semibold text-red-600 mb-2">
-                            เหตุผลประกอบการยกเลิกฝึกงาน
+                          <p className={`font-semibold ${isAbort ? "text-gray-600" : "text-red-600"} mb-2`}>
+                            {isAbort
+                              ? "เหตุผลการยกเลิกการสมัคร"
+                              : "เหตุผลประกอบการยกเลิกฝึกงาน"}
                           </p>
                           <p className="text-gray-700 text-sm">
-                            {cancelData.reason ||
-                              "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"}
+                            {cancelData.reason || "ไม่ได้ระบุ"}
                           </p>
                         </div>
                       </div>
                       {/* Operator and Date */}
-                      <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-red-200">
+                      <div className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${isAbort ? "border-gray-200" : "border-red-200"}`}>
                         <div>
                           <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                           <p className="text-gray-900 text-sm">
-                            {cancelData.cancelledBy || "นายมั่นคง ทรงดี"}
+                            {cancelData.cancelledBy || (
+                              isAbort
+                                ? "ระบบ (อัตโนมัติ)"
+                                : (() => {
+                                    const od = positionInfo?.owner || (positionInfo?.owners && positionInfo.owners.length > 0 ? positionInfo.owners[0] : null);
+                                    return od ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-" : "-";
+                                  })()
+                            )}
                           </p>
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
                           <p className="text-gray-900 text-sm">
-                            {formatDateThai(
-                              cancelData.cancelledDate || "2568-11-15",
-                            )}
+                            {cancelData.cancelledDate
+                              ? formatDateThai(cancelData.cancelledDate)
+                              : "-"}
                           </p>
                         </div>
                       </div>
@@ -1370,6 +1449,9 @@ function ApplicationDetailContent() {
                 const circumference = 2 * Math.PI * 36;
                 const progress = (completedUpTo / totalSteps) * circumference;
 
+                const isCancelledOrAborted =
+                  application.status === "cancelled" || application.status === "rejected" || isCancelledViaStorage;
+
                 return (
                   <div>
                     <button
@@ -1425,7 +1507,38 @@ function ApplicationDetailContent() {
                         </span>
                       </div>
                       <div>
-                        {isAllCompleted ? (
+                        {isCancelledOrAborted ? (
+                          <>
+                            <p className="font-bold text-gray-900">
+                              {application.stepDescription === "ยกเลิกฝึกงาน" ? "ยกเลิกฝึกงาน" : application.status === "rejected" ? "ไม่ผ่านการคัดเลือก" : "ยกเลิกการสมัคร"}
+                            </p>
+                            {(() => {
+                              // For cancelled/rejected, show the actor from the cancel/abort action itself
+                              const termAction = timelineActions.find(
+                                (a) => a.newStatus === "CANCEL" || a.newStatus === "ABORT"
+                              );
+                              const actorLabel = termAction?.actor && termAction.actor.roleId !== 3
+                                ? `พนักงาน : ${[termAction.actor.fname, termAction.actor.lname].filter(Boolean).join(" ")}`
+                                : undefined;
+                              const actionDate = termAction?.createdAt
+                                ? formatActionDate(termAction.createdAt)
+                                : stepCompletedInfo[completedUpTo - 1]?.date;
+                              return (
+                                <>
+                                  {actorLabel && (
+                                    <p className="text-gray-400 text-sm">{actorLabel}</p>
+                                  )}
+                                  {actionDate && (
+                                    <p className="text-gray-400 text-sm">{actionDate}</p>
+                                  )}
+                                </>
+                              );
+                            })()}
+                            <p className="text-gray-400 text-sm">
+                              กระบวนการสมัครสิ้นสุดแล้ว
+                            </p>
+                          </>
+                        ) : isAllCompleted ? (
                           <>
                             <p className="font-bold text-gray-900">
                               การตรวจสอบเสร็จสิ้น
@@ -1830,18 +1943,29 @@ function ApplicationDetailContent() {
                     {application.institution}
                   </p>
                 </div>
-                <div>
-                  <p className="text-gray-400 text-sm mb-1">คณะ</p>
-                  <p className="font-medium text-gray-900">
-                    {application.faculty || "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-400 text-sm mb-1">สาขา</p>
-                  <p className="font-medium text-gray-900">
-                    {application.major?.trim() || "-"}
-                  </p>
-                </div>
+                {application.education === "high_school" ? (
+                  <div className="col-span-2">
+                    <p className="text-gray-400 text-sm mb-1">แผนการเรียน</p>
+                    <p className="font-medium text-gray-900">
+                      {getStudyPlanDisplayText(application)}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-gray-400 text-sm mb-1">คณะ</p>
+                      <p className="font-medium text-gray-900">
+                        {application.faculty || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm mb-1">สาขา</p>
+                      <p className="font-medium text-gray-900">
+                        {application.major?.trim() || "-"}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-6">
@@ -2528,7 +2652,7 @@ function ApplicationDetailContent() {
                               </p>
                             </div>
                             {item.statusNote && (
-                              <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
+                              <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
                                     width="20"
@@ -2539,18 +2663,20 @@ function ApplicationDetailContent() {
                                   >
                                     <path
                                       d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                      fill="#D92D20"
+                                      fill={item.applicationStatus === "ABORT" ? "#6B7280" : "#D92D20"}
                                     />
                                   </svg>
-                                  <span className="text-sm font-semibold text-red-500">
+                                  <span className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}>
                                     {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
                                       : historyOutcome === "cancelled"
-                                        ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                        ? (item.applicationStatus === "ABORT"
+                                            ? "เหตุผลการยกเลิกการสมัคร"
+                                            : "เหตุผลประกอบการยกเลิกฝึกงาน")
                                         : "หมายเหตุ"}
                                   </span>
                                 </div>
-                                <div className="mx-4 border-t border-red-200" />
+                                <div className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`} />
                                 <div className="px-4 pt-3 pb-4">
                                   <p className="text-sm text-gray-700 leading-relaxed">
                                     {item.statusNote}

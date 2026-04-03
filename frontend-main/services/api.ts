@@ -1098,7 +1098,7 @@ export interface MyApplicationData {
   positionDepartmentId: number | null;
   positionOfficeId: number | null;
   infoEndDate: string | null;
-  documents: { docTypeId: number; docFile: string }[];
+  documents: { docTypeId: number; docFile: string; validationStatus?: string; note?: string | null }[];
 }
 
 // Mapping: backend status → frontend step name (Thai)
