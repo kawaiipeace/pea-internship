@@ -382,9 +382,7 @@ export default function OwnerDashboard() {
   const statusData = useMemo(() => {
     const counts: Partial<Record<StatusChartKey, number>> = {};
     allApps.forEach((app) => {
-      const isInternshipCancelled =
-        app.studentInternshipStatus === "CANCEL" ||
-        (app.applicationStatus === "CANCEL" && app.isActive === false);
+      const isInternshipCancelled = app.studentInternshipStatus === "CANCEL";
 
       if (isInternshipCancelled) {
         counts.INTERNSHIP_CANCELLED = (counts.INTERNSHIP_CANCELLED || 0) + 1;
@@ -487,83 +485,20 @@ export default function OwnerDashboard() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    return allApps
-      .map((app) => {
-        const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
-        const endDate = toDateOnly(app.infoEndDate || app.profileEndDate);
-        const fullName = `${app.fname || ""} ${app.lname || ""}`.trim() || "-";
-        const positionName = app.positionName || "ตำแหน่งไม่ระบุ";
-        const periodText = `${formatShortThaiDate(app.infoStartDate || app.profileStartDate)} - ${formatShortThaiDate(app.infoEndDate || app.profileEndDate)}`;
+    const buildInternRow = (
+      app: AllStudentsHistoryItem,
+    ): InternTableRow | null => {
+      const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
+      const endDate = toDateOnly(app.infoEndDate || app.profileEndDate);
+      const fullName = `${app.fname || ""} ${app.lname || ""}`.trim() || "-";
+      const positionName = app.positionName || "ตำแหน่งไม่ระบุ";
+      const periodText = `${formatShortThaiDate(app.infoStartDate || app.profileStartDate)} - ${formatShortThaiDate(app.infoEndDate || app.profileEndDate)}`;
 
-        const internshipCancelled =
-          app.studentInternshipStatus === "CANCEL" ||
-          (app.applicationStatus === "CANCEL" && app.isActive === false);
+      const internshipCancelled =
+        app.studentInternshipStatus === "CANCEL" ||
+        (app.applicationStatus === "CANCEL" && app.isActive === false);
 
-        if (internshipCancelled) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "ยกเลิกฝึกงาน",
-            statusType: "cancelled" as const,
-          };
-        }
-
-        // Accepted + document passed flow for this dashboard view.
-        if (app.applicationStatus !== "COMPLETE") return null;
-
-        const isAwaiting = app.studentInternshipStatus === "AWAITING";
-        if (isAwaiting) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "รอเริ่มฝึกงาน",
-            statusType: "awaiting" as const,
-          };
-        }
-
-        const isActiveByPeriod =
-          !!startDate &&
-          !!endDate &&
-          now.getTime() >= startDate.getTime() &&
-          now.getTime() <= endDate.getTime();
-        const isActiveByStatus = app.studentInternshipStatus === "ACTIVE";
-        if (isActiveByPeriod || isActiveByStatus) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "อยู่ระหว่างฝึกงาน",
-            statusType: "active" as const,
-          };
-        }
-
-        const isCompleted =
-          app.studentInternshipStatus === "COMPLETE" ||
-          (!!endDate && now.getTime() > endDate.getTime());
-        if (isCompleted) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "ฝึกงานเสร็จสิ้น",
-            statusType: "completed" as const,
-          };
-        }
-
+      if (internshipCancelled) {
         return {
           id: app.applicationId,
           fullName,
@@ -571,11 +506,118 @@ export default function OwnerDashboard() {
           periodText,
           startDate,
           endDate,
-          statusLabel: "รับเข้าฝึกงาน",
-          statusType: "accepted" as const,
+          statusLabel: "ยกเลิกฝึกงาน",
+          statusType: "cancelled" as const,
         };
-      })
-      .filter((row): row is InternTableRow => row !== null);
+      }
+
+      // Accepted + document passed flow for this dashboard view.
+      if (app.applicationStatus !== "COMPLETE") return null;
+
+      const isAwaiting = app.studentInternshipStatus === "AWAITING";
+      if (isAwaiting) {
+        return {
+          id: app.applicationId,
+          fullName,
+          positionName,
+          periodText,
+          startDate,
+          endDate,
+          statusLabel: "รอเริ่มฝึกงาน",
+          statusType: "awaiting" as const,
+        };
+      }
+
+      const isActiveByPeriod =
+        !!startDate &&
+        !!endDate &&
+        now.getTime() >= startDate.getTime() &&
+        now.getTime() <= endDate.getTime();
+      const isActiveByStatus = app.studentInternshipStatus === "ACTIVE";
+      if (isActiveByPeriod || isActiveByStatus) {
+        return {
+          id: app.applicationId,
+          fullName,
+          positionName,
+          periodText,
+          startDate,
+          endDate,
+          statusLabel: "อยู่ระหว่างฝึกงาน",
+          statusType: "active" as const,
+        };
+      }
+
+      const isCompleted =
+        app.studentInternshipStatus === "COMPLETE" ||
+        (!!endDate && now.getTime() > endDate.getTime());
+      if (isCompleted) {
+        return {
+          id: app.applicationId,
+          fullName,
+          positionName,
+          periodText,
+          startDate,
+          endDate,
+          statusLabel: "ฝึกงานเสร็จสิ้น",
+          statusType: "completed" as const,
+        };
+      }
+
+      return {
+        id: app.applicationId,
+        fullName,
+        positionName,
+        periodText,
+        startDate,
+        endDate,
+        statusLabel: "รับเข้าฝึกงาน",
+        statusType: "accepted" as const,
+      };
+    };
+
+    const selectedByUser = new Map<
+      string,
+      { row: InternTableRow; createdAt: number }
+    >();
+
+    allApps.forEach((app) => {
+      const row = buildInternRow(app);
+      if (!row) return;
+
+      const userKey =
+        app.studentUserId ||
+        app.email ||
+        app.phoneNumber ||
+        `${app.fname || ""}-${app.lname || ""}` ||
+        `app-${app.applicationId}`;
+      const createdAt = new Date(app.createdAt).getTime() || 0;
+
+      const existing = selectedByUser.get(userKey);
+      if (!existing) {
+        selectedByUser.set(userKey, { row, createdAt });
+        return;
+      }
+
+      // If this user has a cancelled internship row, always show that one.
+      if (
+        row.statusType === "cancelled" &&
+        existing.row.statusType !== "cancelled"
+      ) {
+        selectedByUser.set(userKey, { row, createdAt });
+        return;
+      }
+
+      if (existing.row.statusType === "cancelled") {
+        return;
+      }
+
+      // Otherwise keep the latest row for that user.
+      if (createdAt > existing.createdAt) {
+        selectedByUser.set(userKey, { row, createdAt });
+      }
+    });
+
+    return Array.from(selectedByUser.values()).map((entry) => entry.row);
   }, [allApps]);
 
   const filteredInternTableData = useMemo(() => {
