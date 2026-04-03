@@ -382,7 +382,14 @@ export default function OwnerDashboard() {
   const statusData = useMemo(() => {
     const counts: Partial<Record<StatusChartKey, number>> = {};
     allApps.forEach((app) => {
-      const isInternshipCancelled = app.studentInternshipStatus === "CANCEL";
+      if (app.applicationStatus === "ABORT") {
+        counts.ABORT = (counts.ABORT || 0) + 1;
+        return;
+      }
+
+      const isInternshipCancelled =
+        app.studentInternshipStatus === "CANCEL" ||
+        (app.applicationStatus === "CANCEL" && app.isActive === false);
 
       if (isInternshipCancelled) {
         counts.INTERNSHIP_CANCELLED = (counts.INTERNSHIP_CANCELLED || 0) + 1;
