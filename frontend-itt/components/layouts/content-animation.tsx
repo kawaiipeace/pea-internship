@@ -22,7 +22,7 @@ const ContentAnimation = ({ children }: { children: React.ReactNode }) => {
     return (
         <>
             {/* BEGIN CONTENT AREA */}
-            <div className={`${animation} animate__animated p-6`}>{children}</div>
+            <div className={`${animation} animate__animated ${pathname?.includes('/users/profile') ? 'p-0' : 'p-6'}`}>{children}</div>
             {/* END CONTENT AREA */}
         </>
     );

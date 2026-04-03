@@ -9,10 +9,7 @@ import IconXCircle from '@/components/icon/icon-x-circle';
 import IconClock from '@/components/icon/icon-clock';
 import IconShare from '@/components/icon/icon-share';
 import IconExport from '@/components/icon/icon-export';
-import dynamic from 'next/dynamic';
-const Flatpickr = dynamic(() => import('react-flatpickr'), { ssr: false });
-import 'flatpickr/dist/flatpickr.css';
-import '@/styles/flatpickr.css';
+import Flatpickr from 'react-flatpickr';
 import Dropdown from '@/components/dropdown';
 import IconMinus from '@/components/icon/icon-minus';
 

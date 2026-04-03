@@ -1,8 +1,7 @@
 "use client";
+import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
 import Flatpickr from "react-flatpickr";
-import "flatpickr/dist/flatpickr.css";
-import "@/styles/flatpickr.css";
 
 // สร้าง Interface สำหรับจัดการ Error ของแต่ละช่อง
 interface FormErrors {
@@ -12,6 +11,7 @@ interface FormErrors {
 }
 
 const LeaveRequestPage = () => {
+  const router = useRouter();
   const [leaveDate, setLeaveDate] = useState<any>("");
   const [leaveType, setLeaveType] = useState<"sick" | "personal" | "">("");
   const [details, setDetails] = useState("");
@@ -123,7 +123,7 @@ const LeaveRequestPage = () => {
   return (
     <div className="-m-6 min-h-screen bg-[#fffbf7] dark:bg-black p-4 sm:p-10">
       <div className="mx-auto max-w-3xl sm:px-6 lg:px-8">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1b2e4b] sm:p-10">
+        <div className="rounded-xl border border-[#CECFD2] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1b2e4b] sm:p-10">
           <h1 className="mb-6 text-xl font-bold text-gray-800 dark:text-white-light sm:mb-2 sm:text-2xl">
             การลาปฏิบัติงาน
           </h1>
@@ -163,13 +163,15 @@ const LeaveRequestPage = () => {
                       const calendarContainer = instance.calendarContainer;
                       const btnContainer = document.createElement("div");
                       btnContainer.style.cssText =
-                        "display:flex;justify-content:center;gap:12px;padding:8px 12px 12px;border-top:1px solid #e5e7eb;";
+                        "display:flex;justify-content:center;gap:16px;padding:16px;border-top:1px solid #f3f4f6;";
 
                       const clearBtn = document.createElement("button");
                       clearBtn.textContent = "Clear";
                       clearBtn.type = "button";
                       clearBtn.style.cssText =
-                        "padding:8px 28px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#374151;font-weight:600;font-size:14px;cursor:pointer;";
+                        "flex:1;padding:14px;border-radius:16px;border:1px solid #e5e7eb;background:#fff;color:#4b5563;font-weight:600;font-size:16px;cursor:pointer;transition:all 0.2s;";
+                      clearBtn.addEventListener("mouseover", () => clearBtn.style.background = "#f9fafb");
+                      clearBtn.addEventListener("mouseout", () => clearBtn.style.background = "#fff");
                       clearBtn.addEventListener("click", () => {
                         instance.clear();
                         setLeaveDate("");
@@ -179,13 +181,15 @@ const LeaveRequestPage = () => {
                       okBtn.textContent = "Ok";
                       okBtn.type = "button";
                       okBtn.style.cssText =
-                        "padding:8px 28px;border-radius:8px;border:none;background:#A80689;color:#fff;font-weight:600;font-size:14px;cursor:pointer;";
+                        "flex:1;padding:14px;border-radius:16px;border:none;background:#A80689;color:#fff;font-weight:600;font-size:16px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 12px rgba(168, 6, 137, 0.2);";
+                      okBtn.addEventListener("mouseover", () => okBtn.style.background = "#8e0e6f");
+                      okBtn.addEventListener("mouseout", () => okBtn.style.background = "#A80689");
                       okBtn.addEventListener("click", () => {
                         (instance as any)._okClicked = true;
                         const dates = instance.selectedDates;
                         if (dates.length === 1) {
                           setLeaveDate([dates[0], dates[0]]);
-                          setErrors(prev => ({ ...prev, leaveDate: false })); // เคลียร์ Error เมื่อเลือกข้อมูลแล้ว
+                          setErrors(prev => ({ ...prev, leaveDate: false }));
                         } else if (dates.length >= 2) {
                           setLeaveDate([...dates]);
                           setErrors(prev => ({ ...prev, leaveDate: false }));
@@ -222,7 +226,7 @@ const LeaveRequestPage = () => {
                       ? "border-red-500 hover:border-red-500 focus:border-red-500 dark:border-red-500"
                       : "border-gray-200 focus:border-[#A80689] dark:border-[#17263c]"
                   } dark:bg-[#121e32] dark:text-white-light`}
-                  placeholder="วว/ดด/ปปปป"
+                  placeholder="วว/ดด/ปปปป-วว/ดด/ปปปป"
                 />
                 {errors.leaveDate && <p className="mt-1 text-xs text-red-500">กรุณาเลือกวันที่ต้องการลา</p>}
               </div>
@@ -250,7 +254,7 @@ const LeaveRequestPage = () => {
                   <label
                     className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 ${
                       leaveType === "sick"
-                        ? "border-[#A80689] bg-[#fdf2f8] dark:border-[#B10073] dark:bg-white/5"
+                        ? "border-[#A80689] bg-white dark:border-[#B10073] dark:bg-[#1b2e4b]"
                         : errors.leaveType
                         ? "border-red-500 hover:border-red-500 bg-white dark:bg-[#121e32]"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-[#17263c] dark:bg-[#121e32] dark:hover:border-white/20"
@@ -265,16 +269,16 @@ const LeaveRequestPage = () => {
                         setLeaveType("sick");
                         setErrors(prev => ({ ...prev, leaveType: false })); // เคลียร์ Error
                       }}
-                      className="h-4 w-4 border-gray-300 text-[#A80689] focus:ring-0 dark:border-[#17263c] dark:bg-[#121e32]"
+                      className="appearance-none w-4 h-4 rounded-full border-2 border-gray-300 bg-white checked:border-[3px] checked:border-white checked:bg-[#A80689] checked:ring-2 checked:ring-[#A80689] focus:outline-none dark:border-[#17263c] dark:bg-[#121e32] dark:checked:border-[#1b2e4b]"
                     />
-                    <span className="text-gray-700 dark:text-white-light">
+                    <span className={`${leaveType === "sick" ? "text-[#A80689] dark:text-[#B10073]" : "text-gray-700 dark:text-white-light"} transition-colors`}>
                       ลาป่วย
                     </span>
                   </label>
                   <label
                     className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 ${
                       leaveType === "personal"
-                        ? "border-[#A80689] bg-[#fdf2f8] dark:border-[#B10073] dark:bg-white/5"
+                        ? "border-[#A80689] bg-white dark:border-[#B10073] dark:bg-[#1b2e4b]"
                         : errors.leaveType
                         ? "border-red-500 hover:border-red-500 bg-white dark:bg-[#121e32]"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-[#17263c] dark:bg-[#121e32] dark:hover:border-white/20"
@@ -289,9 +293,9 @@ const LeaveRequestPage = () => {
                         setLeaveType("personal");
                         setErrors(prev => ({ ...prev, leaveType: false })); // เคลียร์ Error
                       }}
-                      className="h-4 w-4 border-gray-300 text-[#A80689] focus:ring-0 dark:border-[#17263c] dark:bg-[#121e32]"
+                      className="appearance-none w-4 h-4 rounded-full border-2 border-gray-300 bg-white checked:border-[3px] checked:border-white checked:bg-[#A80689] checked:ring-2 checked:ring-[#A80689] focus:outline-none dark:border-[#17263c] dark:bg-[#121e32] dark:checked:border-[#1b2e4b]"
                     />
-                    <span className="text-gray-700 dark:text-white-light">
+                    <span className={`${leaveType === "personal" ? "text-[#A80689] dark:text-[#B10073]" : "text-gray-700 dark:text-white-light"} transition-colors`}>
                       ลากิจ
                     </span>
                   </label>
@@ -330,10 +334,10 @@ const LeaveRequestPage = () => {
               {/* File Upload */}
               <div className="pt-2">
                 <div className="mb-2 flex items-center gap-1.5">
-                  <label className="block text-[13px] font-bold text-gray-700 dark:text-white-light">
+                  <label htmlFor="attachment" className="block cursor-pointer text-[13px] font-bold text-gray-700 dark:text-white-light">
                     แนบหลักฐาน (ถ้ามี)
                   </label>
-                  <span className="material-symbols-rounded text-[13px] text-gray-400">info</span>
+                  <span className="material-symbols-rounded text-sm font-normal text-gray-400 scale-[0.6] transform origin-left -translate-y-[2px]">info</span>
                 </div>
 
                 {!attachment ? (
@@ -356,11 +360,12 @@ const LeaveRequestPage = () => {
                       ( ประเภทไฟล์ที่รองรับ: .pdf, .jpg, .jpeg, .png )
                     </p>
                     <input
+                      id="attachment"
                       ref={fileInputRef}
                       type="file"
                       className="hidden"
                       onChange={handleFileChange}
-                      accept="image/*,.pdf,.doc,.docx"
+                      accept=".pdf, image/jpeg, image/png"
                     />
                   </div>
                 ) : (
@@ -370,6 +375,7 @@ const LeaveRequestPage = () => {
                     </span>
                     <button
                       type="button"
+                      id="remove-file"
                       onClick={handleRemoveFile}
                       className="ml-2 text-gray-600 hover:text-red-500 dark:text-white-dark dark:hover:text-red-400"
                     >
@@ -387,14 +393,7 @@ const LeaveRequestPage = () => {
               <div className="flex w-full flex-col-reverse gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() => {
-                    setLeaveDate("");
-                    setLeaveType("");
-                    setDetails("");
-                    setAttachment(null);
-                    setErrors({}); // เคลียร์ Error ตอนกดยกเลิก
-                    handleRemoveFile();
-                  }}
+                  onClick={() => router.push('/intern/leave-history')}
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#A80689] bg-white px-6 py-3 text-[15px] font-bold text-[#A80689] transition-all duration-300 hover:bg-[#fdf2f8] dark:bg-transparent dark:text-white-light dark:hover:bg-white/10 sm:flex-1"
                 >
                   ยกเลิก
@@ -422,9 +421,11 @@ const LeaveRequestPage = () => {
 
           {/* Modal Content */}
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative z-[1000] flex w-[320px] flex-col items-center rounded-2xl bg-white p-6 text-center shadow-xl dark:bg-[#1a1a1a] sm:w-[400px] lg:ml-[260px]">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#11A75C] text-white">
-                <span className="material-symbols-rounded text-[28px]">check_circle</span>
+            <div className="relative z-[1000] flex w-[320px] flex-col items-center rounded-2xl bg-white p-6 text-center shadow-xl dark:bg-[#1a1a1a] sm:w-[400px]">
+              <div className="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
+                <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
+                  <span className="material-symbols-rounded text-[28px]">check</span>
+                </div>
               </div>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                 ยืนยันส่งคำขอลา
@@ -462,9 +463,11 @@ const LeaveRequestPage = () => {
 
           {/* Modal Content */}
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative z-[1000] flex w-[290px] flex-col items-center rounded-2xl bg-white p-6 text-center shadow-xl dark:bg-[#1a1a1a] lg:ml-[260px]">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#11A75C] text-white">
-                <span className="material-symbols-rounded text-[28px]">check_circle</span>
+            <div className="relative z-[1000] flex w-[290px] flex-col items-center rounded-2xl bg-white p-6 text-center shadow-xl dark:bg-[#1a1a1a]">
+              <div className="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
+                <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
+                  <span className="material-symbols-rounded text-[28px]">check</span>
+                </div>
               </div>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                 ส่งคำขอลาสำเร็จ

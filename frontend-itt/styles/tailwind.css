@@ -22,7 +22,8 @@
 @import './sweetalert.css';
 
 /* flatpickr css */
-@import './flatpickr.css';
+@import 'flatpickr/dist/flatpickr.css';
+@import './flatpickr-custom.css';
 
 /* markdown-editor css */
 @import './markdown-editor.css';
