@@ -27,6 +27,7 @@ import {
   staffLogs,
   staffProfiles,
   studentProfiles,
+  timeCorrectionRequests,
   users,
 } from "./schema";
 
@@ -50,6 +51,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   internProjects: many(internProjects),
   leaveRequests_userId: many(leaveRequests, {
     relationName: "leaveRequests_userId_users_id",
+  }),
+  approvedTimeCorrections: many(timeCorrectionRequests, {
+    relationName: "approvedTimeCorrections",
   }),
   leaveRequests_approverId: many(leaveRequests, {
     relationName: "leaveRequests_approverId_users_id",
@@ -372,6 +376,25 @@ export const offsiteTaskStudentsRelations = relations(
       fields: [offsiteTaskStudents.studentId],
       references: [users.id],
       relationName: "studentOffsiteTasks",
+    }),
+  })
+);
+
+export const timeCorrectionRequestsRelations = relations(
+  timeCorrectionRequests,
+  ({ one }) => ({
+    attendanceLog: one(attendanceLogs, {
+      fields: [timeCorrectionRequests.attendanceLogId],
+      references: [attendanceLogs.id],
+    }),
+    studentProfile: one(studentProfiles, {
+      fields: [timeCorrectionRequests.studentProfileId],
+      references: [studentProfiles.id],
+    }),
+    approver: one(users, {
+      fields: [timeCorrectionRequests.approvedBy],
+      references: [users.id],
+      relationName: "approvedTimeCorrections",
     }),
   })
 );

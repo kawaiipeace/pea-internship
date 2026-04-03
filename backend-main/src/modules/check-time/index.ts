@@ -62,16 +62,35 @@ export const checkTime = new Elysia({
     async ({ user, query }) => {
       const year = query.year ? parseInt(query.year, 10) : undefined;
       const month = query.month ? parseInt(query.month, 10) : undefined;
+      const page = query.page ? parseInt(query.page, 10) : 1;
+      const limit = query.limit ? parseInt(query.limit, 10) : 10;
 
-      return await checkTimeService.history(user.id, year, month);
+      return await checkTimeService.history(user.id, year, month, page, limit);
     },
     {
       role: [ROLE_IDS.STUDENT],
-      body: checkSchema.QueryDate,
+      query: checkSchema.QueryHistorySchema,
       detail: {
         summary: "ประวัติการลงเวลา (รายเดือน)",
         description:
-          "ดึงข้อมูลสรุปการลงเวลาและรายการรายวันตามเดือนที่ระบุ เพื่อแสดงในหน้าประวัติ",
+          "ดึงข้อมูลสรุปการลงเวลาและรายการรายวันตามเดือนที่ระบุ (รองรับ Pagination) เพื่อแสดงในหน้าประวัติ",
+      },
+    }
+  )
+  .put(
+    "/edit",
+    async ({ body, set, user }) => {
+      const result = await checkTimeService.edit(user.id, body);
+      set.status = 200;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.STUDENT],
+      body: checkSchema.EditCheckTimeSchema,
+      detail: {
+        summary: "แก้ไขเวลาลงงาน",
+        description:
+          "อนุญาตให้นักศึกษาสามารถแก้ไขเวลาลงงานได้ภายใน 24 ชั่วโมงหลังจากบันทึกเวลา โดยต้องระบุเหตุผลในการแก้ไข",
       },
     }
   );

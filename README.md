@@ -33,7 +33,6 @@ pea-internship/
 | Frontend Main | https://pea-internship-main.vercel.app/ | ระบบจัดการนักศึกษาฝึกงาน |
 | Frontend ITT | https://pea-internship-itt.vercel.app/ | ระบบบันทึกเวลานักศึกษาฝึกงาน |
 | Backend API | https://pea-internship-backend.up.railway.app/docs | REST API และ Swagger Documentation |
-| Database | `postgresql://postgres:yajQMgjvGdfDTFHWOuZANSeDSlmhJXcw@shortline.proxy.rlwy.net:42595/pea-internship` | PostgreSQL Connection String |
 | MinIO | https://pea-internship-minio.up.railway.app | Object Storage สำหรับไฟล์เอกสาร |
 
 

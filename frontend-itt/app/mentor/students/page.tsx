@@ -25,59 +25,68 @@ const StudentsPage = () => {
         {
             id: 1,
             name: 'สมใจ ใฝ่ฝัน (ใจฝัน)',
-            role: 'ออกแบบ UX/UI สำหรับ web application',
+            role: 'นักออกแบบ UX/UI',
             university: 'มหาวิทยาลัยธรรมศาสตร์',
             status: 'ปกติ',
             avatar: '/assets/images/profile-1.jpeg',
-            attendance: { present: 56, late: 4, leave: 3, absent: 2 },
+            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
             progress: { current: 420, total: 560, percent: 75 },
-            daysLeft: 15,
+            statusMessage: 'เหลืออีก 26 วันก่อนสิ้นสุดการฝึกงาน',
+            statusType: 'remaining',
+            consideration: '',
         },
         {
             id: 2,
             name: 'สมหมาย สายเสมอ (มาย)',
-            role: 'Frontend developer',
+            role: 'Fronted Developer',
             university: 'มหาวิทยาลัยเกษตรศาสตร์',
-            status: 'ลา',
+            status: 'สาย',
             avatar: '/assets/images/profile-2.jpeg',
-            attendance: { present: 54, late: 6, leave: 4, absent: 0 },
-            progress: { current: 416, total: 560, percent: 74 },
-            daysLeft: 15,
+            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
+            progress: { current: 555, total: 560, percent: 99 },
+            statusMessage: 'สิ้นสุดการฝึกงาน',
+            statusType: 'ended',
+            consideration: 'รออนุมัติการฝึกงาน',
         },
         {
             id: 3,
             name: 'สมนึก คึกคะนอง (นิค)',
-            role: 'Frontend developer',
+            role: 'Fronted Developer',
             university: 'มหาวิทยาลัยเกษตรศาสตร์',
-            status: 'ลา',
+            status: 'ปกติ',
             avatar: '/assets/images/profile-3.jpeg',
-            attendance: { present: 50, late: 2, leave: 4, absent: 8 },
-            progress: { current: 358, total: 560, percent: 63 },
-            daysLeft: 15,
+            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
+            progress: { current: 420, total: 560, percent: 75 },
+            statusMessage: 'เหลืออีก 26 วันก่อนสิ้นสุดการฝึกงาน',
+            statusType: 'remaining',
+            consideration: '',
         },
         {
             id: 4,
             name: 'สมชาย ลำฝัน (ชาย)',
-            role: 'Frontend developer',
+            role: 'นักออกแบบ UX/UI',
             university: 'โรงเรียนสวนกุหลาบ',
-            status: 'ขาด',
+            status: 'ลา',
             avatar: '/assets/images/profile-4.jpeg',
-            attendance: { present: 16, late: 0, leave: 0, absent: 1 },
-            progress: { current: 112, total: 140, percent: 80, finished: true },
-            daysLeft: 2,
-            needsCompensation: true,
+            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
+            progress: { current: 540, total: 560, percent: 96 },
+            statusMessage: 'สิ้นสุดการฝึกงาน',
+            statusType: 'ended',
+            consideration: 'ชดเชยวันทำงาน 2 วัน',
+            considerationType: 'compensation',
         },
         {
             id: 5,
             name: 'สมศรี สตรีไทย (เฟิร์น)',
-            role: 'Frontend developer',
+            role: 'นักออกแบบ UX/UI',
             university: 'โรงเรียนหอวัง',
-            status: 'สาย',
+            status: 'ปกติ',
             avatar: '/assets/images/profile-5.jpeg',
-            attendance: { present: 16, late: 1, leave: 0, absent: 0 },
-            progress: { current: 140, total: 140, percent: 100, finished: true },
-            daysLeft: 0,
-            isFinished: true,
+            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
+            progress: { current: 558, total: 560, percent: 99 },
+            statusMessage: 'วันสุดท้ายของการฝึกงาน',
+            statusType: 'last-day',
+            consideration: 'รออนุมัติการฝึกงาน',
         },
     ];
 
@@ -143,38 +152,38 @@ const StudentsPage = () => {
         switch (status) {
             case 'ปกติ':
                 return (
-                    <div className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-[#F0FDF4] border border-[#86EFAC] w-max">
-                        <div className="w-7 h-7 flex items-center justify-center bg-[#16A34A] text-white rounded-full shrink-0 shadow-sm">
-                            <IconCircleCheck className="w-4 h-4" />
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#E4FFEE] border border-[#75E0A7] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#079455] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>check</span>
                         </div>
-                        <span className="text-[#6B7280] font-medium text-[14px] whitespace-nowrap">เข้างานปกติ</span>
+                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">เข้างานปกติ</span>
                     </div>
                 );
             case 'ลา':
                 return (
-                    <div className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-[#F0F9FF] border border-[#7DD3FC] w-max">
-                        <div className="w-7 h-7 flex items-center justify-center bg-[#0EA5E9] text-white rounded-full shrink-0 shadow-sm">
-                            <IconFile className="w-4 h-4" />
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EFF8FF] border border-[#1AB3FF]/50 w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#1AB3FF] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>lab_profile</span>
                         </div>
-                        <span className="text-[#6B7280] font-medium text-[14px] whitespace-nowrap">ลา</span>
+                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">ลา</span>
                     </div>
                 );
             case 'ขาด':
                 return (
-                    <div className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-[#FEF2F2] border border-[#FCA5A5] w-max">
-                        <div className="w-7 h-7 flex items-center justify-center bg-[#DC2626] text-white rounded-full shrink-0 shadow-sm">
-                            <IconXCircle className="w-4 h-4" />
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#fef2f2] border border-[#fee2e2] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#ef4444] text-white rounded-full shrink-0 shadow-sm">
+                            <IconXCircle className="w-5 h-5" />
                         </div>
-                        <span className="text-[#6B7280] font-medium text-[14px] whitespace-nowrap">ขาด</span>
+                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">ขาด</span>
                     </div>
                 );
             case 'สาย':
                 return (
-                    <div className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-[#FEFCE8] border border-[#FDE047] w-max">
-                        <div className="w-7 h-7 flex items-center justify-center bg-[#F59E0B] text-white rounded-full shrink-0 shadow-sm">
-                            <IconClock className="w-4 h-4" />
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF9E5] border border-[#FFCA5F] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#FDB022] text-white rounded-full shrink-0 shadow-sm transition-transform">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>schedule</span>
                         </div>
-                        <span className="text-[#6B7280] font-medium text-[14px] whitespace-nowrap">สาย</span>
+                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">สาย</span>
                     </div>
                 );
             default:
@@ -346,11 +355,11 @@ const StudentsPage = () => {
                     <table className="w-full border-collapse table-auto min-w-[1100px]">
                         <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                             <tr>
-                                <th className="py-5 px-6 text-left text-[#6B7280] font-semibold text-[15px] whitespace-nowrap">ชื่อนักศึกษา</th>
-                                <th className="py-5 px-6 text-center text-[#6B7280] font-semibold text-[15px] whitespace-nowrap">สถานะในวันนี้</th>
-                                <th className="py-5 px-6 text-center text-[#6B7280] font-semibold text-[15px] whitespace-nowrap">การมา (นับจากวันที่เริ่มฝึก)</th>
-                                <th className="py-5 px-6 text-center text-[#6B7280] font-semibold text-[15px] whitespace-nowrap">ความก้าวหน้า (ชั่วโมง)</th>
-                                <th className="py-5 px-6 text-center text-[#6B7280] font-semibold text-[15px] whitespace-nowrap">วันฝึกที่เหลือ</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">นักศึกษา</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">สถานะวันนี้</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">ชั่วโมงทำงาน</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">ผลการพิจารณา</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E5E7EB]">
@@ -361,10 +370,9 @@ const StudentsPage = () => {
                                             <img src={student.avatar} alt={student.name} className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
                                                 onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${student.name}&background=random` }} 
                                             />
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="font-bold text-[#111827] text-[16px] whitespace-nowrap">{student.name}</span>
-                                                <span className="text-[13px] text-[#6B7280] whitespace-nowrap">{student.role}</span>
-                                                <span className="text-[13px] text-[#9CA3AF] font-medium whitespace-nowrap">{student.university}</span>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-[#111827] text-[17px] whitespace-nowrap">{student.name}</span>
+                                                <span className="text-[14px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
                                             </div>
                                         </div>
                                     </td>
@@ -379,69 +387,71 @@ const StudentsPage = () => {
                                         <div className="flex justify-center gap-2">
                                             {/* มา */}
                                             <div className="flex flex-col items-center gap-1">
-                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#10B981] bg-[#10B981]/5 rounded-lg">
-                                                    <span className="text-[17px] font-bold text-[#10B981] leading-none">{student.attendance.present}</span>
+                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
+                                                    <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">มา</span>
                                                 </div>
-                                                <span className="text-[12px] text-[#6B7280] font-medium px-1">มา</span>
                                             </div>
                                             {/* สาย */}
                                             <div className="flex flex-col items-center gap-1">
-                                                <div className={`w-12 h-12 flex flex-col items-center justify-center border-2 bg-white rounded-lg transition-colors ${student.attendance.late > 0 ? 'border-[#F79009] bg-[#F79009]/5' : 'border-[#E5E7EB]'}`}>
-                                                    <span className={`text-[17px] font-bold leading-none ${student.attendance.late > 0 ? 'text-[#F79009]' : 'text-[#9CA3AF]'}`}>{student.attendance.late}</span>
+                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
+                                                    <span className="text-[18px] font-bold text-[#E2A727] leading-none">{student.attendance.late}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">สาย</span>
                                                 </div>
-                                                <span className="text-[12px] text-[#6B7280] font-medium px-1">สาย</span>
                                             </div>
                                             {/* ลา */}
                                             <div className="flex flex-col items-center gap-1">
-                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#E5E7EB] bg-white rounded-lg">
-                                                    <span className="text-[17px] font-bold text-[#9CA3AF] leading-none">{student.attendance.leave}</span>
+                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
+                                                    <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">ลา</span>
                                                 </div>
-                                                <span className="text-[12px] text-[#6B7280] font-medium px-1">ลา</span>
                                             </div>
                                             {/* ขาด */}
                                             <div className="flex flex-col items-center gap-1">
-                                                <div className={`w-12 h-12 flex flex-col items-center justify-center border-2 bg-white rounded-lg transition-colors ${student.attendance.absent > 0 ? 'border-[#F04438] bg-[#F04438]/5' : 'border-[#E5E7EB]'}`}>
-                                                    <span className={`text-[17px] font-bold leading-none ${student.attendance.absent > 0 ? 'text-[#F04438]' : 'text-[#9CA3AF]'}`}>{student.attendance.absent}</span>
+                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
+                                                    <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">ขาด</span>
                                                 </div>
-                                                <span className="text-[12px] text-[#6B7280] font-medium px-1">ขาด</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-6">
+                                        <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
+                                            <div className="flex items-center justify-end px-1 mb-1">
+                                                <span className="text-[15px] text-[#9ca3af] font-medium uppercase tracking-wider">
+                                                    <b className="text-[#a80689] text-[18px]">{student.progress.current}</b>
+                                                    / {student.progress.total} ชั่วโมง
+                                                </span>
+                                            </div>
+                                            <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                                                <div 
+                                                    className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
+                                                    style={{ width: `${student.progress.percent}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2 px-1 mt-1">
+                                                <div className={`w-5 h-5 flex items-center justify-center rounded-full ${
+                                                    student.statusType === 'ended' ? 'bg-[#ef4444]' : 
+                                                    student.statusType === 'last-day' ? 'bg-[#f97316]' : 'bg-[#9ca3af]'
+                                                } text-white`}>
+                                                    <IconClock className="w-3 h-3" />
+                                                </div>
+                                                <span className={`text-[13px] font-medium ${
+                                                    student.statusType === 'ended' ? 'text-[#ef4444]' : 
+                                                    student.statusType === 'last-day' ? 'text-[#f97316]' : 'text-[#6b7280]'
+                                                }`}>
+                                                    {student.statusMessage}
+                                                </span>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-center">
-                                        <div className="flex flex-col gap-2 w-full max-w-[240px] mx-auto">
-                                            <div className="flex flex-col gap-1.5 w-full">
-                                                <div className="flex items-center justify-between px-1">
-                                                    <span className="text-[12px] font-bold text-[#6B7280] whitespace-nowrap">{student.progress.current} / {student.progress.total} ชั่วโมง</span>
-                                                    <span className="text-[12px] font-bold text-[#6B7280] whitespace-nowrap">{student.progress.percent} %</span>
-                                                </div>
-                                                <div className="w-full h-3 bg-[#F3F4F6] rounded-full overflow-hidden shrink-0 border border-[#E5E7EB]/50">
-                                                    <div 
-                                                        className="h-full bg-[#FDBAF0] rounded-full transition-all duration-700 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]"
-                                                        style={{ width: `${student.progress.percent}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {student.progress.finished && (
-                                                <div className="w-full h-9 mt-1 bg-[#A80689] rounded-xl flex items-center justify-center text-white text-[14px] font-bold shadow-lg shadow-[#A80689]/20 hover:opacity-90 transition-all cursor-pointer whitespace-nowrap">
-                                                    การผ่านฝึกงาน
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6 text-center">
-                                        <div className="flex flex-col items-center justify-center w-full">
-                                            {student.isFinished ? (
-                                                <span className="text-[#F04438] font-bold text-[16px] whitespace-nowrap">สิ้นสุดวันฝึกแล้ว</span>
-                                            ) : student.needsCompensation ? (
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <span className="text-[#F04438] font-bold text-[20px] whitespace-nowrap">{student.daysLeft} วัน</span>
-                                                    <button className="px-5 py-2 border-2 border-[#A80689] text-[#A80689] rounded-xl text-[13px] font-bold hover:bg-[#A80689] hover:text-white transition-all shadow-sm whitespace-nowrap">
-                                                        ชดเชยวันทำงาน
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <span className="text-[#4B5563] font-bold text-[16px] whitespace-nowrap">{student.daysLeft} วัน</span>
-                                            )}
+                                        <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
+                                            <span className={`font-semibold text-[15px] whitespace-nowrap ${
+                                                student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
+                                            }`}>
+                                                {student.consideration}
+                                            </span>
                                         </div>
                                     </td>
                                 </tr>
@@ -451,41 +461,36 @@ const StudentsPage = () => {
                 </div>
             </div>
 
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-6 pb-10 gap-6">
-                <button className="flex items-center justify-center sm:justify-start gap-2 text-[#A80689] font-bold text-[15px] hover:opacity-80 transition-opacity w-full sm:w-auto py-3 sm:py-0 border border-[#A80689]/20 sm:border-none rounded-xl sm:rounded-none bg-[#A80689]/5 sm:bg-transparent">
-                    <IconExport className="w-5 h-5 stroke-[2.5px]" />
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 pb-10 gap-6 px-2">
+                <button className="flex items-center gap-2.5 text-[#A80689] font-bold text-[16px] hover:opacity-80 transition-all group">
+                    <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#A80689]/5 group-hover:bg-[#A80689]/10 transition-colors">
+                        <IconExport className="w-6 h-6 stroke-[2.5px]" />
+                    </div>
                     ส่งออกตาราง
                 </button>
 
-                <div className="flex flex-row items-center justify-center w-full sm:w-auto overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex items-center gap-1">
                     <button
                         onClick={() => setPage(Math.max(1, page - 1))}
                         disabled={page === 1}
-                        className="flex items-center justify-center w-10 h-10 bg-white border border-[#E5E7EB] rounded-l-lg text-[#4B5563] hover:bg-gray-50 focus:z-10 disabled:opacity-50 disabled:hover:bg-white transition-colors cursor-pointer"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-gray-50 disabled:opacity-30 transition-colors"
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
-                    {Array.from({ length: Math.ceil(filteredItems.length / pageSize) || 1 }, (_, i) => i + 1).map((p) => (
-                        <button
-                            key={p}
-                            onClick={() => setPage(p)}
-                            className={`flex items-center justify-center w-10 h-10 border-y border-r border-[#E5E7EB] text-[14px] font-medium transition-colors focus:z-10 cursor-pointer ${
-                                page === p
-                                    ? 'bg-[#F8FAFC] text-[#111827]'
-                                    : 'bg-white text-[#4B5563] hover:bg-gray-50'
-                            }`}
-                        >
-                            {p}
-                        </button>
-                    ))}
+                    
+                    <button onClick={() => setPage(1)} className={`w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold transition-all ${page === 1 ? 'bg-[#F1F5F9] text-[#1e293b]' : 'text-[#64748b] hover:bg-gray-50'}`}>1</button>
+                    <button onClick={() => setPage(2)} className={`w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold transition-all ${page === 2 ? 'bg-[#F1F5F9] text-[#1e293b]' : 'text-[#64748b] hover:bg-gray-50'}`}>2</button>
+                    <div className="w-10 h-10 flex items-center justify-center text-[#94a3b8] font-bold">...</div>
+                    <button className="w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold text-[#64748b] hover:bg-gray-50">9</button>
+                    <button className="w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold text-[#64748b] hover:bg-gray-50">10</button>
+
                     <button
-                        onClick={() => setPage(Math.min(Math.ceil(filteredItems.length / pageSize) || 1, page + 1))}
-                        disabled={page === (Math.ceil(filteredItems.length / pageSize) || 1)}
-                        className="flex items-center justify-center w-10 h-10 bg-white border-y border-r border-[#E5E7EB] rounded-r-lg text-[#4B5563] hover:bg-gray-50 focus:z-10 disabled:opacity-50 disabled:hover:bg-white transition-colors cursor-pointer"
+                        onClick={() => setPage(page + 1)}
+                        className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-gray-50 transition-colors"
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </button>

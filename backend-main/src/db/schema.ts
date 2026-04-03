@@ -87,6 +87,12 @@ export const leavePeriodEnum = pgEnum("leave_period_enum", [
   "AFTERNOON",
 ]);
 
+export const correctionStatusEnum = pgEnum("correction_status_enum", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+]);
+
 export const docTypes = pgTable(
   "doc_types",
   {
@@ -995,5 +1001,51 @@ export const offsiteTaskStudents = pgTable(
       foreignColumns: [users.id],
       name: "task_students_student_id_fkey",
     }).onDelete("cascade"),
+  ]
+);
+
+export const timeCorrectionRequests = pgTable(
+  "time_correction_requests",
+  {
+    id: serial().primaryKey().notNull(),
+    attendanceLogId: integer("attendance_log_id").notNull(),
+    studentProfileId: integer("student_profile_id").notNull(),
+    originalCheckIn: timestamp("original_check_in", { mode: "string" }),
+    originalCheckOut: timestamp("original_check_out", { mode: "string" }),
+    requestedCheckIn: timestamp("requested_check_in", {
+      mode: "string",
+    }).notNull(),
+    requestedCheckOut: timestamp("requested_check_out", {
+      mode: "string",
+    }).notNull(),
+    calculatedHours: numeric("calculated_hours", { precision: 5, scale: 2 }),
+    reason: text().notNull(),
+    attachmentUrl: varchar("attachment_url", { length: 255 }),
+    status: correctionStatusEnum().default("PENDING").notNull(),
+    approvedBy: varchar("approved_by", { length: 50 }),
+    approverNote: text("approver_note"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.attendanceLogId],
+      foreignColumns: [attendanceLogs.id],
+      name: "time_correction_requests_attendance_log_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.studentProfileId],
+      foreignColumns: [studentProfiles.id],
+      name: "time_correction_requests_student_profile_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.approvedBy],
+      foreignColumns: [users.id],
+      name: "time_correction_requests_approved_by_fkey",
+    }).onDelete("set null"),
   ]
 );
