@@ -89,7 +89,11 @@ export default function AnnouncementsPage() {
         const acceptedStatuses = new Set(["PENDING_CONFIRMATION", "PENDING_REQUEST", "PENDING_REVIEW", "COMPLETE"]);
         try {
           const appResponse = await applicationApi.getAllStudentsHistory({ limit: 1000, includeCanceled: false });
-          const apps = appResponse.data || [];
+          // กรองเฉพาะใบสมัครที่อยู่ใน position ของ department นี้
+          const deptPositionIds = new Set(positions.map((p) => p.id));
+          const apps = (appResponse.data || []).filter(
+            (app) => app.positionId && deptPositionIds.has(app.positionId)
+          );
           const counts: Record<number, { total: number; accepted: number }> = {};
           for (const app of apps) {
             if (!app.positionId) continue;

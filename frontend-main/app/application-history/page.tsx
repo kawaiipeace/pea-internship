@@ -142,7 +142,13 @@ export default function ApplicationHistoryPage() {
           };
           const appStatus = mapBackendStatus(appWithInternshipStatus);
           const appStep = APP_STATUS_TO_STEP[app.applicationStatus];
-          const reason = app.statusNote || "";
+          const hasInvalidDoc = app.documents?.some((d) => d.validationStatus === "INVALID");
+          const invalidDocNote = hasInvalidDoc
+            ? (app.documents as { note?: string | null; validationStatus?: string }[])?.find((d) => d.validationStatus === "INVALID" && d.note)?.note || null
+            : null;
+          const reason = (app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT")
+            ? (app.statusNote || "")
+            : (invalidDocNote || "");
 
           // Determine if this is the "current" application:
           // Active (non-CANCEL/ABORT) or in-training (COMPLETE + isActive)
@@ -607,6 +613,19 @@ export default function ApplicationHistoryPage() {
                         </h4>
                         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                           <p className="text-red-700 text-sm">
+                            {job.rejectionReason}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  {job.applicationStatus === "cancelled" &&
+                    job.rejectionReason && (
+                      <div className="mt-3">
+                        <h4 className="font-bold text-gray-800 text-sm mb-1.5">
+                          เหตุผลที่ยกเลิก
+                        </h4>
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <p className="text-gray-600 text-sm">
                             {job.rejectionReason}
                           </p>
                         </div>
