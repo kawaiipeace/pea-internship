@@ -1133,9 +1133,7 @@ export class ApplicationService {
           : null;
 
       const latestReasonNote =
-        status === "INVALID"
-          ? normalizedInvalidReasons!.join(", ")
-          : null;
+        status === "INVALID" ? normalizedInvalidReasons!.join(", ") : null;
 
       await tx
         .update(applicationDocuments)
