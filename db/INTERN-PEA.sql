@@ -37,6 +37,8 @@ CREATE TYPE public.check_time_status_type AS ENUM ('PRESENT', 'LATE', 'ABSENT', 
 
 CREATE TYPE public.leave_period_enum AS ENUM ('FULL_DAY', 'MORNING', 'AFTERNOON');
 
+CREATE TYPE public.correction_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
 CREATE TABLE -- all
   public.roles (
     id SERIAL PRIMARY KEY,
@@ -526,6 +528,30 @@ CREATE TABLE
     CONSTRAINT task_students_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.offsite_tasks (id) ON DELETE CASCADE,
     CONSTRAINT task_students_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.users (id) ON DELETE CASCADE
   );
+
+CREATE TABLE public.time_correction_requests (
+    id SERIAL PRIMARY KEY,
+    attendance_log_id INT NOT NULL,
+    student_profile_id INT NOT NULL,
+    original_check_in TIMESTAMP,
+    original_check_out TIMESTAMP,
+    requested_check_in TIMESTAMP NOT NULL,
+    requested_check_out TIMESTAMP NOT NULL,
+    calculated_hours DECIMAL(5, 2),
+    reason TEXT NOT NULL,
+    attachment_url VARCHAR(255),
+    status public.correction_status_enum DEFAULT 'PENDING' NOT NULL,
+    approved_by VARCHAR(50),
+    approver_note TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_correction_attendance FOREIGN KEY (attendance_log_id) REFERENCES public.attendance_logs (id) ON DELETE CASCADE,
+    CONSTRAINT fk_correction_student FOREIGN KEY (student_profile_id) REFERENCES public.student_profiles (id) ON DELETE CASCADE,
+    CONSTRAINT fk_correction_approver FOREIGN KEY (approved_by) REFERENCES public.users (id) ON DELETE SET NULL
+);
+
+COMMENT ON TABLE public.time_correction_requests IS 'เก็บข้อมูลคำขอแก้ไขเวลาเข้า-ออกงาน พร้อมไฟล์แนบ รอการอนุมัติ';
 
 CREATE
 OR REPLACE VIEW public.student_attendance_summary AS

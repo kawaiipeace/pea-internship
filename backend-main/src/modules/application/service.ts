@@ -1061,7 +1061,7 @@ export class ApplicationService {
     applicationId: number,
     docTypeId: 1 | 2 | 3 | 4,
     status: "VERIFIED" | "INVALID",
-    note?: string,
+    _note?: string,
     invalidReasons?: string[]
   ) {
     return await db.transaction(async (tx) => {
