@@ -8,6 +8,7 @@ import {
   offsiteTaskStudents,
   offsiteTasks,
   studentProfiles,
+  timeCorrectionRequests,
 } from "@/db/schema";
 import type * as checkSchema from "./model";
 
@@ -396,7 +397,14 @@ export class CheckTimeService {
       };
     });
   }
-  async history(userId: string, year?: number, month?: number) {
+
+  async history(
+    userId: string,
+    year?: number,
+    month?: number,
+    page: number = 1,
+    limit: number = 10
+  ) {
     const student = await db.query.studentProfiles.findFirst({
       where: eq(studentProfiles.userId, userId),
       columns: { id: true },
@@ -415,32 +423,64 @@ export class CheckTimeService {
     const lastDay = new Date(targetYear, targetMonth, 0).getDate();
     const endDate = `${targetYear}-${monthStr}-${lastDay}`;
 
-    const historyData = await db.query.attendanceLogs.findMany({
-      where: and(
-        eq(attendanceLogs.studentProfileId, student.id),
-        gte(attendanceLogs.workDate, startDate),
-        lte(attendanceLogs.workDate, endDate)
-      ),
-      orderBy: [desc(attendanceLogs.workDate)],
-      with: {
-        checkIn: { columns: { time: true } },
-        checkOut: { columns: { time: true } },
+    const whereCondition = and(
+      eq(attendanceLogs.studentProfileId, student.id),
+      gte(attendanceLogs.workDate, startDate),
+      lte(attendanceLogs.workDate, endDate)
+    );
+
+    const allRecordsForSummary = await db.query.attendanceLogs.findMany({
+      where: whereCondition,
+      columns: {
+        dailyStatus: true,
+        checkInId: true,
+        checkOutId: true,
       },
     });
+
+    const totalRecords = allRecordsForSummary.length;
+    const totalPages = Math.ceil(totalRecords / limit);
 
     const summary = {
       present: 0,
       late: 0,
       leave: 0,
       absent: 0,
+      missingOut: 0,
     };
 
-    const records = historyData.map((log) => {
-      if (log.dailyStatus === "PRESENT") summary.present++;
-      else if (log.dailyStatus === "LATE") summary.late++;
-      else if (log.dailyStatus === "LEAVE") summary.leave++;
-      else if (log.dailyStatus === "ABSENT") summary.absent++;
+    allRecordsForSummary.forEach((log) => {
+      let displayStatus = log.dailyStatus;
 
+      if (
+        (log.dailyStatus === "PRESENT" || log.dailyStatus === "LATE") &&
+        log.checkInId &&
+        !log.checkOutId
+      ) {
+        displayStatus = "MISSING_OUT";
+      }
+
+      if (displayStatus === "PRESENT") summary.present++;
+      else if (displayStatus === "LATE") summary.late++;
+      else if (displayStatus === "LEAVE") summary.leave++;
+      else if (displayStatus === "ABSENT") summary.absent++;
+      else if (displayStatus === "MISSING_OUT") summary.missingOut++;
+    });
+
+    const offset = (page - 1) * limit;
+
+    const historyData = await db.query.attendanceLogs.findMany({
+      where: whereCondition,
+      orderBy: [desc(attendanceLogs.workDate)],
+      limit: limit,
+      offset: offset,
+      with: {
+        checkIn: { columns: { time: true } },
+        checkOut: { columns: { time: true } },
+      },
+    });
+
+    const records = historyData.map((log) => {
       const formatTime = (timeStr?: string | null) => {
         if (!timeStr) return "--:--";
         const d = new Date(timeStr);
@@ -475,7 +515,119 @@ export class CheckTimeService {
     return {
       period: { year: targetYear, month: targetMonth },
       summary: summary,
+      pagination: {
+        page: page,
+        limit: limit,
+        totalPages: totalPages,
+        totalRecords: totalRecords,
+      },
       records: records,
     };
+  }
+
+  async edit(userId: string, data: checkSchema.EditCheckTimeDto) {
+    return await db.transaction(async (tx) => {
+      const student = await tx.query.studentProfiles.findFirst({
+        where: eq(studentProfiles.userId, userId),
+      });
+
+      if (!student) {
+        throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
+      }
+
+      if (Number.isNaN(data.attendanceLogId)) {
+        throw new ConflictError("ID ของรายการลงเวลาไม่ถูกต้อง");
+      }
+
+      const existingLog = await tx.query.attendanceLogs.findFirst({
+        where: eq(attendanceLogs.id, data.attendanceLogId),
+        with: {
+          checkIn: true,
+          checkOut: true,
+        },
+      });
+
+      if (!existingLog || existingLog.studentProfileId !== student.id) {
+        throw new NotFoundError("ไม่พบรายการลงเวลานี้");
+      }
+
+      const isMissingOut = existingLog.checkInId && !existingLog.checkOutId;
+      const currentStatus = existingLog.dailyStatus;
+      const allowedToEdit =
+        isMissingOut || currentStatus === "ABSENT" || currentStatus === "LATE";
+
+      if (!allowedToEdit) {
+        throw new ConflictError(
+          "ไม่อนุญาตให้แก้ไขเวลา (ทำได้เฉพาะกรณี ขาดงาน, มาสาย หรือ ลืมเช็คเอาท์)"
+        );
+      }
+
+      const originalIn = existingLog.checkIn?.time || null;
+      const originalOut = existingLog.checkOut?.time || null;
+
+      const workDate = existingLog.workDate;
+      const newInDate = new Date(
+        `${workDate}T${data.checkInTime}:00+07:00`
+      ).toISOString();
+      const newOutDate = new Date(
+        `${workDate}T${data.checkOutTime}:00+07:00`
+      ).toISOString();
+
+      const calculatedHours = this.calculateCorrectionHours(
+        data.checkInTime,
+        data.checkOutTime
+      );
+
+      const [newRequest] = await tx
+        .insert(timeCorrectionRequests)
+        .values({
+          attendanceLogId: existingLog.id,
+          studentProfileId: student.id,
+
+          originalCheckIn: originalIn, // เก็บเวลาเข้างานเก่า
+          originalCheckOut: originalOut, // เก็บเวลาออกงานเก่า
+
+          requestedCheckIn: newInDate, // เก็บเวลาเข้างานใหม่
+          requestedCheckOut: newOutDate, // เก็บเวลาออกงานใหม่
+          calculatedHours: calculatedHours,
+
+          reason: data.reason,
+          attachmentUrl: data.attachmentUrl, // ถ้ามีไฟล์แนบ
+          status: "PENDING", // ตั้งสถานะเป็น "รออนุมัติ"
+        })
+        .returning();
+
+      return {
+        success: true,
+        message: "ส่งคำขอแก้ไขเวลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)",
+        requestId: newRequest.id,
+        hoursWorked: calculatedHours,
+      };
+    });
+  }
+
+  private calculateCorrectionHours(
+    checkInHHmm: string,
+    checkOutHHmm: string
+  ): string {
+    const [inHour, inMin] = checkInHHmm.split(":").map(Number);
+    const [outHour, outMin] = checkOutHHmm.split(":").map(Number);
+
+    const inTime = new Date(1970, 0, 1, inHour, inMin);
+    const outTime = new Date(1970, 0, 1, outHour, outMin);
+
+    let totalMs = outTime.getTime() - inTime.getTime();
+    if (totalMs < 0) totalMs = 0;
+
+    let hours = totalMs / (1000 * 60 * 60);
+
+    if (hours >= 4) {
+      hours -= 1;
+    }
+
+    if (hours > 7) hours = 7;
+    if (hours < 0) hours = 0;
+
+    return hours.toFixed(2);
   }
 }
