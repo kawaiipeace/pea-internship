@@ -426,25 +426,30 @@ export class PositionService {
 
       const autoStatus = computeAutoStatus(newRecruitStart, newRecruitEnd);
 
-      let finalStatus: "NOT_OPEN_YET" | "OPEN" | "CLOSE" | "EXPIRED" =
-        autoStatus;
+      let finalStatus: "NOT_OPEN_YET" | "OPEN" | "CLOSE" | "EXPIRED";
 
-      if (data.recruitmentStatus === "CLOSE") {
-        if (autoStatus !== "OPEN") {
-          throw new ForbiddenError(
-            "สามารถปิดประกาศได้เฉพาะตอนที่สถานะเป็น OPEN เท่านั้น"
-          );
+      if ("recruitmentStatus" in data && data.recruitmentStatus !== undefined) {
+        if (data.recruitmentStatus === "CLOSE") {
+          const [hasApplication] = await tx
+            .select({ id: applicationStatuses.id })
+            .from(applicationStatuses)
+            .where(eq(applicationStatuses.positionId, id))
+            .limit(1);
+
+          if (hasApplication) {
+            throw new BadRequestError(
+              "ไม่สามารถปิดใบประกาศได้ เนื่องจากมีผู้สมัครอยู่ในระบบแล้ว"
+            );
+          }
+
+          finalStatus = "CLOSE";
+        } else {
+          finalStatus = autoStatus;
         }
-        finalStatus = "CLOSE";
-      } else if (data.recruitmentStatus === "OPEN") {
-        if (autoStatus !== "OPEN") {
-          throw new ForbiddenError(
-            "ไม่สามารถเปิดรับสมัครได้ เพราะยังไม่ถึงเวลาเปิดรับสมัครหรือประกาศหมดอายุ"
-          );
-        }
-        finalStatus = "OPEN";
       } else {
         if (existing.recruitmentStatus === "CLOSE" && autoStatus === "OPEN") {
+          finalStatus = "CLOSE";
+        } else if (existing.recruitmentStatus === "CLOSE") {
           finalStatus = "CLOSE";
         } else {
           finalStatus = autoStatus;
@@ -458,8 +463,7 @@ export class PositionService {
 
       if ("name" in data) updateData.name = data.name;
       if ("location" in data) updateData.location = data.location;
-      if ("positionCount" in data)
-        updateData.positionCount = data.positionCount;
+      if ("positionCount" in data) updateData.positionCount = data.positionCount;
       if ("major" in data) updateData.major = data.major;
 
       if ("recruitStart" in data) updateData.recruitStart = data.recruitStart;
