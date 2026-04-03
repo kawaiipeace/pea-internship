@@ -142,13 +142,23 @@ export default function ApplicationHistoryPage() {
           };
           const appStatus = mapBackendStatus(appWithInternshipStatus);
           const appStep = APP_STATUS_TO_STEP[app.applicationStatus];
-          const hasInvalidDoc = app.documents?.some((d) => d.validationStatus === "INVALID");
+          const hasInvalidDoc = app.documents?.some(
+            (d) => d.validationStatus === "INVALID",
+          );
           const invalidDocNote = hasInvalidDoc
-            ? (app.documents as { note?: string | null; validationStatus?: string }[])?.find((d) => d.validationStatus === "INVALID" && d.note)?.note || null
+            ? (
+                app.documents as {
+                  note?: string | null;
+                  validationStatus?: string;
+                }[]
+              )?.find((d) => d.validationStatus === "INVALID" && d.note)
+                ?.note || null
             : null;
-          const reason = (app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT")
-            ? (app.statusNote || "")
-            : (invalidDocNote || "");
+          const reason =
+            app.applicationStatus === "CANCEL" ||
+            app.applicationStatus === "ABORT"
+              ? app.statusNote || ""
+              : invalidDocNote || "";
 
           // Determine if this is the "current" application:
           // Active (non-CANCEL/ABORT) or in-training (COMPLETE + isActive)
@@ -293,9 +303,6 @@ export default function ApplicationHistoryPage() {
     if (applicationStatus === "active") {
       return (
         <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-2 bg-green-100 text-green-500 rounded-full font-bold text-sm">
-            รับเข้าฝึกงาน
-          </span>
           {applicationStep && (
             <span className="px-3 py-2 bg-yellow-100 text-yellow-700 rounded-full font-bold text-sm">
               {applicationStep}

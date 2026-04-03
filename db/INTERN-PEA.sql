@@ -95,6 +95,7 @@ CREATE TABLE -- all
     dept_full6 TEXT NULL,
     dept_full7 TEXT NULL,
     dept_full TEXT NULL,
+    dept_long_short varchar(50) NULL,
     cost_center_code BPCHAR (20) NULL,
     cost_center_name TEXT NULL,
     pea_code VARCHAR(6) NULL,
@@ -569,3 +570,63 @@ GROUP BY
   u.fname,
   u.lname,
   api.hours;
+
+UPDATE public.departments
+SET dept_long_short = 
+    CASE 
+        WHEN (dept_short7 IS NULL OR dept_short7 = '')
+         AND (dept_short6 IS NULL OR dept_short6 = '')
+         AND (dept_short5 IS NULL OR dept_short5 = '')
+         AND (dept_short4 IS NULL OR dept_short4 = '')
+         AND (dept_short3 IS NULL OR dept_short3 = '')
+         AND (dept_short2 IS NULL OR dept_short2 = '')
+        THEN dept_short
+        
+        ELSE CONCAT_WS(' ', 
+            NULLIF(dept_short7, ''),  
+            NULLIF(dept_short6, ''),  
+            NULLIF(dept_short5, ''),  
+            NULLIF(dept_short4, ''), 
+            NULLIF(dept_short3, ''),  
+            NULLIF(dept_short2, '')
+        )
+    END;
+
+
+CREATE OR REPLACE FUNCTION public.trg_set_dept_long_short()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  NEW.dept_long_short := 
+    CASE 
+        WHEN (NEW.dept_short7 IS NULL OR NEW.dept_short7 = '')
+         AND (NEW.dept_short6 IS NULL OR NEW.dept_short6 = '')
+         AND (NEW.dept_short5 IS NULL OR NEW.dept_short5 = '')
+         AND (NEW.dept_short4 IS NULL OR NEW.dept_short4 = '')
+         AND (NEW.dept_short3 IS NULL OR NEW.dept_short3 = '')
+         AND (NEW.dept_short2 IS NULL OR NEW.dept_short2 = '')
+        THEN NEW.dept_short
+        ELSE CONCAT_WS(' ', 
+            NULLIF(NEW.dept_short7, ''),  
+            NULLIF(NEW.dept_short6, ''),  
+            NULLIF(NEW.dept_short5, ''),  
+            NULLIF(NEW.dept_short4, ''), 
+            NULLIF(NEW.dept_short3, ''),  
+            NULLIF(NEW.dept_short2, '')
+        )
+    END;
+  RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS trg_before_insert_set_dept_long_short ON public.departments;
+DROP TRIGGER IF EXISTS trg_before_update_set_dept_long_short ON public.departments;
+
+CREATE TRIGGER trg_before_insert_set_dept_long_short 
+BEFORE INSERT ON public.departments 
+FOR EACH ROW EXECUTE FUNCTION trg_set_dept_long_short();
+
+CREATE TRIGGER trg_before_update_set_dept_long_short 
+BEFORE UPDATE ON public.departments 
+FOR EACH ROW EXECUTE FUNCTION trg_set_dept_long_short();

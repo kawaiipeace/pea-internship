@@ -22,3 +22,7 @@ export const CreateOffsiteTaskSchema = t.Object({
 });
 
 export type CreateOffsiteTaskDto = typeof CreateOffsiteTaskSchema.static;
+
+export const UpdateOffsiteTaskSchema = t.Partial(CreateOffsiteTaskSchema);
+
+export type UpdateOffsiteTaskDto = typeof UpdateOffsiteTaskSchema.static;

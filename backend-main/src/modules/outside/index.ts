@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { isAuthenticated, ROLE_IDS } from "@/middlewares/auth.middleware";
 import * as offsiteModel from "./model";
 import { OffsiteTaskService } from "./service";
@@ -27,6 +27,40 @@ export const offsiteTasks = new Elysia({
       detail: {
         summary: "มอบหมายงานนอกสถานที่",
         description: "Mentor ทำการมอบหมายงานนอกสถานที่ให้นักศึกษา (เลือกได้หลายคน)",
+      },
+    }
+  )
+  // 2. แก้ไขงานนอกสถานที่ (เฉพาะ Mentor)
+  .patch(
+    "/:id",
+    async ({ params, body, user }) => {
+      const taskId = Number(params.id);
+      return await offsiteTaskService.updateTask(taskId, user.id, body);
+    },
+    {
+      role: [ROLE_IDS.MENTOR],
+      params: t.Object({ id: t.Numeric() }),
+      body: offsiteModel.UpdateOffsiteTaskSchema,
+      detail: {
+        summary: "แก้ไขงานนอกสถานที่",
+        description: "แก้ไขรายละเอียดงานหรือรายชื่อนักศึกษา (เฉพาะเจ้าของงาน)",
+      },
+    }
+  )
+
+  // 3. ลบงานนอกสถานที่ (เฉพาะ Mentor)
+  .delete(
+    "/:id",
+    async ({ params, user }) => {
+      const taskId = Number(params.id);
+      return await offsiteTaskService.deleteTask(taskId, user.id);
+    },
+    {
+      role: [ROLE_IDS.MENTOR],
+      params: t.Object({ id: t.Numeric() }),
+      detail: {
+        summary: "ลบงานนอกสถานที่",
+        description: "ลบรายการงานนอกสถานที่ (เฉพาะเจ้าของงาน)",
       },
     }
   )

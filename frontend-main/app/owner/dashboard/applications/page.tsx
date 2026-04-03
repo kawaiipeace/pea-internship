@@ -218,7 +218,7 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       stepDescription: "ไม่ผ่าน",
     },
     ABORT: {
-      step: 1,
+      step: 0,
       status: "cancelled",
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกการสมัคร",
@@ -235,6 +235,23 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       status: "cancelled",
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกฝึกงาน",
+    };
+  } else if (item.applicationStatus === "ABORT") {
+    // Determine step from statusNote set by cron
+    let abortStep = 1;
+    const note = item.statusNote || "";
+    if (note.includes("เอกสารขอความอนุเคราะห์")) {
+      abortStep = 4;
+    } else if (note.includes("สัมภาษณ์")) {
+      abortStep = 2;
+    } else if (note.includes("เอกสาร")) {
+      abortStep = 1;
+    }
+    mapped = {
+      step: abortStep,
+      status: "cancelled",
+      detailedStatus: "cancelled",
+      stepDescription: "ยกเลิกการสมัคร",
     };
   } else if (item.applicationStatus === "CANCEL" && item.statusNote) {
     // CANCEL + isActive=true + statusNote = owner rejected during application (ไม่ผ่าน)
@@ -323,6 +340,15 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
     cancellationReason:
       item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
         ? item.statusNote || undefined
+        : undefined,
+    cancelledBy:
+      item.applicationStatus === "ABORT"
+        ? "ระบบ (อัตโนมัติ)"
+        : undefined,
+    cancelledDate:
+      (item.applicationStatus === "CANCEL" && item.isActive === false) ||
+      item.applicationStatus === "ABORT"
+        ? item.updatedAt || undefined
         : undefined,
     mentors: item.mentors && item.mentors.length > 0 ? item.mentors : undefined,
     skill: item.infoSkill || undefined,
@@ -764,12 +790,17 @@ function ApplicationsContent() {
     let accepted = 0;
     let rejected = 0;
     let cancelled = 0;
+    let abort = 0;
 
     allApplications.forEach((app) => {
       if (app.status === "rejected") {
         rejected++;
       } else if (app.status === "cancelled") {
-        cancelled++;
+        if (app.stepDescription === "ยกเลิกการสมัคร") {
+          abort++;
+        } else {
+          cancelled++;
+        }
       } else if (app.status === "accepted") {
         accepted++;
       } else if (app.detailedStatus === "waiting_confirm") {
@@ -789,6 +820,7 @@ function ApplicationsContent() {
       accepted,
       rejected,
       cancelled,
+      abort,
     };
   };
 
@@ -847,7 +879,9 @@ function ApplicationsContent() {
         case "rejected":
           return app.status === "rejected";
         case "cancelled":
-          return app.status === "cancelled";
+          return app.status === "cancelled" && app.stepDescription !== "ยกเลิกการสมัคร";
+        case "abort":
+          return app.status === "cancelled" && app.stepDescription === "ยกเลิกการสมัคร";
         default:
           return true;
       }
@@ -981,6 +1015,14 @@ function ApplicationsContent() {
 
     // === Cancelled ===
     if (app.status === "cancelled") {
+      // Student self-cancel (ABORT) uses gray badge
+      if (app.stepDescription === "ยกเลิกการสมัคร") {
+        return {
+          text: "ยกเลิกการสมัคร",
+          color:
+            "bg-gray-100 text-gray-600 font-semibold border border-gray-300",
+        };
+      }
       return {
         text: "ยกเลิกฝึกงาน",
         color:
@@ -1266,6 +1308,21 @@ function ApplicationsContent() {
     return labels[education] || education;
   };
 
+  const getStudyPlanLabel = (app: Application): string => {
+    const major = app.major?.trim();
+    if (major) return major;
+
+    const raw = (app.studentNote || "").trim();
+    if (!raw) return "-";
+
+    const firstPart = raw
+      .split("|")
+      .map((p) => p.trim())
+      .find((p) => p && !p.startsWith("สถานศึกษา:"));
+
+    return firstPart || "-";
+  };
+
   // Helper: get mentor info from position data (first mentor added to the position)
   const getMentor = () => {
     const pm = positionInfo?.mentors?.[0];
@@ -1375,10 +1432,15 @@ function ApplicationsContent() {
           color: "bg-red-50 text-red-600 border-red-200",
         };
       case "cancelled":
-        return {
-          label: "ยกเลิกฝึกงาน",
-          color: "bg-red-50 text-red-600 border-red-200",
-        };
+        return status === "ABORT"
+          ? {
+              label: "ยกเลิกการสมัคร",
+              color: "bg-gray-100 text-gray-600 border-gray-300",
+            }
+          : {
+              label: "ยกเลิกฝึกงาน",
+              color: "bg-red-50 text-red-600 border-red-200",
+            };
       default:
         return {
           label: "กำลังดำเนินการ",
@@ -1463,7 +1525,22 @@ function ApplicationsContent() {
     let currentStep = 0;
 
     if (statusCat === "rejected") {
-      completedUpTo = 3;
+      // Use timeline actions to determine where the rejection happened
+      const rejectAction = timelineActions.find(
+        (a) => a.newStatus === "CANCEL"
+      );
+      if (rejectAction?.oldStatus) {
+        const rejectStepMap: Record<string, number> = {
+          PENDING_DOCUMENT: 0,
+          PENDING_INTERVIEW: 1,
+          PENDING_CONFIRMATION: 2,
+          PENDING_REQUEST: 3,
+          PENDING_REVIEW: 4,
+        };
+        completedUpTo = rejectStepMap[rejectAction.oldStatus] ?? 2;
+      } else {
+        completedUpTo = app.step > 0 ? app.step - 1 : 2;
+      }
       currentStep = 0;
     } else if (statusCat === "cancelled") {
       const effDetailed = getAcceptedEffectiveDetailed(app);
@@ -1476,8 +1553,28 @@ function ApplicationsContent() {
         completedUpTo = 4;
         currentStep = 5;
       } else {
-        completedUpTo = 3;
-        currentStep = 4;
+        // Use step from mapper which is based on statusNote/oldStatus for ABORT
+        const abortAction = timelineActions.find(
+          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+        );
+        if (abortAction?.oldStatus) {
+          const abortStepMap: Record<string, number> = {
+            PENDING_DOCUMENT: 0,
+            PENDING_INTERVIEW: 1,
+            PENDING_CONFIRMATION: 2,
+            PENDING_REQUEST: 3,
+            PENDING_REVIEW: 4,
+          };
+          completedUpTo =
+            abortStepMap[abortAction.oldStatus] ?? (app.step > 0 ? app.step - 1 : 0);
+          currentStep = 0;
+        } else if (app.step > 0) {
+          completedUpTo = app.step > 0 ? app.step - 1 : 0;
+          currentStep = 0;
+        } else {
+          completedUpTo = 0;
+          currentStep = 0;
+        }
       }
     } else if (statusCat === "accepted") {
       const effDetailed = getAcceptedEffectiveDetailed(app);
@@ -1712,9 +1809,14 @@ function ApplicationsContent() {
           </div>
           {/* Badge */}
           <div className="flex flex-wrap gap-1 mb-4">
-            <span className="bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA] text-sm px-3 py-1 rounded-full">
-              ยกเลิกฝึกงาน
-            </span>
+            {(() => {
+              const detailBadge = getStatusBadge(selectedApplication);
+              return (
+                <span className={`text-sm px-3 py-1 rounded-full ${detailBadge.color}`}>
+                  {detailBadge.text}
+                </span>
+              );
+            })()}
           </div>
           {/* Department */}
           <div className="flex items-center gap-2 text-gray-600 mb-6 border-b mtb-6 pb-4 border-[#CECFD2]">
@@ -1736,11 +1838,12 @@ function ApplicationsContent() {
                 "ตำแหน่งงาน"}
             </span>
           </div>
-          {/* Cancellation reason */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          {/* Cancellation reason - show for owner-cancelled or cron-aborted with reason */}
+          {(selectedApplication.stepDescription !== "ยกเลิกการสมัคร" || selectedApplication.cancellationReason) && (
+          <div className={`${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mb-6`}>
             <div className="flex items-start gap-2">
               <svg
-                className="w-5 h-5 text-red-500 mt-0.5 shrink-0"
+                className={`w-5 h-5 ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "text-gray-500" : "text-red-500"} mt-0.5 shrink-0`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -1753,8 +1856,10 @@ function ApplicationsContent() {
                 />
               </svg>
               <div>
-                <p className="font-semibold text-red-600 mb-2">
-                  เหตุผลประกอบการยกเลิกฝึกงาน
+                <p className={`font-semibold ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "text-gray-600" : "text-red-600"} mb-2`}>
+                  {selectedApplication.stepDescription === "ยกเลิกการสมัคร"
+                    ? "เหตุผลการยกเลิกการสมัคร"
+                    : "เหตุผลประกอบการยกเลิกฝึกงาน"}
                 </p>
                 <p className="text-gray-700 text-sm">
                   {(() => {
@@ -1770,7 +1875,7 @@ function ApplicationsContent() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-red-200">
+            <div className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "border-gray-200" : "border-red-200"}`}>
               <div>
                 <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                 <p className="text-gray-900 text-sm">
@@ -1814,6 +1919,7 @@ function ApplicationsContent() {
               </div>
             </div>
           </div>
+          )}
           {/* Status Progress Dropdown */}
           <div className="mb-6">
             <button
@@ -2156,20 +2262,29 @@ function ApplicationsContent() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {selectedApplication.education === "high_school" ? (
                 <div>
-                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <span className="text-gray-500 text-sm">แผนการเรียน</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.faculty || "-"}
+                    {getStudyPlanLabel(selectedApplication)}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-500 text-sm">สาขา</span>
-                  <p className="text-gray-900 text-sm">
-                    {selectedApplication.major?.trim() || "-"}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">คณะ</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.faculty || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">สาขา</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.major?.trim() || "-"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
               <div>
                 <span className="text-gray-500 text-sm">
                   ทักษะด้านต่าง ๆ ของผู้สมัคร
@@ -2567,11 +2682,19 @@ function ApplicationsContent() {
                         {stepCompletedInfo[currentStepIndex - 1].operator}
                       </p>
                     )}
-                    <p className="text-gray-400 text-sm">กำลังดำเนินการ</p>
-                    {nextStepLabel && (
+                    {selectedApplication.status === "cancelled" || selectedApplication.status === "rejected" ? (
                       <p className="text-gray-400 text-sm">
-                        ขั้นตอนถัดไป : {nextStepLabel}
+                        กระบวนการสมัครสิ้นสุดแล้ว
                       </p>
+                    ) : (
+                      <>
+                        <p className="text-gray-400 text-sm">กำลังดำเนินการ</p>
+                        {nextStepLabel && (
+                          <p className="text-gray-400 text-sm">
+                            ขั้นตอนถัดไป : {nextStepLabel}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -2761,20 +2884,29 @@ function ApplicationsContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {selectedApplication.education === "high_school" ? (
                 <div>
-                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <span className="text-gray-500 text-sm">แผนการเรียน</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.faculty || "-"}
+                    {getStudyPlanLabel(selectedApplication)}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-500 text-sm">สาขา</span>
-                  <p className="text-gray-900 text-sm">
-                    {selectedApplication.major?.trim() || "-"}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">คณะ</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.faculty || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">สาขา</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.major?.trim() || "-"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <span className="text-gray-500 text-sm">
@@ -3120,9 +3252,9 @@ function ApplicationsContent() {
                   </p>
                   <p className="mt-2 text-sm leading-6 text-[#A80689]">
                     หลังจากรับนักศึกษาฝึกงานเสร็จ คุณต้องส่งเอกสาร
-                    รับนักศึกษาไปที่ กองพัฒนาบุคลากร(กพค.) ผ่าน DDOC ภายใน 15 วัน
-                    ก่อนวันเข้าฝึกงาน หากมีข้อสงสัยสามารถสอบถามได้ที่ เบอร์ภายใน
-                    5866, 5858
+                    รับนักศึกษาไปที่ กองพัฒนาบุคลากร(กพค.) ผ่าน DDOC ภายใน 15
+                    วัน ก่อนวันเข้าฝึกงาน หากมีข้อสงสัยสามารถสอบถามได้ที่
+                    เบอร์ภายใน 5866, 5858
                   </p>
                   <a
                     href={encodeURI("/ตัวอย่าง ตอบรับนักศึกษาฝึกงาน.pdf")}
@@ -3651,20 +3783,29 @@ function ApplicationsContent() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              {selectedApplication.education === "high_school" ? (
                 <div>
-                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <span className="text-gray-500 text-sm">แผนการเรียน</span>
                   <p className="text-gray-900 text-sm">
-                    {selectedApplication.faculty || "-"}
+                    {getStudyPlanLabel(selectedApplication)}
                   </p>
                 </div>
-                <div>
-                  <span className="text-gray-500 text-sm">สาขา</span>
-                  <p className="text-gray-900 text-sm">
-                    {selectedApplication.major?.trim() || "-"}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">คณะ</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.faculty || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">สาขา</span>
+                    <p className="text-gray-900 text-sm">
+                      {selectedApplication.major?.trim() || "-"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
               <div>
                 <span className="text-gray-500 text-sm">
                   ทักษะด้านต่าง ๆ ของผู้สมัคร
@@ -4280,20 +4421,29 @@ function ApplicationsContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {selectedApplication.education === "high_school" ? (
               <div>
-                <span className="text-gray-500 text-sm">คณะ</span>
+                <span className="text-gray-500 text-sm">แผนการเรียน</span>
                 <p className="text-gray-900 text-sm">
-                  {selectedApplication.faculty || "-"}
+                  {getStudyPlanLabel(selectedApplication)}
                 </p>
               </div>
-              <div>
-                <span className="text-gray-500 text-sm">สาขา</span>
-                <p className="text-gray-900 text-sm">
-                  {selectedApplication.major?.trim() || "-"}
-                </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-500 text-sm">คณะ</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.faculty || "-"}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">สาขา</span>
+                  <p className="text-gray-900 text-sm">
+                    {selectedApplication.major?.trim() || "-"}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <span className="text-gray-500 text-sm">
@@ -5242,7 +5392,7 @@ function ApplicationsContent() {
             <p className="text-2xl font-bold text-gray-900">
               {tabCounts.cancelled}
             </p>
-            <p className="text-gray-500 text-sm">สถานะยกเลิกฝึกงาน</p>
+            <p className="text-gray-500 text-sm">สถานะยกเลิก</p>
           </Link>
         </div>
 
@@ -5331,6 +5481,20 @@ function ApplicationsContent() {
             }`}
           >
             ไม่ผ่าน ({tabCounts.rejected})
+          </button>
+          <button
+            onClick={() => {
+              setTabLoading(true);
+              setActiveTab("abort");
+              setTimeout(() => setTabLoading(false), 300);
+            }}
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "abort"
+                ? "border-primary-600 text-primary-600 bg-primary-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            ยกเลิกการสมัคร ({tabCounts.abort})
           </button>
           <button
             onClick={() => {
@@ -5847,8 +6011,8 @@ function ApplicationsContent() {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-3">
-                        <span className="bg-[#FEE4E2] text-[#912018] font-semibold border border-[#FECDCA] text-sm px-3 py-1 rounded-full">
-                          ยกเลิกฝึกงาน
+                        <span className={`text-sm px-3 py-1 rounded-full ${badge.color}`}>
+                          {badge.text}
                         </span>
                       </div>
                       <div className="space-y-1 text-sm text-gray-600">
@@ -6751,10 +6915,13 @@ function ApplicationsContent() {
                               <h4 className="font-semibold text-gray-900 mb-1">
                                 {item.positionName || "ตำแหน่งไม่ระบุ"}
                               </h4>
+                              <p className="text-sm text-gray-500">
+                                รอบที่ {item.internshipRound}
+                              </p>
                             </div>
 
                             {item.statusNote && (
-                              <div className="mx-4 mb-4 rounded-xl bg-red-50 overflow-hidden">
+                              <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
                                     width="20"
@@ -6765,18 +6932,20 @@ function ApplicationsContent() {
                                   >
                                     <path
                                       d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                      fill="#D92D20"
+                                      fill={item.applicationStatus === "ABORT" ? "#6B7280" : "#D92D20"}
                                     />
                                   </svg>
-                                  <span className="text-sm font-semibold text-red-500">
+                                  <span className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}>
                                     {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
                                       : historyOutcome === "cancelled"
-                                        ? "เหตุผลประกอบการยกเลิกฝึกงาน"
+                                        ? (item.applicationStatus === "ABORT"
+                                            ? "เหตุผลการยกเลิกการสมัคร"
+                                            : "เหตุผลประกอบการยกเลิกฝึกงาน")
                                         : "หมายเหตุ"}
                                   </span>
                                 </div>
-                                <div className="mx-4 border-t border-red-200" />
+                                <div className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`} />
                                 <div className="px-4 pt-3 pb-4">
                                   <p className="text-sm text-gray-700 leading-relaxed">
                                     {item.statusNote}

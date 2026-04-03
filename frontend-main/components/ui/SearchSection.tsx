@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { relatedFieldOptions } from "@/app/data/mockAnnouncements";
 
 interface SearchSectionProps {
   onSearch?: (keyword: string, jobTypes: string[]) => void;
@@ -9,22 +8,13 @@ interface SearchSectionProps {
   jobTypeOptions?: Array<{ value: string; label: string }>;
 }
 
-const defaultJobTypeOptions = [
-  ...relatedFieldOptions.map((field) => ({
-    value: field,
-    label: field,
-  })),
-];
-
 export default function SearchSection({
   onSearch,
   resetKey,
   jobTypeOptions,
 }: SearchSectionProps) {
-  const normalizedJobTypeOptions =
-    jobTypeOptions && jobTypeOptions.length > 0
-      ? jobTypeOptions
-      : defaultJobTypeOptions;
+  const normalizedJobTypeOptions = jobTypeOptions || [];
+  const hasJobTypeOptions = normalizedJobTypeOptions.length > 0;
   const [keyword, setKeyword] = useState("");
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
   const [isJobTypeOpen, setIsJobTypeOpen] = useState(false);
@@ -180,67 +170,74 @@ export default function SearchSection({
             {isJobTypeOpen && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 max-h-80 flex flex-col">
                 {/* Search Input */}
-                <div className="px-3 pb-2 border-b border-gray-100">
-                  <div className="relative">
-                    <svg
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                    <input
-                      type="text"
-                      placeholder="ค้นหาสาขาวิชา..."
-                      value={jobTypeSearch}
-                      onChange={(e) => setJobTypeSearch(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
-                    />
-                  </div>
-                </div>
-
-                {/* Options List */}
-                <div className="overflow-y-auto max-h-56">
-                  {normalizedJobTypeOptions
-                    .filter((option) =>
-                      option.label
-                        .toLowerCase()
-                        .includes(jobTypeSearch.toLowerCase()),
-                    )
-                    .map((option) => (
-                      <label
-                        key={option.value}
-                        className="flex items-center gap-3 px-4 py-2 hover:bg-primary-100 cursor-pointer transition-colors"
-                      >
+                {hasJobTypeOptions ? (
+                  <>
+                    <div className="px-3 pb-2 border-b border-gray-100">
+                      <div className="relative">
+                        <svg
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
                         <input
-                          type="checkbox"
-                          checked={selectedJobTypes.includes(option.value)}
-                          onChange={() => handleJobTypeChange(option.value)}
-                          className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 accent-primary-600"
+                          type="text"
+                          placeholder="ค้นหาสาขาวิชา..."
+                          value={jobTypeSearch}
+                          onChange={(e) => setJobTypeSearch(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-300"
                         />
-                        <span className="text-gray-700 text-sm">
-                          {option.label}
-                        </span>
-                      </label>
-                    ))}
-                  {normalizedJobTypeOptions.filter((option) =>
-                    option.label
-                      .toLowerCase()
-                      .includes(jobTypeSearch.toLowerCase()),
-                  ).length === 0 &&
-                    jobTypeSearch && (
-                      <p className="px-4 py-3 text-sm text-gray-400 text-center">
-                        ไม่พบสาขาวิชาที่ค้นหา
-                      </p>
-                    )}
-                </div>
+                      </div>
+                    </div>
+
+                    <div className="overflow-y-auto max-h-56">
+                      {normalizedJobTypeOptions
+                        .filter((option) =>
+                          option.label
+                            .toLowerCase()
+                            .includes(jobTypeSearch.toLowerCase()),
+                        )
+                        .map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-primary-100 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedJobTypes.includes(option.value)}
+                              onChange={() => handleJobTypeChange(option.value)}
+                              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 accent-primary-600"
+                            />
+                            <span className="text-gray-700 text-sm">
+                              {option.label}
+                            </span>
+                          </label>
+                        ))}
+                      {normalizedJobTypeOptions.filter((option) =>
+                        option.label
+                          .toLowerCase()
+                          .includes(jobTypeSearch.toLowerCase()),
+                      ).length === 0 &&
+                        jobTypeSearch && (
+                          <p className="px-4 py-3 text-sm text-gray-400 text-center">
+                            ไม่พบสาขาวิชาที่ค้นหา
+                          </p>
+                        )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="px-4 py-3 text-sm text-gray-400 text-center">
+                    ไม่พบข้อมูลสาขาวิชา
+                  </p>
+                )}
               </div>
             )}
           </div>
