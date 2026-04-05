@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { isAuthenticated, ROLE_IDS } from "@/middlewares/auth.middleware";
 import * as checkSchema from "./model";
 import { CheckTimeService } from "./service";
@@ -91,6 +91,53 @@ export const checkTime = new Elysia({
         summary: "แก้ไขเวลาลงงาน",
         description:
           "อนุญาตให้นักศึกษาสามารถแก้ไขเวลาลงงานได้ภายใน 24 ชั่วโมงหลังจากบันทึกเวลา โดยต้องระบุเหตุผลในการแก้ไข",
+      },
+    }
+  )
+  .get(
+    "/edit/:id",
+    async ({ params, user, set }) => {
+      const result = await checkTimeService.getCorrectionDetail(
+        user.id,
+        params.id
+      );
+      set.status = 200;
+      return result;
+    },
+    {
+      auth: true,
+      params: t.Object({
+        id: t.Numeric({
+          description: "ID ของคำขอแก้ไขเวลา (timeCorrectionRequests.id)",
+        }),
+      }),
+      detail: {
+        summary: "ดูรายละเอียดคำขอแก้ไขเวลา",
+        description:
+          "ดึงข้อมูลคำขอแก้ไขเวลาเพื่อแสดงผลเปรียบเทียบเวลาเก่าและเวลาใหม่ รวมถึงสถานะและเหตุผล",
+      },
+    }
+  )
+  .get(
+    "/file",
+    async ({ query, set }) => {
+      const fileData = await checkTimeService.getFile(query.key);
+
+      set.headers["Content-Type"] = fileData.contentType;
+
+      return fileData.stream;
+    },
+    {
+      auth: true,
+      query: t.Object({
+        key: t.String({
+          description:
+            "Path ของไฟล์ใน MinIO (S3 Key) เช่น time-corrections/1715423891-abc.pdf",
+        }),
+      }),
+      detail: {
+        summary: "ดึงไฟล์หลักฐาน",
+        description: "ดึงไฟล์ที่อัปโหลดไว้ใน MinIO เพื่อนำมาแสดงผลหรือดาวน์โหลด",
       },
     }
   );

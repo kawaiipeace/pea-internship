@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, desc, eq, gte, lte, not, sql } from "drizzle-orm";
-import { ConflictError, NotFoundError } from "@/common/exceptions";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from "@/common/exceptions";
 import { db } from "@/db";
 import {
   applicationStatuses,
@@ -33,6 +37,31 @@ export class CheckTimeService {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  }
+
+  private calculateCorrectionHours(
+    checkInHHmm: string,
+    checkOutHHmm: string
+  ): string {
+    const [inHour, inMin] = checkInHHmm.split(":").map(Number);
+    const [outHour, outMin] = checkOutHHmm.split(":").map(Number);
+
+    const inTime = new Date(1970, 0, 1, inHour, inMin);
+    const outTime = new Date(1970, 0, 1, outHour, outMin);
+
+    let totalMs = outTime.getTime() - inTime.getTime();
+    if (totalMs < 0) totalMs = 0;
+
+    let hours = totalMs / (1000 * 60 * 60);
+
+    if (hours >= 4) {
+      hours -= 1;
+    }
+
+    if (hours > 7) hours = 7;
+    if (hours < 0) hours = 0;
+
+    return hours.toFixed(2);
   }
 
   async in(userId: string, ip: string, data: checkSchema.CheckTimeDto) {
@@ -625,28 +654,86 @@ export class CheckTimeService {
     });
   }
 
-  private calculateCorrectionHours(
-    checkInHHmm: string,
-    checkOutHHmm: string
-  ): string {
-    const [inHour, inMin] = checkInHHmm.split(":").map(Number);
-    const [outHour, outMin] = checkOutHHmm.split(":").map(Number);
+  async getCorrectionDetail(userId: string, requestId: number) {
+    const requestDetail = await db.query.timeCorrectionRequests.findFirst({
+      where: eq(timeCorrectionRequests.id, requestId),
+      with: {
+        studentProfile: true,
+        attendanceLog: true,
+      },
+    });
 
-    const inTime = new Date(1970, 0, 1, inHour, inMin);
-    const outTime = new Date(1970, 0, 1, outHour, outMin);
-
-    let totalMs = outTime.getTime() - inTime.getTime();
-    if (totalMs < 0) totalMs = 0;
-
-    let hours = totalMs / (1000 * 60 * 60);
-
-    if (hours >= 4) {
-      hours -= 1;
+    if (!requestDetail) {
+      throw new NotFoundError("ไม่พบข้อมูลคำขอแก้ไขเวลานี้");
     }
 
-    if (hours > 7) hours = 7;
-    if (hours < 0) hours = 0;
+    if (requestDetail.studentProfile?.userId !== userId) {
+      throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
+    }
 
-    return hours.toFixed(2);
+    const logInfo = await db.query.attendanceLogs.findFirst({
+      where: eq(attendanceLogs.id, requestDetail.attendanceLogId),
+      columns: {
+        workDate: true,
+        actualHoursWorked: true,
+      },
+    });
+
+    const formatTime = (isoDateString: string | null) => {
+      if (!isoDateString) return null;
+      const date = new Date(isoDateString);
+      return date.toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Bangkok",
+      });
+    };
+
+    const getFileName = (url: string | null) => {
+      if (!url) return null;
+      return url.split("/").pop() || "เอกสารแนบ";
+    };
+
+    return {
+      success: true,
+      data: {
+        id: requestDetail.id,
+        workDate: logInfo?.workDate || null,
+        status: requestDetail.status,
+        original: {
+          checkInTime: formatTime(requestDetail.originalCheckIn),
+          checkOutTime: formatTime(requestDetail.originalCheckOut),
+          hoursWorked: logInfo?.actualHoursWorked || 0,
+        },
+        requested: {
+          checkInTime: formatTime(requestDetail.requestedCheckIn),
+          checkOutTime: formatTime(requestDetail.requestedCheckOut),
+          hoursWorked: requestDetail.calculatedHours,
+        },
+        reason: requestDetail.reason,
+        attachment: {
+          url: requestDetail.attachmentUrl,
+          name: getFileName(requestDetail.attachmentUrl),
+        },
+      },
+    };
+  }
+  async getFile(key: string) {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      });
+
+      const data = await s3Client.send(command);
+
+      return {
+        stream: data.Body?.transformToWebStream(),
+        contentType: data.ContentType || "application/octet-stream",
+      };
+    } catch (error) {
+      console.error("Error fetching file from MinIO:", error);
+      throw new NotFoundError("ไม่พบไฟล์ที่ต้องการ หรือไฟล์ถูกลบไปแล้ว");
+    }
   }
 }
