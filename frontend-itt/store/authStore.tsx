@@ -63,26 +63,32 @@ const authStore: StateCreator<AuthStore> = (set) => ({
     actionClearAuth: () => {
         set({ user: null, token: null });
         useAuthStore.persist.clearStorage();
-        document.cookie = `token=; path=/; max-age=0`;
-        document.cookie = `user_role=; path=/; max-age=0`;
+        document.cookie = `token=; path=/; max-age=0; SameSite=Lax`;
+        document.cookie = `user_role=; path=/; max-age=0; SameSite=Lax`;
     },
     actionLogin: async (form: FormLogin) => {
         const res = await axios.post('/auth/sign-in/intern/itt', form);
         const data = res.data as any;
         const token = data.accessToken ?? data.token ?? data.session?.token ?? null;
+        const user: UserSchema | null = data.user ?? null;
 
         set({
             token,
-            user: data.user ?? null,
+            user,
         });
 
         if (token) {
-            document.cookie = `token=${token}; path=/; max-age=86400`;
+            document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
         }
-        
-        // Unconditionally set user_role if login succeeds, as it is required by middleware
-        if (data.user) {
-            document.cookie = `user_role=intern; path=/; max-age=86400`;
+
+        if (user) {
+            const roleMap: Record<number, string> = {
+                1: 'admin',
+                2: 'owner',
+                3: 'intern',
+            };
+            const role = roleMap[user.roleId] ?? 'intern';
+            document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
         }
 
         return;
@@ -98,8 +104,9 @@ const authStore: StateCreator<AuthStore> = (set) => ({
                 token: null,
             });
             useAuthStore.persist.clearStorage();
-            document.cookie = `token=; path=/; max-age=0`;
-            document.cookie = `user_role=; path=/; max-age=0`;
+            // Clear all auth cookies
+            document.cookie = `token=; path=/; max-age=0; SameSite=Lax`;
+            document.cookie = `user_role=; path=/; max-age=0; SameSite=Lax`;
         }
         return;
     },

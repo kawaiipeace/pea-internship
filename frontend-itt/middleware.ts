@@ -3,11 +3,11 @@ import type { NextRequest } from "next/server";
 
 // หน้าสำหรับ intern ที่ต้อง login (Protected Routes)
 const internRoutes = [
-  "/intern",       // ลงเวลาเข้า-ออก
-  "/intern/history",        // ประวัติการลงเวลา
-  "/intern/leave-request",  // ยื่นคำขอลา
-  "/intern/leave-history",  // ประวัติการลา
-  "/intern/user",           // ตั้งค่าโปรไฟล์
+  "/intern",              // ลงเวลาเข้า-ออก
+  "/intern/history",      // ประวัติการลงเวลา
+  "/intern/leave-request",// ยื่นคำขอลา
+  "/intern/leave-history",// ประวัติการลา
+  "/intern/users",        // ตั้งค่าโปรไฟล์
 ];
 
 // หน้าสำหรับ mentor (พี่เลี้ยง)
@@ -21,7 +21,6 @@ const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"
 
 // Token session cookie name
 const SESSION_COOKIE = "token";
-const BETTER_AUTH_COOKIE = "better-auth.session_token";
 
 // Helper: ดึง home page ตาม role สำหรับ ITT
 function getHomeByRole(role: string | undefined): string {
@@ -43,7 +42,7 @@ export function middleware(request: NextRequest) {
   const forceLogin = searchParams.get("forceLogin") === "1";
 
   // ดึง session token และ role
-  const sessionToken = request.cookies.get(SESSION_COOKIE)?.value || request.cookies.get(BETTER_AUTH_COOKIE)?.value;
+  const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
   const userRole = request.cookies.get("user_role")?.value;
 
   // isAuthenticated แค่มี session token ก็พอ แล้วเดี๋ยว fallback ไปหน้า intern ถ้ายกเว้นไม่เจอ role
@@ -97,9 +96,10 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 4. หน้า Public (/) -> ส่งไป Home ตาม Role
-  if (isAuthenticated && pathname === "/") {
-    return NextResponse.redirect(new URL(getHomeByRole(userRole), request.url));
+  // 4. หน้า Public (/) -> ส่งไป Home ตาม Role หรือ Login ถ้าไม่มี session
+  if (pathname === "/") {
+    const targetUrl = isAuthenticated ? getHomeByRole(userRole) : "/login";
+    return NextResponse.redirect(new URL(targetUrl, request.url));
   }
 
   return NextResponse.next();
