@@ -48,9 +48,9 @@ export const EditCheckTimeSchema = t.Object({
     error: "กรุณาระบุเหตุผลในการแก้ไข",
     description: "เหตุผลการแก้ไขเวลา เช่น ลืมกดลงเวลาออก",
   }),
-  attachmentUrl: t.Optional(
-    t.String({
-      description: "URL ของไฟล์แนบ (ถ้ามีการอัปโหลดเข้า Storage แล้ว)",
+  attachment: t.Optional(
+    t.File({
+      description: "ไฟล์แนบหลักฐาน (ถ้ามี)",
     })
   ),
 });

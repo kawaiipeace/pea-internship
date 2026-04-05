@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+import { PutObjectCommand } from "@aws-sdk/client-s3/dist-types/commands/PutObjectCommand";
 import { and, desc, eq, gte, lte, not, sql } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -10,6 +12,7 @@ import {
   studentProfiles,
   timeCorrectionRequests,
 } from "@/db/schema";
+import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import type * as checkSchema from "./model";
 
 export class CheckTimeService {
@@ -526,6 +529,25 @@ export class CheckTimeService {
   }
 
   async edit(userId: string, data: checkSchema.EditCheckTimeDto) {
+    let uploadedAttachmentUrl: string | null = null;
+
+    if (data.attachment) {
+      const file = data.attachment;
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const fileExtension = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${fileExtension}`;
+      const s3Key = `time-corrections/${userId}/${fileName}`;
+
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: s3Key,
+          Body: buffer,
+          ContentType: file.type,
+        })
+      );
+      uploadedAttachmentUrl = `/${BUCKET_NAME}/${s3Key}`;
+    }
     return await db.transaction(async (tx) => {
       const student = await tx.query.studentProfiles.findFirst({
         where: eq(studentProfiles.userId, userId),
@@ -583,17 +605,14 @@ export class CheckTimeService {
         .values({
           attendanceLogId: existingLog.id,
           studentProfileId: student.id,
-
-          originalCheckIn: originalIn, // เก็บเวลาเข้างานเก่า
-          originalCheckOut: originalOut, // เก็บเวลาออกงานเก่า
-
-          requestedCheckIn: newInDate, // เก็บเวลาเข้างานใหม่
-          requestedCheckOut: newOutDate, // เก็บเวลาออกงานใหม่
+          originalCheckIn: originalIn,
+          originalCheckOut: originalOut,
+          requestedCheckIn: newInDate,
+          requestedCheckOut: newOutDate,
           calculatedHours: calculatedHours,
-
           reason: data.reason,
-          attachmentUrl: data.attachmentUrl, // ถ้ามีไฟล์แนบ
-          status: "PENDING", // ตั้งสถานะเป็น "รออนุมัติ"
+          attachmentUrl: uploadedAttachmentUrl,
+          status: "PENDING",
         })
         .returning();
 
