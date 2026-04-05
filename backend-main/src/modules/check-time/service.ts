@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, desc, eq, gte, lte, not, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, not, sql } from "drizzle-orm";
 import {
   ConflictError,
   ForbiddenError,
@@ -18,6 +18,12 @@ import {
 } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import type * as checkSchema from "./model";
+
+type CorrectionRequestData = {
+  id: number;
+  attendanceLogId: number;
+  status: string;
+};
 
 export class CheckTimeService {
   private getDistanceInMeters(
@@ -512,6 +518,20 @@ export class CheckTimeService {
       },
     });
 
+    const logIds = historyData.map((log) => log.id);
+    let correctionRequests: CorrectionRequestData[] = [];
+
+    if (logIds.length > 0) {
+      correctionRequests = (await db.query.timeCorrectionRequests.findMany({
+        where: inArray(timeCorrectionRequests.attendanceLogId, logIds),
+        columns: {
+          id: true,
+          attendanceLogId: true,
+          status: true,
+        },
+      })) as CorrectionRequestData[];
+    }
+
     const records = historyData.map((log) => {
       const formatTime = (timeStr?: string | null) => {
         if (!timeStr) return "--:--";
@@ -535,12 +555,19 @@ export class CheckTimeService {
         displayStatus = "MISSING_OUT";
       }
 
+      const correctionData = correctionRequests.find(
+        (req) => req.attendanceLogId === log.id
+      );
+
       return {
         id: log.id,
         workDate: log.workDate,
         displayStatus: displayStatus,
         checkInTime: inTime,
         checkOutTime: outTime,
+        isEdited: !!correctionData,
+        correctionStatus: correctionData?.status || null,
+        correctionId: correctionData?.id || null,
       };
     });
 
@@ -558,6 +585,20 @@ export class CheckTimeService {
   }
 
   async edit(userId: string, data: checkSchema.EditCheckTimeDto) {
+    if (Number.isNaN(data.attendanceLogId)) {
+      throw new ConflictError("ID ของรายการลงเวลาไม่ถูกต้อง");
+    }
+
+    const existingRequest = await db.query.timeCorrectionRequests.findFirst({
+      where: eq(timeCorrectionRequests.attendanceLogId, data.attendanceLogId),
+    });
+
+    if (existingRequest) {
+      throw new ConflictError(
+        "คุณได้ส่งคำขอแก้ไขเวลาสำหรับรายการนี้ไปแล้ว (สามารถแก้ไขได้เพียงรอบเดียวเท่านั้น)"
+      );
+    }
+
     let uploadedAttachmentUrl: string | null = null;
 
     if (data.attachment) {
@@ -587,10 +628,6 @@ export class CheckTimeService {
         throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
       }
 
-      if (Number.isNaN(data.attendanceLogId)) {
-        throw new ConflictError("ID ของรายการลงเวลาไม่ถูกต้อง");
-      }
-
       const existingLog = await tx.query.attendanceLogs.findFirst({
         where: eq(attendanceLogs.id, data.attendanceLogId),
         with: {
@@ -612,6 +649,15 @@ export class CheckTimeService {
         throw new ConflictError(
           "ไม่อนุญาตให้แก้ไขเวลา (ทำได้เฉพาะกรณี ขาดงาน, มาสาย หรือ ลืมเช็คเอาท์)"
         );
+      }
+
+      const duplicateCheckInTx =
+        await tx.query.timeCorrectionRequests.findFirst({
+          where: eq(timeCorrectionRequests.attendanceLogId, existingLog.id),
+        });
+
+      if (duplicateCheckInTx) {
+        throw new ConflictError("คำขอแก้ไขเวลานี้ถูกส่งไปแล้ว");
       }
 
       const originalIn = existingLog.checkIn?.time || null;
@@ -671,13 +717,7 @@ export class CheckTimeService {
       throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้");
     }
 
-    const logInfo = await db.query.attendanceLogs.findFirst({
-      where: eq(attendanceLogs.id, requestDetail.attendanceLogId),
-      columns: {
-        workDate: true,
-        actualHoursWorked: true,
-      },
-    });
+    const logInfo = requestDetail.attendanceLog;
 
     const formatTime = (isoDateString: string | null) => {
       if (!isoDateString) return null;
@@ -718,6 +758,7 @@ export class CheckTimeService {
       },
     };
   }
+
   async getFile(key: string) {
     try {
       const command = new GetObjectCommand({
