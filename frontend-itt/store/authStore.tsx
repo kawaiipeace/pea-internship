@@ -68,8 +68,10 @@ const authStore: StateCreator<AuthStore> = (set) => ({
     },
     actionLogin: async (form: FormLogin) => {
         const res = await axios.post('/auth/sign-in/intern/itt', form);
-        const data = res.data as any;
-        const token = data.accessToken ?? data.token ?? data.session?.token ?? null;
+        const result = res.data as any;
+        const data = result.data || result; // Handle both { data: { ... } } and { ... }
+
+        const token = data.accessToken ?? data.token ?? data.sessionToken ?? data.session?.token ?? data.session?.sessionToken ?? data.session?.id ?? null;
         const user: UserSchema | null = data.user ?? null;
 
         set({
@@ -86,6 +88,7 @@ const authStore: StateCreator<AuthStore> = (set) => ({
                 1: 'admin',
                 2: 'owner',
                 3: 'intern',
+                4: 'owner',
             };
             const role = roleMap[user.roleId] ?? 'intern';
             document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;

@@ -39,19 +39,19 @@ export default function CustomLoginForm() {
                 },
             });
 
-            router.refresh();
-
             setTimeout(() => {
                 // ใช้ callbackUrl ถ้ามี แต่ต้องเป็น path ภายใน (ไม่เริ่มด้วย http)
+                const searchParams = new URL(window.location.href).searchParams;
                 const callbackUrl = searchParams.get('callbackUrl');
                 const freshUser = useAuthStore.getState().user;
                 const home = getHomeByRole(freshUser?.roleId);
-                if (callbackUrl && callbackUrl.startsWith('/')) {
+
+                if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.includes('/login')) {
                     window.location.href = callbackUrl;
                 } else {
                     window.location.href = home;
                 }
-            }, 1000);
+            }, 500);
 
         } catch (error) {
             let errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';

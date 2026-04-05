@@ -106,7 +106,7 @@ export class AuthService {
       throw new BadRequestError("Invalid phone number or password");
     }
 
-    const authData = await response.json();
+    const authData = await response.clone().json();
     const userId = authData.user.id;
 
     const studentProfile = await db
