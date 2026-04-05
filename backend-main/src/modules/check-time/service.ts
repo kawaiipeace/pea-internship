@@ -548,6 +548,7 @@ export class CheckTimeService {
       );
       uploadedAttachmentUrl = `/${BUCKET_NAME}/${s3Key}`;
     }
+
     return await db.transaction(async (tx) => {
       const student = await tx.query.studentProfiles.findFirst({
         where: eq(studentProfiles.userId, userId),
@@ -586,7 +587,6 @@ export class CheckTimeService {
 
       const originalIn = existingLog.checkIn?.time || null;
       const originalOut = existingLog.checkOut?.time || null;
-
       const workDate = existingLog.workDate;
       const newInDate = new Date(
         `${workDate}T${data.checkInTime}:00+07:00`
