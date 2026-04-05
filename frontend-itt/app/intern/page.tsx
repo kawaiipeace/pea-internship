@@ -1,14 +1,40 @@
 'use client';
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import IconMapPin from '@/components/icon/icon-map-pin';
 import Swal from 'sweetalert2';
+import axiosInstance from '@/api/axios';
+import IconMapPin from '@/components/icon/icon-map-pin';
+
+const OFFICE_LAT = 13.851119091153935;
+const OFFICE_LNG = 100.55810839569543;
+const MAX_DISTANCE_METERS = 300;
+
+const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in metres
+};
 
 const CheckInPage = () => {
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
-    const [locationStatus, setLocationStatus] = useState<'searching' | 'found' | 'outside'>('found');
+    const [locationStatus, setLocationStatus] = useState<'searching' | 'found' | 'outside'>('searching');
+    const [currentPosition, setCurrentPosition] = useState<{ lat: number, lng: number } | null>(null);
 
     const [checkInActionType, setCheckInActionType] = useState<'in' | 'out' | null>(null);
+    const [hasCheckedInToday, setHasCheckedInToday] = useState<boolean>(false);
+    const [hasClockedOutToday, setHasClockedOutToday] = useState<boolean>(false);
+
+    // Progress State
+    const [progressData, setProgressData] = useState<{ accumulatedHours: number, totalHoursGoal: number, percentage: number } | null>(null);
 
     // Success Modal State
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -17,26 +43,159 @@ const CheckInPage = () => {
     // Confirm Clock Out Modal State
     const [showConfirmOutModal, setShowConfirmOutModal] = useState(false);
 
-    const handleCheckIn = (actionType: 'in' | 'out') => {
-        setCheckInActionType(actionType);
-        setCheckInTime(new Date());
-        setShowSuccessModal(true);
+    const checkLocation = useCallback(() => {
+        if (!navigator.geolocation) {
+            Swal.fire({ icon: 'error', title: 'ไม่รองรับ Location', text: 'เบราว์เซอร์ของคุณไม่รองรับการระบุตำแหน่ง', confirmButtonColor: '#A80689' });
+            setLocationStatus('outside');
+            return;
+        }
+
+        setLocationStatus('searching');
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                setCurrentPosition({ lat, lng });
+
+                const distance = getDistanceInMeters(lat, lng, OFFICE_LAT, OFFICE_LNG);
+                if (distance <= MAX_DISTANCE_METERS) {
+                    setLocationStatus('found');
+                } else {
+                    setLocationStatus('outside');
+                }
+            },
+            (error) => {
+                console.error("Error getting location: ", error);
+                let text = 'ไม่สามารถระบุตำแหน่งได้ กรุณาเปิดการเข้าถึงตำแหน่งที่ตั้ง (Location)';
+                if (error.code === error.PERMISSION_DENIED) { text = 'กรุณาอนุญาตการเข้าถึงตำแหน่ง (Location Permission)'; }
+                Swal.fire({ icon: 'warning', title: 'ข้อผิดพลาดเกี่ยวกับตำแหน่ง', text: text, confirmButtonColor: '#A80689' });
+                setLocationStatus('outside');
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }, []);
+
+    const handleCheckIn = async (actionType: 'in' | 'out') => {
+        if (locationStatus !== 'found') {
+            Swal.fire({ icon: 'warning', title: 'ไม่อยู่ในสถานที่', text: 'คุณต้องอยู่ในสถานที่ที่กำหนดเพื่อลงเวลาเข้างาน', confirmButtonColor: '#A80689' });
+            return;
+        }
+        try {
+            await axiosInstance.post('/check-time/in', {
+                latitude: currentPosition?.lat,
+                longitude: currentPosition?.lng,
+                location_note: 'กฟภ. สำนักงานใหญ่'
+            });
+            setCheckInActionType(actionType);
+            setCheckInTime(new Date());
+            setHasCheckedInToday(true);
+            setShowSuccessModal(true);
+            fetchProgress();
+        } catch (error: any) {
+            Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: error.response?.data?.message || 'เกิดข้อผิดพลาดในการลงเวลาเช็คอิน', confirmButtonColor: '#A80689' });
+        }
     };
 
-
-
     const handleClockOut = () => {
+        if (locationStatus !== 'found') {
+            Swal.fire({ icon: 'warning', title: 'ไม่อยู่ในสถานที่', text: 'คุณต้องอยู่ในสถานที่ที่กำหนดเพื่อลงเวลาออกงาน', confirmButtonColor: '#A80689' });
+            return;
+        }
         setCheckInActionType('out');
         setShowConfirmOutModal(true);
     };
 
-    useEffect(() => {
-        setCurrentTime(new Date());
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
+    const confirmClockOut = async () => {
+        try {
+            await axiosInstance.post('/check-time/out', {
+                latitude: currentPosition?.lat,
+                longitude: currentPosition?.lng,
+                location_note: 'กฟภ. สำนักงานใหญ่'
+            });
+            setShowConfirmOutModal(false);
+            setCheckInTime(new Date());
+            setHasClockedOutToday(true);
+            setShowSuccessModal(true);
+            fetchProgress();
+        } catch (error: any) {
+            setShowConfirmOutModal(false);
+            Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: error.response?.data?.message || 'เกิดข้อผิดพลาดในการลงเวลาเช็คเอาท์', confirmButtonColor: '#A80689' });
+        }
+    };
+
+    const fetchProgress = useCallback(async () => {
+        try {
+            const response = await axiosInstance.get('/user/student/total-hours');
+            if (response.data) {
+                setProgressData(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching progress:', error);
+        }
     }, []);
+
+    const fetchTodayStatus = useCallback(async () => {
+        try {
+            const response = await axiosInstance.get('/check-time/history');
+            if (response.data && response.data.records) {
+                const now = new Date();
+                const bkkFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' });
+                const todayStr = bkkFormatter.format(now);
+                
+                const todayRecord = response.data.records.find((r: any) => r.workDate === todayStr);
+                if (todayRecord) {
+                    if (todayRecord.checkInTime && todayRecord.checkInTime !== '--:--') {
+                        setHasCheckedInToday(true);
+                    } else {
+                        setHasCheckedInToday(false);
+                    }
+                    if (todayRecord.checkOutTime && todayRecord.checkOutTime !== '--:--') {
+                        setHasClockedOutToday(true);
+                    } else {
+                        setHasClockedOutToday(false);
+                    }
+                } else {
+                    setHasCheckedInToday(false);
+                    setHasClockedOutToday(false);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching today status:', error);
+        }
+    }, []);
+
+    const canClockOut = () => {
+        if (!currentTime) return false;
+        const h = currentTime.getHours();
+        const m = currentTime.getMinutes();
+        // Allowed from 16:30 (4:30 PM) onwards
+        return h > 16 || (h === 16 && m >= 30);
+    };
+
+    useEffect(() => {
+        checkLocation();
+        fetchProgress();
+        fetchTodayStatus();
+        
+        let lastDate = new Date().toDateString();
+        setCurrentTime(new Date());
+
+        const timer = setInterval(() => {
+            const now = new Date();
+            setCurrentTime(now);
+
+            // Midnight Reset Logic: If the date has changed, reset the status and re-fetch
+            if (now.toDateString() !== lastDate) {
+                lastDate = now.toDateString();
+                setHasCheckedInToday(false);
+                setHasClockedOutToday(false);
+                fetchTodayStatus();
+                fetchProgress();
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [checkLocation, fetchProgress, fetchTodayStatus]);
 
     // Desktop Location Status
     const renderDesktopLocationStatus = () => {
@@ -44,12 +203,12 @@ const CheckInPage = () => {
             return (
                 <div
                     className="flex flex-row items-center w-[180px] h-[40px] gap-[10px] cursor-pointer transition-all select-none bg-[#F3F4F6] rounded-[25px] pr-4 overflow-hidden"
-                    onClick={() => setLocationStatus('found')}
-                    title="คลิกเพื่อจำลองการหาสถานที่เจอแบบในภาพ"
+                    onClick={checkLocation}
+                    title="คลิกเพื่อรีเฟรชตำแหน่ง"
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#CECFD2]">
                         <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[20px] h-[20px]" />
+                            <span className="material-symbols-rounded text-[20px]">location_on</span>
                         </div>
                     </div>
                     <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
@@ -59,12 +218,12 @@ const CheckInPage = () => {
             return (
                 <div
                     className="flex flex-row items-center w-[180px] h-[40px] gap-[10px] cursor-pointer transition-all select-none bg-[#FAF0DB] rounded-[25px] pr-4 overflow-hidden"
-                    onClick={() => setLocationStatus('searching')}
-                    title="คลิกเพื่อจำลองการค้นหาสถานที่"
+                    onClick={checkLocation}
+                    title="คลิกเพื่อรีเฟรชตำแหน่ง"
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#EDC878]">
                         <div className="bg-[#E2A727] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[20px] h-[20px]" />
+                            <span className="material-symbols-rounded text-[20px]">location_on</span>
                         </div>
                     </div>
                     <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">อยู่นอกสถานที่</div>
@@ -74,12 +233,12 @@ const CheckInPage = () => {
             return (
                 <div
                     className="flex flex-row items-center w-[180px] h-[40px] gap-[10px] cursor-pointer transition-all select-none bg-[#D1FADF] rounded-[25px] pr-4 overflow-hidden"
-                    onClick={() => setLocationStatus('outside')}
-                    title="คลิกเพื่อจำลองว่าอยู่นอกสถานที่"
+                    onClick={checkLocation}
+                    title="คลิกเพื่อรีเฟรชตำแหน่ง"
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] shrink-0 bg-[#75E0A7]">
                         <div className="bg-[#42B86F] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[20px] h-[20px]" />
+                            <span className="material-symbols-rounded text-[20px]">location_on</span>
                         </div>
                     </div>
                     <div className="flex-1 text-center font-medium text-[13px] text-[#333741] whitespace-nowrap">อยู่ในสถานที่</div>
@@ -94,12 +253,12 @@ const CheckInPage = () => {
             return (
                 <div
                     className="flex flex-col items-center justify-center gap-[8px] cursor-pointer transition-all select-none"
-                    onClick={() => setLocationStatus('found')}
-                    title="คลิกเพื่อจำลองการหาสถานที่เจอแบบในภาพ"
+                    onClick={checkLocation}
+                    title="คลิกเพื่อรีเฟรชตำแหน่ง"
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] bg-[#CECFD2]">
                         <div className="bg-[#85888E] text-white rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[24px] h-[24px]" />
+                            <span className="material-symbols-rounded text-[24px]">location_on</span>
                         </div>
                     </div>
                     <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">กำลังค้นหาตำแหน่ง...</div>
@@ -109,12 +268,12 @@ const CheckInPage = () => {
             return (
                 <div
                     className="flex flex-col items-center justify-center gap-[8px] cursor-pointer transition-all select-none"
-                    onClick={() => setLocationStatus('searching')}
-                    title="คลิกเพื่อจำลองการค้นหาสถานที่"
+                    onClick={checkLocation}
+                    title="คลิกเพื่อรีเฟรชตำแหน่ง"
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] bg-[#F97066]" >
                         <div className="bg-[#F04438] text-[#FEF3F2] rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[24px] h-[24px]" />
+                            <span className="material-symbols-rounded text-[24px]">location_on</span>
                         </div>
                     </div>
                     <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">อยู่นอกสถานที่</div>
@@ -124,12 +283,12 @@ const CheckInPage = () => {
             return (
                 <div
                     className="flex flex-col items-center justify-center gap-[8px] cursor-pointer transition-all select-none"
-                    onClick={() => setLocationStatus('outside')}
-                    title="คลิกเพื่อจำลองว่าอยู่นอกสถานที่"
+                    onClick={checkLocation}
+                    title="คลิกเพื่อรีเฟรชตำแหน่ง"
                 >
                     <div className="rounded-full flex items-center justify-center w-[40px] h-[40px] bg-[#75E0A7]" >
                         <div className="bg-[#42B86F] text-[#E4F5EA] rounded-full flex items-center justify-center w-[30px] h-[30px]">
-                            <IconMapPin className="w-[24px] h-[24px]" />
+                            <span className="material-symbols-rounded text-[24px]">location_on</span>
                         </div>
                     </div>
                     <div className="font-medium text-[15px] text-[#333741] dark:text-white-light whitespace-nowrap">อยู่ในสถานที่</div>
@@ -159,17 +318,17 @@ const CheckInPage = () => {
             if (isLate) {
                 return {
                     label: 'มาสาย',
-                    className: 'text-[12px] font-bold bg-[#FFEFBC] text-[#AD5A4C]', // Red styling
+                    className: 'bg-[#FFEFBC] text-[#AD5A4C]', // Red styling
                 };
             }
             return {
                 label: 'เข้างานปกติ',
-                className: 'text-[12px] font-bold bg-[#DCFAE6] text-[#067647]', // Green styling 
+                className: 'bg-[#DCFAE6] text-[#067647]', // Green styling 
             };
         } else {
             return {
                 label: 'เข้างานปกติ', // Matches user's specific Figma request
-                className: 'text-[12px] font-bold bg-[#DCFAE6] text-[#067647]', // Green styling matching Figma check-out
+                className: 'bg-[#DCFAE6] text-[#067647]', // Green styling matching Figma check-out
             };
         }
     };
@@ -179,7 +338,7 @@ const CheckInPage = () => {
 
             {/* ----- Desktop Global Fixed Background ----- */}
             <div className="hidden md:block fixed inset-0 z-[1] pointer-events-none bg-[#fdfbfe]">
-                <div className="absolute inset-0 bg-[url('/bg-checkin.jpg')] bg-cover bg-center bg-no-repeat rotate-180 opacity-50"></div>
+                <div className="absolute inset-0 bg-[url('/bg-checkin2.jpg')] bg-cover bg-center bg-no-repeat rotate-180 -scale-x-100 opacity-50"></div>
             </div>
 
             {/* Desktop View */}
@@ -200,16 +359,17 @@ const CheckInPage = () => {
                             <div className="flex-1 h-[18px] rounded-full overflow-hidden bg-gradient-to-b from-[#e4e4e4] to-[#f8f8f8] dark:from-[#1b2e4b] dark:to-[#0f1928] shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.1)] relative flex items-center min-w-0">
                                 {/* Thumb */}
                                 <div
-                                    className="text-white text-[11px] w-[75%] h-[18px] flex justify-end pr-5 items-center font-medium rounded-full bg-[#A80689] shadow-[inset_0px_-4px_6px_rgba(0,0,0,0.4),inset_0px_2px_3px_rgba(255,255,255,0.4)]"
+                                    className="text-white text-[11px] h-[18px] flex justify-end pr-4 items-center font-medium rounded-full bg-[#A80689] shadow-[inset_0px_-4px_6px_rgba(0,0,0,0.4),inset_0px_2px_3px_rgba(255,255,255,0.4)] whitespace-nowrap"
+                                    style={{ width: `${progressData?.percentage || 0}%`, minWidth: '75px' }}
                                 >
-                                    420 ชั่วโมง
+                                    {progressData?.accumulatedHours || 0} ชั่วโมง
                                 </div>
                             </div>
                             {/* Badge at the End */}
                             <div
                                 className="shrink-0 text-white text-[11px] px-3 min-w-[70px] h-[22px] rounded-full font-medium flex items-center justify-center bg-[#A80689] shadow-[inset_0px_-5px_7px_rgba(0,0,0,0.4),inset_0px_2px_4px_rgba(255,255,255,0.4)] whitespace-nowrap z-20"
                             >
-                                560 ชั่วโมง
+                                {progressData?.totalHoursGoal || 560} ชั่วโมง
                             </div>
                         </div>
                     </div>
@@ -239,9 +399,10 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleCheckIn('in')}
-                                className={`w-full max-w-[250px] h-[64px] flex items-center justify-center font-bold rounded-[8px] text-[19px] transition-all hover:-translate-y-[1px] ${locationStatus === 'searching'
-                                        ? 'bg-[#EAEAEA] text-[#9A9A9A] shadow-none'
-                                        : 'bg-[#A80689] text-white hover:bg-[#8B0374] shadow-[0_4px_15px_rgba(168,6,137,0.3)]'
+                                disabled={locationStatus !== 'found' || hasCheckedInToday}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${(locationStatus !== 'found' || hasCheckedInToday)
+                                        ? 'bg-[#ECECED] text-[#61646C]  border border-[#98A2B3]  shadow-none cursor-not-allowed'
+                                        : 'hover:-translate-y-[1px] bg-[#A80689] text-white'
                                     }`}
                             >
                                 ลงเวลาเข้างาน
@@ -249,7 +410,12 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={handleClockOut}
-                                className="w-full max-w-[250px] h-[64px] flex items-center justify-center bg-[#F3F4F6] border border-[#E5E7EB] text-[#475467] font-bold rounded-[8px] text-[19px] transition-all hover:-translate-y-[1px] hover:bg-[#E5E7EB] shadow-[0_2px_4px_rgba(0,0,0,0.02)]"
+                               // disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                                        ? 'bg-[#ECECED] text-[#61646C] border border-[#98A2B3] shadow-none cursor-not-allowed'
+                                        : 'hover:-translate-y-[1px] bg-[#A80689] text-white '
+                                    }`}
+                               // title={!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : ""}
                             >
                                 ลงเวลาออกงาน
                             </button>
@@ -260,7 +426,7 @@ const CheckInPage = () => {
 
             {/* ----- Mobile Global Fixed Background ----- */}
             <div className="md:hidden fixed inset-0 z-[1] pointer-events-none bg-[#fdfbfe]">
-                <div className="absolute inset-0 bg-[url('/bg-checkin.jpg')] bg-cover bg-center bg-no-repeat opacity-50"></div>
+                <div className="absolute inset-0 bg-[url('/bg-checkin2.jpg')] bg-cover bg-center bg-no-repeat  opacity-50"></div>
             </div>
 
             {/* Mobile View (PWA) */}
@@ -289,10 +455,10 @@ const CheckInPage = () => {
                             {/* Unfilled track */}
                             <circle cx="55" cy="55" r="47" stroke="url(#grayGradient)" strokeWidth="8" fill="none" />
                             {/* Filled track */}
-                            <circle cx="55" cy="55" r="47" stroke="url(#chartGradient)" strokeWidth="8" fill="none" strokeDasharray="295" strokeDashoffset="74" strokeLinecap="round" style={{ filter: 'drop-shadow(0px 3px 4px rgba(168,6,137,0.4))' }} />
+                            <circle cx="55" cy="55" r="47" stroke="url(#chartGradient)" strokeWidth="8" fill="none" strokeDasharray="295" strokeDashoffset={295 - (295 * (progressData?.percentage || 0) / 100)} strokeLinecap="round" style={{ filter: 'drop-shadow(0px 3px 4px rgba(168,6,137,0.4))' }} />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 mt-[2px]">
-                            <span className="text-[13px] font-medium text-[#111] leading-tight tracking-[0.2px]">420 / 560</span>
+                            <span className="text-[13px] font-medium text-[#111] leading-tight tracking-[0.2px]">{progressData?.accumulatedHours || 0} / {progressData?.totalHoursGoal || 560}</span>
                             <span className="text-[13px] font-medium text-[#111] leading-tight mt-[6px]">ชั่วโมง</span>
                         </div>
                     </div>
@@ -315,9 +481,10 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={() => handleCheckIn('in')}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${locationStatus === 'searching'
-                                    ? 'bg-[#ECECED] text-[#9A9A9A]'
-                                    : 'bg-[#A80689] text-white'
+                            disabled={locationStatus !== 'found' || hasCheckedInToday}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || hasCheckedInToday)
+                                    ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
+                                    : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
                         >
                             ลงเวลาเข้างาน
@@ -325,7 +492,11 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={handleClockOut}
-                            className="w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] bg-[#ECECED] text-[#000000] transition-colors"
+                            disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                                    ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
+                                    : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
+                                }`}
                         >
                             ลงเวลาออกงาน
                         </button>
@@ -361,41 +532,38 @@ const CheckInPage = () => {
                                 leaveFrom="opacity-100 scale-100"
                                 leaveTo="opacity-0 scale-95"
                             >
-                                <Dialog.Panel as="div" className="bg-white rounded-[16px] w-full max-w-[313px] min-h-[490px] h-fit flex flex-col items-center pt-8 pb-6 px-[26px] shadow-2xl relative font-sans align-middle">
+                                <Dialog.Panel as="div" className="bg-white rounded-[16px] w-full max-w-[340px] flex flex-col items-center pt-10 pb-6 px-6 shadow-2xl relative font-sans align-middle">
 
                                     {/* Check Icon with Circle */}
-                                    <div className="w-[60px] h-[60px] rounded-full border-[2px] border-[#A80689] flex items-center justify-center mb-5 bg-[#FEEBFB]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#A80689" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <div className="w-[72px] h-[72px] shrink-0 rounded-full flex items-center justify-center mb-6 bg-[#25C277]">
+                                        <span className="material-symbols-outlined text-white text-[56px] select-none" style={{ fontSize: '56px' }}>check</span>
                                     </div>
 
                                     {/* Title & Subtitle */}
-                                    <h3 className="font-medium text-[28px] text-black mb-1 tracking-wide">
+                                    <h3 className="font-bold text-[28px] text-black mb-1">
                                         {checkInActionType === 'in' ? 'ลงเวลาสำเร็จ' : 'ลงเวลาออกสำเร็จ'}
                                     </h3>
-                                    <p className="text-[13px] text-[#85888E] font-medium mb-6">
-                                        {checkInActionType === 'in' ? 'ขอให้วันนี้เป็นวันที่ดีในการทำงานนะ' : 'ขอบคุณสำหรับการทำงาน'}
+                                    <p className="text-[15px] text-[#888888] font-medium mb-6">
+                                        {checkInActionType === 'in' ? 'ขอให้วันนี้เป็นวันที่ดีในการทำงาน' : 'ขอบคุณสำหรับการทำงาน'}
                                     </p>
 
                                     {/* Data Card (Inner Box) */}
-                                    <div className="w-full border border-[#E5E7EB] rounded-[8px] p-5 flex flex-col items-center mb-6 bg-white shrink-0">
+                                    <div className="w-full border border-[#E5E7EB] rounded-[8px] pt-8 pb-6 px-6 flex flex-col items-center mb-6 bg-[#FCF9FD] shrink-0">
                                         {/* Time & Date */}
-                                        <div className="text-[28px] font-semibold text-[#A80689] leading-none mb-2 tracking-tight tabular-nums">
-                                            {checkInTime ? checkInTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }).replace(' น.', '') : '08.30'}
+                                        <div className="text-[44px] font-medium text-[#A80689] leading-none mb-3 tracking-tight tabular-nums">
+                                            {checkInTime ? checkInTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }).replace(' น.', '') : '08:30'}
                                         </div>
-                                        <div className="text-[13px] text-[#8C8C8C] font-semibold mb-5">
-                                            {checkInTime ? checkInTime.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'อังคาร 17 มิถุนายน 2568'}
+                                        <div className="text-[15px] text-[#888888] mb-8">
+                                            {checkInTime ? checkInTime.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).replace(/^(วัน[^\s]+)\s/, '$1ที่ ') : 'วันจันทร์ที่ 1 มกราคม 2569'}
                                         </div>
-
-                                        {/* Divider */}
-                                        <div className="w-full h-[1px] bg-[#E5E7EB] mb-4"></div>
 
                                         {/* Location Row */}
-                                        <div className="w-full flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2 text-[#333741]">
-                                                <IconMapPin className="w-[16px] h-[20px] text-[#61646C]" />
-                                                <span className="text-[12px] font-bold">สถานที่</span>
+                                        <div className="w-full flex items-center justify-between mb-4 mt-2">
+                                            <div className="flex items-center gap-3 text-[#333741]">
+                                                <span className="material-symbols-rounded text-[20px] text-[#555555] select-none">location_on</span>
+                                                <span className="text-[14px] font-medium text-[#444]">สถานที่</span>
                                             </div>
-                                            <span className="text-[12px] font-bold text-[#333741]">อยู่ในสถานที่</span>
+                                            <span className="text-[14px] font-medium text-[#333741]">อยู่ในสถานที่</span>
                                         </div>
 
                                         {/* Divider */}
@@ -403,11 +571,11 @@ const CheckInPage = () => {
 
                                         {/* Status Row */}
                                         <div className="w-full flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-[#333741]">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#61646C]"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                                                <span className="text-[12px] font-bold">สถานะ</span>
+                                            <div className="flex items-center gap-3 text-[#333741]">
+                                                <span className="material-symbols-rounded text-[20px] text-[#555555] select-none">planner_review</span>
+                                                <span className="text-[14px] font-medium text-[#444]">สถานะ</span>
                                             </div>
-                                            <div className={`px-3.5 py-1.5 rounded-full text-[13px] font-bold ${getStatusDisplay().className}`}>
+                                            <div className={`px-4 py-1.5 rounded-full text-[13px] font-medium ${getStatusDisplay().className}`}>
                                                 {getStatusDisplay().label}
                                             </div>
                                         </div>
@@ -416,7 +584,7 @@ const CheckInPage = () => {
                                     {/* Return Button */}
                                     <button
                                         onClick={() => setShowSuccessModal(false)}
-                                        className="shrink-0 w-full h-[40px] flex items-center justify-center bg-[#A80689] hover:bg-[#8B0374] text-white font-bold rounded-[5px] text-[13px] transition-colors"
+                                        className="shrink-0 w-full h-[52px] flex items-center justify-center bg-[#A80689] hover:bg-[#8B0374] text-white text-[16px] font-medium rounded-[8px] transition-colors"
                                     >
                                         กลับไปหน้าหลัก
                                     </button>
@@ -456,11 +624,7 @@ const CheckInPage = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setShowConfirmOutModal(false);
-                                            setCheckInTime(new Date());
-                                            setShowSuccessModal(true);
-                                        }}
+                                        onClick={confirmClockOut}
                                         className="shrink-0 w-[130px] h-[40px] flex items-center justify-center bg-[#A80689] hover:bg-[#8B0374] text-white font-bold text-[15px] rounded-[6px] transition-colors focus:outline-none"
                                     >
                                         ยืนยัน

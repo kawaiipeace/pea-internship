@@ -3,16 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
-import IconMapPin from '@/components/icon/icon-map-pin';
+
 import IconFile from '@/components/icon/icon-file';
 import IconClock from '@/components/icon/icon-clock';
 import IconXCircle from '@/components/icon/icon-x-circle';
 import IconX from '@/components/icon/icon-x';
-import IconClipboardText from '@/components/icon/icon-clipboard-text';
+
 import IconPaperclip from '@/components/icon/icon-paperclip';
 import IconCalendarClock from '@/components/icon/icon-calendar-clock';
 import IconCloudDownload from '@/components/icon/icon-cloud-download';
 import IconSend from '@/components/icon/icon-send';
+import IconPaperclipPlus from '@/components/icon/icon-paperclip-plus';
 
 interface EditTimeFormProps {
     selectedHistoryItem: any;
@@ -149,8 +150,10 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                 {/* Form Box */}
                 <div className="w-full max-w-[820px] mx-auto min-h-[337px] bg-[#FEFBF6] dark:bg-[#1C1710] border border-[#CECFD2] rounded-[5px] p-4 sm:p-6 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center gap-[6px] text-[#1C1C1C] dark:text-gray-300 font-bold text-[15px] mb-4">
-                        <IconMapPin className="w-5 h-5 text-[#1C1C1C] stroke-[1.5]" />
+                    <div className="flex items-center gap-[2px] text-[#1C1C1C] dark:text-gray-300  text-[15px] mb-4">
+                        <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
+                            location_on
+                        </span>
                         อยู่ในสถานที่
                     </div>
 
@@ -185,10 +188,13 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
 
                     {/* หมายเหตุ */}
-                    <div className="text-[11px] text-[#A0A0A0] font-medium leading-[1.6]">
-                        ชั่วโมงที่เข้าทำงานคำนวณจากเวลาทำงานจริง สูงสุดไม่เกิน 7 ชั่วโมง (ไม่ร่วมเวลาพักเที่ยง 1 ชั่วโมง) <span className="text-[#EF4444]">*</span>
+                    <div className="text-[13px] text-[#EF4444] font-medium leading-[1.6] flex items-center gap-2">
+                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <circle cx="10" cy="16" r="1" fill="currentColor" />
+                        </svg>
+                        <span>ชั่วโมงคำนวณจากเวลาทำงานจริง สูงสุดไม่เกิน 7 ชั่วโมง (ไม่ร่วมเวลาพักเที่ยง 1 ชั่วโมง)</span>
                     </div>
-
                     {/* สรุปชั่วโมง */}
                     <div className="mt-3 mb-[18px]">
                         <div className="text-[13px] font-bold text-[#828282]">
@@ -198,8 +204,10 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                     {/* เหตุผล */}
                     <div className="mb-4">
-                        <div className="text-[13px] text-[#828282] font-semibold mb-2 flex items-center gap-2">
-                             <IconClipboardText className="w-5 h-5 text-[#1C1C1C]" />
+                        <div className="text-[15px] text-[#1C1C1C] mb-2 flex items-center gap-1">
+                             <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
+                                docs
+                            </span>
                             เหตุผลการแก้ไขเวลา :
                         </div>
                         <textarea
@@ -216,8 +224,8 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                     {/* ไฟล์แนบ Desktop */}
                     <div>
-                        <div className="text-[13px] text-[#828282] font-semibold mb-2 flex items-center gap-2">
-                            <IconPaperclip className="w-5 h-5 text-[#1C1C1C]" />
+                        <div className="text-[15px] text-[#1C1C1C]  mb-2 flex items-center gap-2">
+                            <IconPaperclipPlus className="w-5 h-5 text-[#1C1C1C]" />
                             ไฟล์แนบ (ถ้ามี)
                         </div>
                         <input
@@ -238,15 +246,25 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                                 {selectedFile ? (
                                     <span className="text-green-600">เลือกไฟล์แล้ว: {selectedFile.name}</span>
                                 ) : (
-                                    <>คลิกเพื่ออัปโหลด <span className="text-[#A0A0A0] font-normal">ขนาดไฟล์ไม่เกิน 5 MB</span></>
+                                    <>
+                                        คลิกเพื่ออัปโหลด <span className="text-[#A0A0A0] font-normal">ขนาดไฟล์ไม่เกิน 5 MB</span>
+                                        <div className="text-[#A0A0A0] font-normal mt-0.5 text-[11px]">(ประเภทไฟล์ที่รองรับ: .pdf, .jpg, .jpeg, .png)</div>
+                                    </>
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-center mt-[32px] mb-2">
+                {/* Action Buttons Desktop */}
+                <div className="flex justify-center items-center gap-4 mt-[32px] mb-[40px]">
+                    <button
+                        type="button"
+                        onClick={() => setIsEditingTime(false)}
+                        className="w-full max-w-[180px] py-[11px] bg-white border border-[#A80689] text-[#A80689] hover:bg-gray-50 transition-colors rounded-lg font-bold text-[15px] shadow-sm"
+                    >
+                        ยกเลิก
+                    </button>
                     <button
                         type="button"
                         onClick={() => {
@@ -256,7 +274,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             }
                             setShowConfirm(true);
                         }}
-                        className={`w-full max-w-[280px] py-[11px] ${isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-lg font-bold text-[15px]`}
+                        className={`w-full max-w-[180px] py-[11px] ${isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-lg font-bold text-[15px] shadow-sm`}
                     >
                         ส่งคำขอ
                     </button>
@@ -264,7 +282,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             </div>
 
             {/* Mobile View (Small to Medium screens) */}
-            <div className="lg:hidden w-full flex flex-col gap-4 h-full min-h-[70vh]">
+            <div className="lg:hidden w-full flex flex-col gap-4 h-auto">
                 {/* Header (No longer Sticky) */}
                 <div 
                     className="relative flex items-center justify-center py-2 mb-2 touch-none"
@@ -347,8 +365,10 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
 
                     {/* Location */}
-                    <div className="flex items-center gap-3 text-[#1C1C1C] font-bold text-[15px]">
-                        <IconMapPin className="w-6 h-6 text-[#1C1C1C]" />
+                    <div className="flex items-center gap-2 text-[#1C1C1C]  text-[15px]">
+                        <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
+                            location_on
+                        </span>
                         อยู่ในสถานที่
                     </div>
 
@@ -383,10 +403,10 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
 
                     {/* Instruction Text */}
-                    <div className="text-[13px] text-[#EF4444] font-medium leading-[1.6] flex items-start gap-2">
-                        <svg className="w-5 h-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <div className="text-[13px] text-[#EF4444] font-medium leading-[1.6] flex items-center gap-2">
+                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            <circle cx="12" cy="16" r="1" fill="currentColor" />
+                            <circle cx="10" cy="16" r="1" fill="currentColor" />
                         </svg>
                         <span>ชั่วโมงคำนวณจากเวลาทำงานจริง สูงสุดไม่เกิน 7 ชั่วโมง (ไม่ร่วมเวลาพักเที่ยง 1 ชั่วโมง)</span>
                     </div>
@@ -398,8 +418,10 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                     {/* Reason Section */}
                     <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3 text-gray-500 font-bold text-[15px]">
-                            <IconClipboardText className="w-6 h-6 text-[#1C1C1C]" />
+                        <div className="flex items-center gap-2 text-[#1C1C1C] text-[15px]">
+                            <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
+                                docs
+                            </span>
                             เหตุผลการแก้ไขเวลา
                         </div>
                         <textarea
@@ -416,8 +438,8 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                     {/* ไฟล์แนบ Mobile */}
                     <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-3 text-gray-500 font-bold text-[15px]">
-                            <IconPaperclip className="w-6 h-6 text-[#1C1C1C]" />
+                        <div className="flex items-center gap-2 text-[#1C1C1C]  text-[15px]">
+                            <IconPaperclipPlus className="w-6 h-6 text-[#1C1C1C]" />
                             ไฟล์แนบ (ถ้ามี)
                         </div>
                         <div
@@ -431,7 +453,10 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                                 {selectedFile ? (
                                     <span className="text-green-600">เลือกไฟล์แล้ว: {selectedFile.name}</span>
                                 ) : (
-                                    <>คลิกเพื่ออัปโหลด <span className="text-[#A0A0A0] font-normal text-[12px]">ขนาดไฟล์ไม่เกิน 5 MB</span></>
+                                    <div className="flex flex-col items-center">
+                                        <span>คลิกเพื่ออัปโหลด <span className="text-[#A0A0A0] font-normal text-[12px]">ขนาดไฟล์ไม่เกิน 5 MB</span></span>
+                                        <span className="text-[#A0A0A0] font-normal text-[11px] mt-1">(ประเภทไฟล์ที่รองรับ: .pdf, .jpg, .jpeg, .png)</span>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -439,7 +464,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                 </div>
 
                 {/* Submit Button Mobile */}
-                <div className="flex-grow flex items-center justify-center pt-10 pb-16">
+                <div className="flex flex-col gap-3 pb-8 px-4">
                     <button
                         type="button"
                         onClick={() => {
@@ -449,10 +474,17 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             }
                             setShowConfirm(true);
                         }}
-                        className={`w-full py-4 ${isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-[12px] font-bold text-[17px] flex items-center justify-center gap-3 shadow-lg ${isSubmitDisabled ? '' : 'shadow-purple-200'}`}
+                        className={`w-full py-4 ${isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-lg ${isSubmitDisabled ? '' : 'shadow-purple-200'}`}
                     >
-                        <IconSend className="w-5 h-5" />
                         ส่งคำขอแก้ไขเวลา
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsEditingTime(false)}
+                        className="w-full py-4 bg-white border border-[#A80689] text-[#A80689] hover:bg-gray-50 transition-colors rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-md"
+                    >
+                        ยกเลิก
                     </button>
                 </div>
             </div>
