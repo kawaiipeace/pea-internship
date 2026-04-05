@@ -32,7 +32,7 @@ export const QueryHistorySchema = t.Object({
 export type CheckTimeDto = Static<typeof CheckTimeSchema>;
 
 export const EditCheckTimeSchema = t.Object({
-  attendanceLogId: t.Number({
+  attendanceLogId: t.Numeric({
     error: "ต้องระบุ ID ของรายการลงเวลา",
     description: "ID ของ attendanceLogs ที่ต้องการแก้ไข",
   }),

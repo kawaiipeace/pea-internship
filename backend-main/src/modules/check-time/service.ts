@@ -616,7 +616,7 @@ export class CheckTimeService {
           ContentType: file.type,
         })
       );
-      uploadedAttachmentUrl = `/${BUCKET_NAME}/${s3Key}`;
+      uploadedAttachmentUrl = `/${s3Key}`;
     }
 
     return await db.transaction(async (tx) => {
