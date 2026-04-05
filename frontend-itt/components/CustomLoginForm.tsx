@@ -14,13 +14,20 @@ export default function CustomLoginForm() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    const getHomeByRole = (roleId: number | undefined): string => {
+        switch (roleId) {
+            case 1: return '/admin';
+            case 2: return '/mentor';
+            case 4: return '/mentor'; // owner
+            default: return '/intern';
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         try {
             await login({ phoneNumber, password });
-
-            // Cookies are now set inside actionLogin in authStore
 
             Swal.fire({
                 icon: 'success',
@@ -35,11 +42,14 @@ export default function CustomLoginForm() {
             router.refresh();
 
             setTimeout(() => {
+                // ใช้ callbackUrl ถ้ามี แต่ต้องเป็น path ภายใน (ไม่เริ่มด้วย http)
                 const callbackUrl = searchParams.get('callbackUrl');
+                const freshUser = useAuthStore.getState().user;
+                const home = getHomeByRole(freshUser?.roleId);
                 if (callbackUrl && callbackUrl.startsWith('/')) {
-                    window.location.href = '/intern';
+                    window.location.href = callbackUrl;
                 } else {
-                    window.location.href = '/intern';
+                    window.location.href = home;
                 }
             }, 1000);
 

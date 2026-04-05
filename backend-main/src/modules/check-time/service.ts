@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3/dist-types/commands/PutObjectCommand";
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { and, desc, eq, gte, lte, not, sql } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
