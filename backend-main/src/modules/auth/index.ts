@@ -34,7 +34,7 @@ export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
   .post(
     "/sign-in/intern/itt",
     async ({ body, set }) => {
-      const response = authService.login_itt(body);
+      const response = await authService.login_itt(body);
 
       set.status = 200;
       return response;
