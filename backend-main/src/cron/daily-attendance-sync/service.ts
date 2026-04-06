@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
   applicationStatuses,
@@ -36,7 +36,7 @@ export class CheckTimeService {
         },
       });
 
-      const processed = [];
+      const processedAbsent = [];
 
       for (const student of activeStudents) {
         const appInfo =
@@ -63,11 +63,29 @@ export class CheckTimeService {
             actualHoursWorked: "0.00",
             isVerified: true,
           });
-          processed.push(student.id);
+          processedAbsent.push(student.id);
         }
       }
 
-      return { success: true, markedAbsentCount: processed.length };
+      const missingOutRecords = await tx
+        .update(attendanceLogs)
+        .set({ dailyStatus: "MISSING_OUT" })
+        .where(
+          and(
+            eq(attendanceLogs.workDate, todayStr),
+            isNotNull(attendanceLogs.checkInId),
+            isNull(attendanceLogs.checkOutId),
+            inArray(attendanceLogs.dailyStatus, ["PRESENT", "LATE"])
+          )
+        )
+        .returning({ id: attendanceLogs.id });
+
+      return {
+        success: true,
+        date: todayStr,
+        markedAbsentCount: processedAbsent.length,
+        markedMissingOutCount: missingOutRecords.length,
+      };
     });
   }
 }
