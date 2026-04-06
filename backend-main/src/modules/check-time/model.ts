@@ -24,6 +24,21 @@ export const QueryHistorySchema = t.Object({
   year: t.Optional(t.String()),
   month: t.Optional(t.String()),
   page: t.Optional(t.String({ description: "หน้าที่ต้องการแสดง (ค่าเริ่มต้น: 1)" })),
+  filterStatus: t.Optional(
+    t.Union(
+      [
+        t.Literal("PRESENT"),
+        t.Literal("LATE"),
+        t.Literal("LEAVE"),
+        t.Literal("ABSENT"),
+        t.Literal("MISSING_OUT"),
+      ],
+      {
+        description:
+          "กรองข้อมูลตามสถานะ (PRESENT, LATE, LEAVE, ABSENT, MISSING_OUT)",
+      }
+    )
+  ),
   limit: t.Optional(
     t.String({ description: "จำนวนรายการต่อหน้า (ค่าเริ่มต้น: 10)" })
   ),
