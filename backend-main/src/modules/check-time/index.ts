@@ -64,14 +64,27 @@ export const checkTime = new Elysia({
       const month = query.month ? parseInt(query.month, 10) : undefined;
       const page = query.page ? parseInt(query.page, 10) : 1;
       const limit = query.limit ? parseInt(query.limit, 10) : 10;
-
-      return await checkTimeService.history(user.id, year, month, page, limit);
+      const filterStatus = query.filterStatus as
+        | "PRESENT"
+        | "LATE"
+        | "LEAVE"
+        | "ABSENT"
+        | "MISSING_OUT"
+        | undefined;
+      return await checkTimeService.history(
+        user.id,
+        year,
+        month,
+        page,
+        limit,
+        filterStatus
+      );
     },
     {
       role: [ROLE_IDS.STUDENT],
       query: checkSchema.QueryHistorySchema,
       detail: {
-        summary: "ประวัติการลงเวลา (รายเดือน)",
+        summary: "ประวัติการลงเวลา",
         description:
           "ดึงข้อมูลสรุปการลงเวลาและรายการรายวันตามเดือนที่ระบุ (รองรับ Pagination) เพื่อแสดงในหน้าประวัติ",
       },
