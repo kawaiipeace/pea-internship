@@ -14,7 +14,7 @@ const Page = () => {
         if (item) {
             setData(JSON.parse(item));
         } else {
-            router.push('/history');
+            router.push('/intern/history');
         }
     }, []);
 
@@ -29,7 +29,7 @@ const Page = () => {
 
                 <EditTimeForm
                     selectedHistoryItem={data}
-                    setIsEditingTime={() => router.back()}
+                    setIsEditingTime={() => router.push('/intern/history')}
                 />
 
             </div>

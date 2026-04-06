@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 
 
 import IconFile from '@/components/icon/icon-file';
@@ -32,6 +33,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
     handleTouchMove,
     handleTouchEnd
 }) => {
+    const router = useRouter();
     const [showConfirm, setShowConfirm] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -95,7 +97,6 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                 file: selectedFile?.name
             });
 
-            // Use post/put specifically with FormData configuration
             await axiosInstance.put('/check-time/edit', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
@@ -105,11 +106,12 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             setShowConfirm(false);
             setShowSuccess(true);
 
-            // Auto close faster and jump back to history list
+            // Optimized redirect: Remove refresh and duplicate push calls for speed
             setTimeout(() => {
+                localStorage.removeItem('editItem');
                 setIsEditingTime(false);
-                if (typeof window !== 'undefined') window.location.reload();
-            }, 800);
+                router.push('/intern/history');
+            }, 500);
         } catch (err: any) {
             console.error("Failed to submit correction:", err);
             
@@ -353,6 +355,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </button>
                     <button
                         type="button"
+                        disabled={isLoading}
                         onClick={() => {
                             if (!reason.trim()) {
                                 setError('กรุณากรอกหมายเหตุ');
@@ -360,9 +363,11 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             }
                             setShowConfirm(true);
                         }}
-                        className={`w-full max-w-[180px] py-[11px] ${isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-lg font-bold text-[15px] shadow-sm`}
+                        className={`w-full max-w-[180px] py-[11px] ${isSubmitDisabled || isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-lg font-bold text-[15px] shadow-sm flex items-center justify-center`}
                     >
-                        ส่งคำขอ
+                        {isLoading ? (
+                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : 'ส่งคำขอ'}
                     </button>
                 </div>
             </div>
@@ -561,6 +566,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                 <div className="flex flex-col gap-3 pb-8 px-4">
                     <button
                         type="button"
+                        disabled={isLoading}
                         onClick={() => {
                             if (!reason.trim()) {
                                 setError('กรุณากรอกหมายเหตุ');
@@ -568,15 +574,18 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             }
                             setShowConfirm(true);
                         }}
-                        className={`w-full py-4 ${isSubmitDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-lg ${isSubmitDisabled ? '' : 'shadow-purple-200'}`}
+                        className={`w-full py-4 ${isSubmitDisabled || isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-lg ${(isSubmitDisabled || isLoading) ? '' : 'shadow-purple-200'}`}
                     >
-                        ส่งคำขอแก้ไขเวลา
+                         {isLoading ? (
+                             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : 'ส่งคำขอแก้ไขเวลา'}
                     </button>
 
                     <button
                         type="button"
+                        disabled={isLoading}
                         onClick={() => setIsEditingTime(false)}
-                        className="w-full py-4 bg-white border border-[#A80689] text-[#A80689] hover:bg-gray-50 transition-colors rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-md"
+                        className="w-full py-4 bg-white border border-[#A80689] text-[#A80689] hover:bg-gray-50 transition-colors rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-md disabled:opacity-50"
                     >
                         ยกเลิก
                     </button>
