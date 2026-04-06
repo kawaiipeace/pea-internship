@@ -1,6 +1,19 @@
 import crypto from "node:crypto";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, desc, eq, gte, inArray, lte, not, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  not,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import {
   ConflictError,
   ForbiddenError,
@@ -24,6 +37,14 @@ type CorrectionRequestData = {
   attendanceLogId: number;
   status: string;
 };
+
+type StatusFilter =
+  | "PRESENT"
+  | "LATE"
+  | "LEAVE"
+  | "ABSENT"
+  | "MISSING_OUT"
+  | "";
 
 export class CheckTimeService {
   private getDistanceInMeters(
@@ -441,7 +462,8 @@ export class CheckTimeService {
     year?: number,
     month?: number,
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    filterStatus?: StatusFilter
   ) {
     const student = await db.query.studentProfiles.findFirst({
       where: eq(studentProfiles.userId, userId),
@@ -461,14 +483,14 @@ export class CheckTimeService {
     const lastDay = new Date(targetYear, targetMonth, 0).getDate();
     const endDate = `${targetYear}-${monthStr}-${lastDay}`;
 
-    const whereCondition = and(
+    const baseCondition = and(
       eq(attendanceLogs.studentProfileId, student.id),
       gte(attendanceLogs.workDate, startDate),
       lte(attendanceLogs.workDate, endDate)
     );
 
     const allRecordsForSummary = await db.query.attendanceLogs.findMany({
-      where: whereCondition,
+      where: baseCondition,
       columns: {
         dailyStatus: true,
         checkInId: true,
@@ -476,15 +498,13 @@ export class CheckTimeService {
       },
     });
 
-    const totalRecords = allRecordsForSummary.length;
-    const totalPages = Math.ceil(totalRecords / limit);
-
     const summary = {
       present: 0,
       late: 0,
       leave: 0,
       absent: 0,
       missingOut: 0,
+      total: allRecordsForSummary.length,
     };
 
     allRecordsForSummary.forEach((log) => {
@@ -505,10 +525,41 @@ export class CheckTimeService {
       else if (displayStatus === "MISSING_OUT") summary.missingOut++;
     });
 
+    let filterCondition: SQL | undefined;
+
+    if (filterStatus === "MISSING_OUT") {
+      filterCondition = and(
+        inArray(attendanceLogs.dailyStatus, ["PRESENT", "LATE"]),
+        isNotNull(attendanceLogs.checkInId),
+        isNull(attendanceLogs.checkOutId)
+      );
+    } else if (filterStatus === "PRESENT" || filterStatus === "LATE") {
+      filterCondition = and(
+        eq(attendanceLogs.dailyStatus, filterStatus),
+        or(
+          isNull(attendanceLogs.checkInId),
+          isNotNull(attendanceLogs.checkOutId)
+        )
+      );
+    } else if (filterStatus === "LEAVE" || filterStatus === "ABSENT") {
+      filterCondition = eq(attendanceLogs.dailyStatus, filterStatus);
+    }
+
+    const listCondition = and(baseCondition, filterCondition);
+
+    let totalFilteredRecords = summary.total;
+    if (filterStatus === "PRESENT") totalFilteredRecords = summary.present;
+    else if (filterStatus === "LATE") totalFilteredRecords = summary.late;
+    else if (filterStatus === "LEAVE") totalFilteredRecords = summary.leave;
+    else if (filterStatus === "ABSENT") totalFilteredRecords = summary.absent;
+    else if (filterStatus === "MISSING_OUT")
+      totalFilteredRecords = summary.missingOut;
+
+    const totalPages = Math.ceil(totalFilteredRecords / limit);
     const offset = (page - 1) * limit;
 
     const historyData = await db.query.attendanceLogs.findMany({
-      where: whereCondition,
+      where: listCondition,
       orderBy: [desc(attendanceLogs.workDate)],
       limit: limit,
       offset: offset,
@@ -578,7 +629,7 @@ export class CheckTimeService {
         page: page,
         limit: limit,
         totalPages: totalPages,
-        totalRecords: totalRecords,
+        totalRecords: totalFilteredRecords,
       },
       records: records,
     };
