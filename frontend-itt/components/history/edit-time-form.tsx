@@ -14,6 +14,8 @@ import IconCalendarClock from '@/components/icon/icon-calendar-clock';
 import IconCloudDownload from '@/components/icon/icon-cloud-download';
 import IconSend from '@/components/icon/icon-send';
 import IconPaperclipPlus from '@/components/icon/icon-paperclip-plus';
+import axiosInstance from '@/api/axios';
+import Swal from 'sweetalert2';
 
 interface EditTimeFormProps {
     selectedHistoryItem: any;
@@ -34,29 +36,105 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
     const [showSuccess, setShowSuccess] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [reason, setReason] = useState(selectedHistoryItem?.reqReason || "ลืมกดลงเวลาออก");
+    const [checkInTime, setCheckInTime] = useState("");
+    const [checkOutTime, setCheckOutTime] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setMounted(true);
-    }, []);
+        // Initialize times from selected item, handling various "empty" indicators
+        const isInvalidTime = (time: string | undefined) => 
+            !time || time === "-" || time === "--:--" || time === "ไม่ลงเวลา" || time === "Invalid Date";
 
-    const handleSubmit = () => {
+        const initialIn = isInvalidTime(selectedHistoryItem?.checkInTime) ? "08:30" : selectedHistoryItem.checkInTime;
+        const initialOut = isInvalidTime(selectedHistoryItem?.checkOutTime) ? "16:30" : selectedHistoryItem.checkOutTime;
+        
+        setCheckInTime(initialIn);
+        setCheckOutTime(initialOut);
+    }, [selectedHistoryItem]);
+
+    const handleSubmit = async () => {
+        const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+        
+        if (!timeRegex.test(checkInTime) || !timeRegex.test(checkOutTime)) {
+            setError('รูปแบบเวลาไม่ถูกต้อง (ตัวอย่าง 08:30)');
+            return;
+        }
+
         if (!reason.trim()) {
             setError('กรุณากรอกหมายเหตุ');
             return;
         }
+        
+        setIsLoading(true);
         setError(null);
-        setShowConfirm(false);
-        setShowSuccess(true);
+        
+        try {
+            const formData = new FormData();
+            // Elysia t.Numeric can handle string from FormData
+            formData.append('attendanceLogId', String(selectedHistoryItem.id));
+            formData.append('checkInTime', checkInTime);
+            formData.append('checkOutTime', checkOutTime);
+            formData.append('reason', reason);
+            
+            if (selectedFile) {
+                // Ensure field name matches 'attachment' and it's a File object
+                formData.append('attachment', selectedFile);
+            }
 
-        // Auto close or redirect
-        setTimeout(() => {
-            setShowSuccess(false);
-            setIsEditingTime(false);
-        }, 2000);
+            // Log exact payload to console for verification
+            console.log("Submit Payload:", {
+                id: selectedHistoryItem.id,
+                in: checkInTime,
+                out: checkOutTime,
+                reason: reason,
+                file: selectedFile?.name
+            });
+
+            // Use post/put specifically with FormData configuration
+            await axiosInstance.put('/check-time/edit', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            setShowConfirm(false);
+            setShowSuccess(true);
+
+            // Auto close faster and jump back to history list
+            setTimeout(() => {
+                setIsEditingTime(false);
+                if (typeof window !== 'undefined') window.location.reload();
+            }, 800);
+        } catch (err: any) {
+            console.error("Failed to submit correction:", err);
+            
+            // Extract detailed error from server for 422
+            let msg = 'เกิดข้อผิดพลาดในการส่งข้อมูล';
+            if (err.response?.data?.message) {
+                msg = err.response.data.message;
+            } else if (err.response?.data?.error) {
+                msg = err.response.data.error;
+            } else if (err.response?.status === 422) {
+                // For 422, server usually returns specific field errors
+                const details = err.response?.data;
+                msg = `ข้อมูลไม่ถูกต้อง: ${typeof details === 'object' ? JSON.stringify(details) : details}`;
+            }
+
+            setError(msg);
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด',
+                text: msg,
+                confirmButtonText: 'ตกลง',
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,10 +241,14 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                         <div className="relative w-full max-w-[450px]">
                             <input
                                 type="text"
-                                defaultValue={(!selectedHistoryItem?.checkInTime || selectedHistoryItem?.checkInTime === "-" || selectedHistoryItem?.checkInTime === "ไม่ลงเวลา") ? "08:30" : selectedHistoryItem.checkInTime}
+                                value={checkInTime}
+                                onChange={(e) => setCheckInTime(e.target.value)}
                                 className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
                             />
-                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]">
+                            <button 
+                                onClick={() => setCheckInTime("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]"
+                            >
                                 <IconX className="w-[14px] h-[14px]" />
                             </button>
                         </div>
@@ -178,10 +260,14 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                         <div className="relative w-full max-w-[450px]">
                             <input
                                 type="text"
-                                defaultValue={(!selectedHistoryItem?.checkOutTime || selectedHistoryItem?.checkOutTime === "-" || selectedHistoryItem?.checkOutTime === "ไม่ลงเวลา") ? "16:30" : selectedHistoryItem.checkOutTime}
+                                value={checkOutTime}
+                                onChange={(e) => setCheckOutTime(e.target.value)}
                                 className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
                             />
-                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]">
+                            <button 
+                                onClick={() => setCheckOutTime("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]"
+                            >
                                 <IconX className="w-[14px] h-[14px]" />
                             </button>
                         </div>
@@ -379,10 +465,14 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             <div className="relative">
                                 <input
                                     type="text"
-                                    defaultValue={(!selectedHistoryItem?.checkInTime || selectedHistoryItem?.checkInTime === "-" || selectedHistoryItem?.checkInTime === "ไม่ลงเวลา") ? "08:30" : selectedHistoryItem.checkInTime}
+                                    value={checkInTime}
+                                    onChange={(e) => setCheckInTime(e.target.value)}
                                     className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
                                 />
-                                <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]">
+                                <button 
+                                    onClick={() => setCheckInTime("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
+                                >
                                     <IconX className="w-4 h-4" />
                                 </button>
                             </div>
@@ -392,10 +482,14 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             <div className="relative">
                                 <input
                                     type="text"
-                                    defaultValue={(!selectedHistoryItem?.checkOutTime || selectedHistoryItem?.checkOutTime === "-" || selectedHistoryItem?.checkOutTime === "ไม่ลงเวลา") ? "16:30" : selectedHistoryItem.checkOutTime}
+                                    value={checkOutTime}
+                                    onChange={(e) => setCheckOutTime(e.target.value)}
                                     className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
                                 />
-                                <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]">
+                                <button 
+                                    onClick={() => setCheckOutTime("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
+                                >
                                     <IconX className="w-4 h-4" />
                                 </button>
                             </div>
@@ -513,9 +607,12 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                                 <button
                                     onClick={handleSubmit}
-                                    className="flex-1 py-2.5 bg-[#11A75C] hover:bg-[#0E8F4D] text-white rounded-xl text-sm font-bold"
+                                    disabled={isLoading}
+                                    className={`flex-1 py-2.5 ${isLoading ? 'bg-gray-400' : 'bg-[#11A75C] hover:bg-[#0E8F4D]'} text-white rounded-xl text-sm font-bold flex items-center justify-center`}
                                 >
-                                    ยืนยัน
+                                    {isLoading ? (
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : 'ยืนยัน'}
                                 </button>
                             </div>
                         </div>

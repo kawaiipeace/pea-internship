@@ -21,6 +21,8 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import IconFileText from "@/components/icon/icon-file-text";
 import IconPaperclip from "@/components/icon/icon-paperclip";
+import { useEffect, useCallback } from "react";
+import axiosInstance from "@/api/axios";
 
 const AttendanceHistoryPage = () => {
   const router = useRouter();
@@ -29,6 +31,20 @@ const AttendanceHistoryPage = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
   const [isEditingTime, setIsEditingTime] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [summaryCounts, setSummaryCounts] = useState({
+    present: 0,
+    late: 0,
+    leave: 0,
+    absent: 0,
+    missingOut: 0
+  });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    totalPages: 1,
+    totalRecords: 0
+  });
 
   // Swipe to close state
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -105,25 +121,43 @@ const AttendanceHistoryPage = () => {
     }
   };
 
-  const handleViewFile = (filename: string) => {
-    Swal.fire({
-      title: "ดูไฟล์แนบ",
-      html: `<div className="text-gray-500 mb-2">${filename}</div>`,
-      imageUrl: "/assets/images/profile-34.jpeg",
-      imageWidth: 400,
-      imageHeight: 400,
-      imageAlt: filename,
-      confirmButtonText: "ปิด",
-      buttonsStyling: false,
-      customClass: {
-        popup:
-          "rounded-[20px] p-6 bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center",
-        title:
-          "text-[18px] font-bold text-black dark:text-white pt-2 text-center",
-        confirmButton:
-          "bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] mt-4",
-      },
-    });
+  const handleViewFile = async (key: string, filename: string) => {
+    try {
+      const response = await axiosInstance.get(`/check-time/file`, {
+        params: { key: key },
+        responseType: "arraybuffer", // Use arraybuffer for maximum binary precision
+        transformResponse: [data => data], // Force Axios to NOT transform the data
+      });
+
+      // Get content type from response headers, fallback to application/pdf for PDF files
+      let contentType = response.headers["content-type"];
+      if (!contentType || contentType === "text/plain" || contentType === "application/octet-stream") {
+        if (filename.toLowerCase().endsWith(".pdf")) {
+            contentType = "application/pdf";
+        } else if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
+            contentType = "image/jpeg";
+        } else if (filename.toLowerCase().endsWith(".png")) {
+            contentType = "image/png";
+        }
+      }
+
+      const blob = new Blob([response.data], { type: contentType });
+      const url = URL.createObjectURL(blob);
+      
+      // Open in new tab
+      window.open(url, "_blank");
+
+      // Clean up
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      console.error("Failed to view file:", error);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถโหลดไฟล์ได้",
+        confirmButtonText: "ตกลง",
+      });
+    }
   };
 
   const handleNextMonth = () => {
@@ -135,11 +169,151 @@ const AttendanceHistoryPage = () => {
     }
   };
 
+  const fetchHistory = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      // BE Year to AD Year (BE = AD + 543)
+      const adYear = currentYear - 543;
+      const monthForApi = currentMonth + 1; // API expects 1-12
+
+      const response = await axiosInstance.get(`/check-time/history`, {
+        params: {
+          year: adYear,
+          month: monthForApi,
+          page: pagination.page,
+          limit: 10
+        }
+      });
+
+      if (response.data) {
+        const { summary, records, pagination: paginationData } = response.data;
+        
+        // Map records to UI format
+        const mappedRecords = records.map((log: any) => {
+          const date = new Date(log.workDate);
+          const day = date.getDate().toString();
+          const monthIndex = date.getMonth();
+          const year = date.getFullYear() + 543;
+          
+          const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+          const thaiMonthsFull = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+
+          let statusType = "default";
+          let statusLabel = log.displayStatus;
+
+          switch (log.displayStatus) {
+            case 'PRESENT':
+              statusLabel = "เข้างานปกติ";
+              statusType = "success";
+              break;
+            case 'LATE':
+              statusLabel = "สาย";
+              statusType = "warning";
+              break;
+            case 'LEAVE':
+              statusLabel = "ลา";
+              statusType = "info";
+              break;
+            case 'ABSENT':
+              statusLabel = "ขาดงาน";
+              statusType = "danger";
+              break;
+            case 'MISSING_OUT':
+              statusLabel = "ไม่ลงเวลาออก";
+              statusType = "default";
+              break;
+          }
+
+          let approvalStatus = null;
+          if (log.correctionStatus) {
+            approvalStatus = log.correctionStatus.toLowerCase();
+            if (approvalStatus === 'rejected') approvalStatus = 'denied';
+          }
+
+          return {
+            id: log.id,
+            date: day,
+            month: thaiMonthsShort[monthIndex],
+            labelMobile: `${day} ${thaiMonthsFull[monthIndex]} ${year}`,
+            time: `เวลาทำงาน ${log.checkInTime} - ${log.checkOutTime}`,
+            status: statusLabel,
+            statusType: statusType,
+            checkInTime: log.checkInTime,
+            checkOutTime: log.checkOutTime,
+            location: log.location,
+            workingHours: log.workingHours,
+            approvalStatus: approvalStatus,
+            isLeave: log.displayStatus === 'LEAVE',
+            isEdited: log.isEdited,
+            correctionId: log.correctionId
+          };
+        });
+
+        setHistoryItems(mappedRecords);
+        setSummaryCounts(summary);
+        setPagination({
+          page: paginationData.page,
+          totalPages: paginationData.totalPages,
+          totalRecords: paginationData.totalRecords
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: 'ไม่สามารถดึงข้อมูลประวัติการลงเวลาได้',
+        confirmButtonText: 'ตกลง'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentMonth, currentYear, pagination.page]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
+
+  const fetchCorrectionDetail = async (correctionId: number) => {
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.get(`/check-time/edit/${correctionId}`);
+      if (response.data && response.data.success) {
+        const detail = response.data.data;
+        
+        // Merge detail into selectedHistoryItem
+        setSelectedHistoryItem((prev: any) => ({
+          ...prev,
+          reqCheckInTime: detail.requested.checkInTime,
+          reqCheckOutTime: detail.requested.checkOutTime,
+          reqWorkingHours: `${detail.requested.hoursWorked} ชั่วโมง`,
+          reqReason: detail.reason,
+          evidence: detail.attachment.name,
+          evidenceUrl: detail.attachment.url,
+          originalCheckInTime: detail.original.checkInTime,
+          originalCheckOutTime: detail.original.checkOutTime,
+          originalWorkingHours: `${detail.original.hoursWorked} ชั่วโมง`,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch correction detail:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Dummy Data
+  // Dynamic Summary Data from API
   const summaryData = [
     {
       title: "เข้างานปกติ",
-      days: 14,
+      days: summaryCounts.present,
       icon: (
         <svg
           fill="none"
@@ -161,7 +335,7 @@ const AttendanceHistoryPage = () => {
     },
     {
       title: "สาย",
-      days: 1,
+      days: summaryCounts.late,
       icon: (
         <span className="material-symbols-rounded !text-[28px]">schedule</span>
       ),
@@ -171,7 +345,7 @@ const AttendanceHistoryPage = () => {
     },
     {
       title: "ลา",
-      days: 4,
+      days: summaryCounts.leave,
       icon: (
         <span className="material-symbols-rounded !text-[28px] flex items-center justify-center">lab_profile</span>
       ),
@@ -181,7 +355,7 @@ const AttendanceHistoryPage = () => {
     },
     {
       title: "ขาด",
-      days: 1,
+      days: summaryCounts.absent,
       icon: (
         <svg
           viewBox="0 0 24 24"
@@ -202,162 +376,10 @@ const AttendanceHistoryPage = () => {
     },
   ];
 
-  const historyData = [
-    {
-      date: "1",
-      month: "ม.ค.",
-      labelMobile: "1 มกราคม 2569",
-      time: "เวลาทำงาน ",
-      status: "ขาด",
-      statusType: "danger",
-      location: "การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)",
-      checkInTime: "ไม่ลงเวลา",
-      checkOutTime: "ไม่ลงเวลา",
-      workingHours: "0 ชั่วโมง",
-      approvalStatus: "denied",
-      reqCheckInTime: "08:30",
-      reqCheckOutTime: "16:30",
-      reqWorkingHours: "7 ชั่วโมง",
-      reqReason: "ระบบขัดข้องทำให้ลงเวลาไม่ได้",
-      evidence: "หลักฐาน.pdf",
-      evidenceSize: "(2.4 MB)",
-    },
-    {
-      date: "17",
-      month: "ม.ค.",
-      labelMobile: "17 มกราคม 2569",
-      time: "เวลาทำงาน 08:30 - ไม่ลงเวลา",
-      status: "ไม่ลงเวลาออก",
-      statusType: "default",
-      location: "การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)",
-      checkInTime: "08:30",
-      checkOutTime: "ไม่ลงเวลา",
-      workingHours: "0 ชั่วโมง",
-      approvalStatus: "pending",
-      reqCheckInTime: "08:30",
-      reqCheckOutTime: "16:30",
-      reqWorkingHours: "7 ชั่วโมง",
-      reqReason: "ลืมกดออก",
-      evidence: "หลักฐาน.jpg",
-      evidenceSize: "(5MB)",
-    },
-    {
-      date: "16",
-      month: "ม.ค.",
-      labelMobile: "16 มกราคม 2569",
-      time: "เวลาทำงาน 08:30 - 16:30",
-      status: "เข้างานปกติ",
-      statusType: "success",
-      location: "การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)",
-      checkInTime: "08:30",
-      checkOutTime: "16:30",
-      workingHours: "0 ชั่วโมง",
-      approvalStatus: "approved",
-      reqCheckInTime: "08:30",
-      reqCheckOutTime: "16:30",
-      reqWorkingHours: "7 ชั่วโมง",
-      reqReason: "ลืมกดออก",
-      evidence: "ลงชื่อเข้างาน.jpg",
-      evidenceSize: "(5MB)",
-    },
-    {
-      date: "15",
-      month: "ม.ค.",
-      labelMobile: "15 มกราคม 2569",
-      time: "เวลาทำงาน 08:30 - 16:30",
-      status: "เข้างานปกติ",
-      statusType: "success",
-      location: "การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)",
-      checkInTime: "08:30",
-      checkOutTime: "16:30",
-      workingHours: "8 ชั่วโมง",
-      evidence: "ลงชื่อเข้างาน.jpg",
-      evidenceSize: "(5MB)",
-    },
-    {
-      date: "14",
-      month: "ม.ค.",
-      labelMobile: "14 มกราคม 2569",
-      time: "เวลาทำงาน 10:00 - 16:30",
-      status: "สาย",
-      statusType: "warning",
-      location: "การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)",
-      checkInTime: "10:00",
-      checkOutTime: "16:30",
-      workingHours: "6 ชั่วโมง 30 นาที",
-      evidence: "ลงชื่อเข้างาน.jpg",
-      evidenceSize: "(5MB)",
-    },
-    {
-      date: "13",
-      month: "ม.ค.",
-      labelMobile: "13 มกราคม 2569",
-      time: "เวลาทำงาน --:--",
-      status: "ลา",
-      statusType: "info",
-      isLeave: true,
-      statusText: "คุณลางานวันนี้",
-      leaveDuration: "1 วัน",
-      leaveType: "ลากิจ",
-      leaveReason: "เข้าร่วมประชุมกับทางมหาวิทยาลัย",
-      location: "-",
-      checkInTime: "-",
-      checkOutTime: "-",
-      workingHours: "-",
-      evidence: "ลากิจ.jpg",
-      evidenceSize: "(5MB)",
-    },
-    {
-      date: "12",
-      month: "ม.ค.",
-      labelMobile: "12 มกราคม 2569",
-      time: "เวลาทำงาน --:--",
-      status: "ขาด",
-      statusType: "danger",
-      location: "-",
-      checkInTime: "-",
-      checkOutTime: "-",
-      workingHours: "-",
-      evidence: "-",
-      evidenceSize: "-",
-    },
-    {
-      date: "11",
-      month: "ม.ค.",
-      labelMobile: "11 มกราคม 2569",
-      time: "เวลาทำงาน --:--",
-      status: "ลา",
-      statusType: "info",
-      isLeave: true,
-      statusText: "คุณลางานวันนี้",
-      leaveDuration: "1 วัน",
-      leaveType: "ลาป่วย",
-      leaveReason: "มีอาการปวดหัวและเป็นไข้",
-      location: "-",
-      checkInTime: "-",
-      checkOutTime: "-",
-      workingHours: "-",
-      evidence: "ลาป่วย.jpg",
-      evidenceSize: "(5MB)",
-    },
-    {
-      date: "18",
-      month: "ม.ค.",
-      labelMobile: "18 มกราคม 2569",
-      time: "เวลาทำงาน 08:30 - ไม่ลงเวลา",
-      status: "ไม่ลงเวลาออก",
-      statusType: "default",
-      location: "การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)",
-      checkInTime: "08:30",
-      checkOutTime: "ไม่ลงเวลา",
-      workingHours: "0 ชั่วโมง",
-      evidence: null,
-    },
-  ];
 
   const filteredHistoryData = selectedFilter
-    ? historyData.filter((item) => item.status === selectedFilter)
-    : historyData;
+    ? historyItems.filter((item) => item.status === selectedFilter)
+    : historyItems;
 
   const getStatusBadge = (type: string, status: string) => {
     let icon = null;
@@ -432,7 +454,12 @@ const AttendanceHistoryPage = () => {
   };
 
   return (
-    <div className="-m-6 p-[22px] sm:p-6 text-black dark:text-white-light bg-[#fffbf7] dark:bg-black min-h-screen">
+    <div className="-m-6 p-[22px] sm:p-6 text-black dark:text-white-light bg-[#fffbf7] dark:bg-black min-h-screen relative">
+      {isLoading && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-[2px]">
+           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A80689]"></div>
+        </div>
+      )}
       <div className="w-full max-w-[349px] sm:max-w-[840px] mx-auto min-h-[888px] sm:min-h-[813px] flex flex-col gap-[16px]">
         {/* Header Section */}
         <div className="flex flex-row items-start justify-between gap-2 sm:gap-4 shrink-0">
@@ -541,7 +568,7 @@ const AttendanceHistoryPage = () => {
             })}
           </div>
           <p className="text-xs sm:text-sm text-gray-500">
-            รายการลงเวลาทั้งหมด {historyData.length} วัน
+            รายการลงเวลาทั้งหมด {pagination.totalRecords} วัน
           </p>
         </div>
 
@@ -570,6 +597,10 @@ const AttendanceHistoryPage = () => {
                     ) {
                       setSelectedHistoryItem(item);
                       setIsDetailModalOpen(true);
+                      
+                      if (item.isEdited && item.correctionId) {
+                        fetchCorrectionDetail(item.correctionId);
+                      }
                     }
                   }}
                   className={`w-full max-sm:min-h-[98px] sm:h-[80px] flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-[14px] border border-[#CECFD2] dark:border-gray-700 rounded-[14px] p-3.5 sm:px-4 sm:py-2 bg-white dark:bg-[#121212] overflow-hidden animate-[fadeIn_0.3s_ease-in-out] ${item.isLeave || item.statusType === "warning" || item.statusType === "danger" || item.statusType === "success" || item.statusType === "default" ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-[1.01]" : ""}`}
@@ -667,7 +698,11 @@ const AttendanceHistoryPage = () => {
           </button>
 
           <div className="inline-flex items-center border border-gray-200 dark:border-gray-700 rounded-full overflow-x-auto shadow-sm w-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0">
+            <button 
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0 disabled:opacity-50"
+            >
               <svg
                 className="w-3.5 h-3.5 stroke-2"
                 fill="none"
@@ -681,22 +716,35 @@ const AttendanceHistoryPage = () => {
                 ></path>
               </svg>
             </button>
-            <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-800 dark:text-gray-200 font-bold bg-[#dce0e5] dark:bg-gray-600 border-r border-gray-200 dark:border-gray-700 shrink-0">
-              1
-            </button>
-            <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-              2
-            </button>
-            <span className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-              ...
-            </span>
-            <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-              9
-            </button>
-            <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-              10
-            </button>
-            <button className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] flex items-center justify-center shrink-0">
+            
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+              // Simple logic for showing around current page
+              let pageNum = 1;
+              if (pagination.totalPages <= 5) pageNum = i + 1;
+              else if (pagination.page <= 3) pageNum = i + 1;
+              else if (pagination.page >= pagination.totalPages - 2) pageNum = pagination.totalPages - 4 + i;
+              else pageNum = pagination.page - 2 + i;
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base font-bold border-r border-gray-200 dark:border-gray-700 shrink-0 ${
+                    pagination.page === pageNum 
+                    ? "text-gray-800 dark:text-gray-200 bg-[#dce0e5] dark:bg-gray-600" 
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212]"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            <button 
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] flex items-center justify-center shrink-0 disabled:opacity-50"
+            >
               <svg
                 className="w-3.5 h-3.5 stroke-2"
                 fill="none"
@@ -1121,6 +1169,7 @@ const AttendanceHistoryPage = () => {
                                             type="button"
                                             onClick={() =>
                                               handleViewFile(
+                                                selectedHistoryItem.evidenceUrl || selectedHistoryItem.evidence,
                                                 selectedHistoryItem.evidence,
                                               )
                                             }
@@ -1333,6 +1382,7 @@ const AttendanceHistoryPage = () => {
                                                 type="button"
                                                 onClick={() =>
                                                   handleViewFile(
+                                                    selectedHistoryItem.evidenceUrl || selectedHistoryItem.evidence,
                                                     selectedHistoryItem.evidence,
                                                   )
                                                 }

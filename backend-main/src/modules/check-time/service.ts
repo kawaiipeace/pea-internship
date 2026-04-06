@@ -513,8 +513,8 @@ export class CheckTimeService {
       limit: limit,
       offset: offset,
       with: {
-        checkIn: { columns: { time: true } },
-        checkOut: { columns: { time: true } },
+        checkIn: { columns: { time: true, location: true } },
+        checkOut: { columns: { time: true, location: true } },
       },
     });
 
@@ -565,6 +565,8 @@ export class CheckTimeService {
         displayStatus: displayStatus,
         checkInTime: inTime,
         checkOutTime: outTime,
+        location: log.checkIn?.location || "-",
+        workingHours: log.actualHoursWorked ? `${log.actualHoursWorked} ชั่วโมง` : "-",
         isEdited: !!correctionData,
         correctionStatus: correctionData?.status || null,
         correctionId: correctionData?.id || null,
@@ -769,7 +771,7 @@ export class CheckTimeService {
       const data = await s3Client.send(command);
 
       return {
-        stream: data.Body?.transformToWebStream(),
+        buffer: await data.Body?.transformToByteArray(),
         contentType: data.ContentType || "application/octet-stream",
       };
     } catch (error) {

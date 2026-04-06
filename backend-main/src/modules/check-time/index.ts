@@ -125,7 +125,7 @@ export const checkTime = new Elysia({
 
       set.headers["Content-Type"] = fileData.contentType;
 
-      return fileData.stream;
+      return fileData.buffer;
     },
     {
       auth: true,
