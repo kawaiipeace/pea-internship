@@ -8,6 +8,7 @@ import modules from "@/modules";
 import { applicationInterviewTimeoutCron } from "./cron/application-interview-timeout";
 import { applicationRequestTimeoutCron } from "./cron/application-request-timeout";
 import { applicationTranscriptTimeoutCron } from "./cron/application-transcript-timeout";
+import { positionStatusCron } from "@/cron/position-status-cron";
 import { awaitingCron } from "./cron/awaiting-cron";
 
 const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;
@@ -68,6 +69,7 @@ const app = new Elysia()
   .use(applicationRequestTimeoutCron)
   .use(awaitingCron)
   .use(applicationInterviewTimeoutCron)
+  .use(positionStatusCron)
   .listen(PORT);
 
 console.log(
