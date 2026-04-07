@@ -430,18 +430,6 @@ export class PositionService {
 
       if ("recruitmentStatus" in data && data.recruitmentStatus !== undefined) {
         if (data.recruitmentStatus === "CLOSE") {
-          const [hasApplication] = await tx
-            .select({ id: applicationStatuses.id })
-            .from(applicationStatuses)
-            .where(eq(applicationStatuses.positionId, id))
-            .limit(1);
-
-          if (hasApplication) {
-            throw new BadRequestError(
-              "ไม่สามารถปิดใบประกาศได้ เนื่องจากมีผู้สมัครอยู่ในระบบแล้ว"
-            );
-          }
-
           finalStatus = "CLOSE";
         } else {
           finalStatus = autoStatus;

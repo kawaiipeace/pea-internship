@@ -28,7 +28,7 @@ export const ApplicationInformationBody = t.Object({
 
 export const UploadDocumentBody = t.Object({
   file: t.File(),
-});
+}); // ทำการจำกัดขนาดไฟล์ และแจ้งไปยัง front
 
 export const ReviewDocumentBody = t.Object({
   status: t.Union([t.Literal("VERIFIED"), t.Literal("INVALID")]),
