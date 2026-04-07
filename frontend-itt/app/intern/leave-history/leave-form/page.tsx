@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Flatpickr from "react-flatpickr";
 import axiosInstance from "@/api/axios";
 import Swal from "sweetalert2";
@@ -38,6 +39,8 @@ const LeaveRequestPage = () => {
   // Modal state
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [isCancelSuccessOpen, setIsCancelSuccessOpen] = useState(false);
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -131,34 +134,12 @@ const LeaveRequestPage = () => {
         },
       });
 
-      Swal.fire({
-        html: `
-          <div class="flex flex-col items-center">
-            <div class="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
-              <div class="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
-                <span class="material-symbols-rounded text-[28px]">check</span>
-              </div>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800">ส่งคำขอลาสำเร็จ</h3>
-          </div>
-        `,
-        showConfirmButton: false,
-        timer: 2000,
-        customClass: {
-          popup: "rounded-[20px] p-8",
-        },
-      });
-
-      // Reset form
-      setLeaveDate("");
-      setLeaveType("");
-      setDetails("");
-      setAttachment(null);
-      setErrors({});
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      
-      // Navigate after success or stay? User plan said reset form or redirect. 
-      // I'll stay for now as it's a "history" page link nearby.
+      // Show success modal then reset form and navigate back
+      setIsSuccessOpen(true);
+      setTimeout(() => {
+        setIsSuccessOpen(false);
+        router.push('/intern/leave-history');
+      }, 2000);
     } catch (error: any) {
       console.error("Error submitting leave request:", error);
       Swal.fire({
@@ -445,7 +426,7 @@ const LeaveRequestPage = () => {
               <div className="flex w-full flex-col-reverse gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() => router.push('/intern/leave-history')}
+                  onClick={() => setIsCancelConfirmOpen(true)}
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#A80689] bg-white px-6 py-3 text-[15px] font-bold text-[#A80689] transition-all duration-300 hover:bg-[#fdf2f8] dark:bg-transparent dark:text-white-light dark:hover:bg-white/10 sm:flex-1"
                 >
                   ยกเลิก
@@ -513,29 +494,72 @@ const LeaveRequestPage = () => {
         </div>
       )}
 
-      {/* ===== Success Modal ===== */}
-      {isSuccessOpen && (
-        <div className="fixed inset-0 z-[999] overflow-y-auto">
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black/50 transition-opacity"
-            onClick={() => setIsSuccessOpen(false)}
-          />
-
-          {/* Modal Content */}
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative z-[1000] flex w-[290px] flex-col items-center rounded-2xl bg-white p-6 text-center shadow-xl dark:bg-[#1a1a1a]">
-              <div className="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
-                <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
-                  <span className="material-symbols-rounded text-[28px]">check</span>
-                </div>
+      {/* ===== Success Modal (Portal) ===== */}
+      {isSuccessOpen && typeof document !== 'undefined' && createPortal(
+        <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px',backgroundColor:'rgba(0,0,0,0.5)'}}>
+          <div style={{position:'relative',display:'flex',width:'290px',flexDirection:'column',alignItems:'center',borderRadius:'16px',backgroundColor:'#fff',padding:'24px',textAlign:'center',boxShadow:'0 25px 50px -12px rgba(0,0,0,0.25)'}}>
+            <div style={{marginBottom:'16px',display:'flex',height:'68px',width:'68px',alignItems:'center',justifyContent:'center',borderRadius:'50%',backgroundColor:'#e6f8ef'}}>
+              <div style={{display:'flex',height:'48px',width:'48px',alignItems:'center',justifyContent:'center',borderRadius:'50%',backgroundColor:'#11A75C',color:'#fff'}}>
+                <span className="material-symbols-rounded" style={{fontSize:'28px'}}>check</span>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                ส่งคำขอลาสำเร็จ
-              </h3>
+            </div>
+            <h3 style={{fontSize:'18px',fontWeight:'700',color:'#1f2937',margin:0}}>ส่งคำขอลาสำเร็จ</h3>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ===== Cancel Confirm Modal (Portal) ===== */}
+      {isCancelConfirmOpen && typeof document !== 'undefined' && createPortal(
+        <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px',backgroundColor:'rgba(0,0,0,0.5)'}} onClick={() => setIsCancelConfirmOpen(false)}>
+          <div style={{position:'relative',display:'flex',width:'320px',flexDirection:'column',alignItems:'center',borderRadius:'16px',backgroundColor:'#fff',padding:'24px',textAlign:'center',boxShadow:'0 25px 50px -12px rgba(0,0,0,0.25)'}} onClick={e => e.stopPropagation()}>
+            <div style={{marginBottom:'16px',display:'flex',height:'68px',width:'68px',alignItems:'center',justifyContent:'center',borderRadius:'50%',backgroundColor:'#fde8e8'}}>
+              <div style={{display:'flex',height:'48px',width:'48px',alignItems:'center',justifyContent:'center',borderRadius:'50%',backgroundColor:'#E53935',color:'#fff'}}>
+                <span className="material-symbols-rounded" style={{fontSize:'28px'}}>close</span>
+              </div>
+            </div>
+            <h3 style={{fontSize:'18px',fontWeight:'700',color:'#1f2937',margin:0}}>ยกเลิกส่งคำขอลา</h3>
+            <div style={{marginTop:'24px',display:'flex',width:'100%',gap:'12px'}}>
+              <button
+                type="button"
+                onClick={() => setIsCancelConfirmOpen(false)}
+                style={{flex:1,padding:'12px 0',borderRadius:'12px',border:'1px solid #d1d5db',background:'#fff',color:'#374151',fontSize:'14px',fontWeight:'700',cursor:'pointer'}}
+              >
+                ย้อนกลับ
+              </button>
+              <button
+                type="button"
+                onClick={() => { 
+                  setIsCancelConfirmOpen(false); 
+                  setIsCancelSuccessOpen(true);
+                  setTimeout(() => {
+                    setIsCancelSuccessOpen(false);
+                    router.push('/intern/leave-history'); 
+                  }, 2000);
+                }}
+                style={{flex:1,padding:'12px 0',borderRadius:'12px',border:'none',background:'#E53935',color:'#fff',fontSize:'14px',fontWeight:'700',cursor:'pointer'}}
+              >
+                ยกเลิก
+              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ===== Cancel Success Modal (Portal) ===== */}
+      {isCancelSuccessOpen && typeof document !== 'undefined' && createPortal(
+        <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px',backgroundColor:'rgba(0,0,0,0.5)'}}>
+          <div style={{position:'relative',display:'flex',width:'320px',flexDirection:'column',alignItems:'center',borderRadius:'16px',backgroundColor:'#fff',padding:'40px 24px',textAlign:'center',boxShadow:'0 25px 50px -12px rgba(0,0,0,0.25)'}}>
+            <div style={{marginBottom:'20px',display:'flex',height:'80px',width:'80px',alignItems:'center',justifyContent:'center',borderRadius:'50%',backgroundColor:'#fde8e8'}}>
+              <div style={{display:'flex',height:'56px',width:'56px',alignItems:'center',justifyContent:'center',borderRadius:'50%',backgroundColor:'#E53935',color:'#fff'}}>
+                <span className="material-symbols-rounded" style={{fontSize:'32px'}}>close</span>
+              </div>
+            </div>
+            <h3 style={{fontSize:'20px',fontWeight:'700',color:'#1f2937',margin:0,lineHeight:'1.5'}}>ยกเลิกส่งคำขอลาเรียบร้อยแล้ว</h3>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

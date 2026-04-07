@@ -79,9 +79,39 @@ const ProfilePage = () => {
         try {
             const formData = new FormData();
             formData.append('image', file);
-            await axiosInstance.put('/user/student/itt/profile', formData, {
+            const res = await axiosInstance.put('/user/student/itt/profile', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
+
+            // อัปเดตข้อมูลใน Store เพื่อให้รูปเปลี่ยนทันทีในทุกที่ (เช่น Header)
+            if (res.data?.data?.imageUrl && user) {
+                actionSetUser({
+                    ...user,
+                    profile: {
+                        ...(user.profile || {}),
+                        image: res.data.data.imageUrl
+                    }
+                } as any);
+            }
+
+            Swal.fire({
+                html: `
+                  <div class="flex flex-col items-center">
+                    <div class="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
+                      <div class="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
+                        <span class="material-symbols-rounded text-[28px]">check</span>
+                      </div>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">อัปโหลดรูปโปรไฟล์สำเร็จ</h3>
+                  </div>
+                `,
+                showConfirmButton: false,
+                timer: 1500,
+                customClass: {
+                    popup: 'rounded-[20px] p-8',
+                },
+            });
+
         } catch (error) {
             console.error('Error uploading profile image:', error);
             // revert preview on error
