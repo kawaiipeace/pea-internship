@@ -178,51 +178,42 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                 </div>
                 <div className="flex flex-col gap-2 text-[18px] font-bold text-[#1C1C1C] dark:text-white tracking-tight">
                     <div className="text-[20px]">
-                        {selectedHistoryItem?.statusType === 'danger' ? 'ขาดงาน' : (selectedHistoryItem?.time || 'เวลาทำงาน 08:30 - --:--')}
+                        {selectedHistoryItem?.statusType === 'danger' ? 'ขาดงาน' : (selectedHistoryItem?.time || '08:30 - --:--')}
                     </div>
 
                     {/* Status Badge below time */}
-                    <div>
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold gap-2 border ${
-                            selectedHistoryItem?.status === 'เข้างานปกติ' ? 'bg-[#E7FAEF] text-[#10B981] border-[#10B981]' :
-                            selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? 'bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]' :
-                            selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? 'bg-[#FCEDED] text-[#EF4444] border-[#EF4444]' :
-                            selectedHistoryItem?.status === 'ลา' ? 'bg-[#EEF8FF] text-[#3B82F6] border-[#3B82F6]' :
-                            'bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]'
-                        }`}>
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0 ${
-                                selectedHistoryItem?.status === 'เข้างานปกติ' ? 'bg-[#10B981]' :
-                                selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? 'bg-[#F59E0B]' :
-                                selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? 'bg-[#EF4444]' :
-                                selectedHistoryItem?.status === 'ลา' ? 'bg-[#3B82F6]' :
-                                'bg-[#6B7280]'
-                            }`}>
-                                {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
-                                    <IconClock className="w-3 h-3 text-white" />
-                                ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
-                                    <IconX className="w-2.5 h-2.5 text-white" />
-                                ) : selectedHistoryItem?.status === 'ลา' ? (
-                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z" fill="white"/>
-                                        <rect x="8" y="7" width="8" height="2" rx="1" fill="#3B82F6"/>
-                                        <rect x="8" y="11" width="8" height="2" rx="1" fill="#3B82F6"/>
-                                        <path d="M15.5 20V17C15.5 16.1716 16.1716 15.5 17 15.5H20L15.5 20Z" fill="#3B82F6"/>
-                                    </svg>
-                                ) : (
-                                    <div className="relative w-3 h-3 flex items-center justify-center">
-                                        <svg className="w-full h-full fill-current" viewBox="0 0 24 24">
-                                            <path d="M6 2h12a1 1 0 011 1v4a1 1 0 01-.3.7l-4.7 4.7 4.7 4.7a1 1 0 01.3.7v4a1 1 0 01-1 1H6a1 1 0 01-1-1v-4a1 1 0 01.3-.7l4.7-4.7-4.7-4.7A1 1 0 015 7V3a1 1 0 011-1zm1 2v2.6l4.3 4.4L7 15.4V18h10v-2.6l-4.3-4.4 4.3-4.4V4H7z" />
-                                        </svg>
-                                        <div className="absolute w-[12px] h-[1.5px] bg-white rotate-[-45deg]"></div>
-                                    </div>
-                                )}
+                    <div className="mt-1">
+                        {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
+                            <div className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold gap-2 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
+                                <div className="w-5 h-5 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">check</span>
+                                </div>
+                                เข้างานปกติ
                             </div>
-                            {selectedHistoryItem?.statusType === 'danger' ? 'ขาด' : (selectedHistoryItem?.status || 'ไม่ลงเวลาออก')}
-                        </div>
+                        ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
+                            <div className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold gap-2 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
+                                <div className="w-5 h-5 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0">
+                                    <IconClock className="w-3 h-3 text-white" />
+                                </div>
+                                สาย
+                            </div>
+                        ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
+                            <div className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold gap-2 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
+                                <div className="w-5 h-5 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0">
+                                    <IconX className="w-2.5 h-2.5 text-white" />
+                                </div>
+                                ขาด
+                            </div>
+                        ) : (
+                            <div className="w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border border-[#6B7280] rounded-full flex items-center gap-1.5 text-[11px] font-bold shrink-0">
+                                <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] leading-none">
+                                        hourglass_disabled
+                                    </span>
+                                </div>
+                                ไม่ลงเวลาออก
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -286,12 +277,8 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
 
                     {/* หมายเหตุ */}
-                    <div className="text-[13px] text-[#EF4444] font-medium leading-[1.6] flex items-center gap-2">
-                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            <circle cx="10" cy="16" r="1" fill="currentColor" />
-                        </svg>
-                        <span>ชั่วโมงคำนวณจากเวลาทำงานจริง สูงสุดไม่เกิน 7 ชั่วโมง (ไม่ร่วมเวลาพักเที่ยง 1 ชั่วโมง)</span>
+                    <div className="text-[13px] text-[#EF4444] font-medium leading-[1.6]">
+                        *ชั่วโมงคำนวณจากเวลาทำงานจริง สูงสุดไม่เกิน 7 ชั่วโมง (ไม่ร่วมเวลาพักเที่ยง 1 ชั่วโมง)
                     </div>
                     {/* สรุปชั่วโมง */}
                     <div className="mt-3 mb-[18px]">
@@ -303,9 +290,6 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* เหตุผล */}
                     <div className="mb-4">
                         <div className="text-[15px] text-[#1C1C1C] mb-2 flex items-center gap-1">
-                             <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
-                                docs
-                            </span>
                             เหตุผลการแก้ไขเวลา :
                         </div>
                         <textarea
@@ -323,7 +307,6 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* ไฟล์แนบ Desktop */}
                     <div>
                         <div className="text-[15px] text-[#1C1C1C]  mb-2 flex items-center gap-2">
-                            <IconPaperclipPlus className="w-5 h-5 text-[#1C1C1C]" />
                             ไฟล์แนบ (ถ้ามี)
                         </div>
                         <input
@@ -405,63 +388,58 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
                 </div>
 
-                {/* Card 1: Status Summary */}
-                <div className="bg-white rounded-[16px] border border-[#CECFD2] p-5 shadow-sm">
-                    <div className="text-[15px] font-bold text-gray-900 mb-1">{selectedHistoryItem?.labelMobile || '1 มกราคม 2569'}</div>
-                    <div className="text-[17px] font-bold text-gray-900 mb-3 tracking-tight">
-                        {selectedHistoryItem?.statusType === 'danger' ? 'ขาดงาน' : (selectedHistoryItem?.time || 'เวลาทำงาน 08:30 - --:--')}
+                {/* Card 1: Status Summary (Vertical Layout) */}
+                <div className="bg-white rounded-[16px] border border-[#CECFD2] p-5 shadow-sm space-y-2">
+                    <div className="text-[15px] text-gray-800 dark:text-gray-200">{selectedHistoryItem?.labelMobile || '1 มกราคม 2569'}</div>
+                    <div className="text-[17px] font-bold text-gray-900 dark:text-gray-100">
+                        {selectedHistoryItem?.statusType === 'danger' ? 'ขาดงาน' : (selectedHistoryItem?.time || '08:30 - --:--')}
                     </div>
 
-                    {/* Status Badge */}
-                    <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[13px] font-bold gap-2 border ${
-                            selectedHistoryItem?.status === 'เข้างานปกติ' ? 'bg-[#E7FAEF] text-[#10B981] border-[#10B981]' :
-                            selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? 'bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]' :
-                            selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? 'bg-[#FCEDED] text-[#EF4444] border-[#EF4444]' :
-                            selectedHistoryItem?.status === 'ลา' ? 'bg-[#EEF8FF] text-[#3B82F6] border-[#3B82F6]' :
-                            'bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]'
-                        }`}>
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0 ${
-                            selectedHistoryItem?.status === 'เข้างานปกติ' ? 'bg-[#10B981]' :
-                            selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? 'bg-[#F59E0B]' :
-                            selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? 'bg-[#EF4444]' :
-                            selectedHistoryItem?.status === 'ลา' ? 'bg-[#3B82F6]' :
-                            'bg-[#6B7280]'
-                        }`}>
-                            {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
-                                <IconClock className="w-3 h-3 text-white" />
-                            ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
-                                <IconX className="w-2.5 h-2.5 text-white" />
-                            ) : selectedHistoryItem?.status === 'ลา' ? (
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M6 2H18C19.1 2 20 2.9 20 4V15.5L15.5 20H6C4.9 20 4 19.1 4 18V4C4 2.9 4.9 2 6 2Z" fill="white"/>
-                                    <rect x="8" y="7" width="8" height="2" rx="1" fill="#3B82F6"/>
-                                    <rect x="8" y="11" width="8" height="2" rx="1" fill="#3B82F6"/>
-                                    <path d="M15.5 20V17C15.5 16.1716 16.1716 15.5 17 15.5H20L15.5 20Z" fill="#3B82F6"/>
-                                </svg>
-                            ) : (
-                                <div className="relative w-3 h-3 flex items-center justify-center">
-                                    <svg className="w-full h-full fill-current" viewBox="0 0 24 24">
-                                        <path d="M6 2h12a1 1 0 011 1v4a1 1 0 01-.3.7l-4.7 4.7 4.7 4.7a1 1 0 01.3.7v4a1 1 0 01-1 1H6a1 1 0 01-1-1v-4a1 1 0 01.3-.7l4.7-4.7-4.7-4.7A1 1 0 015 7V3a1 1 0 011-1zm1 2v2.6l4.3 4.4L7 15.4V18h10v-2.6l-4.3-4.4 4.3-4.4V4H7z" />
-                                    </svg>
-                                    <div className="absolute w-[12px] h-[1.5px] bg-white rotate-[-45deg]"></div>
+                    {/* Status Badge below time */}
+                    <div className="mt-1">
+                        {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
+                            <div className="inline-flex items-center px-4 py-1.2 rounded-full text-[13px] font-medium gap-2 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
+                                <div className="w-5 h-5 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">check</span>
                                 </div>
-                            )}
-                        </div>
-                        {selectedHistoryItem?.statusType === 'danger' ? 'ขาด' : (selectedHistoryItem?.status || 'ไม่ลงเวลาออก')}
+                                เข้างานปกติ
+                            </div>
+                        ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
+                            <div className="inline-flex items-center px-4 py-1.2 rounded-full text-[13px] font-medium gap-2 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
+                                <div className="w-5 h-5 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0">
+                                    <IconClock className="w-3 h-3 text-white" />
+                                </div>
+                                สาย
+                            </div>
+                        ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
+                            <div className="inline-flex items-center px-4 py-1.2 rounded-full text-[13px] font-medium gap-2 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
+                                <div className="w-5 h-5 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0">
+                                    <IconX className="w-2.5 h-2.5 text-white" />
+                                </div>
+                                ขาด
+                            </div>
+                        ) : (
+                            <div className="w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border border-[#6B7280] rounded-full flex items-center gap-1.5 text-[11px] font-bold shrink-0">
+                                <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] leading-none">
+                                        hourglass_disabled
+                                    </span>
+                                </div>
+                                ไม่ลงเวลาออก
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Card 2: Form */}
                 <div className="bg-white rounded-[16px] border border-[#CECFD2] p-5 shadow-sm flex flex-col gap-5">
-                    {/* Form Title */}
+                    {/* Form Title (Updated Magenta Theme) */}
                     <div className="flex items-center gap-3 text-[#A80689] font-bold text-[16px]">
-                        <div className="w-8 h-8 rounded-full bg-[#A80689] flex items-center justify-center text-white">
-                            <IconCalendarClock className="w-5 h-5" />
-                        </div>
+                          <div className="w-7 h-7 bg-[#A80689] rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm">
+                            <span className="material-symbols-rounded !text-[20px] text-white">
+                              calendar_clock
+                            </span>
+                          </div>
                         คำขอแก้ไขเวลา
                     </div>
 
@@ -521,13 +499,9 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                         </div>
                     </div>
 
-                    {/* Instruction Text */}
-                    <div className="text-[13px] text-[#EF4444] font-medium leading-[1.6] flex items-center gap-2">
-                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            <circle cx="10" cy="16" r="1" fill="currentColor" />
-                        </svg>
-                        <span>ชั่วโมงคำนวณจากเวลาทำงานจริง สูงสุดไม่เกิน 7 ชั่วโมง (ไม่ร่วมเวลาพักเที่ยง 1 ชั่วโมง)</span>
+                    {/* Instruction Text (No Icon) */}
+                    <div className="text-[13px] text-[#EF4444] font-medium leading-[1.6]">
+                        *ชั่วโมงคำนวณจากเวลาทำงานจริง สูงสุดไม่เกิน 7 ชั่วโมง (ไม่ร่วมเวลาพักเที่ยง 1 ชั่วโมง)
                     </div>
 
                     {/* Result Text */}
@@ -536,15 +510,13 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
 
                     {/* Reason Section */}
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2 text-[#1C1C1C] text-[15px]">
-                            <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
-                                docs
-                            </span>
+                    <div className="flex flex-col gap-2">
+                        <div className="text-[15px] text-gray-800">
                             เหตุผลการแก้ไขเวลา
                         </div>
                         <textarea
                             rows={1}
+                            placeholder="ระบุเหตุผล"
                             value={reason}
                             onChange={(e) => {
                                 setReason(e.target.value);
@@ -556,9 +528,8 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
 
                     {/* ไฟล์แนบ Mobile */}
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2 text-[#1C1C1C]  text-[15px]">
-                            <IconPaperclipPlus className="w-6 h-6 text-[#1C1C1C]" />
+                    <div className="flex flex-col gap-2">
+                        <div className="text-[15px] text-gray-800">
                             ไฟล์แนบ (ถ้ามี)
                         </div>
                         <div
@@ -582,7 +553,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     </div>
                 </div>
 
-                {/* Submit Button Mobile */}
+                {/* Submit Buttons Mobile */}
                 <div className="flex flex-col gap-3 pb-8 px-4">
                     <button
                         type="button"
@@ -594,18 +565,15 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                             }
                             setShowConfirm(true);
                         }}
-                        className={`w-full py-4 ${isSubmitDisabled || isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#A80689] hover:bg-[#8F0574]'} transition-colors text-white rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-lg ${(isSubmitDisabled || isLoading) ? '' : 'shadow-purple-200'}`}
+                        className={`w-full py-3.5 ${isSubmitDisabled || isLoading ? 'bg-gray-400' : 'bg-[#A80689]'} text-white rounded-[12px] font-bold text-[16px] shadow-sm`}
                     >
-                         {isLoading ? (
-                             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : 'ส่งคำขอแก้ไขเวลา'}
+                         {isLoading ? 'กำลังส่งข้อมูล...' : 'ส่งคำขอแก้ไขเวลา'}
                     </button>
 
                     <button
                         type="button"
-                        disabled={isLoading}
                         onClick={() => setIsEditingTime(false)}
-                        className="w-full py-4 bg-white border border-[#A80689] text-[#A80689] hover:bg-gray-50 transition-colors rounded-[12px] font-bold text-[17px] flex items-center justify-center shadow-md disabled:opacity-50"
+                        className="w-full py-3.5 bg-white border border-[#A80689] text-[#A80689] rounded-[12px] font-bold text-[16px] shadow-sm"
                     >
                         ยกเลิก
                     </button>
