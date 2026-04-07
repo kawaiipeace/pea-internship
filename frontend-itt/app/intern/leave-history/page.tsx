@@ -193,6 +193,51 @@ const LeaveHistoryPage = () => {
         }
     };
 
+    const handleDeleteLeaveRequest = async (id: string) => {
+        try {
+            Swal.fire({
+                title: 'กำลังยกเลิกคำขอ...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            await axiosInstance.delete(`/leave/${id}`);
+
+            setHistoryData(prev => prev.filter(h => h.id !== id));
+            setIsDetailModalOpen(false);
+
+            Swal.fire({
+                title: 'ยกเลิกสำเร็จ!',
+                icon: 'success',
+                confirmButtonText: 'ตกลง',
+                buttonsStyling: false,
+                customClass: {
+                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                    title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                    htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+                    confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                }
+            });
+            
+            // Refresh summary and data
+            fetchLeaveHistory();
+        } catch (error: any) {
+            console.error('Error deleting leave request:', error);
+            const errorMessage = error.response?.data?.message || 'ไม่สามารถยกเลิกคำขอได้';
+            Swal.fire({
+                title: 'เกิดข้อผิดพลาด',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'ตกลง',
+                customClass: {
+                    confirmButton: 'bg-[#A80689] text-white px-6 py-2 rounded-lg'
+                }
+            });
+        }
+    };
+
     const handleMonthSelect = (month: number, year: number) => {
         setCurrentMonth(month);
         setCurrentYear(year);
@@ -341,8 +386,8 @@ const LeaveHistoryPage = () => {
                                     {/* Mobile Responsive Layout */}
                                     <div className="sm:hidden flex-1 flex flex-col justify-between sm:justify-center py-0.5 sm:gap-1 relative">
                                         <div className="flex items-center justify-between gap-2">
-                                            <div className="text-[14px] text-[#000000]whitespace-nowrap">
-                                                {item.date} {item.month.length > 3 ? item.month.substring(0, 3) + '.' : item.month} {item.year || '2569'}
+                                            <div className="text-[14px] text-[#000000] whitespace-nowrap">
+                                                {item.date} {item.month} {item.year}
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 {getStatusBadge(item.statusType, item.status)}
@@ -369,19 +414,7 @@ const LeaveHistoryPage = () => {
                                                                 }
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
-                                                                    setHistoryData(prev => prev.filter(h => h.id !== item.id));
-                                                                    Swal.fire({
-                                                                        title: 'ยกเลิกสำเร็จ!',
-                                                                        icon: 'success',
-                                                                        buttonsStyling: false,
-                                                                        customClass: {
-                                                                            popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                            title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                                                                            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                            confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
-                                                                        },
-                                                                        confirmButtonText: 'ตกลง'
-                                                                    });
+                                                                    handleDeleteLeaveRequest(item.id);
                                                                 }
                                                             });
                                                         }}
@@ -479,18 +512,7 @@ const LeaveHistoryPage = () => {
                                                                 }
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
-                                                                    setHistoryData(prev => prev.filter(h => h.id !== item.id));
-                                                                    Swal.fire({
-                                                                        title: 'ยกเลิกสำเร็จ!',
-                                                                        icon: 'success',
-                                                                        buttonsStyling: false,
-                                                                        customClass: {
-                                                                            popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                            title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                                                                            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                            confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2 px-10 rounded-[12px] text-[15px] mt-2'
-                                                                        }
-                                                                    });
+                                                                    handleDeleteLeaveRequest(item.id);
                                                                 }
                                                             });
                                                         }}
@@ -637,20 +659,7 @@ const LeaveHistoryPage = () => {
                                                                                         }
                                                                                     }).then((result) => {
                                                                                         if (result.isConfirmed) {
-                                                                                            setHistoryData(prev => prev.filter(h => h.id !== selectedHistoryItem.id));
-                                                                                            setIsDetailModalOpen(false);
-                                                                                            Swal.fire({
-                                                                                                title: 'ยกเลิกสำเร็จ!',
-                                                                                                icon: 'success',
-                                                                                                buttonsStyling: false,
-                                                                                                customClass: {
-                                                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                                                                                                    htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                                                    confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
-                                                                                                },
-                                                                                                confirmButtonText: 'ตกลง'
-                                                                                            });
+                                                                                            handleDeleteLeaveRequest(selectedHistoryItem.id);
                                                                                         }
                                                                                     });
                                                                                 }}
