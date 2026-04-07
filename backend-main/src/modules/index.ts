@@ -6,8 +6,10 @@ import { auth } from "./auth";
 import { checkTime } from "./check-time";
 import { department } from "./department";
 import { favorite } from "./favorite";
+import { file } from "./file";
 import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
+import { leave } from "./leave-requests";
 import { ownerStudents } from "./manualEndInternships";
 import { notification } from "./notification";
 import { offsiteTasks } from "./outside";
@@ -32,5 +34,7 @@ const modules = new Elysia({ prefix: "/api" })
   .use(staffLogs)
   .use(offsiteTasks)
   .use(checkTime)
+  .use(leave)
+  .use(file)
   .use(applicationStatusActionsModule);
 export default modules;
