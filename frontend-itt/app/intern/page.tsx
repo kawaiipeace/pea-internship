@@ -5,8 +5,8 @@ import Swal from 'sweetalert2';
 import axiosInstance from '@/api/axios';
 import IconMapPin from '@/components/icon/icon-map-pin';
 
-const OFFICE_LAT = 13.851119091153935;
-const OFFICE_LNG = 100.55810839569543;
+const OFFICE_LAT = 13.893511352870942;
+const OFFICE_LNG = 100.47590942850128;
 const MAX_DISTANCE_METERS = 300;
 
 const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {

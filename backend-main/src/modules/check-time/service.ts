@@ -442,7 +442,7 @@ export class CheckTimeService {
         .set({
           checkOutId: newCheckOut.id,
           actualHoursWorked: actualHoursWorked,
-          isVerified: isOnsite ? true : null,
+          isVerified: isOnsite,
         })
         .where(eq(attendanceLogs.id, existingLog.id));
 
@@ -483,6 +483,14 @@ export class CheckTimeService {
     const lastDay = new Date(targetYear, targetMonth, 0).getDate();
     const endDate = `${targetYear}-${monthStr}-${lastDay}`;
 
+    const bkkFormatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const todayStr = bkkFormatter.format(now);
+
     const baseCondition = and(
       eq(attendanceLogs.studentProfileId, student.id),
       gte(attendanceLogs.workDate, startDate),
@@ -495,6 +503,7 @@ export class CheckTimeService {
         dailyStatus: true,
         checkInId: true,
         checkOutId: true,
+        workDate: true,
       },
     });
 
@@ -509,11 +518,12 @@ export class CheckTimeService {
 
     allRecordsForSummary.forEach((log) => {
       let displayStatus = log.dailyStatus;
-
+      const logDateStr = String(log.workDate).substring(0, 10);
       if (
         (log.dailyStatus === "PRESENT" || log.dailyStatus === "LATE") &&
         log.checkInId &&
-        !log.checkOutId
+        !log.checkOutId &&
+        logDateStr !== todayStr
       ) {
         displayStatus = "MISSING_OUT";
       }
@@ -531,14 +541,16 @@ export class CheckTimeService {
       filterCondition = and(
         inArray(attendanceLogs.dailyStatus, ["PRESENT", "LATE"]),
         isNotNull(attendanceLogs.checkInId),
-        isNull(attendanceLogs.checkOutId)
+        isNull(attendanceLogs.checkOutId),
+        not(eq(attendanceLogs.workDate, todayStr))
       );
     } else if (filterStatus === "PRESENT" || filterStatus === "LATE") {
       filterCondition = and(
         eq(attendanceLogs.dailyStatus, filterStatus),
         or(
-          isNull(attendanceLogs.checkInId),
-          isNotNull(attendanceLogs.checkOutId)
+          isNotNull(attendanceLogs.checkOutId),
+          eq(attendanceLogs.workDate, todayStr),
+          isNull(attendanceLogs.checkInId)
         )
       );
     } else if (filterStatus === "LEAVE" || filterStatus === "ABSENT") {
@@ -597,11 +609,15 @@ export class CheckTimeService {
       const inTime = formatTime(log.checkIn?.time);
       const outTime = formatTime(log.checkOut?.time);
 
+      const logDateStr = String(log.workDate).substring(0, 10);
+
       let displayStatus = log.dailyStatus;
+
       if (
         (log.dailyStatus === "PRESENT" || log.dailyStatus === "LATE") &&
         log.checkInId &&
-        !log.checkOutId
+        !log.checkOutId &&
+        logDateStr !== todayStr
       ) {
         displayStatus = "MISSING_OUT";
       }
