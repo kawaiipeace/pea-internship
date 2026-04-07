@@ -42,6 +42,14 @@ const Header = () => {
     const router = useRouter();
     const { t, i18n } = getTranslation();
     const logout = useAuthStore((state) => state.actionLogout);
+    const fetchProfile = useAuthStore((state) => state.actionFetchProfile);
+    const user = useAuthStore((state) => state.user);
+    const fullName = user ? [user.fname, user.lname].filter(Boolean).join(' ') : 'Guest';
+    const email = user?.email || '';
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
 
 
     const handleLogout = async () => {
@@ -318,17 +326,17 @@ const Header = () => {
                                 btnClassName="relative group block"
                                 button={<img className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" src="/assets/images/user-profile.jpeg" alt="userProfile" />}
                             >
-                                <ul className="w-[230px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
+                                <ul className="w-max min-w-[230px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
                                     <li>
                                         <div className="flex items-center px-4 py-4">
                                             <img className="h-10 w-10 rounded-md object-cover" src="/assets/images/user-profile.jpeg" alt="userProfile" />
-                                            <div className="truncate ltr:pl-4 rtl:pr-4">
-                                                <h4 className="text-base">
-                                                    John Doe
-                                                    <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">Pro</span>
+                                            <div className="ltr:pl-4 rtl:pr-4">
+                                                <h4 className="text-base whitespace-nowrap">
+                                                    {fullName}
+                                                    <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">Intern</span>
                                                 </h4>
-                                                <button type="button" className="text-black/60 hover:text-primary dark:text-dark-light/60 dark:hover:text-white">
-                                                    johndoe@gmail.com
+                                                <button type="button" className="text-black/60 hover:text-primary dark:text-dark-light/60 dark:hover:text-white whitespace-nowrap">
+                                                    {email}
                                                 </button>
                                             </div>
                                         </div>
