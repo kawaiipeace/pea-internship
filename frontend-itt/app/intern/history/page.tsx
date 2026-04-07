@@ -3,13 +3,12 @@ import React, { useState, Fragment } from "react";
 import IconCircleCheck from "@/components/icon/icon-circle-check";
 import IconClock from "@/components/icon/icon-clock";
 import IconFile from "@/components/icon/icon-file";
-import IconXCircle from "@/components/icon/icon-x-circle";
 import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import IconShare from "@/components/icon/icon-share";
 import { Transition, Dialog } from "@headlessui/react";
 
 import IconCamera from "@/components/icon/icon-camera";
-import IconX from "@/components/icon/icon-x";
+
 import IconArchive from "@/components/icon/icon-archive";
 import EditTimeForm from "@/components/history/edit-time-form";
 import IconCalendarClock from "@/components/icon/icon-calendar-clock";
@@ -251,7 +250,7 @@ const AttendanceHistoryPage = () => {
             monthFull: thaiMonthsFull[monthIndex], // Adding back full month
             year: year,                           // Adding back BE year
             labelMobile: `${day} ${thaiMonthsFull[monthIndex]} ${year}`,
-            time: log.displayStatus === 'ABSENT' ? 'ขาดงาน' : `เวลาทำงาน ${inTimeDisplay} - ${outTimeDisplay}`,
+            time: log.displayStatus === 'ABSENT' ? 'ขาดงาน' : `${inTimeDisplay} - ${outTimeDisplay}`,
             status: statusLabel,
             statusType: statusType,
             checkInTime: inTimeDisplay,
@@ -336,24 +335,12 @@ const AttendanceHistoryPage = () => {
       title: "เข้างานปกติ",
       days: summaryCounts.present,
       icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="4"
-          viewBox="0 0 24 24"
-          className="w-7 h-7"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M5 13l4 4L19 7"
-          ></path>
-        </svg>
+        <span className="material-symbols-rounded !text-[28px]">check</span>
       ),
       bgColor: "bg-[#e7faef]",
-      textColor: "text-[#10b981]",
-      borderColor: "border-[#10b981]",
-      iconBg: "bg-[#10b981]",
+      textColor: "text-[#079455]",
+      borderColor: "border-[#079455]",
+      iconBg: "bg-[#079455]",
     },
     {
       title: "สาย",
@@ -362,9 +349,9 @@ const AttendanceHistoryPage = () => {
         <span className="material-symbols-rounded !text-[28px]">schedule</span>
       ),
       bgColor: "bg-[#fdf4d6]",
-      textColor: "text-[#f59e0b]",
-      borderColor: "border-[#f59e0b]",
-      iconBg: "bg-[#f59e0b]",
+      textColor: "text-[#FDB022]",
+      borderColor: "border-[#FDB022]",
+      iconBg: "bg-[#FDB022]",
     },
     {
       title: "ลา",
@@ -373,26 +360,15 @@ const AttendanceHistoryPage = () => {
         <span className="material-symbols-rounded !text-[28px] flex items-center justify-center">lab_profile</span>
       ),
       bgColor: "bg-[#eef8ff]",
-      textColor: "text-[#3b82f6]",
-      borderColor: "border-[#3b82f6]",
-      iconBg: "bg-[#3b82f6]",
+      textColor: "text-[#1AB3FF]",
+      borderColor: "border-[#1AB3FF]",
+      iconBg: "bg-[#1AB3FF]",
     },
     {
       title: "ขาด",
       days: summaryCounts.absent,
       icon: (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="w-7 h-7"
-        >
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
+        <span className="material-symbols-rounded !text-[28px]">close</span>
       ),
       bgColor: "bg-[#fceded]",
       textColor: "text-[#ef4444]",
@@ -410,48 +386,40 @@ const AttendanceHistoryPage = () => {
 
     if (type === "success" || status === "เข้างานปกติ") {
       icon = (
-        <div className="w-4 h-4 rounded-full bg-[#10b981] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm">
-          <svg
-            className="w-2.5 h-2.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="4"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M5 13l4 4L19 7"
-            ></path>
-          </svg>
+        <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">
+            check
+          </span>
         </div>
       );
       colorClass =
-        "px-2 py-0.5 bg-[#e7faef] text-[#10b981] border border-[#10b981] rounded-full flex items-center text-[11px] font-bold";
+        "px-2 py-0.5 bg-[#e7faef] text-[#079455] border border-[#079455] rounded-full flex items-center text-[11px] font-bold";
     } else if (type === "warning" || status === "สาย") {
       icon = (
-        <div className="w-4 h-4 rounded-full bg-[#f59e0b] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
+        <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
           <span className="material-symbols-rounded !text-[12px] flex items-center justify-center">
             schedule
           </span>
         </div>
       );
       colorClass =
-        "px-2 py-0.5 bg-[#fdf4d6] text-[#f59e0b] border border-[#f59e0b] rounded-full flex items-center text-[11px] font-bold";
+        "px-2 py-0.5 bg-[#fdf4d6] text-[#FDB022] border border-[#FDB022] rounded-full flex items-center text-[11px] font-bold";
     } else if (type === "info" || status === "ลา") {
       icon = (
-        <div className="w-4 h-4 rounded-full bg-[#3b82f6] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
+        <div className="w-4 h-4 rounded-full bg-[#1AB3FF] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
           <span className="material-symbols-rounded !text-[12px] flex items-center justify-center">
             lab_profile
           </span>
         </div>
       );
       colorClass =
-        "px-2 py-0.5 bg-[#eef8ff] text-[#3b82f6] border border-[#3b82f6] rounded-full flex items-center text-[11px] font-bold";
+        "px-2 py-0.5 bg-[#eef8ff] text-[#1AB3FF] border border-[#1AB3FF] rounded-full flex items-center text-[11px] font-bold";
     } else if (type === "danger" || status === "ขาด") {
       icon = (
         <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm focus:outline-none">
-          <IconX className="w-2.5 h-2.5" />
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">
+            close
+          </span>
         </div>
       );
       colorClass =
@@ -542,7 +510,7 @@ const AttendanceHistoryPage = () => {
         {/* Summary Section */}
         <div className="shrink-0 flex flex-col gap-[16px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-[17px] font-bold text-[#B10073]">
+            <h2 className="text-[16px] font-bold text-[#000000]">
               สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})
             </h2>
             {selectedFilter && (
@@ -575,10 +543,10 @@ const AttendanceHistoryPage = () => {
                     })}
                   </div>
                   <div className="flex flex-col mt-2 sm:mt-0">
-                    <div className="font-bold text-gray-800 dark:text-gray-200 text-[11px] sm:text-sm mb-1 sm:mb-0.5">
+                    <div className="font-bold text-gray-800 dark:text-gray-200 text-[14px] sm:text-[16px] mb-1 sm:mb-0.5 leading-tight">
                       {item.title}
                     </div>
-                    <div className="text-base sm:text-[22px] font-bold text-black dark:text-white leading-none">
+                    <div className="text-[14px] sm:text-[16px] font-bold text-black dark:text-white leading-none">
                       {item.days} วัน
                     </div>
                   </div>
@@ -586,14 +554,11 @@ const AttendanceHistoryPage = () => {
               );
             })}
           </div>
-          <p className="text-xs sm:text-sm text-gray-500">
-            รายการลงเวลาทั้งหมด {pagination.totalRecords} วัน
-          </p>
         </div>
 
         {/* History List Section */}
         <div className="shrink-0 flex flex-col gap-[16px]">
-          <h2 className="text-[17px] font-bold text-[#B10073]">
+          <h2 className="text-[16px] font-bold text-[#000000]">
             รายการประวัติการลงเวลา{" "}
             {selectedFilter && (
               <span className="text-sm font-normal text-gray-500 ml-2">
@@ -627,7 +592,7 @@ const AttendanceHistoryPage = () => {
                   {/* Desktop Date Badge (Balanced Style) - Only visible on sm screens and above */}
                   <div className="hidden sm:flex flex-col items-center justify-center bg-[#E4E7EC] dark:bg-gray-800 rounded-xl w-[70px] h-[70px] shrink-0 border border-[#CECFD2] dark:border-gray-700 px-1 text-center">
                     <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200 leading-tight mb-1">
-                      {item.date} {item.monthFull}
+                      {item.date} {item.month}
                     </span>
                     <span className="text-[14px] text-gray-800 dark:text-gray-300 font-bold leading-tight">
                       {item.year}
@@ -644,13 +609,12 @@ const AttendanceHistoryPage = () => {
 
                       {item.approvalStatus && (
                         <div
-                          className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-[12px] font-bold sm:shadow-sm whitespace-nowrap sm:absolute sm:top-3 sm:right-4 ${
-                            item.approvalStatus === "approved"
-                              ? "bg-[#EBFBF3] text-[#10B981] sm:border sm:border-[#A7F3D0]"
-                              : item.approvalStatus === "denied"
-                                ? "bg-[#FFEBEC] text-[#F97066] sm:border sm:border-[#FECACA]"
-                                : "bg-[#F3F4F6] text-[#6B7280] sm:border sm:border-[#E5E7EB]"
-                          }`}
+                          className={`px-3 py-1 rounded-full text-[12px] whitespace-nowrap sm:absolute sm:top-3 sm:right-4 ${item.approvalStatus === "approved"
+                            ? "bg-[#EBFBF3] text-[#10B981]"
+                            : item.approvalStatus === "denied"
+                              ? "bg-[#FEE4E2] text-[#B42318]"
+                              : "bg-[#F3F4F6] text-[#6B7280]"
+                            }`}
                         >
                           {item.approvalStatus === "approved"
                             ? "อนุมัติการแก้ไขเวลา"
@@ -662,7 +626,7 @@ const AttendanceHistoryPage = () => {
                     </div>
 
                     {/* Body: Time */}
-                    <div className="font-bold  text-[16px] sm:text-[19px] text-gray-900 dark:text-gray-100 leading-none">
+                    <div className="font-bold text-[16px] sm:text-[19px] text-gray-900 dark:text-gray-100 leading-none">
                       {item.time}
                     </div>
 
@@ -725,8 +689,8 @@ const AttendanceHistoryPage = () => {
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
                   className={`px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base font-bold border-r border-gray-200 dark:border-gray-700 shrink-0 ${pagination.page === pageNum
-                      ? "text-gray-800 dark:text-gray-200 bg-[#dce0e5] dark:bg-gray-600"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212]"
+                    ? "text-gray-800 dark:text-gray-200 bg-[#dce0e5] dark:bg-gray-600"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212]"
                     }`}
                 >
                   {pageNum}
@@ -792,8 +756,8 @@ const AttendanceHistoryPage = () => {
                     <Dialog.Panel
                       as="div"
                       className={`w-full ${isEditingTime ? "sm:max-w-[880px]" : "max-w-lg"} transform text-left align-middle shadow-xl transition-all ${isEditingTime
-                          ? "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] px-6 pb-6 pt-2 h-[calc(100vh-48px)] mt-12 sm:mt-0 sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden sm:block sm:overflow-y-auto"
-                          : "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] p-6 h-[62vh] sm:h-auto max-h-[62vh] sm:max-h-none flex flex-col overflow-hidden sm:block sm:overflow-y-auto sm:overflow-visible"
+                        ? "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] px-6 pb-6 pt-2 h-[calc(100vh-48px)] mt-12 sm:mt-0 sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden sm:block sm:overflow-y-auto"
+                        : "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] p-6 h-[62vh] sm:h-auto max-h-[62vh] sm:max-h-none flex flex-col overflow-hidden sm:block sm:overflow-y-auto sm:overflow-visible"
                         }`}
                       style={{
                         transform:
@@ -822,7 +786,7 @@ const AttendanceHistoryPage = () => {
                         className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 hidden sm:block"
                         onClick={() => setIsDetailModalOpen(false)}
                       >
-                        <IconX className="w-5 h-5" />
+                        <span className="material-symbols-rounded">close</span>
                       </button>
 
                       {selectedHistoryItem && (
@@ -850,7 +814,9 @@ const AttendanceHistoryPage = () => {
                                 </div>
                                 <div className="inline-flex items-center px-4 py-1.5 bg-[#FFEAEC] text-[#D92D20] border border-[#FCA5A5] rounded-full text-xs font-bold gap-1.5 w-fit">
                                   <div className="w-5 h-5 bg-[#D92D20] rounded-full flex items-center justify-center text-white shrink-0">
-                                    <IconX className="w-3 h-3" />
+                                    <span className="material-symbols-rounded !text-[14px]">
+                                      close
+                                    </span>
                                   </div>
                                   {selectedHistoryItem.status}
                                 </div>
@@ -874,18 +840,9 @@ const AttendanceHistoryPage = () => {
 
                                     {/* Calendar Content */}
                                     <div className="flex flex-1 w-full flex items-center justify-center">
-                                      <svg
-                                        className="w-12 h-12 text-[#EF4444]"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="3.5"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      >
-                                        <line x1="18" y1="6" x2="6" y2="18" />
-                                        <line x1="6" y1="6" x2="18" y2="18" />
-                                      </svg>
+                                      <span className="material-symbols-rounded !text-[48px] text-[#EF4444]">
+                                        close
+                                      </span>
                                     </div>
                                   </div>
 
@@ -930,19 +887,19 @@ const AttendanceHistoryPage = () => {
                                     onTouchEnd={handleTouchEnd}
                                   >
                                     <div className="flex flex-col gap-1">
-                                      <div className="flex items-start justify-between">
+                                      <div className="flex items-start justify-between pr-4">
                                         <div className="text-[14px] text-gray-900 leading-tight">
                                           {selectedHistoryItem.labelMobile}
                                         </div>
                                         {selectedHistoryItem.approvalStatus && (
                                           <div
-                                            className={`px-2 py-0.5 rounded-full text-[12px] ${selectedHistoryItem.approvalStatus ===
-                                                "approved"
-                                                ? "bg-[#EBFBF3] text-[#10B981]"
-                                                : selectedHistoryItem.approvalStatus ===
-                                                  "denied"
-                                                  ? "bg-[#FFEBEC] text-[#F97066]"
-                                                  : "bg-[#F3F4F6] text-[#6B7280]"
+                                            className={`px-3 py-1 rounded-full text-[12px] ${selectedHistoryItem.approvalStatus ===
+                                              "approved"
+                                              ? "bg-[#EBFBF3] text-[#10B981]"
+                                              : selectedHistoryItem.approvalStatus ===
+                                                "denied"
+                                                ? "bg-[#FEE4E2] text-[#B42318]"
+                                                : "bg-[#F3F4F6] text-[#6B7280]"
                                               }`}
                                           >
                                             {selectedHistoryItem.approvalStatus ===
@@ -961,65 +918,51 @@ const AttendanceHistoryPage = () => {
                                           ? "ขาดงาน"
                                           : selectedHistoryItem.isLeave
                                             ? "ลางานเต็มวัน"
-                                            : selectedHistoryItem.time.includes(
-                                              "เวลาทำงาน",
-                                            )
-                                              ? selectedHistoryItem.time
-                                              : `เวลาทำงาน ${selectedHistoryItem.time}`}
+                                            : selectedHistoryItem.time}
                                       </div>
                                     </div>
 
                                     {/* Status Badge */}
                                     <div
                                       className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold gap-1.5 border mt-2 shrink-0 ${selectedHistoryItem.status ===
-                                          "ไม่ลงเวลาออก"
-                                          ? "w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]"
-                                          : `w-fit min-w-[75px] px-2 py-1 ${selectedHistoryItem.status ===
-                                            "เข้างานปกติ" ||
+                                        "ไม่ลงเวลาออก"
+                                        ? "w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]"
+                                        : `w-fit min-w-[75px] px-2 py-1 ${selectedHistoryItem.status ===
+                                          "เข้างานปกติ" ||
+                                          selectedHistoryItem.statusType ===
+                                          "success"
+                                          ? "bg-[#E7FAEF] text-[#10B981] border-[#10B981]"
+                                          : selectedHistoryItem.status ===
+                                            "สาย" ||
                                             selectedHistoryItem.statusType ===
-                                            "success"
-                                            ? "bg-[#E7FAEF] text-[#10B981] border-[#10B981]"
+                                            "warning"
+                                            ? "bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]"
                                             : selectedHistoryItem.status ===
-                                              "สาย" ||
+                                              "ขาด" ||
                                               selectedHistoryItem.statusType ===
-                                              "warning"
-                                              ? "bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]"
-                                              : selectedHistoryItem.status ===
-                                                "ขาด" ||
-                                                selectedHistoryItem.statusType ===
-                                                "danger"
-                                                ? "bg-[#FCEDED] text-[#EF4444] border-[#EF4444]"
-                                                : selectedHistoryItem.leaveType ===
-                                                  "ลาป่วย"
-                                                  ? "bg-[#FFEBF5] text-[#D42A8C] border-[#D42A8C]"
-                                                  : "bg-[#EEF4FF] text-[#4386F9] border-[#4386F9]"
-                                          }`
+                                              "danger"
+                                              ? "bg-[#FCEDED] text-[#EF4444] border-[#EF4444]"
+                                              : selectedHistoryItem.leaveType ===
+                                                "ลาป่วย"
+                                                ? "bg-[#FFEBF5] text-[#D42A8C] border-[#D42A8C]"
+                                                : "bg-[#EEF4FF] text-[#4386F9] border-[#4386F9]"
+                                        }`
                                         }`}
                                     >
                                       {selectedHistoryItem.status ===
                                         "เข้างานปกติ" ||
                                         selectedHistoryItem.statusType ===
                                         "success" ? (
-                                        <div className="w-5 h-5 bg-[#10B981] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
-                                          <svg
-                                            className="w-3 h-3"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              d="M5 13l4 4L19 7"
-                                            />
-                                          </svg>
+                                        <div className="w-5 h-5 bg-[#079455] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
+                                          <span className="material-symbols-rounded !text-[14px] text-white">
+                                            check
+                                          </span>
                                         </div>
                                       ) : selectedHistoryItem.status ===
                                         "สาย" ||
                                         selectedHistoryItem.statusType ===
                                         "warning" ? (
-                                        <div className="w-5 h-5 bg-[#F59E0B] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                        <div className="w-5 h-5 bg-[#FDB022] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
                                           <span className="material-symbols-rounded !text-[14px] flex items-center justify-center">
                                             schedule
                                           </span>
@@ -1029,7 +972,9 @@ const AttendanceHistoryPage = () => {
                                         selectedHistoryItem.statusType ===
                                         "danger" ? (
                                         <div className="w-5 h-5 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
-                                          <IconX className="w-3 h-3 text-white" />
+                                          <span className="material-symbols-rounded !text-[14px] text-white">
+                                            close
+                                          </span>
                                         </div>
                                       ) : selectedHistoryItem.leaveType ===
                                         "ลาป่วย" ? (
@@ -1040,7 +985,7 @@ const AttendanceHistoryPage = () => {
                                         </div>
                                       ) : selectedHistoryItem.status === "ลา" ||
                                         selectedHistoryItem.isLeave ? (
-                                        <div className="w-5 h-5 bg-[#4386F9] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                        <div className="w-5 h-5 bg-[#1AB3FF] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
                                           <span className="material-symbols-rounded !text-[14px] flex items-center justify-center">
                                             lab_profile
                                           </span>
@@ -1071,21 +1016,23 @@ const AttendanceHistoryPage = () => {
                                   /* Case: Leave (Business/Sick) */
                                   <div className="flex flex-col">
                                     <div className="flex flex-col mb-4 px-1">
-                                      <div className="flex items-start justify-between">
+                                      <div className="flex items-start justify-between pr-4">
                                         <div className="text-[14px] text-gray-800 dark:text-gray-200">
-                                          {selectedHistoryItem.labelMobile}
+                                          {selectedHistoryItem.date}{" "}
+                                          {selectedHistoryItem.monthFull}{" "}
+                                          {selectedHistoryItem.year}
                                         </div>
                                         {selectedHistoryItem.approvalStatus &&
                                           selectedHistoryItem.approvalStatus !==
                                           "pending" && (
                                             <div
                                               className={`px-3 py-1 rounded-full text-[12px] ${selectedHistoryItem.approvalStatus ===
-                                                  "approved"
-                                                  ? "bg-[#EBFBF3] text-[#10B981]"
-                                                  : selectedHistoryItem.approvalStatus ===
-                                                    "denied"
-                                                    ? "bg-[#FFEBEC] text-[#F97066]"
-                                                    : "bg-[#F3F4F6] text-[#6B7280]"
+                                                "approved"
+                                                ? "bg-[#EBFBF3] text-[#10B981]"
+                                                : selectedHistoryItem.approvalStatus ===
+                                                  "denied"
+                                                  ? "bg-[#FEE4E2] text-[#B42318]"
+                                                  : "bg-[#F3F4F6] text-[#6B7280]"
                                                 }`}
                                             >
                                               {selectedHistoryItem.approvalStatus ===
@@ -1249,20 +1196,20 @@ const AttendanceHistoryPage = () => {
                                             <div className="space-y-3">
                                               <div className="flex items-center gap-1 text-gray-700 font-bold text-[13px]">
                                                 <span className="material-symbols-rounded text-[18px] text-gray-700">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" || 
-                                                   selectedHistoryItem.statusType === "success" || 
-                                                   selectedHistoryItem.status === "สาย" || 
-                                                   selectedHistoryItem.statusType === "warning" || 
-                                                   selectedHistoryItem.status === "ไม่ลงเวลาออก") 
-                                                   ? "apartment" : "globe_location_pin"}
+                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                    selectedHistoryItem.statusType === "success" ||
+                                                    selectedHistoryItem.status === "สาย" ||
+                                                    selectedHistoryItem.statusType === "warning" ||
+                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                    ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" || 
-                                                   selectedHistoryItem.statusType === "success" || 
-                                                   selectedHistoryItem.status === "สาย" || 
-                                                   selectedHistoryItem.statusType === "warning" || 
-                                                   selectedHistoryItem.status === "ไม่ลงเวลาออก") 
-                                                   ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
+                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                    selectedHistoryItem.statusType === "success" ||
+                                                    selectedHistoryItem.status === "สาย" ||
+                                                    selectedHistoryItem.statusType === "warning" ||
+                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                    ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
                                               <div className="space-y-1.5 text-[13px] text-gray-500 font-medium">
@@ -1323,20 +1270,20 @@ const AttendanceHistoryPage = () => {
                                             <div className="space-y-3">
                                               <div className="flex items-center gap-1 text-[#A80689] font-bold text-[13px]">
                                                 <span className="material-symbols-rounded text-[18px] text-[#A80689]">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" || 
-                                                   selectedHistoryItem.statusType === "success" || 
-                                                   selectedHistoryItem.status === "สาย" || 
-                                                   selectedHistoryItem.statusType === "warning" || 
-                                                   selectedHistoryItem.status === "ไม่ลงเวลาออก") 
-                                                   ? "apartment" : "globe_location_pin"}
+                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                    selectedHistoryItem.statusType === "success" ||
+                                                    selectedHistoryItem.status === "สาย" ||
+                                                    selectedHistoryItem.statusType === "warning" ||
+                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                    ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" || 
-                                                   selectedHistoryItem.statusType === "success" || 
-                                                   selectedHistoryItem.status === "สาย" || 
-                                                   selectedHistoryItem.statusType === "warning" || 
-                                                   selectedHistoryItem.status === "ไม่ลงเวลาออก") 
-                                                   ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
+                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
+                                                    selectedHistoryItem.statusType === "success" ||
+                                                    selectedHistoryItem.status === "สาย" ||
+                                                    selectedHistoryItem.statusType === "warning" ||
+                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                    ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
                                               <div className="space-y-1.5 text-[13px] text-[#A80689] font-medium">
@@ -1364,13 +1311,10 @@ const AttendanceHistoryPage = () => {
                                         </div>
 
                                         {/* Separate Reason Section (Mobile) */}
-                                        <div className="w-full space-y-1">
-                                          <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800">
-                                            <span className="material-symbols-rounded text-gray-800">
-                                              description
-                                            </span>
-                                            เหตุผลการแก้ไขเวลา
-                                          </div>
+                                          <div className="w-full space-y-1">
+                                            <div className="flex items-center gap-2 text-[16px]  text-gray-800">
+                                              เหตุผลการแก้ไขเวลา
+                                            </div>
                                           <div className="w-full min-h-[42px] bg-[#F9FAFB] border border-[#CECFD2] rounded-[10px] px-4 py-2.5 flex items-center text-[14px] text-gray-700 shadow-sm leading-relaxed">
                                             {selectedHistoryItem.reqReason ||
                                               "ไม่ได้ระบุ"}
@@ -1379,10 +1323,7 @@ const AttendanceHistoryPage = () => {
 
                                         {/* Evidence Section (Updated Mobile) */}
                                         <div className="w-full">
-                                          <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800">
-                                            <span className="material-symbols-rounded text-gray-800">
-                                              attach_file_add
-                                            </span>
+                                          <div className="flex items-center gap-2 text-[16px] text-gray-800">
                                             <span className="whitespace-nowrap">
                                               ไฟล์แนบ :
                                             </span>
