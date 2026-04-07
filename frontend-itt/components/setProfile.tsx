@@ -1,6 +1,8 @@
+'use client';
 import React, { useState } from 'react';
 import axios from '../api/axios'; // อิงตาม import ของคุณ
 import useAuthStore from '@/store/authStore'; // ปรับ path ให้ตรงกับที่เก็บ store ของคุณ
+import Swal from 'sweetalert2';
 
 const SetProfile = () => {
   // ดึง user ปัจจุบัน และ action สำหรับอัปเดตจาก Zustand
@@ -26,13 +28,23 @@ const SetProfile = () => {
 
     // 1. เช็ค User ก่อนเลย ถ้าไม่มีให้เตือนและหยุดทำงาน
     if (!user) {
-      alert("ไม่พบข้อมูลผู้ใช้งาน กรุณาล็อกอินใหม่");
+      Swal.fire({
+        icon: 'error',
+        title: 'ไม่พบข้อมูลผู้ใช้งาน',
+        text: 'กรุณาล็อกอินใหม่อีกครั้ง',
+        confirmButtonColor: '#9A0D8A',
+      });
       return;
     }
 
     // 2. เช็คว่ากรอกข้อมูลครบไหม
     if (!nickname || !image) {
-      alert("กรุณากรอกชื่อเล่นและอัปโหลดรูปโปรไฟล์");
+      Swal.fire({
+        icon: 'warning',
+        title: 'ข้อมูลไม่ครบถ้วน',
+        text: 'กรุณากรอกชื่อเล่นและอัปโหลดรูปโปรไฟล์',
+        confirmButtonColor: '#9A0D8A',
+      });
       return;
     }
 
@@ -64,19 +76,42 @@ const SetProfile = () => {
         }
       } as any; // ใส่ as any เพื่อบังคับข้าม TypeScript Error ตอนเซ็ต State
 
+      await Swal.fire({
+        html: `
+          <div class="flex flex-col items-center">
+            <div class="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
+              <div class="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
+                <span class="material-symbols-rounded text-[28px]">check</span>
+              </div>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">บันทึกข้อมูลสำเร็จ</h3>
+          </div>
+        `,
+        showConfirmButton: false,
+        timer: 1500,
+        customClass: {
+          popup: 'rounded-[20px] p-8',
+        },
+      });
+
       // อัปเดตลง Zustand Store (พอรูปไม่เป็น null แล้ว Layout จะซ่อนหน้านี้อัตโนมัติ)
       actionSetUser(updatedUser);
 
     } catch (error) {
       console.error("อัปเดตโปรไฟล์ไม่สำเร็จ:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+      Swal.fire({
+        icon: 'error',
+        title: 'บันทึกข้อมูลไม่สำเร็จ',
+        text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง',
+        confirmButtonColor: '#9A0D8A',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[50] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white p-8 rounded-xl shadow-2xl w-[400px]">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">ตั้งค่าโปรไฟล์</h2>
@@ -86,20 +121,26 @@ const SetProfile = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* ส่วนอัปโหลดรูป */}
           <div className="flex flex-col items-center gap-3">
-            <div className="relative h-24 w-24 rounded-full border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden">
-              {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-xs text-gray-400 text-center">อัปโหลด<br />รูปภาพ</span>
-              )}
+            <div className="relative group">
+              <div className="h-24 w-24 rounded-full bg-[#FEEBFB] flex items-center justify-center overflow-hidden border border-[#FEEBFB] group-hover:border-[#9A0D8A] transition-colors">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="material-symbols-outlined text-[#9A0D8A] scale-[1.5]">person</span>
+                )}
+              </div>
+              {/* Camera Icon Overlay */}
+              <div className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100">
+                <span className="material-symbols-outlined text-[#9A0D8A] scale-75">photo_camera</span>
+              </div>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
             </div>
-            <p className="text-xs text-gray-400">คลิกที่วงกลมเพื่อเลือกรูป (PNG, JPG)</p>
+            <p className="text-xs text-gray-400">คลิกเพื่อเลือกรูปโปรไฟล์ (PNG, JPG)</p>
           </div>
 
           {/* ส่วนกรอกชื่อเล่น */}
@@ -112,7 +153,7 @@ const SetProfile = () => {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               placeholder="กรอกชื่อเล่นของคุณ"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#9A0D8A] focus:border-[#9A0D8A] outline-none transition-all"
               required
             />
           </div>
@@ -121,7 +162,7 @@ const SetProfile = () => {
           <button
             type="submit"
             disabled={loading || !nickname || !image}
-            className="w-full bg-blue-600 text-white font-semibold py-2.5 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-[#9A0D8A] hover:bg-[#7D0A6F] text-white font-semibold py-2.5 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
