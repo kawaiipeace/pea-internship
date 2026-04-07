@@ -245,10 +245,11 @@ const AttendanceHistoryPage = () => {
 
           return {
             id: log.id,
+            workDate: log.workDate, // Store workDate for filtering
             date: day,
             month: thaiMonthsShort[monthIndex],
-            monthFull: thaiMonthsFull[monthIndex], // Adding back full month
-            year: year,                           // Adding back BE year
+            monthFull: thaiMonthsFull[monthIndex],
+            year: year,
             labelMobile: `${day} ${thaiMonthsFull[monthIndex]} ${year}`,
             time: log.displayStatus === 'ABSENT' ? 'ขาดงาน' : `${inTimeDisplay} - ${outTimeDisplay}`,
             status: statusLabel,
@@ -264,8 +265,29 @@ const AttendanceHistoryPage = () => {
           };
         });
 
-        setHistoryItems(mappedRecords);
-        setSummaryCounts(summary);
+        // Filter out today's record if it's incomplete (no check-out and before 23:50)
+        const now = new Date();
+        const bkkNow = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+        const bkkTodayStr = bkkNow.getFullYear() + "-" + (bkkNow.getMonth() + 1).toString().padStart(2, '0') + "-" + bkkNow.getDate().toString().padStart(2, '0');
+        const bkkCurrentTime = bkkNow.getHours() * 100 + bkkNow.getMinutes();
+
+        const filteredRecords = mappedRecords.filter((item: any) => {
+          // If it's today and no check-out, hide it until 23:50
+          if (item.workDate === bkkTodayStr && item.checkOutTime === "ไม่ลงเวลา" && bkkCurrentTime < 2350) {
+            return false;
+          }
+          return true;
+        });
+
+        // Adjust summary counts based on filtered records
+        const activeSummary = { ...summary };
+        const missingRecord = mappedRecords.find((item: any) => item.workDate === bkkTodayStr && item.checkOutTime === "ไม่ลงเวลา" && bkkCurrentTime < 2350);
+        if (missingRecord) {
+          activeSummary.missingOut = Math.max(0, activeSummary.missingOut - 1);
+        }
+
+        setHistoryItems(filteredRecords);
+        setSummaryCounts(activeSummary);
         setPagination({
           page: paginationData.page,
           totalPages: paginationData.totalPages,
@@ -379,7 +401,7 @@ const AttendanceHistoryPage = () => {
     if (type === "success" || status === "เข้างานปกติ") {
       icon = (
         <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm">
-          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px] -translate-y-[0.5px]">
             check
           </span>
         </div>
@@ -389,7 +411,7 @@ const AttendanceHistoryPage = () => {
     } else if (type === "warning" || status === "สาย") {
       icon = (
         <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
-          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center">
+          <span className="material-symbols-rounded !text-[12px] leading-none translate-x-[0.5px] -translate-y-[0.5px]">
             schedule
           </span>
         </div>
@@ -399,7 +421,7 @@ const AttendanceHistoryPage = () => {
     } else if (type === "info" || status === "ลา") {
       icon = (
         <div className="w-4 h-4 rounded-full bg-[#1AB3FF] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
-          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">
             lab_profile
           </span>
         </div>
@@ -409,7 +431,7 @@ const AttendanceHistoryPage = () => {
     } else if (type === "danger" || status === "ขาด") {
       icon = (
         <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm focus:outline-none">
-          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px] translate-y-[0.5px]">
             close
           </span>
         </div>
@@ -419,7 +441,7 @@ const AttendanceHistoryPage = () => {
     } else if (type === "default" || status === "ไม่ลงเวลาออก") {
       icon = (
         <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-          <span className="material-symbols-rounded !text-[12px] leading-none">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">
             hourglass_disabled
           </span>
         </div>
@@ -530,7 +552,7 @@ const AttendanceHistoryPage = () => {
                   <div
                     className={`flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center sm:mr-4 ${item.iconBg} shadow-sm sm:shadow-none`}
                   >
-                    <span className="material-symbols-rounded !text-[24px] sm:!text-[28px] text-white flex items-center justify-center">
+                    <span className={`material-symbols-rounded !text-[24px] sm:!text-[28px] text-white flex items-center justify-center leading-none translate-x-[0.5px] ${item.icon === 'close' ? 'translate-y-[0.5px]' : '-translate-y-[0.5px]'}`}>
                       {item.icon}
                     </span>
                   </div>
@@ -804,9 +826,9 @@ const AttendanceHistoryPage = () => {
                                 <div className="text-[14px] text-gray-800 dark:text-gray-200 mb-2">
                                   {selectedHistoryItem.labelMobile}
                                 </div>
-                                <div className="inline-flex items-center px-4 py-1.5 bg-[#FFEAEC] text-[#D92D20] border border-[#FCA5A5] rounded-full text-xs font-bold gap-1.5 w-fit">
-                                  <div className="w-5 h-5 bg-[#D92D20] rounded-full flex items-center justify-center text-white shrink-0">
-                                    <span className="material-symbols-rounded !text-[14px]">
+                                <div className="inline-flex items-center px-4 py-1.2 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full text-[13px] font-bold gap-2 w-fit">
+                                  <div className="w-5 h-5 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[14px] flex items-center justify-center leading-none translate-x-[0.5px] translate-y-[0.5px]">
                                       close
                                     </span>
                                   </div>
@@ -914,73 +936,53 @@ const AttendanceHistoryPage = () => {
                                       </div>
                                     </div>
 
-                                    {/* Status Badge */}
                                     <div
-                                      className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold gap-1.5 border mt-2 shrink-0 ${selectedHistoryItem.status ===
-                                        "ไม่ลงเวลาออก"
+                                      className={`mt-2 ${selectedHistoryItem.status === "ไม่ลงเวลาออก"
                                         ? "w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]"
-                                        : `w-fit min-w-[75px] px-2 py-1 ${selectedHistoryItem.status ===
-                                          "เข้างานปกติ" ||
-                                          selectedHistoryItem.statusType ===
-                                          "success"
-                                          ? "bg-[#E7FAEF] text-[#10B981] border-[#10B981]"
-                                          : selectedHistoryItem.status ===
-                                            "สาย" ||
-                                            selectedHistoryItem.statusType ===
-                                            "warning"
-                                            ? "bg-[#FDF4D6] text-[#F59E0B] border-[#F59E0B]"
-                                            : selectedHistoryItem.status ===
-                                              "ขาด" ||
-                                              selectedHistoryItem.statusType ===
-                                              "danger"
+                                        : `w-fit px-2 py-0.5 ${selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success"
+                                          ? "bg-[#E7FAEF] text-[#079455] border-[#079455]"
+                                          : selectedHistoryItem.status === "สาย" || selectedHistoryItem.statusType === "warning"
+                                            ? "bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]"
+                                            : selectedHistoryItem.status === "ขาด" || selectedHistoryItem.statusType === "danger"
                                               ? "bg-[#FCEDED] text-[#EF4444] border-[#EF4444]"
-                                              : selectedHistoryItem.leaveType ===
-                                                "ลาป่วย"
+                                              : selectedHistoryItem.leaveType === "ลาป่วย"
                                                 ? "bg-[#FFEBF5] text-[#D42A8C] border-[#D42A8C]"
                                                 : "bg-[#EEF4FF] text-[#4386F9] border-[#4386F9]"
                                         }`
-                                        }`}
+                                        } rounded-full flex items-center text-[11px] font-bold border gap-1.5 shadow-sm shrink-0`}
                                     >
                                       {selectedHistoryItem.status ===
                                         "เข้างานปกติ" ||
                                         selectedHistoryItem.statusType ===
                                         "success" ? (
-                                        <div className="w-5 h-5 bg-[#079455] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
-                                          <span className="material-symbols-rounded !text-[14px] text-white">
-                                            check
-                                          </span>
+                                        <div className="w-4 h-4 bg-[#079455] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px] -translate-y-[0.5px]">check</span>
                                         </div>
                                       ) : selectedHistoryItem.status ===
                                         "สาย" ||
                                         selectedHistoryItem.statusType ===
                                         "warning" ? (
-                                        <div className="w-5 h-5 bg-[#FDB022] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                          <span className="material-symbols-rounded !text-[14px] flex items-center justify-center">
-                                            schedule
-                                          </span>
+                                        <div className="w-4 h-4 bg-[#FDB022] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">schedule</span>
                                         </div>
                                       ) : selectedHistoryItem.status ===
                                         "ขาด" ||
                                         selectedHistoryItem.statusType ===
                                         "danger" ? (
-                                        <div className="w-5 h-5 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
-                                          <span className="material-symbols-rounded !text-[14px] text-white">
-                                            close
-                                          </span>
+                                        <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px] translate-y-[0.5px]">close</span>
                                         </div>
                                       ) : selectedHistoryItem.leaveType ===
                                         "ลาป่วย" ? (
-                                        <div className="w-5 h-5 bg-[#D42A8C] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                          <span className="material-symbols-rounded !text-[14px] leading-none text-white">
+                                        <div className="w-4 h-4 bg-[#D42A8C] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px] text-white">
                                             lab_profile
                                           </span>
                                         </div>
                                       ) : selectedHistoryItem.status === "ลา" ||
                                         selectedHistoryItem.isLeave ? (
-                                        <div className="w-5 h-5 bg-[#1AB3FF] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                          <span className="material-symbols-rounded !text-[14px] flex items-center justify-center">
-                                            lab_profile
-                                          </span>
+                                        <div className="w-4 h-4 bg-[#1AB3FF] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">lab_profile</span>
                                         </div>
                                       ) : (
                                         <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
@@ -1046,26 +1048,22 @@ const AttendanceHistoryPage = () => {
                                     <div className="mb-4">
                                       {selectedHistoryItem.leaveType ===
                                         "ลากิจ" ? (
-                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                          <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                            <span className="material-symbols-rounded !text-[12px] leading-none text-white">
+                                        <div className="inline-flex items-center px-4 py-1.2 bg-[#EEF4FF] text-[#4386F9] border border-[#4386F9] rounded-full text-[13px] font-bold gap-2">
+                                          <div className="w-5 h-5 bg-[#4386F9] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                            <span className="material-symbols-rounded !text-[14px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">
                                               lab_profile
                                             </span>
                                           </div>
-                                          <span className="leading-none text-gray-500">
-                                            ลากิจ
-                                          </span>
+                                          ลากิจ
                                         </div>
                                       ) : (
-                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                          <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
-                                            <span className="material-symbols-rounded !text-[14px] leading-none text-white">
+                                        <div className="inline-flex items-center px-4 py-1.2 bg-[#FFEBF5] text-[#D42A8C] border border-[#D42A8C] rounded-full text-[13px] font-bold gap-2">
+                                          <div className="w-5 h-5 bg-[#D42A8C] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                            <span className="material-symbols-rounded !text-[14px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">
                                               lab_profile
                                             </span>
                                           </div>
-                                          <span className="leading-none text-gray-500">
-                                            ลาป่วย
-                                          </span>
+                                          ลาป่วย
                                         </div>
                                       )}
                                     </div>
