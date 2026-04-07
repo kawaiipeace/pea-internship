@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, Fragment } from 'react';
+import React, { useState, Fragment, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
+import axiosInstance from '@/api/axios';
 import IconCircleCheck from '@/components/icon/icon-circle-check';
 import IconClock from '@/components/icon/icon-clock';
 import IconFile from '@/components/icon/icon-file';
@@ -58,25 +59,138 @@ const LeaveHistoryPage = () => {
 
     // Thai month names
     const thaiMonthsFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-    const [currentMonth, setCurrentMonth] = useState(0); // Jan
-    const [currentYear, setCurrentYear] = useState(2569);
+    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
-    const handleViewFile = (filename: string) => {
-        Swal.fire({
-            title: 'ดูไฟล์แนบ',
-            html: `<div className="text-gray-500 mb-2">${filename}</div>`,
-            imageUrl: '/assets/images/profile-34.jpeg',
-            imageWidth: 400,
-            imageHeight: 400,
-            imageAlt: filename,
-            confirmButtonText: 'ปิด',
-            buttonsStyling: false,
-            customClass: {
-                popup: 'rounded-[20px] p-6 bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center',
-                confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] mt-4'
+    // Default to current date
+    const now = new Date();
+    const [currentMonth, setCurrentMonth] = useState(now.getMonth());
+    const [currentYear, setCurrentYear] = useState(now.getFullYear() + 543);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [isLoading, setIsLoading] = useState(true);
+    const [summary, setSummary] = useState({ total: 0, absence: 0, sick: 0 });
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, totalRecords: 0 });
+    const [historyData, setHistoryData] = useState<any[]>([]);
+
+    const fetchLeaveHistory = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const yearAD = currentYear - 543;
+            const month = currentMonth + 1;
+            
+            let typeParam = undefined;
+            if (selectedFilter === 'ลากิจ') typeParam = 'ABSENCE';
+            if (selectedFilter === 'ลาป่วย') typeParam = 'SICK';
+
+            const response = await axiosInstance.get('/leave/history', {
+                params: {
+                    month,
+                    year: yearAD,
+                    page: currentPage,
+                    limit: 10,
+                    type: typeParam
+                }
+            });
+
+            const data = response.data;
+            setHistoryData(data.records.map((r: any) => {
+                const dateObj = new Date(r.leaveDate);
+                return {
+                    id: r.id,
+                    date: dateObj.getDate().toString(),
+                    month: thaiMonthsFull[dateObj.getMonth()],
+                    monthShort: thaiMonthsShort[dateObj.getMonth()],
+                    year: (dateObj.getFullYear() + 543).toString(),
+                    labelMobile: `${dateObj.getDate()} ${thaiMonthsShort[dateObj.getMonth()]}`,
+                    time: 'ลางานเต็มวัน',
+                    status: mapStatusToText(r.status),
+                    statusType: mapStatusToType(r.status),
+                    isLeave: true,
+                    location: 'PEA',
+                    leaveDuration: 'ลาเต็มวัน',
+                    leaveType: r.leaveType === 'ABSENCE' || r.leaveType === 'ลากิจ' ? 'ลากิจ' : 'ลาป่วย',
+                    evidence: r.attachmentUrl ? r.attachmentUrl.split('/').pop() : '',
+                    evidenceUrl: r.attachmentUrl,
+                    leaveReason: r.reason || 'ไม่ระบุเหตุผล'
+                };
+            }));
+            setSummary(data.summary);
+            setPagination(data.pagination);
+        } catch (error) {
+            console.error('Error fetching leave history:', error);
+            // Swal.fire('Error', 'ไม่สามารถดึงข้อมูลประวัติการลาได้', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentMonth, currentYear, selectedFilter, currentPage]);
+
+    useEffect(() => {
+        fetchLeaveHistory();
+    }, [fetchLeaveHistory]);
+
+    const mapStatusToText = (status: string) => {
+        switch (status) {
+            case 'PENDING': return 'รออนุมัติการลา';
+            case 'APPROVED': return 'อนุมัติการลา';
+            case 'REJECTED': return 'ไม่อนุมัติการลา';
+            default: return status;
+        }
+    };
+
+    const mapStatusToType = (status: string) => {
+        switch (status) {
+            case 'PENDING': return 'warning';
+            case 'APPROVED': return 'success';
+            case 'REJECTED': return 'danger';
+            default: return 'warning';
+        }
+    };
+
+    const handleViewFile = async (item: any) => {
+        if (!item.evidenceUrl) return;
+
+        try {
+            Swal.fire({
+                title: 'กำลังโหลดไฟล์...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Re-using the logic from current user request: file endpoint is /files/:key
+            // The evidenceUrl is likely "/leave-documents/..."
+            // We need to extract the key. If it starts with "/", remove it.
+            const key = item.evidenceUrl.startsWith('/') ? item.evidenceUrl.substring(1) : item.evidenceUrl;
+            
+            const response = await axiosInstance.get(`/files/${encodeURIComponent(key)}`, {
+                responseType: 'blob'
+            });
+
+            if (!response.data || response.data.size === 0) {
+                throw new Error('ไม่พบข้อมูลไฟล์');
             }
-        });
+
+            const blobUrl = URL.createObjectURL(response.data);
+            
+            // Open in new tab
+            const newTab = window.open(blobUrl, '_blank');
+            if (!newTab) {
+                Swal.fire({
+                    title: 'เปิดไฟล์ไม่สำเร็จ',
+                    text: 'กรุณาอนุญาตให้เบราว์เซอร์เปิดหน้าต่างป็อปอัพ',
+                    icon: 'warning',
+                    confirmButtonText: 'ตกลง',
+                    customClass: {
+                        confirmButton: 'bg-[#A80689] text-white px-6 py-2 rounded-lg'
+                    }
+                });
+            }
+            
+            Swal.close();
+        } catch (error) {
+            console.error('Error fetching file:', error);
+            Swal.fire('Error', 'ไม่สามารถเปิดไฟล์ได้', 'error');
+        }
     };
 
     const handleMonthSelect = (month: number, year: number) => {
@@ -102,103 +216,13 @@ const LeaveHistoryPage = () => {
         }
     };
 
-    // Summary Data for Leave History
-    const summaryData = [
-        { title: 'ลาทั้งหมด', days: 4, icon: 'lab_profile', bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
-        { title: 'ลากิจ', days: 2, icon: 'business_center', bgColor: 'bg-[#E2E4FF] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#1A3CFF]', hoverBorderClass: 'hover:border-[#1A3CFF]' },
-        { title: 'ลาป่วย', days: 2, icon: 'health_cross', bgColor: 'bg-[#FFD7EF] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
+    // Summary Data for Leave History (Dynamic)
+    const summaryCards = [
+        { title: 'ลาทั้งหมด', days: summary.total, icon: 'lab_profile', bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
+        { title: 'ลากิจ', days: summary.absence, icon: 'business_center', bgColor: 'bg-[#E2E4FF] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#1A3CFF]', hoverBorderClass: 'hover:border-[#1A3CFF]' },
+        { title: 'ลาป่วย', days: summary.sick, icon: 'health_cross', bgColor: 'bg-[#FFD7EF] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
     ];
 
-    const [historyData, setHistoryData] = useState([
-        {
-            id: 0,
-            date: '1', month: 'ม.ค.', year: '2569', labelMobile: '1 มกราคม', time: 'ลางานเต็มวัน', status: 'ไม่อนุมัติการลา', statusType: 'danger',
-            isLeave: true,
-            statusText: 'ไม่อนุมัติการลา',
-            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
-            leaveDuration: 'ลาเต็มวัน',
-            leaveType: 'ลาป่วย',
-            evidence: 'ลาป่วย.jpg',
-            evidenceSize: '(1MB)',
-            leaveReason: 'ไม่ผ่านการพิจารณา'
-        },
-        {
-            id: 1,
-            date: '13', month: 'ม.ค.', year: '2569', labelMobile: '13 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
-            isLeave: true,
-            statusText: 'อนุมัติการลา',
-            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
-            leaveDuration: 'ลาเต็มวัน',
-            leaveType: 'ลากิจ',
-            evidence: 'ลากิจ.jpg',
-            evidenceSize: '(2MB)',
-            leaveReason: 'ลาเพื่อทำกิจกรรมมหาวิทยาลัยแต่ระบบล่ม ทำให้ส่งคำขอไม่ได้'
-        },
-        {
-            id: 2,
-            date: '12', month: 'ม.ค.', year: '2569', labelMobile: '12 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
-            isLeave: true,
-            statusText: 'อนุมัติการลา',
-            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
-            leaveDuration: 'ลาเต็มวัน',
-            leaveType: 'ลากิจ',
-            evidence: 'ลากิจ.jpg',
-            evidenceSize: '(2MB)',
-            leaveReason: 'ทำธุระส่วนตัว'
-        },
-        {
-            id: 3,
-            date: '9', month: 'ม.ค.', year: '2569', labelMobile: '9 มกราคม', time: 'เวลาทำงาน 13:00 - 16:30', status: 'อนุมัติการลา', statusType: 'success',
-            isLeave: true,
-            statusText: 'อนุมัติการลา',
-            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
-            leaveDuration: 'ลาป่วย 3.5 ชม.',
-            leaveType: 'ลาป่วย',
-            evidence: 'ใบรับรองแพทย์.jpg',
-            evidenceSize: '(1.5MB)',
-            leaveReason: 'ไปพบแพทย์'
-        },
-        {
-            id: 4,
-            date: '8', month: 'ม.ค.', year: '2569', labelMobile: '8 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
-            isLeave: true,
-            statusText: 'อนุมัติการลา',
-            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
-            leaveDuration: 'ลาเต็มวัน',
-            leaveType: 'ลาป่วย',
-            evidence: 'ลาป่วย.jpg',
-            evidenceSize: '(105KB)',
-            leaveReason: 'เกิดอุบัติเหตุ'
-        },
-        {
-            id: 5,
-            date: '14', month: 'ม.ค.', year: '2569', labelMobile: '14 มกราคม', time: 'ลางานเต็มวัน', status: 'รออนุมัติการลา', statusType: 'warning',
-            isLeave: true,
-            statusText: 'รออนุมัติการลา',
-            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
-            leaveDuration: 'ลาเต็มวัน',
-            leaveType: 'ลากิจ',
-            evidence: 'ลากิจ.jpg',
-            evidenceSize: '(2MB)',
-            leaveReason: 'ทำธุระสำคัญ'
-        },
-        {
-            id: 6,
-            date: '15', month: 'ม.ค.', year: '2569', labelMobile: '15 มกราคม', time: 'ลางานเต็มวัน', status: 'รออนุมัติการลา', statusType: 'warning',
-            isLeave: true,
-            statusText: 'รออนุมัติการลา',
-            location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
-            leaveDuration: 'ลาเต็มวัน',
-            leaveType: 'ลาป่วย',
-            evidence: 'ลาป่วย.jpg',
-            evidenceSize: '(1MB)',
-            leaveReason: 'ไม่สบาย'
-        }
-    ]);
-
-    const filteredHistoryData = selectedFilter
-        ? historyData.filter(item => item.leaveType === selectedFilter || (selectedFilter === 'ลาทั้งหมด'))
-        : historyData;
 
     const getStatusBadge = (type: string, status: string) => {
         let colorClass = "";
@@ -252,14 +276,17 @@ const LeaveHistoryPage = () => {
                         )}
                     </div>
                     <div className="flex flex-row overflow-x-auto sm:overflow-visible gap-[13px] pt-1 w-full mx-auto sm:mx-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        {summaryData.map((item, index) => {
+                        {summaryCards.map((item, index) => {
                             const isSelected = selectedFilter === item.title || (selectedFilter === null && item.title === 'ลาทั้งหมด');
 
                             return (
                                 <button
                                     key={index}
                                     type="button"
-                                    onClick={() => setSelectedFilter(isSelected ? null : item.title)}
+                                    onClick={() => {
+                                        setSelectedFilter(isSelected ? null : item.title);
+                                        setCurrentPage(1); // Reset to page 1 on filter change
+                                    }}
                                     className={`w-[100px] sm:w-auto flex-none sm:flex-1 ${item.bgColor} flex flex-col sm:flex-row justify-between sm:justify-start items-center sm:items-center p-3 sm:px-4 sm:py-5 rounded-[12px] shadow-none h-[115px] sm:h-[90px] text-center sm:text-left transition-all border-2 ${isSelected ? item.activeBorderClass : `border-transparent hover:-translate-y-1 ${item.hoverBorderClass}`}`}
                                 >
                                     <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full ${
@@ -278,7 +305,7 @@ const LeaveHistoryPage = () => {
                             );
                         })}
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-500">รายการการลาทั้งหมด {historyData.length} วัน</p>
+                    <p className="text-xs sm:text-sm text-gray-500">รายการการลาทั้งหมด {pagination.totalRecords} วัน</p>
                 </div>
 
                 {/* History List Section */}
@@ -295,8 +322,14 @@ const LeaveHistoryPage = () => {
                         </button>
                     </div>
                     <div className="flex flex-col gap-[14px]">
-                        {filteredHistoryData.length > 0 ? (
-                            filteredHistoryData.map((item, index) => (
+                        {isLoading ? (
+                            <div className="flex flex-col gap-4">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="w-full h-[88px] bg-gray-100 dark:bg-gray-800 animate-pulse rounded-[14px]"></div>
+                                ))}
+                            </div>
+                        ) : historyData.length > 0 ? (
+                            historyData.map((item, index) => (
                                 <div
                                     key={index}
                                     className={`relative w-full max-sm:min-h-0 sm:h-[88px] flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5 border border-[#CECFD2] dark:border-gray-700 rounded-[14px] p-3 sm:px-4 sm:py-2 bg-white dark:bg-[#121212] overflow-hidden animate-[fadeIn_0.3s_ease-in-out] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-[1.01] mx-auto sm:mx-0`}
@@ -471,7 +504,7 @@ const LeaveHistoryPage = () => {
                             ))
                         ) : (
                             <div className="text-center py-8 text-gray-500 border border-dashed border-gray-300 rounded-xl mt-4">
-                                ไม่พบข้อมูลสำหรับสถานะ "{selectedFilter}"
+                                ไม่พบข้อมูลสำหรับ "{selectedFilter || 'ทั้งหมด'}"
                             </div>
                         )}
                     </div>
@@ -486,25 +519,33 @@ const LeaveHistoryPage = () => {
                     </button>
 
                     <div className="inline-flex items-center border border-gray-200 dark:border-gray-700 rounded-lg overflow-x-auto shadow-sm w-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <button className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0">
+                        <button 
+                            className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0 disabled:opacity-50"
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        >
                             <svg className="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
-                        <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-800 dark:text-gray-200 font-bold bg-[#dce0e5] dark:bg-gray-600 border-r border-gray-200 dark:border-gray-700 shrink-0">
-                            1
-                        </button>
-                        <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-                            2
-                        </button>
-                        <span className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-                            ...
-                        </span>
-                        <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-                            9
-                        </button>
-                        <button className="px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 shrink-0">
-                            10
-                        </button>
-                        <button className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] flex items-center justify-center shrink-0">
+                        
+                        {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                            <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base font-bold border-r border-gray-200 dark:border-gray-700 shrink-0 ${
+                                    currentPage === page 
+                                    ? 'bg-[#dce0e5] dark:bg-gray-600 text-gray-800 dark:text-gray-200' 
+                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212]'
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+
+                        <button 
+                            className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] flex items-center justify-center shrink-0 disabled:opacity-50"
+                            disabled={currentPage === pagination.totalPages}
+                            onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                        >
                             <svg className="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"></path></svg>
                         </button>
                     </div>
@@ -664,21 +705,14 @@ const LeaveHistoryPage = () => {
                                                                     <span className="whitespace-nowrap">ไฟล์แนบ :</span>
                                                                     <button 
                                                                         type="button"
-                                                                        onClick={() => handleViewFile(selectedHistoryItem.evidence)}
-                                                                        className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                                        onClick={() => handleViewFile(selectedHistoryItem)}
+                                                                        className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-auto min-w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                                                                     >
-                                                                        <div className="flex items-center justify-center shrink-0">
-                                                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <path d="M7 18H17V20H7V18Z" fill="black" />
-                                                                                <path d="M17 14H7V16H17V14Z" fill="black" />
-                                                                                <path d="M7 10H14V12H7V10Z" fill="black" />
-                                                                                <path fillRule="evenodd" clipRule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9L14 2H6ZM13 4L19 10V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4H13Z" fill="black" />
-                                                                                <rect x="14.5" y="10.5" width="4" height="3" rx="1" fill="white" stroke="black" />
-                                                                                <text x="15" y="12.5" fontSize="2.5" fontWeight="bold" fill="black">PDF</text>
-                                                                            </svg>
+                                                                        <div className="flex items-center justify-center shrink-0 text-[#A80689]">
+                                                                            <span className="material-symbols-rounded !text-[20px]">description</span>
                                                                         </div>
-                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-gray-200 truncate">
-                                                                            {selectedHistoryItem.evidence}
+                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-white truncate max-w-[150px]">
+                                                                            {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'}
                                                                         </div>
                                                                     </button>
                                                                 </div>
@@ -776,8 +810,8 @@ const LeaveHistoryPage = () => {
                                                                         <div className="w-8 h-8 rounded-[4px] overflow-hidden flex items-center justify-center shrink-0 bg-gray-100">
                                                                             <img src="/assets/images/profile-34.jpeg" alt="thumbnail" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                                                         </div>
-                                                                        <div className="text-[13px] font-bold text-gray-700 dark:text-gray-300">
-                                                                            {selectedHistoryItem.evidence || 'ลากิจ.jpg'} <span className="font-normal text-gray-400">({selectedHistoryItem.evidenceSize || '2MB'})</span>
+                                                                        <div className="text-[13px] font-bold text-gray-700 dark:text-white truncate flex-1">
+                                                                            {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'} <span className="font-normal text-gray-400">({selectedHistoryItem.evidenceSize || ''})</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -787,8 +821,8 @@ const LeaveHistoryPage = () => {
                                                                         <span className="material-symbols-rounded text-[20px]">description</span>
                                                                         รายละเอียดการลา
                                                                     </div>
-                                                                    <div className="bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 w-[450px] h-[45px] text-[13px] text-gray-600 dark:text-gray-300 font-medium flex items-center">
-                                                                        {selectedHistoryItem.leaveReason || 'เข้าร่วมประชุมกับทางมหาวิทยาลัย ขาดไม่ได้'}
+                                                                    <div className="bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 w-full sm:w-[450px] min-h-[45px] py-3 text-[13px] text-gray-600 dark:text-gray-300 font-medium flex items-center h-auto">
+                                                                        {selectedHistoryItem.leaveReason || 'ไม่ได้ระบุเหตุผล'}
                                                                     </div>
                                                                 </div>
                                                             </div>
