@@ -378,18 +378,23 @@ function ApplicationsContent() {
   // Popup states
   const [showInterviewConfirm, setShowInterviewConfirm] = useState(false);
   const [showInterviewSuccess, setShowInterviewSuccess] = useState(false);
+  const [interviewSubmitting, setInterviewSubmitting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [showRejectSuccess, setShowRejectSuccess] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
   const [showDocRejectModal, setShowDocRejectModal] = useState(false);
   const [showDocumentPopup, setShowDocumentPopup] = useState(false);
   const [docRejectReason, setDocRejectReason] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showCancelSuccess, setShowCancelSuccess] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   // Application history modal state
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -1130,7 +1135,8 @@ function ApplicationsContent() {
 
   // Handle interview confirmation (Owner approves interview → PENDING_INTERVIEW → PENDING_CONFIRMATION)
   const handleConfirmInterview = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !interviewSubmitting) {
+      setInterviewSubmitting(true);
       try {
         await applicationApi.approveInterview(Number(selectedApplication.id));
         // Also update localStorage for backward compatibility
@@ -1147,13 +1153,16 @@ function ApplicationsContent() {
       } catch (err) {
         console.error("Failed to approve interview:", err);
         setShowInterviewConfirm(false);
+      } finally {
+        setInterviewSubmitting(false);
       }
     }
   };
 
   // Handle approve application (Owner confirms accept → PENDING_CONFIRMATION → PENDING_REQUEST)
   const handleApprove = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !approveSubmitting) {
+      setApproveSubmitting(true);
       try {
         await applicationApi.confirmAccept(Number(selectedApplication.id));
         const newApproved = [...approvedApps, selectedApplication.id];
@@ -1170,13 +1179,16 @@ function ApplicationsContent() {
       } catch (err) {
         console.error("Failed to confirm accept:", err);
         setShowApproveConfirm(false);
+      } finally {
+        setApproveSubmitting(false);
       }
     }
   };
 
   // Handle reject application (Owner rejects → CANCEL)
   const handleReject = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !rejectSubmitting) {
+      setRejectSubmitting(true);
       try {
         await applicationApi.rejectApplication(
           Number(selectedApplication.id),
@@ -1227,6 +1239,8 @@ function ApplicationsContent() {
         setShowRejectConfirm(false);
         setShowRejectModal(false);
         setRejectReason("");
+      } finally {
+        setRejectSubmitting(false);
       }
     }
   };
@@ -6349,15 +6363,44 @@ function ApplicationsContent() {
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowInterviewConfirm(false)}
-                className="px-8 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-sm cursor-pointer"
+                disabled={interviewSubmitting}
+                className="px-8 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 ย้อนกลับ
               </button>
               <button
                 onClick={handleConfirmInterview}
-                className="px-8 py-2.5 bg-green-600 border border-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white transition-colors font-sm cursor-pointer"
+                disabled={interviewSubmitting}
+                className="px-8 py-2.5 bg-green-600 border border-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white transition-colors font-sm disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
               >
-                ยืนยัน
+                {interviewSubmitting ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                      />
+                    </svg>
+                    กำลังยืนยัน...
+                  </>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -6426,15 +6469,44 @@ function ApplicationsContent() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowApproveConfirm(false)}
-                className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 cursor-pointer"
+                disabled={approveSubmitting}
+                className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={handleApprove}
-                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
+                disabled={approveSubmitting}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
               >
-                ยืนยัน
+                {approveSubmitting ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                      />
+                    </svg>
+                    กำลังยืนยัน...
+                  </>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -6475,8 +6547,11 @@ function ApplicationsContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             <button
-              onClick={() => setShowRejectModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!rejectSubmitting) setShowRejectModal(false);
+              }}
+              disabled={rejectSubmitting}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -6530,6 +6605,7 @@ function ApplicationsContent() {
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
+                disabled={rejectSubmitting}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -6537,7 +6613,8 @@ function ApplicationsContent() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={rejectSubmitting}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
@@ -6545,23 +6622,46 @@ function ApplicationsContent() {
                 onClick={() => {
                   if (rejectReason.trim()) handleReject();
                 }}
-                disabled={!rejectReason.trim()}
+                disabled={!rejectReason.trim() || rejectSubmitting}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                ยืนยันการปฏิเสธ
+                {rejectSubmitting ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
+                {rejectSubmitting ? "กำลังดำเนินการ..." : "ยืนยันการปฏิเสธ"}
               </button>
             </div>
           </div>
@@ -6603,8 +6703,11 @@ function ApplicationsContent() {
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             {/* Close button */}
             <button
-              onClick={() => setShowCancelModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!cancelSubmitting) setShowCancelModal(false);
+              }}
+              disabled={cancelSubmitting}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -6660,6 +6763,7 @@ function ApplicationsContent() {
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                disabled={cancelSubmitting}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -6668,33 +6772,81 @@ function ApplicationsContent() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={cancelSubmitting}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
               <button
-                onClick={() => {
-                  if (cancelReason.trim()) {
-                    setShowCancelConfirm(true);
+                onClick={async () => {
+                  if (
+                    !cancelReason.trim() ||
+                    !selectedApplication ||
+                    cancelSubmitting
+                  )
+                    return;
+
+                  setCancelSubmitting(true);
+                  try {
+                    await ownerStudentsApi.updateInternshipStatus(
+                      selectedApplication.internId,
+                      "CANCEL",
+                      cancelReason,
+                    );
+                    setShowCancelModal(false);
+                    setCancelReason("");
+                    setShowCancelSuccess(true);
+                    setTimeout(() => {
+                      setShowCancelSuccess(false);
+                    }, 500);
+                    await fetchApplications();
+                  } catch (err) {
+                    console.error("Cancel internship failed:", err);
+                    alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
+                  } finally {
+                    setCancelSubmitting(false);
                   }
                 }}
-                disabled={!cancelReason.trim()}
+                disabled={!cancelReason.trim() || cancelSubmitting}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                ยืนยันการยกเลิกฝึกงาน
+                {cancelSubmitting ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
+                {cancelSubmitting ? "กำลังยืนยัน..." : "ยืนยันการยกเลิกฝึกงาน"}
               </button>
             </div>
           </div>
@@ -6750,6 +6902,10 @@ function ApplicationsContent() {
                     setShowCancelConfirm(false);
                     setShowCancelModal(false);
                     setCancelReason("");
+                    setShowCancelSuccess(true);
+                    setTimeout(() => {
+                      setShowCancelSuccess(false);
+                    }, 500);
                     await fetchApplications();
                   } catch (err) {
                     console.error("Cancel internship failed:", err);
@@ -6799,6 +6955,34 @@ function ApplicationsContent() {
                 ยืนยัน
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Success Popup */}
+      {showCancelSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl p-8 max-w-xs w-full mx-4 text-center shadow-2xl">
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full flex items-center justify-center">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">
+              ยกเลิกฝึกงานเรียบร้อยแล้ว
+            </h3>
           </div>
         </div>
       )}

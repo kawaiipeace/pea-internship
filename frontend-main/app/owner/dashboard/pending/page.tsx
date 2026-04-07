@@ -89,12 +89,15 @@ function PendingStatusContent() {
   // Popup states
   const [showInterviewConfirm, setShowInterviewConfirm] = useState(false);
   const [showInterviewSuccess, setShowInterviewSuccess] = useState(false);
+  const [interviewSubmitting, setInterviewSubmitting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [showRejectSuccess, setShowRejectSuccess] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
   const [interviewedApps, setInterviewedApps] = useState<string[]>([]);
   const [approvedApps, setApprovedApps] = useState<string[]>([]);
   const [rejectedApps, setRejectedApps] = useState<string[]>([]);
@@ -743,7 +746,8 @@ function PendingStatusContent() {
 
   // Handle interview confirmation (Owner approves interview → PENDING_INTERVIEW → PENDING_CONFIRMATION)
   const handleConfirmInterview = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !interviewSubmitting) {
+      setInterviewSubmitting(true);
       try {
         await applicationApi.approveInterview(Number(selectedApplication.id));
         const newInterviewed = [...interviewedApps, selectedApplication.id];
@@ -762,13 +766,16 @@ function PendingStatusContent() {
       } catch (err) {
         console.error("Failed to approve interview:", err);
         setShowInterviewConfirm(false);
+      } finally {
+        setInterviewSubmitting(false);
       }
     }
   };
 
   // Handle approve application (Owner confirms accept → PENDING_CONFIRMATION → PENDING_REQUEST)
   const handleApprove = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !approveSubmitting) {
+      setApproveSubmitting(true);
       try {
         await applicationApi.confirmAccept(Number(selectedApplication.id));
         const newApproved = [...approvedApps, selectedApplication.id];
@@ -788,13 +795,16 @@ function PendingStatusContent() {
       } catch (err) {
         console.error("Failed to confirm accept:", err);
         setShowApproveConfirm(false);
+      } finally {
+        setApproveSubmitting(false);
       }
     }
   };
 
   // Handle reject application (Owner rejects → CANCEL)
   const handleReject = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !rejectSubmitting) {
+      setRejectSubmitting(true);
       try {
         await applicationApi.rejectApplication(
           Number(selectedApplication.id),
@@ -821,6 +831,8 @@ function PendingStatusContent() {
         setShowRejectConfirm(false);
         setShowRejectModal(false);
         setRejectReason("");
+      } finally {
+        setRejectSubmitting(false);
       }
     }
   };
@@ -2719,15 +2731,44 @@ function PendingStatusContent() {
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowInterviewConfirm(false)}
-                className="px-8 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-sm cursor-pointer"
+                disabled={interviewSubmitting}
+                className="px-8 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 ย้อนกลับ
               </button>
               <button
                 onClick={handleConfirmInterview}
-                className="px-8 py-2.5 bg-green-600 border border-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white transition-colors font-sm cursor-pointer"
+                disabled={interviewSubmitting}
+                className="px-8 py-2.5 bg-green-600 border border-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white transition-colors font-sm disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
               >
-                ยืนยัน
+                {interviewSubmitting ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                      />
+                    </svg>
+                    กำลังยืนยัน...
+                  </>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -2796,15 +2837,44 @@ function PendingStatusContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowApproveConfirm(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 cursor-pointer"
+                  disabled={approveSubmitting}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   onClick={handleApprove}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
+                  disabled={approveSubmitting}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
                 >
-                  ยืนยัน
+                  {approveSubmitting ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        />
+                        <path
+                          className="opacity-90"
+                          fill="currentColor"
+                          d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                        />
+                      </svg>
+                      กำลังยืนยัน...
+                    </>
+                  ) : (
+                    "ยืนยัน"
+                  )}
                 </button>
               </div>
             </div>
@@ -2846,8 +2916,11 @@ function PendingStatusContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             <button
-              onClick={() => setShowRejectModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!rejectSubmitting) setShowRejectModal(false);
+              }}
+              disabled={rejectSubmitting}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -2901,6 +2974,7 @@ function PendingStatusContent() {
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
+                disabled={rejectSubmitting}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -2908,7 +2982,8 @@ function PendingStatusContent() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={rejectSubmitting}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
@@ -2916,23 +2991,46 @@ function PendingStatusContent() {
                 onClick={() => {
                   if (rejectReason.trim()) handleReject();
                 }}
-                disabled={!rejectReason.trim()}
+                disabled={!rejectReason.trim() || rejectSubmitting}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                ยืนยันการปฏิเสธ
+                {rejectSubmitting ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
+                {rejectSubmitting ? "กำลังดำเนินการ..." : "ยืนยันการปฏิเสธ"}
               </button>
             </div>
           </div>
@@ -3073,7 +3171,9 @@ function PendingStatusContent() {
                             </div>
 
                             {item.statusNote && (
-                              <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
+                              <div
+                                className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}
+                              >
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
                                     width="20"
@@ -3084,20 +3184,28 @@ function PendingStatusContent() {
                                   >
                                     <path
                                       d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                      fill={item.applicationStatus === "ABORT" ? "#6B7280" : "#D92D20"}
+                                      fill={
+                                        item.applicationStatus === "ABORT"
+                                          ? "#6B7280"
+                                          : "#D92D20"
+                                      }
                                     />
                                   </svg>
-                                  <span className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}>
+                                  <span
+                                    className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}
+                                  >
                                     {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
                                       : historyOutcome === "cancelled"
-                                        ? (item.applicationStatus === "ABORT"
-                                            ? "เหตุผลการยกเลิกการสมัคร"
-                                            : "เหตุผลประกอบการยกเลิกฝึกงาน")
+                                        ? item.applicationStatus === "ABORT"
+                                          ? "เหตุผลการยกเลิกการสมัคร"
+                                          : "เหตุผลประกอบการยกเลิกฝึกงาน"
                                         : "หมายเหตุ"}
                                   </span>
                                 </div>
-                                <div className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`} />
+                                <div
+                                  className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`}
+                                />
                                 <div className="px-4 pt-3 pb-4">
                                   <p className="text-sm text-gray-700 leading-relaxed">
                                     {item.statusNote}

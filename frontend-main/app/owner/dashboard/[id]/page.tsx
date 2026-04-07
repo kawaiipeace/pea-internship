@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import OwnerNavbar from "@/components/ui/OwnerNavbar";
@@ -14,6 +14,7 @@ import {
 import {
   applicationApi,
   applicationStatusActionsApi,
+  ownerStudentsApi,
   positionApi,
   type ApplicationStatusAction,
   type AppStatusEnum,
@@ -130,20 +131,28 @@ function ApplicationDetailContent() {
   const [timelineActions, setTimelineActions] = useState<
     ApplicationStatusAction[]
   >([]);
-  useEffect(() => {
+
+  const fetchTimelineActions = useCallback(async () => {
     if (!applicationId) return;
     const appId = Number(applicationId);
-    if (!appId || isNaN(appId)) return;
-    applicationStatusActionsApi
-      .getByApplicationStatusId(appId)
-      .then((actions) => {
-        setTimelineActions([...actions].reverse());
-      })
-      .catch((err) => {
-        console.error("Failed to fetch timeline actions:", err);
-        setTimelineActions([]);
-      });
+    if (!appId || isNaN(appId)) {
+      setTimelineActions([]);
+      return;
+    }
+
+    try {
+      const actions =
+        await applicationStatusActionsApi.getByApplicationStatusId(appId);
+      setTimelineActions([...actions].reverse());
+    } catch (err) {
+      console.error("Failed to fetch timeline actions:", err);
+      setTimelineActions([]);
+    }
   }, [applicationId]);
+
+  useEffect(() => {
+    fetchTimelineActions();
+  }, [fetchTimelineActions]);
 
   // Mentor states
   const [assignedMentors, setAssignedMentors] = useState<Mentor[]>([]);
@@ -399,11 +408,13 @@ function ApplicationDetailContent() {
   };
 
   // Helper: refetch application data after action
-  const refetchApplication = () => {
-    fetchAllApplications().then((apps) => {
-      const found = apps.find((app) => app.id === applicationId);
-      setApplication(found || null);
-    });
+  const refetchApplication = async () => {
+    const [apps] = await Promise.all([
+      fetchAllApplications(),
+      fetchTimelineActions(),
+    ]);
+    const found = apps.find((app) => app.id === applicationId);
+    setApplication(found || null);
   };
 
   // Handler: Mark as interviewed (step 2 -> step 3) via API
@@ -412,7 +423,7 @@ function ApplicationDetailContent() {
     setActionLoading(true);
     try {
       await applicationApi.approveInterview(Number(application.id));
-      refetchApplication();
+      await refetchApplication();
     } catch (err) {
       console.error("Failed to approve interview:", err);
       alert("เกิดข้อผิดพลาดในการยืนยันการสัมภาษณ์");
@@ -427,7 +438,7 @@ function ApplicationDetailContent() {
     setActionLoading(true);
     try {
       await applicationApi.confirmAccept(Number(application.id));
-      refetchApplication();
+      await refetchApplication();
     } catch (err) {
       console.error("Failed to confirm accept:", err);
       alert("เกิดข้อผิดพลาดในการรับเข้าฝึกงาน");
@@ -449,7 +460,7 @@ function ApplicationDetailContent() {
       setShowRejectModal(false);
       setRejectReason("");
       setShowRejectSuccess(true);
-      refetchApplication();
+      await refetchApplication();
       setTimeout(() => {
         setShowRejectSuccess(false);
       }, 500);
@@ -476,15 +487,20 @@ function ApplicationDetailContent() {
       };
     // Fallback to API data + timeline actions
     const cancelAction = timelineActions.find(
-      (a) => a.newStatus === "CANCEL" || a.newStatus === "ABORT"
+      (a) => a.newStatus === "CANCEL" || a.newStatus === "ABORT",
     );
-    const actorName = application?.cancelledBy || (cancelAction?.actor
-      ? [cancelAction.actor.fname, cancelAction.actor.lname].filter(Boolean).join(" ")
-      : "");
+    const actorName =
+      application?.cancelledBy ||
+      (cancelAction?.actor
+        ? [cancelAction.actor.fname, cancelAction.actor.lname]
+            .filter(Boolean)
+            .join(" ")
+        : "");
     return {
       reason: application?.cancellationReason,
       cancelledBy: actorName,
-      cancelledDate: application?.cancelledDate || cancelAction?.createdAt || "",
+      cancelledDate:
+        application?.cancelledDate || cancelAction?.createdAt || "",
     };
   };
 
@@ -497,11 +513,11 @@ function ApplicationDetailContent() {
         rejectedDate: data.rejectedDate,
       };
     // Fallback to API data + timeline actions
-    const cancelAction = timelineActions.find(
-      (a) => a.newStatus === "CANCEL"
-    );
+    const cancelAction = timelineActions.find((a) => a.newStatus === "CANCEL");
     const actorName = cancelAction?.actor
-      ? [cancelAction.actor.fname, cancelAction.actor.lname].filter(Boolean).join(" ")
+      ? [cancelAction.actor.fname, cancelAction.actor.lname]
+          .filter(Boolean)
+          .join(" ")
       : "";
     return {
       reason: application?.cancellationReason || "",
@@ -533,7 +549,7 @@ function ApplicationDetailContent() {
       } else {
         // Use timeline actions to determine actual step for ABORT
         const abortAction = timelineActions.find(
-          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL",
         );
         if (abortAction?.oldStatus) {
           const abortStepMap: Record<string, number> = {
@@ -544,7 +560,8 @@ function ApplicationDetailContent() {
             PENDING_REVIEW: 4,
           };
           completedUpTo =
-            abortStepMap[abortAction.oldStatus] ?? (application.step > 0 ? application.step - 1 : 0);
+            abortStepMap[abortAction.oldStatus] ??
+            (application.step > 0 ? application.step - 1 : 0);
           currentStep = 0;
         } else if (application.step > 0) {
           // Fallback: use the step from applicationMapper
@@ -561,7 +578,7 @@ function ApplicationDetailContent() {
     ) {
       // Use timeline actions to determine where the rejection happened
       const rejectAction = timelineActions.find(
-        (a) => a.newStatus === "CANCEL"
+        (a) => a.newStatus === "CANCEL",
       );
       if (rejectAction?.oldStatus) {
         const rejectStepMap: Record<string, number> = {
@@ -1312,12 +1329,16 @@ function ApplicationDetailContent() {
 
               {/* Cancellation Reason Box */}
               {(application.status === "cancelled" || isCancelledViaStorage) &&
-                (application.stepDescription !== "ยกเลิกการสมัคร" || application.cancellationReason) &&
+                (application.stepDescription !== "ยกเลิกการสมัคร" ||
+                  application.cancellationReason) &&
                 (() => {
-                  const isAbort = application.stepDescription === "ยกเลิกการสมัคร";
+                  const isAbort =
+                    application.stepDescription === "ยกเลิกการสมัคร";
                   const cancelData = getCancellationData();
                   return (
-                    <div className={`${isAbort ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mt-4`}>
+                    <div
+                      className={`${isAbort ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mt-4`}
+                    >
                       <div className="flex items-start gap-2">
                         <svg
                           className={`w-5 h-5 ${isAbort ? "text-gray-500" : "text-red-500"} mt-0.5 shrink-0`}
@@ -1333,7 +1354,9 @@ function ApplicationDetailContent() {
                           />
                         </svg>
                         <div>
-                          <p className={`font-semibold ${isAbort ? "text-gray-600" : "text-red-600"} mb-2`}>
+                          <p
+                            className={`font-semibold ${isAbort ? "text-gray-600" : "text-red-600"} mb-2`}
+                          >
                             {isAbort
                               ? "เหตุผลการยกเลิกการสมัคร"
                               : "เหตุผลประกอบการยกเลิกฝึกงาน"}
@@ -1344,18 +1367,27 @@ function ApplicationDetailContent() {
                         </div>
                       </div>
                       {/* Operator and Date */}
-                      <div className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${isAbort ? "border-gray-200" : "border-red-200"}`}>
+                      <div
+                        className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${isAbort ? "border-gray-200" : "border-red-200"}`}
+                      >
                         <div>
                           <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                           <p className="text-gray-900 text-sm">
-                            {cancelData.cancelledBy || (
-                              isAbort
+                            {cancelData.cancelledBy ||
+                              (isAbort
                                 ? "ระบบ (อัตโนมัติ)"
                                 : (() => {
-                                    const od = positionInfo?.owner || (positionInfo?.owners && positionInfo.owners.length > 0 ? positionInfo.owners[0] : null);
-                                    return od ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-" : "-";
-                                  })()
-                            )}
+                                    const od =
+                                      positionInfo?.owner ||
+                                      (positionInfo?.owners &&
+                                      positionInfo.owners.length > 0
+                                        ? positionInfo.owners[0]
+                                        : null);
+                                    return od
+                                      ? `${od.fname || ""} ${od.lname || ""}`.trim() ||
+                                          "-"
+                                      : "-";
+                                  })())}
                           </p>
                         </div>
                         <div>
@@ -1450,7 +1482,9 @@ function ApplicationDetailContent() {
                 const progress = (completedUpTo / totalSteps) * circumference;
 
                 const isCancelledOrAborted =
-                  application.status === "cancelled" || application.status === "rejected" || isCancelledViaStorage;
+                  application.status === "cancelled" ||
+                  application.status === "rejected" ||
+                  isCancelledViaStorage;
 
                 return (
                   <div>
@@ -1510,26 +1544,38 @@ function ApplicationDetailContent() {
                         {isCancelledOrAborted ? (
                           <>
                             <p className="font-bold text-gray-900">
-                              {application.stepDescription === "ยกเลิกฝึกงาน" ? "ยกเลิกฝึกงาน" : application.status === "rejected" ? "ไม่ผ่านการคัดเลือก" : "ยกเลิกการสมัคร"}
+                              {application.stepDescription === "ยกเลิกฝึกงาน"
+                                ? "ยกเลิกฝึกงาน"
+                                : application.status === "rejected"
+                                  ? "ไม่ผ่านการคัดเลือก"
+                                  : "ยกเลิกการสมัคร"}
                             </p>
                             {(() => {
                               // For cancelled/rejected, show the actor from the cancel/abort action itself
                               const termAction = timelineActions.find(
-                                (a) => a.newStatus === "CANCEL" || a.newStatus === "ABORT"
+                                (a) =>
+                                  a.newStatus === "CANCEL" ||
+                                  a.newStatus === "ABORT",
                               );
-                              const actorLabel = termAction?.actor && termAction.actor.roleId !== 3
-                                ? `พนักงาน : ${[termAction.actor.fname, termAction.actor.lname].filter(Boolean).join(" ")}`
-                                : undefined;
+                              const actorLabel =
+                                termAction?.actor &&
+                                termAction.actor.roleId !== 3
+                                  ? `พนักงาน : ${[termAction.actor.fname, termAction.actor.lname].filter(Boolean).join(" ")}`
+                                  : undefined;
                               const actionDate = termAction?.createdAt
                                 ? formatActionDate(termAction.createdAt)
                                 : stepCompletedInfo[completedUpTo - 1]?.date;
                               return (
                                 <>
                                   {actorLabel && (
-                                    <p className="text-gray-400 text-sm">{actorLabel}</p>
+                                    <p className="text-gray-400 text-sm">
+                                      {actorLabel}
+                                    </p>
                                   )}
                                   {actionDate && (
-                                    <p className="text-gray-400 text-sm">{actionDate}</p>
+                                    <p className="text-gray-400 text-sm">
+                                      {actionDate}
+                                    </p>
                                   )}
                                 </>
                               );
@@ -2135,12 +2181,39 @@ function ApplicationDetailContent() {
                   setShowInterviewSuccess(true);
                   setTimeout(() => {
                     setShowInterviewSuccess(false);
-                  }, 2000);
+                  }, 500);
                 }}
                 disabled={actionLoading}
-                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
-                {actionLoading ? "กำลังดำเนินการ..." : "ยืนยัน"}
+                {actionLoading ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                      />
+                    </svg>
+                    กำลังดำเนินการ...
+                  </>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -2220,9 +2293,36 @@ function ApplicationDetailContent() {
                   setShowApproveConfirm(false);
                 }}
                 disabled={actionLoading}
-                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer disabled:opacity-50"
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
-                {actionLoading ? "กำลังดำเนินการ..." : "ยืนยัน"}
+                {actionLoading ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                      />
+                    </svg>
+                    กำลังดำเนินการ...
+                  </>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -2234,8 +2334,11 @@ function ApplicationDetailContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             <button
-              onClick={() => setShowRejectModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!actionLoading) setShowRejectModal(false);
+              }}
+              disabled={actionLoading}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -2288,6 +2391,7 @@ function ApplicationDetailContent() {
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
+                disabled={actionLoading}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -2295,7 +2399,8 @@ function ApplicationDetailContent() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={actionLoading}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
@@ -2306,19 +2411,42 @@ function ApplicationDetailContent() {
                 disabled={!rejectReason.trim() || actionLoading}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
+                {actionLoading ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
                 {actionLoading ? "กำลังดำเนินการ..." : "ยืนยันการปฏิเสธ"}
               </button>
             </div>
@@ -2360,8 +2488,11 @@ function ApplicationDetailContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             <button
-              onClick={() => setShowCancelModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!actionLoading) setShowCancelModal(false);
+              }}
+              disabled={actionLoading}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -2414,6 +2545,7 @@ function ApplicationDetailContent() {
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                disabled={actionLoading}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -2421,69 +2553,77 @@ function ApplicationDetailContent() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={actionLoading}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
               <button
-                onClick={() => {
-                  if (cancelReason.trim() && application) {
-                    const existingCancelled = (() => {
-                      try {
-                        const stored =
-                          localStorage.getItem("pea_cancelled_apps");
-                        return stored ? JSON.parse(stored) : [];
-                      } catch {
-                        return [];
-                      }
-                    })();
-                    const today = new Date();
-                    const buddhistYear = today.getFullYear() + 543;
-                    const month = String(today.getMonth() + 1).padStart(2, "0");
-                    const day = String(today.getDate()).padStart(2, "0");
-                    const cancelDate = `${buddhistYear}-${month}-${day}`;
-                    if (
-                      !existingCancelled.find(
-                        (c: { id: string }) => c.id === application.id,
-                      )
-                    ) {
-                      existingCancelled.push({
-                        id: application.id,
-                        reason: cancelReason,
-                        cancelledBy: "เจ้าของหน่วยงาน",
-                        cancelledDate: cancelDate,
-                      });
-                      localStorage.setItem(
-                        "pea_cancelled_apps",
-                        JSON.stringify(existingCancelled),
-                      );
-                      setCancelledAppsData(existingCancelled);
-                    }
+                onClick={async () => {
+                  if (!cancelReason.trim() || !application || actionLoading)
+                    return;
+
+                  setActionLoading(true);
+                  try {
+                    await ownerStudentsApi.updateInternshipStatus(
+                      application.internId,
+                      "CANCEL",
+                      cancelReason,
+                    );
                     setShowCancelModal(false);
                     setCancelReason("");
                     setShowCancelSuccess(true);
                     setTimeout(() => {
                       setShowCancelSuccess(false);
                     }, 500);
+                    await refetchApplication();
+                  } catch (err) {
+                    console.error("Cancel internship failed:", err);
+                    alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
+                  } finally {
+                    setActionLoading(false);
                   }
                 }}
-                disabled={!cancelReason.trim()}
+                disabled={!cancelReason.trim() || actionLoading}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                ยืนยันการยกเลิกฝึกงาน
+                {actionLoading ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
+                {actionLoading ? "กำลังยืนยัน..." : "ยืนยันการยกเลิกฝึกงาน"}
               </button>
             </div>
           </div>
@@ -2652,7 +2792,9 @@ function ApplicationDetailContent() {
                               </p>
                             </div>
                             {item.statusNote && (
-                              <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
+                              <div
+                                className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}
+                              >
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
                                     width="20"
@@ -2663,20 +2805,28 @@ function ApplicationDetailContent() {
                                   >
                                     <path
                                       d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                      fill={item.applicationStatus === "ABORT" ? "#6B7280" : "#D92D20"}
+                                      fill={
+                                        item.applicationStatus === "ABORT"
+                                          ? "#6B7280"
+                                          : "#D92D20"
+                                      }
                                     />
                                   </svg>
-                                  <span className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}>
+                                  <span
+                                    className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}
+                                  >
                                     {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
                                       : historyOutcome === "cancelled"
-                                        ? (item.applicationStatus === "ABORT"
-                                            ? "เหตุผลการยกเลิกการสมัคร"
-                                            : "เหตุผลประกอบการยกเลิกฝึกงาน")
+                                        ? item.applicationStatus === "ABORT"
+                                          ? "เหตุผลการยกเลิกการสมัคร"
+                                          : "เหตุผลประกอบการยกเลิกฝึกงาน"
                                         : "หมายเหตุ"}
                                   </span>
                                 </div>
-                                <div className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`} />
+                                <div
+                                  className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`}
+                                />
                                 <div className="px-4 pt-3 pb-4">
                                   <p className="text-sm text-gray-700 leading-relaxed">
                                     {item.statusNote}
