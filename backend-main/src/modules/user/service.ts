@@ -1,4 +1,8 @@
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { and, desc, eq, or } from "drizzle-orm";
 import { NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -397,7 +401,10 @@ export class UserService {
   }
 
   async updateProfile(userId: string, data: userModel.createProfile) {
-    // 1. เช็ค User ก่อน (ไม่ต้องใช้ Transaction เพราะเป็นแค่การอ่าน)
+    const userProfile = await db.query.studentProfiles.findFirst({
+      where: eq(studentProfiles.userId, userId),
+    });
+
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
     });
@@ -405,6 +412,7 @@ export class UserService {
     if (!user) throw new NotFoundError("ไม่พบผู้ใช้งานในระบบ");
 
     let imagePath: string | undefined;
+    const oldImagePath = userProfile?.image;
 
     if (data.image) {
       const fileExt = data.image.name.split(".").pop() || "png";
@@ -421,7 +429,6 @@ export class UserService {
       });
 
       await s3Client.send(uploadCommand);
-
       imagePath = fileName;
     }
 
@@ -441,12 +448,24 @@ export class UserService {
       }
     });
 
+    if (imagePath && oldImagePath) {
+      try {
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: oldImagePath,
+        });
+        await s3Client.send(deleteCommand);
+      } catch (error) {
+        console.error("Failed to delete old image from MinIO:", error);
+      }
+    }
+
     return {
       success: true,
       message: "ตั้งค่าโปรไฟล์และอัปโหลดรูปภาพสำเร็จ",
       data: {
         nickname: data.nickname || user.displayUsername,
-        imageUrl: imagePath,
+        imageUrl: imagePath || oldImagePath,
       },
     };
   }
