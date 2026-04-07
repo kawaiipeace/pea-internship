@@ -103,10 +103,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   // Figma: radio toggles for position count and apply period
   const [isUnlimitedCount, setIsUnlimitedCount] = useState(false);
   const [isNoTimeLimit, setIsNoTimeLimit] = useState(false);
-  // Tooltip visibility for location
-  const [showLocationTooltip, setShowLocationTooltip] = useState(false);
   // Tooltip visibility for qualifications
-  const [showQualificationsTooltip, setShowQualificationsTooltip] = useState(false);
+  const [showQualificationsTooltip, setShowQualificationsTooltip] =
+    useState(false);
 
   // Compute announcement status from dates (for conditional sidebar)
   const computedStatus = (() => {
@@ -589,7 +588,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           try {
             await userApi.updateStaffPhone(mentor.staffProfileId, mentor.phone);
           } catch (err) {
-            console.warn(`Failed to update mentor phone for staffProfileId ${mentor.staffProfileId}:`, err);
+            console.warn(
+              `Failed to update mentor phone for staffProfileId ${mentor.staffProfileId}:`,
+              err,
+            );
           }
         }
       }
@@ -766,7 +768,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 <label
                   className={`block text-sm font-medium mb-1 ${errors.title ? "text-red-500" : "text-gray-700"}`}
                 >
-                  ชื่อตำแหน่งงาน *
+                  <span>ชื่อตำแหน่งงาน</span>
+                  <span className="text-red-500"> *</span>
                 </label>
                 <input
                   type="text"
@@ -790,7 +793,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 text-gray-700">
-                    กองงาน *
+                    <span>กองงาน</span>
+                    <span className="text-red-500"> *</span>
                   </label>
                   <input
                     type="text"
@@ -804,40 +808,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   <label
                     className={`block text-sm font-medium mb-1 ${errors.location ? "text-red-500" : "text-gray-700"}`}
                   >
-                    <span className="flex items-center gap-1">
-                      สถานที่ปฏิบัติงาน *
-                      <span className="relative inline-block">
-                        <button
-                          type="button"
-                          onMouseEnter={() => setShowLocationTooltip(true)}
-                          onMouseLeave={() => setShowLocationTooltip(false)}
-                          onClick={() =>
-                            setShowLocationTooltip(!showLocationTooltip)
-                          }
-                          className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        </button>
-                        {showLocationTooltip && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50">
-                            เช่น การไฟฟ้าสำนักงานใหญ่ กรุงเทพฯ อาคาร 4 ชั้น 7
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-                          </div>
-                        )}
-                      </span>
-                    </span>
+                    <span>สถานที่ปฏิบัติงาน</span>
+                    <span className="text-red-500"> *</span>
                   </label>
                   <input
                     type="text"
@@ -852,6 +824,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                         : "border-gray-200 focus:ring-primary-600"
                     } focus:outline-none focus:ring-2`}
                   />
+                  <p className="text-gray-500 text-sm mt-2">
+                    เช่น การไฟฟ้าสำนักงานใหญ่ กรุงเทพฯ อาคาร 4 ชั้น 7
+                  </p>
                   {errors.location && (
                     <p className="text-red-500 text-xs mt-1">
                       {errors.location}
@@ -865,7 +840,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 <label
                   className={`block text-sm font-medium mb-2 ${errors.maxApplicants ? "text-red-500" : "text-gray-700"}`}
                 >
-                  จำนวนผู้สมัครที่เปิดรับ *
+                  <span>จำนวนผู้สมัครที่เปิดรับ</span>
+                  <span className="text-red-500"> *</span>
                 </label>
                 <div className="flex items-center gap-6">
                   {/* Option 1: Unlimited */}
@@ -941,7 +917,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 <label
                   className={`block text-sm font-medium mb-1 ${errors.relatedFields ? "text-red-500" : "text-gray-700"}`}
                 >
-                  สาขาวิชาที่เกี่ยวข้อง (เพิ่มได้มากกว่า 1 สาขา) *
+                  <span>สาขาวิชาที่เกี่ยวข้อง (เพิ่มได้มากกว่า 1 สาขา)</span>
+                  <span className="text-red-500"> *</span>
                 </label>
 
                 {/* Added Fields */}
@@ -1151,7 +1128,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <label
                       className={`block text-sm font-medium mb-1 ${errors.startDate ? "text-red-500" : "text-gray-700"}`}
                     >
-                      วันที่เปิดรับสมัคร *
+                      <span>วันที่เปิดรับสมัคร</span>
+                      <span className="text-red-500"> *</span>
                     </label>
                     <div className="relative">
                       <svg
@@ -1189,7 +1167,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <label
                       className={`block text-sm font-medium mb-1 ${errors.endDate ? "text-red-500" : "text-gray-700"}`}
                     >
-                      วันที่ปิดรับสมัคร *
+                      <span>วันที่ปิดรับสมัคร</span>
+                      <span className="text-red-500"> *</span>
                     </label>
                     <div className="relative">
                       <svg
@@ -1328,7 +1307,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 <label
                   className={`block text-sm font-medium mb-1 ${errors.responsibilities ? "text-red-500" : "text-gray-700"}`}
                 >
-                  ลักษณะงาน *
+                  <span>ลักษณะงาน</span>
+                  <span className="text-red-500"> *</span>
                 </label>
 
                 <div className="space-y-2 mb-2">
@@ -1401,44 +1381,45 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 <label
                   className={`block text-sm font-medium mb-1 ${errors.qualifications ? "text-red-500" : "text-gray-700"}`}
                 >
-                  คุณสมบัติ *
+                  <span>คุณสมบัติ</span>
+                  <span className="text-red-500"> *</span>
                   <span className="relative inline-block ml-1">
-                        <button
-                          type="button"
-                          onMouseEnter={() => setShowQualificationsTooltip(true)}
-                          onMouseLeave={() => setShowQualificationsTooltip(false)}
-                          onClick={() =>
-                            setShowQualificationsTooltip(!showQualificationsTooltip)
-                          }
-                          className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        </button>
-                        {showQualificationsTooltip && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50">
-                            <p className="mb-1">เช่น</p>
-                            <ul className="list-disc list-inside space-y-0.5">
-                              <li>กำลังศึกษาอยู่ชั้นปริญญาตรี</li>
-                              <li>มีทักษะการสื่อสารทำงานเป็นทีม</li>
-                              <li>สามารถฝึกงานเต็ม 5 วันต่อสัปดาห์</li>
-                              <li>มีความสนใจในการเรียนรู้เทคโนโลยีใหม่ๆ</li>
-                            </ul>
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
-                          </div>
-                        )}
-                      </span>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setShowQualificationsTooltip(true)}
+                      onMouseLeave={() => setShowQualificationsTooltip(false)}
+                      onClick={() =>
+                        setShowQualificationsTooltip(!showQualificationsTooltip)
+                      }
+                      className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </button>
+                    {showQualificationsTooltip && (
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50">
+                        <p className="mb-1">เช่น</p>
+                        <ul className="list-disc list-inside space-y-0.5">
+                          <li>กำลังศึกษาอยู่ชั้นปริญญาตรี</li>
+                          <li>มีทักษะการสื่อสารทำงานเป็นทีม</li>
+                          <li>สามารถฝึกงานเต็ม 5 วันต่อสัปดาห์</li>
+                          <li>มีความสนใจในการเรียนรู้เทคโนโลยีใหม่ๆ</li>
+                        </ul>
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800"></div>
+                      </div>
+                    )}
+                  </span>
                 </label>
 
                 <div className="space-y-2 mb-2">
@@ -1587,7 +1568,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   <label
                     className={`block text-sm font-medium mb-1 ${errors.contactName ? "text-red-500" : "text-gray-700"}`}
                   >
-                    ชื่อผู้ประกาศรับสมัคร *
+                    <span>ชื่อผู้ประกาศรับสมัคร</span>
+                    <span className="text-red-500"> *</span>
                   </label>
                   <input
                     type="text"
@@ -1607,7 +1589,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <label
                       className={`block text-sm font-medium mb-1 ${errors.contactEmail ? "text-red-500" : "text-gray-700"}`}
                     >
-                      อีเมลผู้ประกาศรับสมัคร *
+                      <span>อีเมลผู้ประกาศรับสมัคร</span>
+                      <span className="text-red-500"> *</span>
                     </label>
                     <input
                       type="email"
@@ -1625,7 +1608,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                     <label
                       className={`block text-sm font-medium mb-1 ${errors.contactPhone ? "text-red-500" : "text-gray-700"}`}
                     >
-                      เบอร์โทรผู้ประกาศรับสมัคร *
+                      <span>เบอร์โทรผู้ประกาศรับสมัคร</span>
+                      <span className="text-red-500"> *</span>
                     </label>
                     <input
                       type="tel"
@@ -1697,7 +1681,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   className="relative mb-4"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ชื่อพี่เลี้ยง *
+                    <span>ชื่อพี่เลี้ยง</span>
+                    <span className="text-red-500"> *</span>
                   </label>
                   <button
                     type="button"
@@ -1777,7 +1762,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      อีเมลพี่เลี้ยง *
+                      <span>อีเมลพี่เลี้ยง</span>
+                      <span className="text-red-500"> *</span>
                     </label>
                     <input
                       type="email"
@@ -1801,7 +1787,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      เบอร์โทรพี่เลี้ยง *
+                      <span>เบอร์โทรพี่เลี้ยง</span>
+                      <span className="text-red-500"> *</span>
                     </label>
                     <input
                       type="tel"
