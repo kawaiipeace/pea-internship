@@ -15,8 +15,8 @@ export const file = new Elysia({
       const { key } = params;
       const result = await fileService.getFile(key);
 
-      set.status = 200;
-      return result;
+      set.headers["Content-Type"] = result.contentType;
+      return result.buffer;
     },
     {
       auth: true,
