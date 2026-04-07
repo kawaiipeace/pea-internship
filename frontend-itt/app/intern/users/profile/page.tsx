@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axiosInstance from '@/api/axios';
 import useAuthStore from '@/store/authStore';
+import Swal from 'sweetalert2';
 
 const ProfilePage = () => {
     // Progress State
@@ -49,12 +50,22 @@ const ProfilePage = () => {
 
         // validate type
         if (!file.type.startsWith('image/')) {
-            alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+            Swal.fire({
+                icon: 'error',
+                title: 'ไฟล์ไม่ถูกต้อง',
+                text: 'กรุณาเลือกไฟล์รูปภาพเท่านั้น',
+                confirmButtonColor: '#9A0D8A',
+            });
             return;
         }
         // validate size (5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert('ขนาดไฟล์ต้องไม่เกิน 5 MB');
+            Swal.fire({
+                icon: 'error',
+                title: 'ไฟล์ใหญ่เกินไป',
+                text: 'ขนาดไฟล์ต้องไม่เกิน 5 MB',
+                confirmButtonColor: '#9A0D8A',
+            });
             return;
         }
 
@@ -74,7 +85,12 @@ const ProfilePage = () => {
             console.error('Error uploading profile image:', error);
             // revert preview on error
             setProfileImage(null);
-            alert('อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+            Swal.fire({
+                icon: 'error',
+                title: 'อัปโหลดล้มเหลว',
+                text: 'อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง',
+                confirmButtonColor: '#9A0D8A',
+            });
         } finally {
             setIsUploadingImage(false);
             // reset input so same file can be selected again
@@ -82,7 +98,7 @@ const ProfilePage = () => {
         }
     };
 
-    const actionSetUser = useAuthStore((state) => state.actionSetUser);
+    const { user, actionSetUser } = useAuthStore();
 
     // ── Fetch student profile from /user/student ──────────────────────────────
     const fetchStudentProfile = useCallback(async () => {
@@ -114,7 +130,8 @@ const ProfilePage = () => {
                         ? `${formatDate(profile.startDate)} - ${formatDate(profile.endDate)}`
                         : '';
 
-                setUserData({
+                setUserData((prev) => ({
+                    ...prev,
                     nickname: data.displayUsername ?? '',              // ชื่อเล่น
                     gender: data.gender ?? '',                         // MALE / FEMALE / OTHER
                     email: data.email ?? '',
@@ -123,9 +140,7 @@ const ProfilePage = () => {
                     institution: profile.major ?? '',                  // สาขา
                     period,                                            // วันเริ่ม - วันสิ้นสุด
                     hoursRequired: profile.hours ? `${profile.hours} ชั่วโมง` : '',
-                    department: '',   // ยังไม่มีใน response นี้
-                    position: '',     // ยังไม่มีใน response นี้
-                });
+                }));
             }
         } catch (error) {
             console.error('Error fetching student profile:', error);
@@ -140,8 +155,11 @@ const ProfilePage = () => {
             const historyRes = await axiosInstance.get('/applications/history/me');
             const history: any[] = historyRes.data ?? [];
 
+            console.log('Internship history:', history);
+
             // หา active record ล่าสุด
             const activeApp = history.find((h) => h.isActive) ?? history[0];
+            console.log('Active application:', activeApp);
             if (!activeApp) return;
 
             const positionName: string = activeApp.positionName ?? '';
@@ -155,11 +173,12 @@ const ProfilePage = () => {
             if (!departmentId) return;
 
             // ดึง mentor จาก /position?departmentId=xxx
-            const posRes = await axiosInstance.get(`/position?departmentId=${departmentId}`);
+            const posRes = await axiosInstance.get(`/position?department=${departmentId}`);
             const positions: any[] = posRes.data?.data ?? posRes.data ?? [];
+            console.log('Fetched positions for dept:', departmentId, positions);
 
-            // หา position ที่ตรงกับ positionId ของ active app
             const matchedPos = positions.find((p: any) => p.id === activeApp.positionId) ?? positions[0];
+            console.log('Matched position:', matchedPos);
 
             // ชื่อกองงาน จาก department
             const deptName: string =
@@ -218,10 +237,111 @@ const ProfilePage = () => {
         setTempValue(userData[field]);
     };
 
-    const confirmEdit = () => {
-        if (editingField) {
-            setUserData((prev) => ({ ...prev, [editingField]: tempValue }));
-            setEditingField(null);
+    const confirmEdit = async () => {
+        if (!editingField) return;
+
+        if (editingField === 'nickname') {
+            try {
+                setIsLoading(true);
+                const formData = new FormData();
+                formData.append('nickname', tempValue);
+
+                const response = await axiosInstance.put('/user/student/itt/profile', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+
+                if (response.data.success) {
+                    const updatedNickname = response.data.data.nickname;
+                    
+                    // Update local state
+                    setUserData((prev) => ({ ...prev, nickname: updatedNickname }));
+                    
+                    // Update global state
+                    if (user) {
+                        actionSetUser({
+                            ...user,
+                            displayUsername: updatedNickname,
+                        });
+                    }
+                    
+                    
+                    Swal.fire({
+                        html: `
+                          <div class="flex flex-col items-center">
+                            <div class="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
+                              <div class="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
+                                <span class="material-symbols-rounded text-[28px]">check</span>
+                              </div>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">อัปเดตชื่อเล่นเรียบร้อยแล้ว</h3>
+                          </div>
+                        `,
+                        showConfirmButton: false,
+                        timer: 1500,
+                        customClass: {
+                            popup: 'rounded-[20px] p-8',
+                        },
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating nickname:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'อัปเดตไม่สำเร็จ',
+                    text: 'ไม่สามารถอัปเดตชื่อเล่นได้ กรุณาลองใหม่อีกครั้ง',
+                    confirmButtonColor: '#9A0D8A',
+                });
+            } finally {
+                setIsLoading(false);
+                setEditingField(null);
+            }
+        } else if (editingField === 'email') {
+            try {
+                setIsLoading(true);
+                const response = await axiosInstance.put('/user/update', { email: tempValue });
+
+                if (response.data) {
+                    // Update local state
+                    setUserData((prev) => ({ ...prev, email: tempValue }));
+                    
+                    // Update global state
+                    if (user) {
+                        actionSetUser({
+                            ...user,
+                            email: tempValue,
+                        });
+                    }
+                    
+                    Swal.fire({
+                        html: `
+                          <div class="flex flex-col items-center">
+                            <div class="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
+                              <div class="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
+                                <span class="material-symbols-rounded text-[28px]">check</span>
+                              </div>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">อัปเดตอีเมลเรียบร้อยแล้ว</h3>
+                          </div>
+                        `,
+                        showConfirmButton: false,
+                        timer: 1500,
+                        customClass: {
+                            popup: 'rounded-[20px] p-8',
+                        },
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating email:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'อัปเดตไม่สำเร็จ',
+                    text: 'ไม่สามารถอัปเดตอีเมลได้ กรุณาลองใหม่อีกครั้ง',
+                    confirmButtonColor: '#9A0D8A',
+                });
+            } finally {
+                setIsLoading(false);
+                setEditingField(null);
+            }
         }
     };
 
@@ -283,9 +403,9 @@ const ProfilePage = () => {
                                 type="button"
                                 onClick={handleAvatarClick}
                                 disabled={isUploadingImage}
-                                className="absolute bottom-0 right-0 w-[28px] h-[28px] bg-[#FED8F6] dark:bg-[#1b2e4b] border-[1.5px] border-pink-200 dark:border-gray-600 rounded-full flex items-center justify-center text-[#A80689] dark:text-[#B10073] shadow-sm hover:bg-pink-200 transition-colors disabled:opacity-50"
+                                className="absolute bottom-0 right-0 w-[32px] h-[32px] bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-600 shadow-md hover:bg-gray-50 transition-colors disabled:opacity-50"
                             >
-                                <span className="material-symbols-outlined text-[14px] scale-[0.8]">edit_square</span>
+                                <span className="material-symbols-outlined text-[18px]">photo_camera</span>
                             </button>
                         </div>
                     </div>
@@ -438,9 +558,9 @@ const ProfilePage = () => {
                             type="button"
                             onClick={handleAvatarClick}
                             disabled={isUploadingImage}
-                            className="absolute bottom-0 right-0 w-[28px] h-[28px] bg-[#FED8F6] dark:bg-[#1b2e4b] border-[1.5px] border-pink-200 dark:border-gray-600 rounded-full flex items-center justify-center text-[#A80689] dark:text-[#B10073] shadow-sm hover:bg-pink-200 transition-colors disabled:opacity-50"
+                            className="absolute bottom-0 right-0 w-[32px] h-[32px] bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-600 shadow-md hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
-                            <span className="material-symbols-outlined text-[14px] scale-[0.8] text-[#A80689]">edit_square</span>
+                            <span className="material-symbols-outlined text-[18px]">photo_camera</span>
                         </button>
                     </div>
                     <div className="flex flex-col flex-1 w-full mt-2 md:mt-0">
