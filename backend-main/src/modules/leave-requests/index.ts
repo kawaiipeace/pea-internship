@@ -48,6 +48,24 @@ export const leave = new Elysia({
     }
   )
 
+  .delete(
+    "/:id",
+    async ({ params: { id }, set, user }) => {
+      const response = await leaveService.deleteLeaveRequest(user.id, id);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [3],
+      params: model.params,
+      detail: {
+        summary: "ยกเลิกคำขอลา (Cancel/Delete Leave Request)",
+        description: "ลบรายการลาที่ส่งไปแล้ว (ลบได้เฉพาะสถานะ PENDING และต้องเป็นเจ้าของเท่านั้น)",
+      },
+    }
+  )
+
   .get(
     "/history",
     async ({ query, set, user }) => {
