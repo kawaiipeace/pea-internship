@@ -184,23 +184,23 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* Status Badge below time */}
                     <div className="mt-1">
                         {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
-                            <div className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold gap-2 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
-                                <div className="w-5 h-5 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">check</span>
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
+                                <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px] text-white">check</span>
                                 </div>
                                 เข้างานปกติ
                             </div>
                         ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
-                            <div className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold gap-2 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
-                                <div className="w-5 h-5 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0">
-                                    <IconClock className="w-3 h-3 text-white" />
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
+                                <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">schedule</span>
                                 </div>
                                 สาย
                             </div>
                         ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
-                            <div className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-bold gap-2 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
-                                <div className="w-5 h-5 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0">
-                                    <IconX className="w-2.5 h-2.5 text-white" />
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
+                                <div className="w-4 h-4 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] translate-y-[0.5px]">close</span>
                                 </div>
                                 ขาด
                             </div>
@@ -398,23 +398,23 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* Status Badge below time */}
                     <div className="mt-1">
                         {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
-                            <div className="inline-flex items-center px-4 py-1.2 rounded-full text-[13px] font-medium gap-2 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
-                                <div className="w-5 h-5 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center text-white">check</span>
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
+                                <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px] text-white">check</span>
                                 </div>
                                 เข้างานปกติ
                             </div>
                         ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
-                            <div className="inline-flex items-center px-4 py-1.2 rounded-full text-[13px] font-medium gap-2 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
-                                <div className="w-5 h-5 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0">
-                                    <IconClock className="w-3 h-3 text-white" />
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
+                                <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">schedule</span>
                                 </div>
                                 สาย
                             </div>
                         ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
-                            <div className="inline-flex items-center px-4 py-1.2 rounded-full text-[13px] font-medium gap-2 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
-                                <div className="w-5 h-5 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0">
-                                    <IconX className="w-2.5 h-2.5 text-white" />
+                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
+                                <div className="w-4 h-4 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] translate-y-[0.5px]">close</span>
                                 </div>
                                 ขาด
                             </div>
