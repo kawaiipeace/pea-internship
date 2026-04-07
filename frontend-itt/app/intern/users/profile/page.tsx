@@ -480,7 +480,9 @@ const ProfilePage = () => {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[13px] font-bold text-[#2a303b] dark:text-gray-300">เพศ</span>
-                                <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">{userData.gender || '-'}</span>
+                                <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {userData.gender === 'MALE' ? 'ผู้ชาย' : userData.gender === 'FEMALE' ? 'ผู้หญิง' : userData.gender || '-'}
+                                </span>
                             </div>
                         </div>
 
@@ -631,7 +633,7 @@ const ProfilePage = () => {
                                 <label className="text-[15px] font-bold text-[#2a303b] dark:text-gray-300">เพศ</label>
                                 <input
                                     type="text"
-                                    value={userData.gender}
+                                    value={userData.gender === 'MALE' ? 'ผู้ชาย' : userData.gender === 'FEMALE' ? 'ผู้หญิง' : userData.gender}
                                     readOnly
                                     className="w-full text-[14px] font-medium text-[#6b7280] dark:text-gray-400 bg-[#ECECED] dark:bg-black/20 border border-transparent rounded-[6px] py-[10px] px-4 cursor-not-allowed"
                                 />
