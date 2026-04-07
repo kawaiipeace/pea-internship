@@ -2,6 +2,8 @@
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
 import Flatpickr from "react-flatpickr";
+import axiosInstance from "@/api/axios";
+import Swal from "sweetalert2";
 
 // สร้าง Interface สำหรับจัดการ Error ของแต่ละช่อง
 interface FormErrors {
@@ -16,6 +18,7 @@ const LeaveRequestPage = () => {
   const [leaveType, setLeaveType] = useState<"sick" | "personal" | "">("");
   const [details, setDetails] = useState("");
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // State สำหรับจัดการ Error
   const [errors, setErrors] = useState<FormErrors>({});
@@ -96,28 +99,77 @@ const LeaveRequestPage = () => {
     setIsConfirmOpen(true);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setIsConfirmOpen(false);
-    setIsSuccessOpen(true);
+    setIsSubmitting(true);
 
-    // TODO: Implement actual API submission
-    console.log("Form submitted:", {
-      leaveDate,
-      leaveType,
-      details,
-      attachment,
-    });
+    try {
+      const formatDate = (date: any) => {
+        if (!date) return "";
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
 
-    // Auto close success modal after 2 seconds and reset form
-    setTimeout(() => {
-      setIsSuccessOpen(false);
+      const startDate = formatDate(Array.isArray(leaveDate) ? leaveDate[0] : leaveDate);
+      const endDate = formatDate(Array.isArray(leaveDate) && leaveDate.length > 1 ? leaveDate[leaveDate.length - 1] : (Array.isArray(leaveDate) ? leaveDate[0] : leaveDate));
+
+      const formData = new FormData();
+      formData.append("startDate", startDate);
+      formData.append("endDate", endDate);
+      formData.append("leaveType", leaveType === "sick" ? "SICK" : "ABSENCE");
+      formData.append("reason", details);
+      if (attachment) {
+        formData.append("attachment", attachment);
+      }
+
+      await axiosInstance.post("/leave", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      Swal.fire({
+        html: `
+          <div class="flex flex-col items-center">
+            <div class="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#e6f8ef]">
+              <div class="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#11A75C] text-white">
+                <span class="material-symbols-rounded text-[28px]">check</span>
+              </div>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800">ส่งคำขอลาสำเร็จ</h3>
+          </div>
+        `,
+        showConfirmButton: false,
+        timer: 2000,
+        customClass: {
+          popup: "rounded-[20px] p-8",
+        },
+      });
+
+      // Reset form
       setLeaveDate("");
       setLeaveType("");
       setDetails("");
       setAttachment(null);
       setErrors({});
       if (fileInputRef.current) fileInputRef.current.value = "";
-    }, 2000);
+      
+      // Navigate after success or stay? User plan said reset form or redirect. 
+      // I'll stay for now as it's a "history" page link nearby.
+    } catch (error: any) {
+      console.error("Error submitting leave request:", error);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: error.response?.data?.message || "ไม่สามารถส่งคำขอลาได้ กรุณาลองใหม่อีกครั้ง",
+        confirmButtonColor: "#A80689",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -400,9 +452,18 @@ const LeaveRequestPage = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#A80689] px-6 py-3 text-[15px] font-bold text-white shadow-sm transition-all duration-300 hover:bg-[#8e0e6f] dark:bg-[#A80689] dark:hover:bg-[#8e0e6f] sm:flex-1"
+                  disabled={isSubmitting}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#A80689] px-6 py-3 text-[15px] font-bold text-white shadow-sm transition-all duration-300 hover:bg-[#8e0e6f] dark:bg-[#A80689] dark:hover:bg-[#8e0e6f] sm:flex-1 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  ส่งคำขอลา
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      กำลังส่ง...
+                    </>
+                  ) : "ส่งคำขอลา"}
                 </button>
               </div>
 

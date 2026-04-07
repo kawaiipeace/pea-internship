@@ -105,14 +105,14 @@ const LeaveHistoryPage = () => {
     // Summary Data for Leave History
     const summaryData = [
         { title: 'ลาทั้งหมด', days: 4, icon: 'lab_profile', bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
-        { title: 'ลากิจ', days: 2, icon: 'lab_profile', bgColor: 'bg-[#E8EAF6] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#3F51B5]', hoverBorderClass: 'hover:border-[#3F51B5]' },
-        { title: 'ลาป่วย', days: 2, icon: 'lab_profile', bgColor: 'bg-[#FCE4EC] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
+        { title: 'ลากิจ', days: 2, icon: 'business_center', bgColor: 'bg-[#E2E4FF] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#1A3CFF]', hoverBorderClass: 'hover:border-[#1A3CFF]' },
+        { title: 'ลาป่วย', days: 2, icon: 'health_cross', bgColor: 'bg-[#FFD7EF] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
     ];
 
     const [historyData, setHistoryData] = useState([
         {
             id: 0,
-            date: '1', month: 'ม.ค.', labelMobile: '1 มกราคม', time: 'ลางานเต็มวัน', status: 'ไม่อนุมัติการลา', statusType: 'danger',
+            date: '1', month: 'ม.ค.', year: '2569', labelMobile: '1 มกราคม', time: 'ลางานเต็มวัน', status: 'ไม่อนุมัติการลา', statusType: 'danger',
             isLeave: true,
             statusText: 'ไม่อนุมัติการลา',
             location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
@@ -124,7 +124,7 @@ const LeaveHistoryPage = () => {
         },
         {
             id: 1,
-            date: '13', month: 'ม.ค.', labelMobile: '13 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
+            date: '13', month: 'ม.ค.', year: '2569', labelMobile: '13 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
             isLeave: true,
             statusText: 'อนุมัติการลา',
             location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
@@ -136,7 +136,7 @@ const LeaveHistoryPage = () => {
         },
         {
             id: 2,
-            date: '12', month: 'ม.ค.', labelMobile: '12 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
+            date: '12', month: 'ม.ค.', year: '2569', labelMobile: '12 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
             isLeave: true,
             statusText: 'อนุมัติการลา',
             location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
@@ -148,7 +148,7 @@ const LeaveHistoryPage = () => {
         },
         {
             id: 3,
-            date: '9', month: 'ม.ค.', labelMobile: '9 มกราคม', time: 'เวลาทำงาน 13:00 - 16:30', status: 'อนุมัติการลา', statusType: 'success',
+            date: '9', month: 'ม.ค.', year: '2569', labelMobile: '9 มกราคม', time: 'เวลาทำงาน 13:00 - 16:30', status: 'อนุมัติการลา', statusType: 'success',
             isLeave: true,
             statusText: 'อนุมัติการลา',
             location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
@@ -160,7 +160,7 @@ const LeaveHistoryPage = () => {
         },
         {
             id: 4,
-            date: '8', month: 'ม.ค.', labelMobile: '8 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
+            date: '8', month: 'ม.ค.', year: '2569', labelMobile: '8 มกราคม', time: 'ลางานเต็มวัน', status: 'อนุมัติการลา', statusType: 'success',
             isLeave: true,
             statusText: 'อนุมัติการลา',
             location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
@@ -172,9 +172,9 @@ const LeaveHistoryPage = () => {
         },
         {
             id: 5,
-            date: '14', month: 'ม.ค.', labelMobile: '14 มกราคม', time: 'ลางานเต็มวัน', status: 'รอการอนุมัติ', statusType: 'warning',
+            date: '14', month: 'ม.ค.', year: '2569', labelMobile: '14 มกราคม', time: 'ลางานเต็มวัน', status: 'รออนุมัติการลา', statusType: 'warning',
             isLeave: true,
-            statusText: 'รอการอนุมัติ',
+            statusText: 'รออนุมัติการลา',
             location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
             leaveDuration: 'ลาเต็มวัน',
             leaveType: 'ลากิจ',
@@ -184,9 +184,9 @@ const LeaveHistoryPage = () => {
         },
         {
             id: 6,
-            date: '15', month: 'ม.ค.', labelMobile: '15 มกราคม', time: 'ลางานเต็มวัน', status: 'รอการอนุมัติ', statusType: 'warning',
+            date: '15', month: 'ม.ค.', year: '2569', labelMobile: '15 มกราคม', time: 'ลางานเต็มวัน', status: 'รออนุมัติการลา', statusType: 'warning',
             isLeave: true,
-            statusText: 'รอการอนุมัติ',
+            statusText: 'รออนุมัติการลา',
             location: 'การไฟฟ้าส่วนภูมิภาค (สำนักงานใหญ่)',
             leaveDuration: 'ลาเต็มวัน',
             leaveType: 'ลาป่วย',
@@ -201,17 +201,14 @@ const LeaveHistoryPage = () => {
         : historyData;
 
     const getStatusBadge = (type: string, status: string) => {
-        let colorClass = '';
-        if (type === 'success') {
-            colorClass = 'w-[70px] h-[20px] bg-[#DCFAE6] text-[#085D3A] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
-        } else if (type === 'warning') {
-            colorClass = 'w-[70px] h-[20px] bg-[#F0F1F1] text-[#61646C] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
-        } else if (type === 'info') {
-            colorClass = 'w-[70px] h-[20px] bg-[#e5f5ff] text-[#3b82f6] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
-        } else if (type === 'danger') {
-            colorClass = 'w-[70px] h-[20px] bg-[#ffeaeb] text-[#ef4444] rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
+        let colorClass = "";
+
+        if (type === "success" || status === "อนุมัติการลา") {
+            colorClass = "px-3 py-1 bg-[#DCFAE6] text-[#067647] rounded-full text-[12px] whitespace-nowrap font-medium";
+        } else if (type === "danger" || status === "ไม่อนุมัติการลา") {
+            colorClass = "px-3 py-1 bg-[#FEE4E2] text-[#B42318] rounded-full text-[12px] whitespace-nowrap font-medium";
         } else {
-            colorClass = 'w-[70px] h-[20px] bg-[#F3F4F6] text-gray-400 rounded-[15px] flex items-center justify-center text-[10px] font-bold whitespace-nowrap';
+            colorClass = "px-3 py-1 bg-[#F0F1F1] text-[#61646C] rounded-full text-[12px] whitespace-nowrap font-medium";
         }
 
         return (
@@ -263,19 +260,19 @@ const LeaveHistoryPage = () => {
                                     key={index}
                                     type="button"
                                     onClick={() => setSelectedFilter(isSelected ? null : item.title)}
-                                    className={`w-[107px] sm:w-auto flex-none sm:flex-1 ${item.bgColor} flex flex-col sm:flex-row justify-between sm:justify-start items-start sm:items-center p-3 sm:px-4 sm:py-5 rounded-[14px] shadow-none h-[120px] sm:h-[90px] text-left transition-all border-2 ${isSelected ? item.activeBorderClass : `border-transparent hover:-translate-y-1 ${item.hoverBorderClass}`}`}
+                                    className={`w-[100px] sm:w-auto flex-none sm:flex-1 ${item.bgColor} flex flex-col sm:flex-row justify-between sm:justify-start items-center sm:items-center p-3 sm:px-4 sm:py-5 rounded-[12px] shadow-none h-[115px] sm:h-[90px] text-center sm:text-left transition-all border-2 ${isSelected ? item.activeBorderClass : `border-transparent hover:-translate-y-1 ${item.hoverBorderClass}`}`}
                                 >
-                                    <div className={`flex-shrink-0 flex items-center justify-center w-8 h-8 sm:w-11 sm:h-11 rounded-full ${
+                                    <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full ${
                                         item.title === 'ลาทั้งหมด' ? 'bg-[#03A9F4]' : 
-                                        item.title === 'ลากิจ' ? 'bg-[#3F51B5]' : 'bg-[#E91E63]'
+                                        item.title === 'ลากิจ' ? 'bg-[#1A3CFF]' : 'bg-[#FF1A7D]'
                                     } sm:mr-4`}>
-                                        <span className="material-symbols-rounded !text-[24px] sm:!text-[28px] text-white flex items-center justify-center">
+                                        <span className={`material-symbols-rounded !text-[24px] sm:!text-[28px] text-white flex items-center justify-center leading-none translate-x-[0.5px] ${item.icon === 'close' ? 'translate-y-[0.5px]' : '-translate-y-[0.5px]'}`}>
                                             {item.icon}
                                         </span>
                                     </div>
-                                    <div className="flex flex-col mt-3 sm:mt-0">
-                                        <div className="font-bold text-gray-800 dark:text-gray-200 text-[13px] sm:text-sm mb-1 sm:mb-0.5">{item.title}</div>
-                                        <div className="text-[16px] sm:text-[22px] font-bold text-black dark:text-white leading-none">{item.days} วัน</div>
+                                    <div className="flex flex-col mt-2 sm:mt-0">
+                                        <div className="font-bold text-gray-800 dark:text-gray-200 text-[13px] sm:text-[15px] mb-0.5 sm:mb-0.5 leading-tight">{item.title}</div>
+                                        <div className="text-[15px] sm:text-[22px] font-bold text-black dark:text-white leading-none">{item.days} วัน</div>
                                     </div>
                                 </button>
                             );
@@ -302,24 +299,24 @@ const LeaveHistoryPage = () => {
                             filteredHistoryData.map((item, index) => (
                                 <div
                                     key={index}
-                                    className={`w-full max-w-[349px] sm:max-w-none h-[98px] sm:h-[80px] flex flex-col sm:flex-row sm:items-center gap-[6px] sm:gap-[14px] border border-[#CECFD2] dark:border-gray-700 rounded-[14px] px-3.5 py-2.5 sm:px-4 sm:py-2 bg-white dark:bg-[#121212] overflow-hidden animate-[fadeIn_0.3s_ease-in-out] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-[1.01] mx-auto sm:mx-0`}
+                                    className={`relative w-full max-sm:min-h-0 sm:h-[88px] flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5 border border-[#CECFD2] dark:border-gray-700 rounded-[14px] p-3 sm:px-4 sm:py-2 bg-white dark:bg-[#121212] overflow-hidden animate-[fadeIn_0.3s_ease-in-out] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-[1.01] mx-auto sm:mx-0`}
                                     onClick={() => {
                                         setSelectedHistoryItem(item);
                                         setIsDetailModalOpen(true);
                                     }}
                                 >
                                     {/* Mobile Responsive Layout */}
-                                    <div className="sm:hidden flex flex-col w-full max-w-[317px] h-[74px] gap-[4px] relative">
-                                        <div className="flex items-center justify-between">
-                                            <div className="text-[14px] font-bold text-gray-800">
-                                                {item.date} {item.month.length > 3 ? item.month.substring(0, 3) + '.' : item.month} 2569
+                                    <div className="sm:hidden flex-1 flex flex-col justify-between sm:justify-center py-0.5 sm:gap-1 relative">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="text-[14px] text-[#000000]whitespace-nowrap">
+                                                {item.date} {item.month.length > 3 ? item.month.substring(0, 3) + '.' : item.month} {item.year || '2569'}
                                             </div>
-                                            <div className="flex items-center gap-1.5 translate-y-[-2px]">
+                                            <div className="flex items-center gap-1.5">
                                                 {getStatusBadge(item.statusType, item.status)}
                                                 {item.statusType === 'warning' && (
                                                     <button
                                                         type="button"
-                                                        className="text-gray-500 hover:text-red-500 transition-colors p-1"
+                                                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             Swal.fire({
@@ -362,24 +359,24 @@ const LeaveHistoryPage = () => {
                                             </div>
                                         </div>
                                         
-                                        <div className="font-bold text-[16px] text-[#1A1A1A] dark:text-gray-200">
-                                            {item.leaveDuration === 'ลาเต็มวัน' ? 'ลางานเต็มวัน' : item.time}
+                                        <div className="font-bold text-[16px] text-gray-900 dark:text-gray-100 leading-none mt-1">
+                                            ลางาน
                                         </div>
 
-                                        <div className="inline-flex mt-0.5">
+                                        <div className="inline-flex mt-1.5">
                                             {item.leaveType === 'ลากิจ' ? (
-                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                        <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4b5e71] border border-[#1A3CFF] rounded-full text-[10px] font-bold px-1 gap-1">
+                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#1A3CFF] shadow-sm overflow-hidden">
+                                                        <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0.5px]">business_center</span>
                                                     </div>
-                                                    <span className="leading-none">ลากิจ</span>
+                                                    <span className="leading-none text-gray-500">ลากิจ</span>
                                                 </div>
                                             ) : (
-                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
-                                                        <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4b5e71] border border-[#FF1A7D] rounded-full text-[10px] font-bold px-1 gap-1">
+                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D] shadow-sm overflow-hidden">
+                                                        <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0px]">health_cross</span>
                                                     </div>
-                                                    <span className="leading-none">ลาป่วย</span>
+                                                    <span className="leading-none text-gray-500">ลาป่วย</span>
                                                 </div>
                                             )}
                                         </div>
@@ -388,28 +385,32 @@ const LeaveHistoryPage = () => {
                                     {/* Desktop Layout */}
                                     <div className="hidden sm:flex items-center gap-[14px] w-full">
                                         {/* Desktop Date Badge */}
-                                        <div className="flex flex-col items-center justify-center bg-[#fcf2e3] dark:bg-orange-900/20 rounded-xl w-14 h-14 shrink-0 border border-[#f5e3cd] dark:border-none">
-                                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200 leading-none mb-1">{item.date}</span>
-                                            <span className="text-xs text-gray-800 dark:text-gray-300 font-semibold">{item.month}</span>
+                                        <div className="hidden sm:flex flex-col items-center justify-center bg-[#E4E7EC] dark:bg-gray-800 rounded-xl w-[70px] h-[70px] shrink-0 border border-[#CECFD2] dark:border-gray-700 px-1 text-center">
+                                            <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200 leading-tight mb-1">
+                                                {item.date} {item.month}
+                                            </span>
+                                            <span className="text-[14px] text-gray-800 dark:text-gray-300 font-bold leading-tight">
+                                                {item.year || '2569'}
+                                            </span>
                                         </div>
 
                                         {/* Details Container */}
-                                        <div className="flex flex-col w-full gap-2 sm:gap-2 pl-0 sm:pl-1 flex-1">
-                                            <div className="font-bold text-[14px] sm:text-[15px] text-gray-800 dark:text-gray-200">{item.time}</div>
+                                        <div className="flex flex-col w-full gap-2 sm:gap-1 pl-0 sm:pl-1 flex-1">
+                                            <div className="font-bold text-[16px] sm:text-[19px] text-gray-900 dark:text-gray-100 leading-none">ลางาน</div>
                                             <div className="inline-flex self-start">
                                                 {item.leaveType === 'ลากิจ' ? (
-                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                        <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                            <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                        <div className="w-[18px] h-[18px] rounded-full bg-[#1A3CFF] flex items-center justify-center shrink-0 shadow-sm overflow-hidden text-white">
+                                                            <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0px] -translate-y-[0.5px]">business_center</span>
                                                         </div>
-                                                        <span className="leading-none">ลากิจ</span>
+                                                        <span className="leading-none text-gray-500">ลากิจ</span>
                                                     </div>
                                                 ) : item.leaveType === 'ลาป่วย' ? (
-                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                        <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
-                                                            <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
+                                                        <div className="w-[18px] h-[18px] rounded-full bg-[#FF1A7D] flex items-center justify-center shrink-0 shadow-sm overflow-hidden text-white">
+                                                            <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0px] -translate-y-[0px]">health_cross</span>
                                                         </div>
-                                                        <span className="leading-none">ลาป่วย</span>
+                                                        <span className="leading-none text-gray-500">ลาป่วย</span>
                                                     </div>
                                                 ) : (
                                                     <div className="inline-flex items-center px-3 py-1 bg-[#f0f9ff] text-[#0ea5e9] border border-[#bae6fd] rounded-full text-xs font-bold gap-1.5">
@@ -420,7 +421,7 @@ const LeaveHistoryPage = () => {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3 ml-auto">
+                                        <div className="flex items-center gap-3 ml-auto sm:absolute sm:top-3 sm:right-4">
                                             {getStatusBadge(item.statusType, item.status)}
                                                 {item.statusType === 'warning' && (
                                                     <button
@@ -454,9 +455,8 @@ const LeaveHistoryPage = () => {
                                                                             popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
                                                                             title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
                                                                             htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                            confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
-                                                                        },
-                                                                        confirmButtonText: 'ตกลง'
+                                                                            confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2 px-10 rounded-[12px] text-[15px] mt-2'
+                                                                        }
                                                                     });
                                                                 }
                                                             });
@@ -566,23 +566,17 @@ const LeaveHistoryPage = () => {
                                                         {/* Mobile Bottom Sheet (Restored & Refined) */}
                                                         <div className="sm:hidden flex flex-col items-center">
                                                             {/* Header Region */}
-                                                            <div className="w-full h-auto flex flex-col pt-2 touch-none">
-                                                                <div className="flex items-center justify-between mt-2 mb-3">
-                                                                    <div className="text-[17px] font-bold text-gray-800 dark:text-gray-200">
+                                                            <div className="w-full h-auto flex flex-col pt-1 touch-none">
+                                                                <div className="flex items-center justify-between mt-1 mb-2">
+                                                                    <div className="text-[16px] font-bold text-gray-800 dark:text-gray-200">
                                                                         {selectedHistoryItem.date} {thaiMonthsFull[currentMonth]} {currentYear}
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <div className={`px-3 py-1 rounded-full text-[12px] font-bold ${
-                                                                            selectedHistoryItem.status === 'อนุมัติการลา' ? 'bg-[#E6F4EA] text-[#0D652D]' :
-                                                                            selectedHistoryItem.status === 'ไม่อนุมัติการลา' ? 'bg-[#FFE4E6] text-[#E11D48]' :
-                                                                            'bg-[#F0F1F1] text-[#61646C]'
-                                                                        }`}>
-                                                                            {selectedHistoryItem.status}
-                                                                        </div>
+                                                                        {getStatusBadge(selectedHistoryItem.statusType, selectedHistoryItem.status)}
                                                                         {selectedHistoryItem.status === 'รอการอนุมัติ' || selectedHistoryItem.status === 'รออนุมัติการลา' ? (
                                                                             <button
                                                                                 type="button"
-                                                                                className="text-gray-500 hover:text-red-500 transition-colors p-1"
+                                                                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
                                                                                     Swal.fire({
@@ -620,29 +614,29 @@ const LeaveHistoryPage = () => {
                                                                                     });
                                                                                 }}
                                                                             >
-                                                                                <IconTrash className="w-[20px] h-[20px]" />
+                                                                                <IconTrash className="w-[18px] h-[18px]" />
                                                                             </button>
                                                                         ) : null}
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="text-[20px] font-bold text-[#1A1A1A] dark:text-white mb-2">
-                                                                    {selectedHistoryItem.leaveDuration === 'ลาเต็มวัน' ? 'ลางานเต็มวัน' : selectedHistoryItem.time}
+                                                                <div className="text-[19px] font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                                                                    ลางาน
                                                                 </div>
 
                                                                 {/* Leave Type Tag */}
-                                                                <div className="mb-4">
+                                                                <div className="mb-3">
                                                                     {selectedHistoryItem.leaveType === 'ลากิจ' ? (
-                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                                                <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4b5e71] border border-[#1A3CFF] rounded-full text-[10px] font-bold px-1 gap-1">
+                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#1A3CFF] shadow-sm overflow-hidden">
+                                                                                <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0.5px]">business_center</span>
                                                                             </div>
                                                                             <span className="leading-none text-gray-500">ลากิจ</span>
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
-                                                                                <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4b5e71] border border-[#FF1A7D] rounded-full text-[10px] font-bold px-1 gap-1">
+                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D] shadow-sm overflow-hidden">
+                                                                                <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0px]">health_cross</span>
                                                                             </div>
                                                                             <span className="leading-none text-gray-500">ลาป่วย</span>
                                                                         </div>
@@ -650,7 +644,7 @@ const LeaveHistoryPage = () => {
                                                                 </div>
 
                                                                 {/* Divider */}
-                                                                <hr className="w-full h-[1px] bg-[#ECECED] border-none mb-4" />
+                                                                <hr className="w-full h-[1px] bg-[#ECECED] border-none mb-3" />
                                                             </div>
 
                                                             {/* Reasoning Section */}
@@ -710,7 +704,7 @@ const LeaveHistoryPage = () => {
                                                                 </div>
 
                                                                 <div className="text-[18px] sm:text-[22px] font-bold text-[#1A1A1A] dark:text-white mb-2">
-                                                                    {selectedHistoryItem.leaveDuration === 'ลาเต็มวัน' ? 'ลางานเต็มวัน' : selectedHistoryItem.time}
+                                                                    ลางาน
                                                                 </div>
 
                                                                 {/* Tag */}
@@ -746,16 +740,16 @@ const LeaveHistoryPage = () => {
                                                                     <div className="text-[12px] font-bold text-gray-400">ประเภทการลา :</div>
                                                                     <div className="pt-0.5">
                                                                         {selectedHistoryItem.leaveType === 'ลากิจ' ? (
-                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4B5E71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
-                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#4F46E5] flex items-center justify-center text-white shrink-0">
-                                                                                    <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4B5E71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
+                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#1A3CFF] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                                                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0.5px]">business_center</span>
                                                                                 </div>
                                                                                 ลากิจ
                                                                             </div>
                                                                         ) : selectedHistoryItem.leaveType === 'ลาป่วย' ? (
-                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4B5E71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
-                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#FF1A7D] flex items-center justify-center text-white shrink-0">
-                                                                                    <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
+                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4B5E71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
+                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#FF1A7D] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                                                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0px]">health_cross</span>
                                                                                 </div>
                                                                                 ลาป่วย
                                                                             </div>
