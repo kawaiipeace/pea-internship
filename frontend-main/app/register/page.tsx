@@ -768,7 +768,7 @@ export default function RegisterPage() {
                       : "text-gray-800 font-semibold"
                   }`}
                 >
-                  ชื่อ <span className="text-primary-600">*</span>
+                  ชื่อ <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -801,7 +801,7 @@ export default function RegisterPage() {
                       : "text-gray-800 font-semibold"
                   }`}
                 >
-                  นามสกุล <span className="text-primary-600">*</span>
+                  นามสกุล <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -837,7 +837,7 @@ export default function RegisterPage() {
                       : "text-gray-800 font-semibold"
                   }`}
                 >
-                  อีเมล <span className="text-primary-600">*</span>
+                  อีเมล <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -870,7 +870,7 @@ export default function RegisterPage() {
                       : "text-gray-800 font-semibold"
                   }`}
                 >
-                  เบอร์โทร <span className="text-primary-600">*</span>
+                  เบอร์โทร <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -905,7 +905,7 @@ export default function RegisterPage() {
                     : "text-gray-800 font-semibold"
                 }`}
               >
-                เพศ <span className="text-primary-600">*</span>
+                เพศ <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -950,7 +950,7 @@ export default function RegisterPage() {
                     : "text-gray-800 font-semibold"
                 }`}
               >
-                การศึกษาปัจจุบัน <span className="text-primary-600">*</span>
+                การศึกษาปัจจุบัน <span className="text-red-500">*</span>
               </label>
               <div className="flex flex-col gap-2">
                 {educationOptions.map((option) => (
@@ -993,7 +993,7 @@ export default function RegisterPage() {
                   }`}
                 >
                   ระบุประเภทการศึกษาอื่น ๆ{" "}
-                  <span className="text-primary-600">*</span>
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -1029,8 +1029,7 @@ export default function RegisterPage() {
                     : "text-gray-800 font-semibold"
                 }`}
               >
-                {getInstitutionLabel()}{" "}
-                <span className="text-primary-600">*</span>
+                {getInstitutionLabel()} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -1127,7 +1126,7 @@ export default function RegisterPage() {
                 >
                   คณะ{" "}
                   {formData.education === "university" && (
-                    <span className="text-primary-600">*</span>
+                    <span className="text-red-500">*</span>
                   )}
                 </label>
                 <input
@@ -1166,7 +1165,7 @@ export default function RegisterPage() {
                   ? "แผนการเรียน"
                   : "สาขาวิชา"}{" "}
                 {formData.education !== "other" && (
-                  <span className="text-primary-600">*</span>
+                  <span className="text-red-500">*</span>
                 )}
               </label>
               <input
@@ -1206,7 +1205,7 @@ export default function RegisterPage() {
                       : "text-gray-800 font-semibold"
                   }`}
                 >
-                  รหัสผ่าน <span className="text-primary-600">*</span>
+                  รหัสผ่าน <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -1285,7 +1284,7 @@ export default function RegisterPage() {
                       : "text-gray-800 font-semibold"
                   }`}
                 >
-                  ยืนยันรหัสผ่าน <span className="text-primary-600">*</span>
+                  ยืนยันรหัสผ่าน <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input

@@ -4038,7 +4038,7 @@ function ApplicationsContent() {
                   fill="CurrentColor"
                 />
               </svg>
-              ยืนยันผลการสัมภาษณ์
+              สัมภาษณ์เสร็จสิ้น
             </button>
           )}
 
