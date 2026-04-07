@@ -139,12 +139,18 @@ export default function CustomLoginForm() {
                     </div>
                 </div>
 
-                <div className="pt-2 pb-2">
+                <div className="pt-2 pb-2 space-y-4">
                     <button
                         type="submit"
-                        className="w-full py-3 px-4 bg-[#9A0D8A] hover:bg-[#7D0A6F] text-white rounded-[10px] text-[16px] font-semibold transition-all shadow-[0_4px_10px_rgba(154,13,138,0.3)] hover:-translate-y-[1px]"
+                        className="w-full py-3 px-4 bg-[#9A0D8A] hover:bg-[#7D0A6F] text-white rounded-[10px] text-[16px] font-normal transition-all shadow-[0_4px_10px_rgba(154,13,138,0.3)] hover:-translate-y-[1px]"
                     >
                         เข้าสู่ระบบ
+                    </button>
+                    <button
+                        type="button"
+                        className="w-full py-3 px-4 bg-white border-[1px] border-[#A80689] text-[#A80689] rounded-[5px] text-[16px] font-normal transition-all hover:bg-[#9A0D8A]/5 hover:-translate-y-[1px]"
+                    >
+                        เข้าสู่ระบบพนักงาน PEA
                     </button>
                 </div>
             </form>
