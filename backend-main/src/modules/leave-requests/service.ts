@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, count, desc, eq, gte, lte } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ConflictError, ForbiddenError } from "@/common/exceptions";
@@ -242,5 +242,47 @@ export class LeaveService {
       },
       records,
     };
+  }
+
+  async deleteLeaveRequest(userId: string, id: number) {
+    await this.assertUserExists(userId);
+    const request = await db.query.leaveRequests.findFirst({
+      where: eq(leaveRequests.id, id),
+    });
+
+    if (!request) {
+      throw new NotFoundError(`ไม่พบข้อมูลใบลาที่ต้องการลบ (ID: ${id})`);
+    }
+    if (request.userId !== userId) {
+      throw new ForbiddenError("คุณไม่มีสิทธิ์ลบรายการลาของผู้อื่น");
+    }
+    if (request.status !== "PENDING") {
+      throw new ConflictError(
+        "ไม่สามารถลบได้ เนื่องจากใบลาถูกดำเนินการไปแล้ว (APPROVED/REJECTED)"
+      );
+    }
+
+    return await db.transaction(async (tx) => {
+      if (request.file) {
+        try {
+          const s3Key = request.file.startsWith("/")
+            ? request.file.slice(1)
+            : request.file;
+
+          await s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: BUCKET_NAME,
+              Key: s3Key,
+            })
+          );
+        } catch (error) {
+          console.error("ลบไฟล์ใน S3 ล้มเหลว:", error);
+        }
+      }
+
+      await tx.delete(leaveRequests).where(eq(leaveRequests.id, id));
+
+      return { success: true, message: "ยกเลิกคำขอลาเรียบร้อยแล้ว" };
+    });
   }
 }
