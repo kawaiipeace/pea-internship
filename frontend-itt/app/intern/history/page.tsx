@@ -334,9 +334,7 @@ const AttendanceHistoryPage = () => {
     {
       title: "เข้างานปกติ",
       days: summaryCounts.present,
-      icon: (
-        <span className="material-symbols-rounded !text-[28px]">check</span>
-      ),
+      icon: "check",
       bgColor: "bg-[#e7faef]",
       textColor: "text-[#079455]",
       borderColor: "border-[#079455]",
@@ -345,9 +343,7 @@ const AttendanceHistoryPage = () => {
     {
       title: "สาย",
       days: summaryCounts.late,
-      icon: (
-        <span className="material-symbols-rounded !text-[28px]">schedule</span>
-      ),
+      icon: "schedule",
       bgColor: "bg-[#fdf4d6]",
       textColor: "text-[#FDB022]",
       borderColor: "border-[#FDB022]",
@@ -356,9 +352,7 @@ const AttendanceHistoryPage = () => {
     {
       title: "ลา",
       days: summaryCounts.leave,
-      icon: (
-        <span className="material-symbols-rounded !text-[28px] flex items-center justify-center">lab_profile</span>
-      ),
+      icon: "lab_profile",
       bgColor: "bg-[#eef8ff]",
       textColor: "text-[#1AB3FF]",
       borderColor: "border-[#1AB3FF]",
@@ -367,9 +361,7 @@ const AttendanceHistoryPage = () => {
     {
       title: "ขาด",
       days: summaryCounts.absent,
-      icon: (
-        <span className="material-symbols-rounded !text-[28px]">close</span>
-      ),
+      icon: "close",
       bgColor: "bg-[#fceded]",
       textColor: "text-[#ef4444]",
       borderColor: "border-[#ef4444]",
@@ -538,9 +530,9 @@ const AttendanceHistoryPage = () => {
                   <div
                     className={`flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center sm:mr-4 ${item.iconBg} shadow-sm sm:shadow-none`}
                   >
-                    {React.cloneElement(item.icon as any, {
-                      className: `${(item.icon as any).props.className || ""} ${item.title === "สาย" || item.title === "ลา" || item.title === "เข้างานปกติ" || item.title === "ขาด" ? "" : "w-6 h-6"} text-white`.trim(),
-                    })}
+                    <span className="material-symbols-rounded !text-[24px] sm:!text-[28px] text-white flex items-center justify-center">
+                      {item.icon}
+                    </span>
                   </div>
                   <div className="flex flex-col mt-2 sm:mt-0">
                     <div className="font-bold text-gray-800 dark:text-gray-200 text-[14px] sm:text-[16px] mb-1 sm:mb-0.5 leading-tight">

@@ -104,9 +104,9 @@ const LeaveHistoryPage = () => {
 
     // Summary Data for Leave History
     const summaryData = [
-        { title: 'ลาทั้งหมด', days: 4, icon: <IconFileText />, bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
-        { title: 'ลากิจ', days: 2, icon: <IconBriefcase />, bgColor: 'bg-[#E8EAF6] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#3F51B5]', hoverBorderClass: 'hover:border-[#3F51B5]' },
-        { title: 'ลาป่วย', days: 2, icon: <IconMedicalCross />, bgColor: 'bg-[#FCE4EC] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
+        { title: 'ลาทั้งหมด', days: 4, icon: 'lab_profile', bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
+        { title: 'ลากิจ', days: 2, icon: 'lab_profile', bgColor: 'bg-[#E8EAF6] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#3F51B5]', hoverBorderClass: 'hover:border-[#3F51B5]' },
+        { title: 'ลาป่วย', days: 2, icon: 'lab_profile', bgColor: 'bg-[#FCE4EC] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
     ];
 
     const [historyData, setHistoryData] = useState([
@@ -269,7 +269,9 @@ const LeaveHistoryPage = () => {
                                         item.title === 'ลาทั้งหมด' ? 'bg-[#03A9F4]' : 
                                         item.title === 'ลากิจ' ? 'bg-[#3F51B5]' : 'bg-[#E91E63]'
                                     } sm:mr-4`}>
-                                        {React.cloneElement(item.icon, { className: 'w-4 h-4 sm:w-6 sm:h-6 text-white stroke-[2px]' })}
+                                        <span className="material-symbols-rounded !text-[24px] sm:!text-[28px] text-white flex items-center justify-center">
+                                            {item.icon}
+                                        </span>
                                     </div>
                                     <div className="flex flex-col mt-3 sm:mt-0">
                                         <div className="font-bold text-gray-800 dark:text-gray-200 text-[13px] sm:text-sm mb-1 sm:mb-0.5">{item.title}</div>
@@ -368,16 +370,14 @@ const LeaveHistoryPage = () => {
                                             {item.leaveType === 'ลากิจ' ? (
                                                 <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                     <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                        <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
+                                                        <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                     </div>
                                                     <span className="leading-none">ลากิจ</span>
                                                 </div>
                                             ) : (
                                                 <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                     <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
-                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M12 5v14M5 12h14" />
-                                                        </svg>
+                                                        <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                     </div>
                                                     <span className="leading-none">ลาป่วย</span>
                                                 </div>
@@ -400,22 +400,20 @@ const LeaveHistoryPage = () => {
                                                 {item.leaveType === 'ลากิจ' ? (
                                                     <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                         <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                            <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
+                                                            <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                         </div>
                                                         <span className="leading-none">ลากิจ</span>
                                                     </div>
                                                 ) : item.leaveType === 'ลาป่วย' ? (
                                                     <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                         <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
-                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                                <path d="M12 5v14M5 12h14" />
-                                                            </svg>
+                                                            <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                         </div>
                                                         <span className="leading-none">ลาป่วย</span>
                                                     </div>
                                                 ) : (
                                                     <div className="inline-flex items-center px-3 py-1 bg-[#f0f9ff] text-[#0ea5e9] border border-[#bae6fd] rounded-full text-xs font-bold gap-1.5">
-                                                        <IconFile className="w-3.5 h-3.5" />
+                                                        <span className="material-symbols-rounded !text-[14px]">lab_profile</span>
                                                         {item.leaveType}
                                                     </div>
                                                 )}
@@ -637,14 +635,14 @@ const LeaveHistoryPage = () => {
                                                                     {selectedHistoryItem.leaveType === 'ลากิจ' ? (
                                                                         <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                                             <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#4F46E5]">
-                                                                                <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
+                                                                                <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                                             </div>
                                                                             <span className="leading-none text-gray-500">ลากิจ</span>
                                                                         </div>
                                                                     ) : (
                                                                         <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
                                                                             <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D]">
-                                                                                <IconMedicalCross className="w-2.5 h-2.5 text-white stroke-[1.5px]" />
+                                                                                <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                                             </div>
                                                                             <span className="leading-none text-gray-500">ลาป่วย</span>
                                                                         </div>
@@ -658,7 +656,7 @@ const LeaveHistoryPage = () => {
                                                             {/* Reasoning Section */}
                                                             <div className="w-full space-y-3 mb-6">
                                                                 <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
-                                                                    <IconFileText className="w-5 h-5 text-gray-800 dark:text-gray-300" />
+                                                                    <span className="material-symbols-rounded text-gray-800 dark:text-gray-300 text-[20px]">description</span>
                                                                     รายละเอียดการลา
                                                                 </div>
                                                                 <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-3 min-h-[48px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
@@ -719,12 +717,7 @@ const LeaveHistoryPage = () => {
                                                                 <div>
                                                                     <div className="inline-flex items-center px-2.5 py-1.5 bg-[#EEF4FF] text-[#1C1C1C] border border-[#4386F9] rounded-full text-[12.5px] font-bold gap-1 mt-0.5">
                                                                         <div className="w-5 h-5 rounded-full bg-[#4386F9] flex items-center justify-center text-white shrink-0">
-                                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                <rect x="5" y="4" width="14" height="16" rx="2" stroke="white" strokeWidth="2.5"/>
-                                                                                <path d="M9 9H15" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                                                                                <path d="M9 13H15" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                                                                                <path d="M9 17H12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                                                                            </svg>
+                                                                            <span className="material-symbols-rounded !text-[14px]">lab_profile</span>
                                                                         </div>
                                                                         ลา
                                                                     </div>
@@ -755,24 +748,21 @@ const LeaveHistoryPage = () => {
                                                                         {selectedHistoryItem.leaveType === 'ลากิจ' ? (
                                                                             <div className="inline-flex items-center w-[60px] h-[26px] bg-[#EEF2FF] text-[#4B5E71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
                                                                                 <div className="w-[18px] h-[18px] rounded-full bg-[#4F46E5] flex items-center justify-center text-white shrink-0">
-                                                                                    <IconBriefcase className="w-2.5 h-2.5 text-white fill-none stroke-current stroke-[1.5px]" />
+                                                                                    <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                                                 </div>
                                                                                 ลากิจ
                                                                             </div>
                                                                         ) : selectedHistoryItem.leaveType === 'ลาป่วย' ? (
                                                                             <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFF1F2] text-[#4B5E71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
                                                                                 <div className="w-[18px] h-[18px] rounded-full bg-[#FF1A7D] flex items-center justify-center text-white shrink-0">
-                                                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                                        <path d="M12 6V18" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-                                                                                        <path d="M6 12H18" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-                                                                                    </svg>
+                                                                                    <span className="material-symbols-rounded !text-[12px] leading-none text-white">lab_profile</span>
                                                                                 </div>
                                                                                 ลาป่วย
                                                                             </div>
                                                                         ) : (
                                                                             <div className="inline-flex items-center w-[75px] justify-center px-2 py-1 bg-[#F0F9FF] text-[#0EA5E9] border border-[#BAE6FD] rounded-full text-[10px] font-bold gap-1 mt-0.5">
                                                                                 <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-[#0ea5e9]">
-                                                                                    <IconFileText className="w-2.5 h-2.5 text-white" />
+                                                                                    <span className="material-symbols-rounded !text-[12px] text-white">lab_profile</span>
                                                                                 </div>
                                                                                 {selectedHistoryItem.leaveType}
                                                                             </div>
@@ -785,7 +775,7 @@ const LeaveHistoryPage = () => {
                                                             <div className="w-full sm:w-[636px] sm:h-[190px] bg-[#FEFBF6] dark:bg-[#1A1A1A] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
                                                                 <div className="space-y-1.5">
                                                                     <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                        <IconCamera className="w-[18px] h-[18px]" />
+                                                                        <span className="material-symbols-rounded text-[20px]">description</span>
                                                                         หลักฐานการลางาน
                                                                     </div>
                                                                     <div className="flex items-center bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 py-2 gap-3 w-[450px] h-[45px]">
@@ -800,12 +790,7 @@ const LeaveHistoryPage = () => {
 
                                                                 <div className="space-y-1.5 mt-2">
                                                                     <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                            <rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="2.5"/>
-                                                                            <path d="M9 9H15" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-                                                                            <path d="M9 13H15" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-                                                                            <path d="M9 17H12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-                                                                        </svg>
+                                                                        <span className="material-symbols-rounded text-[20px]">description</span>
                                                                         รายละเอียดการลา
                                                                     </div>
                                                                     <div className="bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 w-[450px] h-[45px] text-[13px] text-gray-600 dark:text-gray-300 font-medium flex items-center">
