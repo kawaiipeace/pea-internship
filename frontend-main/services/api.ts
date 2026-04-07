@@ -1085,6 +1085,18 @@ export type AppStatusEnum =
   | "ABORT";
 
 // ข้อมูลใบสมัครจาก GET /applications/history/me
+
+export interface CompleteModalResponse {
+  shouldShow: boolean;
+  applicationStatusId: number | null;
+  title: string | null;
+  message: string | null;
+}
+
+export interface AcknowledgeResponse {
+  message: string;
+}
+
 export interface MyApplicationData {
   applicationId: number;
   applicationStatus: AppStatusEnum;
@@ -1245,6 +1257,21 @@ export const applicationApi = {
     const list = response.data;
     return list && list.length > 0 ? list[0] : null;
   },
+
+  getApplicationCompleteModal: async (): Promise<CompleteModalResponse> => {
+    const response = await api.get<CompleteModalResponse>(
+      "/student/application-complete-modal"
+    );
+    return response.data;
+  },
+
+  // add
+  acknowledgeApplicationCompleteModal: async (): Promise<AcknowledgeResponse> => {
+    const response = await api.post<AcknowledgeResponse>(
+      "/student/application-complete-modal/acknowledge"
+    );
+    return response.data;
+  },  
 
   // สร้างใบสมัครใหม่ (คลิกสมัครตำแหน่งฝึกงาน)
   createApplication: async (positionId: number): Promise<ApplicationData> => {

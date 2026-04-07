@@ -105,36 +105,30 @@ export default function InternHomePage() {
     loadJobs();
   }, []);
 
-  // Check if student passed selection (COMPLETE = รับเข้าฝึกงาน + เอกสารผ่าน) and show congrats modal
   useEffect(() => {
-    const checkCongratsStatus = async () => {
+    const checkCongratsModal = async () => {
       try {
-        const app = await applicationApi.getMyLatestApplication();
-        if (
-          app &&
-          app.applicationStatus === "COMPLETE"
-        ) {
-          const seenKey = `congrats_seen_${app.applicationId}`;
-          if (!localStorage.getItem(seenKey)) {
-            setShowCongratsModal(true);
-          }
+        const modalStatus = await applicationApi.getApplicationCompleteModal();
+
+        if (modalStatus?.shouldShow) {
+          setShowCongratsModal(true);
+        } else {
+          setShowCongratsModal(false);
         }
       } catch {
-        // Not logged in or no application
+        setShowCongratsModal(false);
       }
     };
-    checkCongratsStatus();
+
+    checkCongratsModal();
   }, []);
 
-  const handleCloseCongratsModal = async () => {
-    try {
-      const app = await applicationApi.getMyLatestApplication();
-      if (app) {
-        localStorage.setItem(`congrats_seen_${app.applicationId}`, "true");
-      }
-    } catch {}
-    setShowCongratsModal(false);
-  };
+const handleCloseCongratsModal = async () => {
+  try {
+    await applicationApi.acknowledgeApplicationCompleteModal();
+  } catch {}
+  setShowCongratsModal(false);
+};
 
   // Detect mobile screen
   useEffect(() => {

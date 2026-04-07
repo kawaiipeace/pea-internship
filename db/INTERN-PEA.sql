@@ -466,6 +466,25 @@ CREATE TABLE -- all
     FOREIGN KEY (mentor_id) REFERENCES public.staff_profiles (id)
   );
 
+CREATE TABLE public.complete_acknowledge (
+  id SERIAL PRIMARY KEY,
+  application_status_id INT NOT NULL UNIQUE,
+  user_id VARCHAR(50) NOT NULL,
+  acknowledged_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT complete_acknowledge_application_status_id_fkey
+    FOREIGN KEY (application_status_id)
+    REFERENCES public.application_statuses (id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT complete_acknowledge_user_id_fkey
+    FOREIGN KEY (user_id)
+    REFERENCES public.users (id)
+    ON DELETE CASCADE
+);
+CREATE INDEX idx_app_complete_acks_user_id
+  ON public.complete_acknowledge (user_id);
+
 CREATE TABLE -- itt
   public.projects (
     id SERIAL PRIMARY KEY,

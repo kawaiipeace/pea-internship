@@ -8,6 +8,7 @@ import {
   applicationStatuses,
   attendanceLogs,
   checkTimes,
+  completeAcknowledge,
   dailyWorkLogs,
   departments,
   docTypes,
@@ -66,6 +67,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     relationName: "studentOffsiteTasks",
   }),
   internshipEndHistoryChangedBy: many(internshipEndHistory),
+  completeAcknowledge: many(completeAcknowledge),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -126,6 +128,20 @@ export const internshipEndHistoryRelations = relations(
     }),
     changedByUser: one(users, {
       fields: [internshipEndHistory.changedBy],
+      references: [users.id],
+    }),
+  })
+);
+
+export const completeAcknowledgeRelations = relations(
+  completeAcknowledge,
+  ({ one }) => ({
+    applicationStatus: one(applicationStatuses, {
+      fields: [completeAcknowledge.applicationStatusId],
+      references: [applicationStatuses.id],
+    }),
+    user: one(users, {
+      fields: [completeAcknowledge.userId],
       references: [users.id],
     }),
   })
@@ -251,6 +267,7 @@ export const applicationStatusesRelations = relations(
     applicationDocuments: many(applicationDocuments),
     applicationMentors: many(applicationMentors),
     applicationStatusActions: many(applicationStatusActions),
+    completeAcknowledge: many(completeAcknowledge),
   })
 );
 

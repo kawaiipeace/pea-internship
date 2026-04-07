@@ -832,6 +832,37 @@ export const applicationMentors = pgTable(
   ]
 );
 
+export const completeAcknowledge = pgTable(
+  "complete_acknowledge",
+  {
+    id: serial().primaryKey().notNull(),
+    applicationStatusId: integer("application_status_id").notNull(),
+    userId: varchar("user_id", { length: 50 }).notNull(),
+    acknowledgedAt: timestamp("acknowledged_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.applicationStatusId],
+      foreignColumns: [applicationStatuses.id],
+      name: "complete_acknowledge_application_status_id_fkey",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "complete_acknowledge_user_id_fkey",
+    }).onDelete("cascade"),
+
+    unique("complete_acknowledge_application_status_id_key").on(
+      table.applicationStatusId
+    ),
+
+    index("idx_app_complete_acks_user_id").on(table.userId),
+  ]
+);
+
 export const projects = pgTable(
   "projects",
   {
