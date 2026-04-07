@@ -49,9 +49,10 @@ interface AuthStore {
     actionClearAuth: () => void;
     actionLogin: (form: FormLogin) => Promise<void>;
     actionLogout: () => Promise<void>;
+    actionFetchProfile: () => Promise<void>;
 }
 
-const authStore: StateCreator<AuthStore> = (set) => ({
+const authStore: StateCreator<AuthStore> = (set, get) => ({
     user: null,
     token: null,
     actionSetUser: (user) => {
@@ -65,6 +66,16 @@ const authStore: StateCreator<AuthStore> = (set) => ({
         useAuthStore.persist.clearStorage();
         document.cookie = `token=; path=/; max-age=0; SameSite=Lax`;
         document.cookie = `user_role=; path=/; max-age=0; SameSite=Lax`;
+    },
+    actionFetchProfile: async () => {
+        try {
+            const res = await axios.get('/user/profile');
+            const userData = (res.data.data || res.data) as UserSchema;
+            console.log('Fetched User Data:', userData);
+            set({ user: userData });
+        } catch (error) {
+            console.error("Fetch profile failed:", error);
+        }
     },
     actionLogin: async (form: FormLogin) => {
         const res = await axios.post('/auth/sign-in/intern/itt', form);

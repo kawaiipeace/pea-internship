@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axiosInstance from '@/api/axios';
+import useAuthStore from '@/store/authStore';
 
 const ProfilePage = () => {
     // Progress State
@@ -81,12 +82,17 @@ const ProfilePage = () => {
         }
     };
 
+    const actionSetUser = useAuthStore((state) => state.actionSetUser);
+
     // ── Fetch student profile from /user/student ──────────────────────────────
     const fetchStudentProfile = useCallback(async () => {
         try {
             const response = await axiosInstance.get('/user/profile');
             const data = response.data;
             if (data) {
+                // Sync to global store
+                actionSetUser(data);
+
                 // ชื่อจริง - นามสกุล
                 const name = [data.fname, data.lname].filter(Boolean).join(' ') || '';
                 setFullName(name);
