@@ -88,6 +88,7 @@ function ApplicationStatusContent() {
     "Transcript",
   ]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [transcriptName, setTranscriptName] = useState<string>("");
@@ -172,9 +173,9 @@ function ApplicationStatusContent() {
                   tags: jobData.tags,
                   applicationPeriod:
                     jobData.recruitStartDate &&
-                    jobData.recruitEndDate &&
-                    jobData.recruitStartDate !== "-" &&
-                    jobData.recruitEndDate !== "-"
+                      jobData.recruitEndDate &&
+                      jobData.recruitStartDate !== "-" &&
+                      jobData.recruitEndDate !== "-"
                       ? `${jobData.recruitStartDate} - ${jobData.recruitEndDate}`
                       : "ไม่กำหนดระยะเวลา",
                   startDate: jobData.startDate,
@@ -314,6 +315,32 @@ function ApplicationStatusContent() {
   const [isReuploadReady, setIsReuploadReady] = useState(false);
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string>("");
+  const [showFileSizeErrorModal, setShowFileSizeErrorModal] = useState(false);
+  const [fileSizeErrorMessage, setFileSizeErrorMessage] = useState<string>("");
+
+  const MAX_FILE_SIZE_MB = 30;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+  const ALLOWED_FILE_TYPES = [".png", ".jpg", ".jpeg", ".pdf"];
+  const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "application/pdf"];
+
+  const validateFile = (file: File): boolean => {
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (!ALLOWED_FILE_TYPES.includes(ext) && !ALLOWED_MIME_TYPES.includes(file.type)) {
+      setFileSizeErrorMessage(
+        `ไฟล์ "${file.name}" ไม่รองรับ กรุณาอัปโหลดไฟล์ .png, .jpg หรือ .pdf เท่านั้น`
+      );
+      setShowFileSizeErrorModal(true);
+      return false;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setFileSizeErrorMessage(
+        `ไฟล์ "${file.name}" มีขนาด ${(file.size / (1024 * 1024)).toFixed(1)} MB ซึ่งเกินขนาดที่กำหนด (ไม่เกิน ${MAX_FILE_SIZE_MB} MB)`
+      );
+      setShowFileSizeErrorModal(true);
+      return false;
+    }
+    return true;
+  };
 
   const transcriptInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -334,31 +361,39 @@ function ApplicationStatusContent() {
 
   const handleTranscriptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setTranscript(e.target.files[0]);
-      setTranscriptName(e.target.files[0].name);
+      const file = e.target.files[0];
+      if (!validateFile(file)) { e.target.value = ""; return; }
+      setTranscript(file);
+      setTranscriptName(file.name);
       setShowSuccessModal(true);
     }
   };
 
   const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setResume(e.target.files[0]);
-      setResumeName(e.target.files[0].name);
+      const file = e.target.files[0];
+      if (!validateFile(file)) { e.target.value = ""; return; }
+      setResume(file);
+      setResumeName(file.name);
       setShowSuccessModal(true);
     }
   };
 
   const handlePortfolioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setPortfolio(e.target.files[0]);
-      setPortfolioName(e.target.files[0].name);
+      const file = e.target.files[0];
+      if (!validateFile(file)) { e.target.value = ""; return; }
+      setPortfolio(file);
+      setPortfolioName(file.name);
       setShowSuccessModal(true);
     }
   };
 
   const handleCourtesyDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setCourtesyDocument(e.target.files[0]);
+      const file = e.target.files[0];
+      if (!validateFile(file)) { e.target.value = ""; return; }
+      setCourtesyDocument(file);
       setShowSuccessModal(true);
       // If document status was "ไม่ครบถ้วน", mark as ready for reupload
       if (documentStatus === "เอกสารไม่ผ่าน") {
@@ -395,7 +430,7 @@ function ApplicationStatusContent() {
       const error = err as { response?: { data?: { message?: string } } };
       setUploadErrorMessage(
         error?.response?.data?.message ||
-          "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง",
+        "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง",
       );
       setShowUploadErrorModal(true);
     } finally {
@@ -432,7 +467,7 @@ function ApplicationStatusContent() {
       const error = err as { response?: { data?: { message?: string } } };
       setUploadErrorMessage(
         error?.response?.data?.message ||
-          "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง",
+        "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง",
       );
       setShowUploadErrorModal(true);
     } finally {
@@ -484,7 +519,7 @@ function ApplicationStatusContent() {
       const error = err as { response?: { data?: { message?: string } } };
       setUploadErrorMessage(
         error?.response?.data?.message ||
-          "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง",
+        "ไม่สามารถอัปโหลดเอกสารได้ กรุณาลองใหม่อีกครั้ง",
       );
       setShowUploadErrorModal(true);
       return;
@@ -504,11 +539,12 @@ function ApplicationStatusContent() {
   };
 
   const handleFinalCancel = async () => {
-    setShowCancelModal(false);
+    setIsCanceling(true);
     try {
       if (applicationId) {
         await applicationApi.cancelApplication(applicationId);
       }
+      setShowCancelModal(false);
       setShowCancelSuccessModal(true);
       // Auto close after 2 seconds and redirect to intern home
       setTimeout(() => {
@@ -520,6 +556,8 @@ function ApplicationStatusContent() {
       const error = err as { response?: { data?: { message?: string } } };
       const msg = error?.response?.data?.message || "ไม่สามารถยกเลิกใบสมัครได้";
       alert(msg);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -811,13 +849,12 @@ function ApplicationStatusContent() {
                   >
                     {/* Circle */}
                     <div
-                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        isCompleted
-                          ? "bg-primary-600" // Completed: solid primary color
-                          : isOnHold
-                            ? "bg-white border-[3px] border-primary-600" // On Hold: white center with primary border
-                            : "bg-gray-300" // Pending: gray
-                      }`}
+                      className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted
+                        ? "bg-primary-600" // Completed: solid primary color
+                        : isOnHold
+                          ? "bg-white border-[3px] border-primary-600" // On Hold: white center with primary border
+                          : "bg-gray-300" // Pending: gray
+                        }`}
                     >
                       {/* Checkmark - only show for completed steps */}
                       {isCompleted && (
@@ -839,9 +876,8 @@ function ApplicationStatusContent() {
                     </div>
                     {/* Label */}
                     <span
-                      className={`mt-2 md:mt-3 text-[10px] md:text-xs text-center leading-tight font-medium ${
-                        isActive ? "text-primary-600" : "text-gray-400"
-                      }`}
+                      className={`mt-2 md:mt-3 text-[10px] md:text-xs text-center leading-tight font-medium ${isActive ? "text-primary-600" : "text-gray-400"
+                        }`}
                     >
                       {step}
                     </span>
@@ -1103,7 +1139,7 @@ function ApplicationStatusContent() {
               <span className="text-red-500">*</span>เอกสารที่ต้องอัปโหลด
             </h2>
             {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
-              <div className="flex items-center gap-1.5 mb-3 md:mb-4 text-red-600">
+              <div className="flex items-center gap-1.5 mb-2 md:mb-3 text-red-600">
                 <svg
                   width="18"
                   height="18"
@@ -1122,6 +1158,11 @@ function ApplicationStatusContent() {
                 </span>
               </div>
             )}
+            {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
+              <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">
+                รองรับไฟล์ .png, .jpg, .pdf เท่านั้น (ไฟล์ละไม่เกิน 30 MB)
+              </p>
+            )}
 
             {/* Transcript Upload */}
             <div className="mb-4">
@@ -1138,7 +1179,7 @@ function ApplicationStatusContent() {
                   />
                 </svg>
                 <span className="font-bold text-gray-800 text-sm md:text-base">
-                  Transcript (PDF)<span className="text-red-500">*</span>
+                  Transcript<span className="text-red-500">*</span>
                 </span>
               </div>
               {/* Sample Document Button */}
@@ -1217,7 +1258,7 @@ function ApplicationStatusContent() {
               <input
                 ref={transcriptInputRef}
                 type="file"
-                accept=".pdf"
+                accept=".png,.jpg,.jpeg,.pdf"
                 onChange={handleTranscriptChange}
                 className="hidden"
               />
@@ -1239,7 +1280,7 @@ function ApplicationStatusContent() {
                     />
                   </svg>
                   <span className="font-bold text-gray-800 text-sm md:text-base">
-                    Resume (PDF)<span className="text-red-500">*</span>
+                    Resume<span className="text-red-500">*</span>
                   </span>
                 </div>
                 <div
@@ -1320,7 +1361,7 @@ function ApplicationStatusContent() {
                     />
                   </svg>
                   <span className="font-bold text-gray-800 text-sm md:text-base">
-                    Portfolio (PDF)<span className="text-red-500">*</span>
+                    Portfolio<span className="text-red-500">*</span>
                   </span>
                 </div>
                 <div
@@ -1388,86 +1429,42 @@ function ApplicationStatusContent() {
             {/* Signature Option - Show only when step is รอยื่นเอกสารขอความอนุเคราะห์ or รอการตรวจสอบ */}
             {(currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" ||
               currentStep === "รอการตรวจสอบ") && (
-              <>
-                {/* Additional Document Upload Section */}
-                <div className="mt-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-3">
-                    {documentStatus !== "เอกสารผ่าน" && (
-                      <span className="text-red-500">*</span>
-                    )}
-                    เอกสารขอความอนุเคราะห์จากสถาบัน
-                  </h3>
-                  {currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" &&
-                    documentStatus !== "เอกสารไม่ผ่าน" && (
-                      <div className="flex items-start gap-2 mb-3 text-red-500 text-sm leading-5">
-                        <svg
-                          width="15"
-                          height="16"
-                          viewBox="0 0 15 16"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="mt-0.5 shrink-0"
-                        >
-                          <path
-                            d="M1.5 4.5H12V3H1.5V4.5ZM1.5 15C1.0875 15 0.734375 14.8531 0.440625 14.5594C0.146875 14.2656 0 13.9125 0 13.5V3C0 2.5875 0.146875 2.23438 0.440625 1.94063C0.734375 1.64688 1.0875 1.5 1.5 1.5H2.25V0.75C2.25 0.5375 2.32188 0.359375 2.46563 0.215625C2.60938 0.071875 2.7875 0 3 0C3.2125 0 3.39062 0.071875 3.53438 0.215625C3.67813 0.359375 3.75 0.5375 3.75 0.75V1.5H9.75V0.75C9.75 0.5375 9.82188 0.359375 9.96563 0.215625C10.1094 0.071875 10.2875 0 10.5 0C10.7125 0 10.8906 0.071875 11.0344 0.215625C11.1781 0.359375 11.25 0.5375 11.25 0.75V1.5H12C12.4125 1.5 12.7656 1.64688 13.0594 1.94063C13.3531 2.23438 13.5 2.5875 13.5 3V6.50625C13.5 6.71875 13.4281 6.89687 13.2844 7.04062C13.1406 7.18437 12.9625 7.25625 12.75 7.25625C12.5375 7.25625 12.3594 7.18437 12.2156 7.04062C12.0719 6.89687 12 6.71875 12 6.50625V6H1.5V13.5H5.85C6.0625 13.5 6.24062 13.5719 6.38437 13.7156C6.52812 13.8594 6.6 14.0375 6.6 14.25C6.6 14.4625 6.52812 14.6406 6.38437 14.7844C6.24062 14.9281 6.0625 15 5.85 15H1.5ZM11.25 15.75C10.2125 15.75 9.32812 15.3844 8.59688 14.6531C7.86563 13.9219 7.5 13.0375 7.5 12C7.5 10.9625 7.86563 10.0781 8.59688 9.34688C9.32812 8.61563 10.2125 8.25 11.25 8.25C12.2875 8.25 13.1719 8.61563 13.9031 9.34688C14.6344 10.0781 15 10.9625 15 12C15 13.0375 14.6344 13.9219 13.9031 14.6531C13.1719 15.3844 12.2875 15.75 11.25 15.75ZM11.625 11.85V10.125C11.625 10.025 11.5875 9.9375 11.5125 9.8625C11.4375 9.7875 11.35 9.75 11.25 9.75C11.15 9.75 11.0625 9.7875 10.9875 9.8625C10.9125 9.9375 10.875 10.025 10.875 10.125V11.8313C10.875 11.9313 10.8938 12.0281 10.9312 12.1219C10.9688 12.2156 11.025 12.3 11.1 12.375L12.2438 13.5187C12.3188 13.5938 12.4063 13.6313 12.5063 13.6313C12.6063 13.6313 12.6937 13.5938 12.7687 13.5187C12.8438 13.4437 12.8813 13.3563 12.8813 13.2563C12.8813 13.1563 12.8438 13.0688 12.7687 12.9938L11.625 11.85Z"
-                            fill="#F04438"
-                          />
-                        </svg>
-                        <div>
-                          กรุณาอัปโหลดเอกสารภายใน 30 วัน มิฉะนั้น
-                          ใบสมัครของคุณจะถูกยกเลิกโดยอัตโนมัติ
+                <>
+                  {/* Additional Document Upload Section */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">
+                      {documentStatus !== "เอกสารผ่าน" && (
+                        <span className="text-red-500">*</span>
+                      )}
+                      เอกสารขอความอนุเคราะห์จากสถาบัน
+                    </h3>
+                    {currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" &&
+                      documentStatus !== "เอกสารไม่ผ่าน" && (
+                        <div className="flex items-start gap-2 mb-3 text-red-500 text-sm leading-5">                          <svg
+                            width="15"
+                            height="16"
+                            viewBox="0 0 15 16"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="mt-0.5 shrink-0"
+                          >
+                            <path
+                              d="M1.5 4.5H12V3H1.5V4.5ZM1.5 15C1.0875 15 0.734375 14.8531 0.440625 14.5594C0.146875 14.2656 0 13.9125 0 13.5V3C0 2.5875 0.146875 2.23438 0.440625 1.94063C0.734375 1.64688 1.0875 1.5 1.5 1.5H2.25V0.75C2.25 0.5375 2.32188 0.359375 2.46563 0.215625C2.60938 0.071875 2.7875 0 3 0C3.2125 0 3.39062 0.071875 3.53438 0.215625C3.67813 0.359375 3.75 0.5375 3.75 0.75V1.5H9.75V0.75C9.75 0.5375 9.82188 0.359375 9.96563 0.215625C10.1094 0.071875 10.2875 0 10.5 0C10.7125 0 10.8906 0.071875 11.0344 0.215625C11.1781 0.359375 11.25 0.5375 11.25 0.75V1.5H12C12.4125 1.5 12.7656 1.64688 13.0594 1.94063C13.3531 2.23438 13.5 2.5875 13.5 3V6.50625C13.5 6.71875 13.4281 6.89687 13.2844 7.04062C13.1406 7.18437 12.9625 7.25625 12.75 7.25625C12.5375 7.25625 12.3594 7.18437 12.2156 7.04062C12.0719 6.89687 12 6.71875 12 6.50625V6H1.5V13.5H5.85C6.0625 13.5 6.24062 13.5719 6.38437 13.7156C6.52812 13.8594 6.6 14.0375 6.6 14.25C6.6 14.4625 6.52812 14.6406 6.38437 14.7844C6.24062 14.9281 6.0625 15 5.85 15H1.5ZM11.25 15.75C10.2125 15.75 9.32812 15.3844 8.59688 14.6531C7.86563 13.9219 7.5 13.0375 7.5 12C7.5 10.9625 7.86563 10.0781 8.59688 9.34688C9.32812 8.61563 10.2125 8.25 11.25 8.25C12.2875 8.25 13.1719 8.61563 13.9031 9.34688C14.6344 10.0781 15 10.9625 15 12C15 13.0375 14.6344 13.9219 13.9031 14.6531C13.1719 15.3844 12.2875 15.75 11.25 15.75ZM11.625 11.85V10.125C11.625 10.025 11.5875 9.9375 11.5125 9.8625C11.4375 9.7875 11.35 9.75 11.25 9.75C11.15 9.75 11.0625 9.7875 10.9875 9.8625C10.9125 9.9375 10.875 10.025 10.875 10.125V11.8313C10.875 11.9313 10.8938 12.0281 10.9312 12.1219C10.9688 12.2156 11.025 12.3 11.1 12.375L12.2438 13.5187C12.3188 13.5938 12.4063 13.6313 12.5063 13.6313C12.6063 13.6313 12.6937 13.5938 12.7687 13.5187C12.8438 13.4437 12.8813 13.3563 12.8813 13.2563C12.8813 13.1563 12.8438 13.0688 12.7687 12.9938L11.625 11.85Z"
+                              fill="#F04438"
+                            />
+                          </svg>
+                          <div>
+                            กรุณาอัปโหลดเอกสารภายใน 30 วัน มิฉะนั้น
+                            ใบสมัครของคุณจะถูกยกเลิกโดยอัตโนมัติ
+                          </div>
                         </div>
-                      </div>
+                      )}
+                    {currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" && (
+                      <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">
+                        รองรับไฟล์ .png, .jpg, .pdf เท่านั้น (ไฟล์ละไม่เกิน 30 MB)
+                      </p>
                     )}
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5ZM5 19H19V5H5V19ZM8 17H13C13.2833 17 13.5208 16.9042 13.7125 16.7125C13.9042 16.5208 14 16.2833 14 16C14 15.7167 13.9042 15.4792 13.7125 15.2875C13.5208 15.0958 13.2833 15 13 15H8C7.71667 15 7.47917 15.0958 7.2875 15.2875C7.09583 15.4792 7 15.7167 7 16C7 16.2833 7.09583 16.5208 7.2875 16.7125C7.47917 16.9042 7.71667 17 8 17ZM8 13H16C16.2833 13 16.5208 12.9042 16.7125 12.7125C16.9042 12.5208 17 12.2833 17 12C17 11.7167 16.9042 11.4792 16.7125 11.2875C16.5208 11.0958 16.2833 11 16 11H8C7.71667 11 7.47917 11.0958 7.2875 11.2875C7.09583 11.4792 7 11.7167 7 12C7 12.2833 7.09583 12.5208 7.2875 12.7125C7.47917 12.9042 7.71667 13 8 13ZM8 9H16C16.2833 9 16.5208 8.90417 16.7125 8.7125C16.9042 8.52083 17 8.28333 17 8C17 7.71667 16.9042 7.47917 16.7125 7.2875C16.5208 7.09583 16.2833 7 16 7H8C7.71667 7 7.47917 7.09583 7.2875 7.2875C7.09583 7.47917 7 7.71667 7 8C7 8.28333 7.09583 8.52083 7.2875 8.7125C7.47917 8.90417 7.71667 9 8 9Z"
-                        fill="#A80689"
-                      />
-                    </svg>
-                    <span className="font-medium text-gray-700">
-                      เอกสารขอความอนุเคราะห์ (PDF)
-                    </span>
-                  </div>
-
-                  {/* Sample Document Button */}
-                  <a
-                    href="/เอกสารขอความอนุเคราะห์.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-1 mb-2 px-2 py-0.5 rounded-lg text-gray-400 hover:text-primary-600 text-sm transition-colors"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 14 14"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M6.63333 10.6667C6.86667 10.6667 7.06389 10.5861 7.225 10.425C7.38611 10.2639 7.46667 10.0667 7.46667 9.83333C7.46667 9.6 7.38611 9.40278 7.225 9.24167C7.06389 9.08055 6.86667 9 6.63333 9C6.4 9 6.20278 9.08055 6.04167 9.24167C5.88056 9.40278 5.8 9.6 5.8 9.83333C5.8 10.0667 5.88056 10.2639 6.04167 10.425C6.20278 10.5861 6.4 10.6667 6.63333 10.6667ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0C7.58889 0 8.45555 0.175 9.26667 0.525C10.0778 0.875 10.7833 1.35 11.3833 1.95C11.9833 2.55 12.4583 3.25556 12.8083 4.06667C13.1583 4.87778 13.3333 5.74444 13.3333 6.66667C13.3333 7.58889 13.1583 8.45555 12.8083 9.26667C12.4583 10.0778 11.9833 10.7833 11.3833 11.3833C10.7833 11.9833 10.0778 12.4583 9.26667 12.8083C8.45555 13.1583 7.58889 13.3333 6.66667 13.3333ZM6.73333 3.8C7.01111 3.8 7.25278 3.88889 7.45833 4.06667C7.66389 4.24444 7.76667 4.46667 7.76667 4.73333C7.76667 4.97778 7.69167 5.19444 7.54167 5.38333C7.39167 5.57222 7.22222 5.75 7.03333 5.91667C6.77778 6.13889 6.55278 6.38333 6.35833 6.65C6.16389 6.91667 6.06667 7.21667 6.06667 7.55C6.06667 7.70555 6.125 7.83611 6.24167 7.94167C6.35833 8.04722 6.49444 8.1 6.65 8.1C6.81667 8.1 6.95833 8.04444 7.075 7.93333C7.19167 7.82222 7.26667 7.68333 7.3 7.51667C7.34444 7.28333 7.44444 7.075 7.6 6.89167C7.75556 6.70833 7.92222 6.53333 8.1 6.36667C8.35556 6.12222 8.575 5.85556 8.75833 5.56667C8.94167 5.27778 9.03333 4.95556 9.03333 4.6C9.03333 4.03333 8.80278 3.56944 8.34167 3.20833C7.88056 2.84722 7.34444 2.66667 6.73333 2.66667C6.31111 2.66667 5.90833 2.75556 5.525 2.93333C5.14167 3.11111 4.85 3.38333 4.65 3.75C4.57222 3.88333 4.54722 4.025 4.575 4.175C4.60278 4.325 4.67778 4.43889 4.8 4.51667C4.95556 4.60556 5.11667 4.63333 5.28333 4.6C5.45 4.56667 5.58889 4.47222 5.7 4.31667C5.82222 4.15 5.975 4.02222 6.15833 3.93333C6.34167 3.84444 6.53333 3.8 6.73333 3.8Z"
-                        fill="CurrentColor"
-                      />
-                    </svg>
-                    ตัวอย่าง
-                  </a>
-
-                  {documentStatus === "เอกสารผ่าน" ||
-                  (isCourtesySubmitted && documentStatus === "รอการตรวจสอบ") ? (
-                    /* Read-only display for completed/submitted step */
-                    <div className="flex items-center justify-between px-4 py-3 border-2 border-primary-600 rounded-xl bg-gray-50">
-                      <span className="text-black">
-                        {courtesyDocument
-                          ? courtesyDocument.name
-                          : courtesyDocName || "courtesy_document.pdf"}
-                      </span>
+                    <div className="flex items-center gap-2 mb-2">
                       <svg
                         width="24"
                         height="24"
@@ -1476,169 +1473,214 @@ function ApplicationStatusContent() {
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M10.6 13.8L8.45 11.65C8.26667 11.4667 8.03333 11.375 7.75 11.375C7.46667 11.375 7.23333 11.4667 7.05 11.65C6.86667 11.8333 6.775 12.0667 6.775 12.35C6.775 12.6333 6.86667 12.8667 7.05 13.05L9.9 15.9C10.1 16.1 10.3333 16.2 10.6 16.2C10.8667 16.2 11.1 16.1 11.3 15.9L16.95 10.25C17.1333 10.0667 17.225 9.83333 17.225 9.55C17.225 9.26667 17.1333 9.03333 16.95 8.85C16.7667 8.66667 16.5333 8.575 16.25 8.575C15.9667 8.575 15.7333 8.66667 15.55 8.85L10.6 13.8ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22Z"
-                          fill="#17B26A"
+                          d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5ZM5 19H19V5H5V19ZM8 17H13C13.2833 17 13.5208 16.9042 13.7125 16.7125C13.9042 16.5208 14 16.2833 14 16C14 15.7167 13.9042 15.4792 13.7125 15.2875C13.5208 15.0958 13.2833 15 13 15H8C7.71667 15 7.47917 15.0958 7.2875 15.2875C7.09583 15.4792 7 15.7167 7 16C7 16.2833 7.09583 16.5208 7.2875 16.7125C7.47917 16.9042 7.71667 17 8 17ZM8 13H16C16.2833 13 16.5208 12.9042 16.7125 12.7125C16.9042 12.5208 17 12.2833 17 12C17 11.7167 16.9042 11.4792 16.7125 11.2875C16.5208 11.0958 16.2833 11 16 11H8C7.71667 11 7.47917 11.0958 7.2875 11.2875C7.09583 11.4792 7 11.7167 7 12C7 12.2833 7.09583 12.5208 7.2875 12.7125C7.47917 12.9042 7.71667 13 8 13ZM8 9H16C16.2833 9 16.5208 8.90417 16.7125 8.7125C16.9042 8.52083 17 8.28333 17 8C17 7.71667 16.9042 7.47917 16.7125 7.2875C16.5208 7.09583 16.2833 7 16 7H8C7.71667 7 7.47917 7.09583 7.2875 7.2875C7.09583 7.47917 7 7.71667 7 8C7 8.28333 7.09583 8.52083 7.2875 8.7125C7.47917 8.90417 7.71667 9 8 9Z"
+                          fill="#A80689"
                         />
                       </svg>
+                      <span className="font-medium text-gray-700">
+                        เอกสารขอความอนุเคราะห์
+                      </span>
                     </div>
-                  ) : (
-                    /* Editable upload for other steps */
-                    <>
-                      <div
-                        onClick={() => courtesyDocInputRef.current?.click()}
-                        className={`flex items-center justify-between px-4 py-3 border-2 rounded-xl cursor-pointer transition-colors hover:bg-gray-50 ${
-                          courtesyDocument ||
-                          (documentStatus === "เอกสารไม่ผ่าน" &&
-                            courtesyDocName)
-                            ? "border-primary-600"
-                            : "border-gray-200 hover:border-primary-600"
-                        }`}
+
+                    {/* Sample Document Button */}
+                    <a
+                      href="/เอกสารขอความอนุเคราะห์.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex items-center gap-1 mb-2 px-2 py-0.5 rounded-lg text-gray-400 hover:text-primary-600 text-sm transition-colors"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
                       >
-                        <span
-                          className={
-                            courtesyDocument ||
-                            (documentStatus === "เอกสารไม่ผ่าน" &&
-                              courtesyDocName)
-                              ? "text-black"
-                              : "text-black/60"
-                          }
-                        >
+                        <path
+                          d="M6.63333 10.6667C6.86667 10.6667 7.06389 10.5861 7.225 10.425C7.38611 10.2639 7.46667 10.0667 7.46667 9.83333C7.46667 9.6 7.38611 9.40278 7.225 9.24167C7.06389 9.08055 6.86667 9 6.63333 9C6.4 9 6.20278 9.08055 6.04167 9.24167C5.88056 9.40278 5.8 9.6 5.8 9.83333C5.8 10.0667 5.88056 10.2639 6.04167 10.425C6.20278 10.5861 6.4 10.6667 6.63333 10.6667ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0C7.58889 0 8.45555 0.175 9.26667 0.525C10.0778 0.875 10.7833 1.35 11.3833 1.95C11.9833 2.55 12.4583 3.25556 12.8083 4.06667C13.1583 4.87778 13.3333 5.74444 13.3333 6.66667C13.3333 7.58889 13.1583 8.45555 12.8083 9.26667C12.4583 10.0778 11.9833 10.7833 11.3833 11.3833C10.7833 11.9833 10.0778 12.4583 9.26667 12.8083C8.45555 13.1583 7.58889 13.3333 6.66667 13.3333ZM6.73333 3.8C7.01111 3.8 7.25278 3.88889 7.45833 4.06667C7.66389 4.24444 7.76667 4.46667 7.76667 4.73333C7.76667 4.97778 7.69167 5.19444 7.54167 5.38333C7.39167 5.57222 7.22222 5.75 7.03333 5.91667C6.77778 6.13889 6.55278 6.38333 6.35833 6.65C6.16389 6.91667 6.06667 7.21667 6.06667 7.55C6.06667 7.70555 6.125 7.83611 6.24167 7.94167C6.35833 8.04722 6.49444 8.1 6.65 8.1C6.81667 8.1 6.95833 8.04444 7.075 7.93333C7.19167 7.82222 7.26667 7.68333 7.3 7.51667C7.34444 7.28333 7.44444 7.075 7.6 6.89167C7.75556 6.70833 7.92222 6.53333 8.1 6.36667C8.35556 6.12222 8.575 5.85556 8.75833 5.56667C8.94167 5.27778 9.03333 4.95556 9.03333 4.6C9.03333 4.03333 8.80278 3.56944 8.34167 3.20833C7.88056 2.84722 7.34444 2.66667 6.73333 2.66667C6.31111 2.66667 5.90833 2.75556 5.525 2.93333C5.14167 3.11111 4.85 3.38333 4.65 3.75C4.57222 3.88333 4.54722 4.025 4.575 4.175C4.60278 4.325 4.67778 4.43889 4.8 4.51667C4.95556 4.60556 5.11667 4.63333 5.28333 4.6C5.45 4.56667 5.58889 4.47222 5.7 4.31667C5.82222 4.15 5.975 4.02222 6.15833 3.93333C6.34167 3.84444 6.53333 3.8 6.73333 3.8Z"
+                          fill="CurrentColor"
+                        />
+                      </svg>
+                      ตัวอย่าง
+                    </a>
+
+                    {documentStatus === "เอกสารผ่าน" ||
+                      (isCourtesySubmitted && documentStatus === "รอการตรวจสอบ") ? (
+                      /* Read-only display for completed/submitted step */
+                      <div className="flex items-center justify-between px-4 py-3 border-2 border-primary-600 rounded-xl bg-gray-50">
+                        <span className="text-black">
                           {courtesyDocument
                             ? courtesyDocument.name
-                            : documentStatus === "เอกสารไม่ผ่าน" &&
-                                courtesyDocName
-                              ? courtesyDocName
-                              : "Choose File"}
+                            : courtesyDocName || "courtesy_document.pdf"}
                         </span>
-                        {courtesyDocument ||
-                        (documentStatus === "เอกสารไม่ผ่าน" &&
-                          courtesyDocName &&
-                          !isReuploadReady) ? (
-                          documentStatus === "เอกสารไม่ผ่าน" &&
-                          !isReuploadReady ? (
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M10.6 13.8L8.45 11.65C8.26667 11.4667 8.03333 11.375 7.75 11.375C7.46667 11.375 7.23333 11.4667 7.05 11.65C6.86667 11.8333 6.775 12.0667 6.775 12.35C6.775 12.6333 6.86667 12.8667 7.05 13.05L9.9 15.9C10.1 16.1 10.3333 16.2 10.6 16.2C10.8667 16.2 11.1 16.1 11.3 15.9L16.95 10.25C17.1333 10.0667 17.225 9.83333 17.225 9.55C17.225 9.26667 17.1333 9.03333 16.95 8.85C16.7667 8.66667 16.5333 8.575 16.25 8.575C15.9667 8.575 15.7333 8.66667 15.55 8.85L10.6 13.8ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22Z"
+                            fill="#17B26A"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      /* Editable upload for other steps */
+                      <>
+                        <div
+                          onClick={() => courtesyDocInputRef.current?.click()}
+                          className={`flex items-center justify-between px-4 py-3 border-2 rounded-xl cursor-pointer transition-colors hover:bg-gray-50 ${courtesyDocument ||
+                            (documentStatus === "เอกสารไม่ผ่าน" &&
+                              courtesyDocName)
+                            ? "border-primary-600"
+                            : "border-gray-200 hover:border-primary-600"
+                            }`}
+                        >
+                          <span
+                            className={
+                              courtesyDocument ||
+                                (documentStatus === "เอกสารไม่ผ่าน" &&
+                                  courtesyDocName)
+                                ? "text-black"
+                                : "text-black/60"
+                            }
+                          >
+                            {courtesyDocument
+                              ? courtesyDocument.name
+                              : documentStatus === "เอกสารไม่ผ่าน" &&
+                                courtesyDocName
+                                ? courtesyDocName
+                                : "Choose File"}
+                          </span>
+                          {courtesyDocument ||
+                            (documentStatus === "เอกสารไม่ผ่าน" &&
+                              courtesyDocName &&
+                              !isReuploadReady) ? (
+                            documentStatus === "เอกสารไม่ผ่าน" &&
+                              !isReuploadReady ? (
+                              <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20ZM9.4 15L12 12.4L14.6 15L16 13.6L13.4 11L16 8.4L14.6 7L12 9.6L9.4 7L8 8.4L10.6 11L8 13.6L9.4 15Z"
+                                  fill="#F04438"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M10.6 13.8L8.45 11.65C8.26667 11.4667 8.03333 11.375 7.75 11.375C7.46667 11.375 7.23333 11.4667 7.05 11.65C6.86667 11.8333 6.775 12.0667 6.775 12.35C6.775 12.6333 6.86667 12.8667 7.05 13.05L9.9 15.9C10.1 16.1 10.3333 16.2 10.6 16.2C10.8667 16.2 11.1 16.1 11.3 15.9L16.95 10.25C17.1333 10.0667 17.225 9.83333 17.225 9.55C17.225 9.26667 17.1333 9.03333 16.95 8.85C16.7667 8.66667 16.5333 8.575 16.25 8.575C15.9667 8.575 15.7333 8.66667 15.55 8.85L10.6 13.8ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22Z"
+                                  fill="#17B26A"
+                                />
+                              </svg>
+                            )
+                          ) : (
                             <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
+                              className="w-5 h-5 text-gray-400"
                               fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
                               <path
-                                d="M12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20ZM9.4 15L12 12.4L14.6 15L16 13.6L13.4 11L16 8.4L14.6 7L12 9.6L9.4 7L8 8.4L10.6 11L8 13.6L9.4 15Z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <input
+                          ref={courtesyDocInputRef}
+                          type="file"
+                          accept=".png,.jpg,.jpeg,.pdf"
+                          onChange={handleCourtesyDocChange}
+                          className="hidden"
+                        />
+                        {documentStatus === "เอกสารไม่ผ่าน" &&
+                          !isReuploadReady ? (
+                          <div className="flex items-start gap-2 mt-2 text-red-500 text-sm leading-5">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 14 14"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="mt-0.5 shrink-0"
+                            >
+                              <path
+                                d="M6.66667 10C6.85556 10 7.01389 9.93611 7.14167 9.80833C7.26944 9.68056 7.33333 9.52222 7.33333 9.33333V6.66667C7.33333 6.47778 7.26944 6.31944 7.14167 6.19167C7.01389 6.06389 6.85556 6 6.66667 6C6.47778 6 6.31944 6.06389 6.19167 6.19167C6.06389 6.31944 6 6.47778 6 6.66667V9.33333C6 9.52222 6.06389 9.68056 6.19167 9.80833C6.31944 9.93611 6.47778 10 6.66667 10ZM6.66667 4.66667C6.85556 4.66667 7.01389 4.60278 7.14167 4.475C7.26944 4.34722 7.33333 4.18889 7.33333 4C7.33333 3.81111 7.26944 3.65278 7.14167 3.525C7.01389 3.39722 6.85556 3.33333 6.66667 3.33333C6.47778 3.33333 6.31944 3.39722 6.19167 3.525C6.06389 3.65278 6 3.81111 6 4C6 4.18889 6.06389 4.34722 6.19167 4.475C6.31944 4.60278 6.47778 4.66667 6.66667 4.66667ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0C7.58889 0 8.45555 0.175 9.26667 0.525C10.0778 0.875 10.7833 1.35 11.3833 1.95C11.9833 2.55 12.4583 3.25556 12.8083 4.06667C13.1583 4.87778 13.3333 5.74444 13.3333 6.66667C13.3333 7.58889 13.1583 8.45555 12.8083 9.26667C12.4583 10.0778 11.9833 10.7833 11.3833 11.3833C10.7833 11.9833 10.0778 12.4583 9.26667 12.8083C8.45555 13.1583 7.58889 13.3333 6.66667 13.3333ZM6.66667 12C8.15555 12 9.41667 11.4833 10.45 10.45C11.4833 9.41667 12 8.15555 12 6.66667C12 5.17778 11.4833 3.91667 10.45 2.88333C9.41667 1.85 8.15555 1.33333 6.66667 1.33333C5.17778 1.33333 3.91667 1.85 2.88333 2.88333C1.85 3.91667 1.33333 5.17778 1.33333 6.66667C1.33333 8.15555 1.85 9.41667 2.88333 10.45C3.91667 11.4833 5.17778 12 6.66667 12Z"
                                 fill="#F04438"
                               />
                             </svg>
-                          ) : (
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M10.6 13.8L8.45 11.65C8.26667 11.4667 8.03333 11.375 7.75 11.375C7.46667 11.375 7.23333 11.4667 7.05 11.65C6.86667 11.8333 6.775 12.0667 6.775 12.35C6.775 12.6333 6.86667 12.8667 7.05 13.05L9.9 15.9C10.1 16.1 10.3333 16.2 10.6 16.2C10.8667 16.2 11.1 16.1 11.3 15.9L16.95 10.25C17.1333 10.0667 17.225 9.83333 17.225 9.55C17.225 9.26667 17.1333 9.03333 16.95 8.85C16.7667 8.66667 16.5333 8.575 16.25 8.575C15.9667 8.575 15.7333 8.66667 15.55 8.85L10.6 13.8ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22Z"
-                                fill="#17B26A"
-                              />
-                            </svg>
-                          )
-                        ) : (
-                          <svg
-                            className="w-5 h-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <input
-                        ref={courtesyDocInputRef}
-                        type="file"
-                        accept=".pdf"
-                        onChange={handleCourtesyDocChange}
-                        className="hidden"
-                      />
-                      {documentStatus === "เอกสารไม่ผ่าน" &&
-                      !isReuploadReady ? (
-                        <div className="flex items-start gap-2 mt-2 text-red-500 text-sm leading-5">
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="mt-0.5 shrink-0"
-                          >
-                            <path
-                              d="M6.66667 10C6.85556 10 7.01389 9.93611 7.14167 9.80833C7.26944 9.68056 7.33333 9.52222 7.33333 9.33333V6.66667C7.33333 6.47778 7.26944 6.31944 7.14167 6.19167C7.01389 6.06389 6.85556 6 6.66667 6C6.47778 6 6.31944 6.06389 6.19167 6.19167C6.06389 6.31944 6 6.47778 6 6.66667V9.33333C6 9.52222 6.06389 9.68056 6.19167 9.80833C6.31944 9.93611 6.47778 10 6.66667 10ZM6.66667 4.66667C6.85556 4.66667 7.01389 4.60278 7.14167 4.475C7.26944 4.34722 7.33333 4.18889 7.33333 4C7.33333 3.81111 7.26944 3.65278 7.14167 3.525C7.01389 3.39722 6.85556 3.33333 6.66667 3.33333C6.47778 3.33333 6.31944 3.39722 6.19167 3.525C6.06389 3.65278 6 3.81111 6 4C6 4.18889 6.06389 4.34722 6.19167 4.475C6.31944 4.60278 6.47778 4.66667 6.66667 4.66667ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0C7.58889 0 8.45555 0.175 9.26667 0.525C10.0778 0.875 10.7833 1.35 11.3833 1.95C11.9833 2.55 12.4583 3.25556 12.8083 4.06667C13.1583 4.87778 13.3333 5.74444 13.3333 6.66667C13.3333 7.58889 13.1583 8.45555 12.8083 9.26667C12.4583 10.0778 11.9833 10.7833 11.3833 11.3833C10.7833 11.9833 10.0778 12.4583 9.26667 12.8083C8.45555 13.1583 7.58889 13.3333 6.66667 13.3333ZM6.66667 12C8.15555 12 9.41667 11.4833 10.45 10.45C11.4833 9.41667 12 8.15555 12 6.66667C12 5.17778 11.4833 3.91667 10.45 2.88333C9.41667 1.85 8.15555 1.33333 6.66667 1.33333C5.17778 1.33333 3.91667 1.85 2.88333 2.88333C1.85 3.91667 1.33333 5.17778 1.33333 6.66667C1.33333 8.15555 1.85 9.41667 2.88333 10.45C3.91667 11.4833 5.17778 12 6.66667 12Z"
-                              fill="#F04438"
-                            />
-                          </svg>
-                          <div>
-                            โปรดอัปโหลดเอกสารใหม่ภายใน 15 วัน มิฉะนั้น
-                            ใบสมัครใบนี้จะถูกยกเลิกโดยอัตโนมัติ
+                            <div>
+                              โปรดอัปโหลดเอกสารใหม่ภายใน 15 วัน มิฉะนั้น
+                              ใบสมัครใบนี้จะถูกยกเลิกโดยอัตโนมัติ
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-
-                {/* Submit Button for Courtesy Document - Only show for รอยื่นเอกสารขอความอนุเคราะห์ and not submitted - Hidden on mobile */}
-                {/* Fixed Mobile Courtesy Upload Button */}
-                {((currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" &&
-                  !isCourtesySubmitted) ||
-                  (documentStatus === "เอกสารไม่ผ่าน" && isReuploadReady)) && (
-                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:hidden z-40">
-                    <button
-                      type="button"
-                      onClick={
-                        documentStatus === "เอกสารไม่ผ่าน"
-                          ? handleReuploadConfirm
-                          : handleConfirmCourtesyUpload
-                      }
-                      disabled={!courtesyDocument}
-                      className={`w-full py-3 rounded-xl font-medium transition-colors active:scale-95 ${
-                        courtesyDocument
-                          ? "bg-primary-600 text-white active:bg-primary-700"
-                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      }`}
-                    >
-                      ยืนยันการอัปโหลดเอกสาร
-                    </button>
+                        ) : null}
+                      </>
+                    )}
                   </div>
-                )}
 
-                {/* Desktop Button for Courtesy Document Upload */}
-                {((currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" &&
-                  !isCourtesySubmitted) ||
-                  (documentStatus === "เอกสารไม่ผ่าน" && isReuploadReady)) && (
-                  <button
-                    type="button"
-                    onClick={
-                      documentStatus === "เอกสารไม่ผ่าน"
-                        ? handleReuploadConfirm
-                        : handleConfirmCourtesyUpload
-                    }
-                    disabled={!courtesyDocument}
-                    className={`hidden md:block w-full mt-6 py-3 rounded-xl font-medium transition-colors cursor-pointer active:scale-95 ${
-                      courtesyDocument
-                        ? "bg-primary-600 text-white hover:bg-primary-700"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    ยืนยันการอัปโหลดเอกสาร
-                  </button>
-                )}
-              </>
-            )}
+                  {/* Submit Button for Courtesy Document - Only show for รอยื่นเอกสารขอความอนุเคราะห์ and not submitted - Hidden on mobile */}
+                  {/* Fixed Mobile Courtesy Upload Button */}
+                  {((currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" &&
+                    !isCourtesySubmitted) ||
+                    (documentStatus === "เอกสารไม่ผ่าน" && isReuploadReady)) && (
+                      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:hidden z-40">
+                        <button
+                          type="button"
+                          onClick={
+                            documentStatus === "เอกสารไม่ผ่าน"
+                              ? handleReuploadConfirm
+                              : handleConfirmCourtesyUpload
+                          }
+                          disabled={!courtesyDocument}
+                          className={`w-full py-3 rounded-xl font-medium transition-colors active:scale-95 ${courtesyDocument
+                            ? "bg-primary-600 text-white active:bg-primary-700"
+                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            }`}
+                        >
+                          ยืนยันการอัปโหลดเอกสาร
+                        </button>
+                      </div>
+                    )}
+
+                  {/* Desktop Button for Courtesy Document Upload */}
+                  {((currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" &&
+                    !isCourtesySubmitted) ||
+                    (documentStatus === "เอกสารไม่ผ่าน" && isReuploadReady)) && (
+                      <button
+                        type="button"
+                        onClick={
+                          documentStatus === "เอกสารไม่ผ่าน"
+                            ? handleReuploadConfirm
+                            : handleConfirmCourtesyUpload
+                        }
+                        disabled={!courtesyDocument}
+                        className={`hidden md:block w-full mt-6 py-3 rounded-xl font-medium transition-colors cursor-pointer active:scale-95 ${courtesyDocument
+                          ? "bg-primary-600 text-white hover:bg-primary-700"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          }`}
+                      >
+                        ยืนยันการอัปโหลดเอกสาร
+                      </button>
+                    )}
+                </>
+              )}
 
             {/* Action Buttons - Show when step is รอยื่นเอกสาร */}
             {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
@@ -1730,11 +1772,10 @@ function ApplicationStatusContent() {
               type="button"
               onClick={handleConfirmCourtesyUpload}
               disabled={!courtesyDocument}
-              className={`w-full py-3 rounded-xl font-medium transition-colors cursor-pointer active:scale-95 ${
-                courtesyDocument
-                  ? "bg-primary-600 text-white active:bg-primary-700"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              className={`w-full py-3 rounded-xl font-medium transition-colors cursor-pointer active:scale-95 ${courtesyDocument
+                ? "bg-primary-600 text-white active:bg-primary-700"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
             >
               ยืนยันการอัปโหลดเอกสาร
             </button>
@@ -1798,6 +1839,7 @@ function ApplicationStatusContent() {
               </button>
               <button
                 type="button"
+                disabled={isUploading}
                 onClick={
                   isReuploadReady
                     ? handleFinalReuploadConfirm
@@ -1805,9 +1847,17 @@ function ApplicationStatusContent() {
                       ? handleFinalCourtesyConfirm
                       : handleFinalConfirm
                 }
-                className="flex-1 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer"
+                className="flex-1 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                ยืนยัน
+                {isUploading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.373 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    กำลังอัปโหลด...
+                  </span>
+                ) : "ยืนยัน"}
               </button>
             </div>
           </div>
@@ -1836,7 +1886,7 @@ function ApplicationStatusContent() {
             </div>
             <h3 className="text-lg font-bold text-black mb-2">
               {currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" ||
-              documentStatus === "เอกสารผ่าน"
+                documentStatus === "เอกสารผ่าน"
                 ? "ยืนยันการอัปโหลดเอกสารเรียบร้อยแล้ว"
                 : "ยืนยันการสมัครเรียบร้อยแล้ว"}
             </h3>
@@ -1867,10 +1917,19 @@ function ApplicationStatusContent() {
               </button>
               <button
                 type="button"
+                disabled={isCanceling}
                 onClick={handleFinalCancel}
-                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                ยืนยัน
+                {isCanceling ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.373 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    กำลังยกเลิก...
+                  </span>
+                ) : "ยืนยัน"}
               </button>
             </div>
           </div>
@@ -1904,6 +1963,41 @@ function ApplicationStatusContent() {
             <button
               type="button"
               onClick={() => setShowUploadErrorModal(false)}
+              className="w-full py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer"
+            >
+              ตกลง
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* File Size/Type Error Modal */}
+      {showFileSizeErrorModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 text-center">
+            {/* Warning Icon */}
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01M12 2L2 22h20L12 2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-black mb-2">
+              ไม่สามารถอัปโหลดไฟล์ได้
+            </h3>
+            <p className="text-gray-500 text-sm mb-6">{fileSizeErrorMessage}</p>
+            <button
+              type="button"
+              onClick={() => setShowFileSizeErrorModal(false)}
               className="w-full py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer"
             >
               ตกลง
