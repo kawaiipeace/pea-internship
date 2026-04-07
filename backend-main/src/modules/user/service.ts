@@ -10,7 +10,7 @@ import {
   studentProfiles,
   users,
 } from "@/db/schema";
-import { s3Client } from "../../lib/s3";
+import { BUCKET_NAME, s3Client } from "../../lib/s3";
 import type * as userModel from "./model";
 
 const ROLE_ADMIN = 1;
@@ -397,33 +397,36 @@ export class UserService {
   }
 
   async updateProfile(userId: string, data: userModel.createProfile) {
-    return await db.transaction(async (tx) => {
-      const user = await tx.query.users.findFirst({
-        where: eq(users.id, userId),
+    // 1. เช็ค User ก่อน (ไม่ต้องใช้ Transaction เพราะเป็นแค่การอ่าน)
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user) throw new NotFoundError("ไม่พบผู้ใช้งานในระบบ");
+
+    let imagePath: string | undefined;
+
+    if (data.image) {
+      const fileExt = data.image.name.split(".").pop() || "png";
+      const fileName = `profiles/${userId}-${Date.now()}.${fileExt}`;
+
+      const arrayBuffer = await data.image.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const uploadCommand = new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileName,
+        Body: buffer,
+        ContentType: data.image.type,
       });
 
-      if (!user) throw new NotFoundError("ไม่พบผู้ใช้งานในระบบ");
+      await s3Client.send(uploadCommand);
 
-      let imagePath: string | undefined;
+      imagePath = fileName;
+    }
 
-      if (data.image) {
-        const fileExt = data.image.name.split(".").pop() || "png";
-        const fileName = `profiles/${userId}-${Date.now()}.${fileExt}`;
-
-        const arrayBuffer = await data.image.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        const uploadCommand = new PutObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME!,
-          Key: fileName,
-          Body: buffer,
-          ContentType: data.image.type,
-        });
-
-        await s3Client.send(uploadCommand);
-
-        imagePath = fileName;
-
+    await db.transaction(async (tx) => {
+      if (imagePath) {
         await tx
           .update(studentProfiles)
           .set({ image: imagePath })
@@ -436,15 +439,15 @@ export class UserService {
           .set({ displayUsername: data.nickname })
           .where(eq(users.id, userId));
       }
-
-      return {
-        success: true,
-        message: "ตั้งค่าโปรไฟล์และอัปโหลดรูปภาพสำเร็จ",
-        data: {
-          nickname: data.nickname || user.displayUsername,
-          imageUrl: imagePath,
-        },
-      };
     });
+
+    return {
+      success: true,
+      message: "ตั้งค่าโปรไฟล์และอัปโหลดรูปภาพสำเร็จ",
+      data: {
+        nickname: data.nickname || user.displayUsername,
+        imageUrl: imagePath,
+      },
+    };
   }
 }

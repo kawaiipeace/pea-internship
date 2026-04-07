@@ -49,9 +49,10 @@ interface AuthStore {
     actionClearAuth: () => void;
     actionLogin: (form: FormLogin) => Promise<void>;
     actionLogout: () => Promise<void>;
+    actionFetchProfile: () => Promise<void>;
 }
 
-const authStore: StateCreator<AuthStore> = (set) => ({
+const authStore: StateCreator<AuthStore> = (set, get) => ({
     user: null,
     token: null,
     actionSetUser: (user) => {
@@ -66,36 +67,62 @@ const authStore: StateCreator<AuthStore> = (set) => ({
         document.cookie = `token=; path=/; max-age=0; SameSite=Lax`;
         document.cookie = `user_role=; path=/; max-age=0; SameSite=Lax`;
     },
+    actionFetchProfile: async () => {
+        try {
+            const res = await axios.get('/user/profile');
+            const userData = (res.data.data || res.data) as UserSchema;
+            console.log('Fetched User Data:', userData);
+            set({ user: userData });
+        } catch (error) {
+            console.error("Fetch profile failed:", error);
+        }
+    },
     actionLogin: async (form: FormLogin) => {
         const res = await axios.post('/auth/sign-in/intern/itt', form);
         const result = res.data as any;
-        const data = result.data || result; // Handle both { data: { ... } } and { ... }
+        const loginData = result.data || result;
 
-        const token = data.accessToken ?? data.token ?? data.sessionToken ?? data.session?.token ?? data.session?.sessionToken ?? data.session?.id ?? null;
-        const user: UserSchema | null = data.user ?? null;
+        const token = loginData.accessToken ?? loginData.token ?? loginData.sessionToken ?? loginData.session?.token ?? loginData.session?.sessionToken ?? loginData.session?.id ?? null;
 
-        set({
-            token,
-            user,
-        });
-
-        if (token) {
-            document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
+        if (!token) {
+            throw new Error("ไม่ได้รับ Token จากการ Login");
         }
 
-        if (user) {
-            const roleMap: Record<number, string> = {
-                1: 'admin',
-                2: 'owner',
-                3: 'intern',
-                4: 'owner',
-            };
-            const role = roleMap[user.roleId] ?? 'intern';
-            document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
-        }
+        document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
 
-        return;
+        try {
+            const profileRes = await axios.get('/user/profile', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const userData = (profileRes.data.data || profileRes.data) as UserSchema;
+
+            set({
+                token,
+                user: userData,
+            });
+
+            if (userData) {
+                const roleMap: Record<number, string> = {
+                    1: 'admin',
+                    2: 'owner',
+                    3: 'intern',
+                    4: 'owner',
+                };
+                const role = roleMap[userData.roleId] ?? 'intern';
+                document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
+            }
+
+            return;
+
+        } catch (error) {
+            console.error("ดึงข้อมูล Profile ไม่สำเร็จ:", error);
+            throw error;
+        }
     },
+
     actionLogout: async () => {
         try {
             await axios.post('/auth/sign-out');

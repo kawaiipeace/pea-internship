@@ -617,7 +617,9 @@ export class CheckTimeService {
         checkInTime: inTime,
         checkOutTime: outTime,
         location: log.checkIn?.location || "-",
-        workingHours: log.actualHoursWorked ? `${log.actualHoursWorked} ชั่วโมง` : "-",
+        workingHours: log.actualHoursWorked
+          ? `${log.actualHoursWorked} ชั่วโมง`
+          : "-",
         isEdited: !!correctionData,
         correctionStatus: correctionData?.status || null,
         correctionId: correctionData?.id || null,
