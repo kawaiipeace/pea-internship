@@ -45,6 +45,9 @@ export function middleware(request: NextRequest) {
   const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
   const userRole = request.cookies.get("user_role")?.value;
 
+  console.log(`[Middleware] มีคนกำลังเข้าหน้า: ${pathname}`);
+  console.log(`[Middleware] Role ที่มันอ่านได้จาก Cookie คือ: "${userRole}"`);
+
   // isAuthenticated แค่มี session token ก็พอ แล้วเดี๋ยว fallback ไปหน้า intern ถ้ายกเว้นไม่เจอ role
   const isAuthenticated = !!sessionToken;
 
@@ -82,20 +85,21 @@ export function middleware(request: NextRequest) {
   if (isAuthenticated && isProtectedRoute && userRole) {
     const isOwnerOrMentor = userRole === "owner" || userRole === "mentor";
 
-    // Mentor/Owner พยายามเข้า Intern routes
-    if (isOwnerOrMentor && isInternRoute) {
+    // Mentor/Owner พยายามเข้า Intern หรือ Admin routes
+    if (isOwnerOrMentor && (isInternRoute || isAdminRoute)) {
       return NextResponse.redirect(new URL("/mentor", request.url));
     }
+
     // Intern พยายามเข้า Mentor/Admin routes
     if ((userRole === "intern" || userRole === "student") && (isMentorRoute || isAdminRoute)) {
       return NextResponse.redirect(new URL("/intern", request.url));
     }
+
     // Admin พยายามเข้าหน้าอื่นๆ
     if (userRole === "admin" && (isInternRoute || isMentorRoute)) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
   }
-
   // 4. หน้า Public (/) -> ส่งไป Home ตาม Role หรือ Login ถ้าไม่มี session
   if (pathname === "/") {
     const targetUrl = isAuthenticated ? getHomeByRole(userRole) : "/login";

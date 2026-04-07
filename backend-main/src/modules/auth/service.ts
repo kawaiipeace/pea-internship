@@ -152,4 +152,17 @@ export class AuthService {
       asResponse: true,
     });
   }
+  async loginWithKeycloakiTT(headers: Headers) {
+    const api = auth.api as Auth["api"];
+    const callbackURL = Bun.env.iTT_KEYCLOAK_CALLBACK_URL;
+
+    return await api.signInSocial({
+      headers: headers,
+      body: {
+        provider: "keycloak",
+        callbackURL,
+      },
+      asResponse: true,
+    });
+  }
 }
