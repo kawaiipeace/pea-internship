@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axiosInstance from '@/api/axios';
 import useAuthStore from '@/store/authStore';
+import ImageWithAuth from '../../../../components/ImageWithAuth'; // ปรับ Path ให้ตรงกับที่อยู่ไฟล์จริง
 import Swal from 'sweetalert2';
 
 const ProfilePage = () => {
@@ -349,7 +350,7 @@ const ProfilePage = () => {
         setEditingField(null);
     };
 
-    const avatarUrl = profileImage ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'User')}&background=random&size=200`;
+    const defaultAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'User')}&background=random&size=200`;
     const displayName = isLoading ? '...' : fullName || '-';
 
     return (
@@ -387,8 +388,17 @@ const ProfilePage = () => {
                     {/* Avatar */}
                     <div className="flex justify-center mb-6 mt-1">
                         <div className="relative">
-                            <div className="w-[84px] h-[84px] rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
-                                <img src={avatarUrl} className="w-full h-full object-cover" alt="Profile" />
+                            <div className="w-[84px] h-[84px] rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800">
+                                {profileImage ? (
+                                    // ถ้ามีการอัปโหลดรูปใหม่ ให้โชว์รูป Preview ในเครื่องก่อน
+                                    <img src={profileImage} className="w-full h-full object-cover" alt="Profile Preview" />
+                                ) : (
+                                    // ดึงรูปจาก API อย่างปลอดภัย
+                                    <ImageWithAuth
+                                        className="w-full h-full object-cover"
+                                        fallbackSrc={defaultAvatarUrl}
+                                    />
+                                )}
                             </div>
                             {/* Loading overlay */}
                             {isUploadingImage && (
@@ -544,8 +554,17 @@ const ProfilePage = () => {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-12">
                     <div className="relative shrink-0">
-                        <div className="w-[100px] h-[100px] rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
-                            <img src={avatarUrl} className="w-full h-full object-cover" alt="Profile" />
+                        <div className="w-[100px] h-[100px] rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                            {profileImage ? (
+                                // ถ้ามีการอัปโหลดรูปใหม่ ให้โชว์รูป Preview ในเครื่องก่อน
+                                <img src={profileImage} className="w-full h-full object-cover" alt="Profile Preview" />
+                            ) : (
+                                // ดึงรูปจาก API อย่างปลอดภัย
+                                <ImageWithAuth
+                                    className="w-full h-full object-cover"
+                                    fallbackSrc={defaultAvatarUrl}
+                                />
+                            )}
                         </div>
                         {/* Loading overlay */}
                         {isUploadingImage && (
