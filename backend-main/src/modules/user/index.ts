@@ -145,4 +145,20 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
         description: "อัปโหลดรูปภาพโปรไฟล์ใหม่ (รองรับไฟล์รูปภาพ) และแก้ไขชื่อเล่น",
       },
     }
+  )
+
+  .get(
+    "/student/itt/profile/img",
+    async ({ set, user }) => {
+      const fileData = await userService.getProfileImage(user.id);
+      set.headers["Content-Type"] = fileData.contentType;
+      return fileData.buffer;
+    },
+    {
+      auth: true,
+      detail: {
+        summary: "ดึงรูปโปรไฟล์นักศึกษา",
+        description: "ดึงไฟล์รูปภาพโปรไฟล์จาก Storage เพื่อนำไปแสดงผล",
+      },
+    }
   );

@@ -1,4 +1,4 @@
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, desc, eq, or } from "drizzle-orm";
 import { NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -449,5 +449,36 @@ export class UserService {
         imageUrl: imagePath,
       },
     };
+  }
+
+  async getProfileImage(userId: string) {
+    const [profile] = await db
+      .select({ image: studentProfiles.image })
+      .from(studentProfiles)
+      .where(eq(studentProfiles.userId, userId))
+      .limit(1);
+
+    if (!profile || !profile.image) {
+      throw new NotFoundError("ผู้ใช้งานยังไม่ได้ตั้งรูปโปรไฟล์");
+    }
+
+    const imageKey = profile.image;
+
+    try {
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: imageKey,
+      });
+
+      const data = await s3Client.send(command);
+
+      return {
+        buffer: await data.Body?.transformToByteArray(),
+        contentType: data.ContentType || "application/octet-stream",
+      };
+    } catch (error) {
+      console.error("Error fetching profile image from MinIO:", error);
+      throw new NotFoundError("ไม่พบรูปภาพโปรไฟล์ หรือรูปภาพถูกลบไปแล้ว");
+    }
   }
 }

@@ -19,6 +19,12 @@ interface UserProfile {
     endDate: string;
 }
 
+interface MentorProfile {
+    id: number;
+    userId: string;
+    employeeId: string;
+}
+
 interface UserSchema {
     id: string;
     roleId: number;
@@ -27,13 +33,13 @@ interface UserSchema {
     lname: string;
     username: string;
     displayUsername: string;
-    phoneNumber: string;
+    phoneNumber: string | null;
     email: string;
     gender: 'MALE' | 'FEMALE' | 'OTHER';
     emailVerified: boolean;
     createdAt: string;
     updatedAt: string;
-    profile?: UserProfile | null;
+    profile?: UserProfile | MentorProfile[] | null;
 }
 
 interface FormLogin {
@@ -50,6 +56,7 @@ interface AuthStore {
     actionLogin: (form: FormLogin) => Promise<void>;
     actionLogout: () => Promise<void>;
     actionFetchProfile: () => Promise<void>;
+    actionHandleSSOCallback: (token: string) => Promise<void>;
 }
 
 const authStore: StateCreator<AuthStore> = (set, get) => ({
@@ -108,8 +115,7 @@ const authStore: StateCreator<AuthStore> = (set, get) => ({
                 const roleMap: Record<number, string> = {
                     1: 'admin',
                     2: 'owner',
-                    3: 'intern',
-                    4: 'owner',
+                    3: 'intern', 
                 };
                 const role = roleMap[userData.roleId] ?? 'intern';
                 document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
@@ -119,6 +125,29 @@ const authStore: StateCreator<AuthStore> = (set, get) => ({
 
         } catch (error) {
             console.error("ดึงข้อมูล Profile ไม่สำเร็จ:", error);
+            throw error;
+        }
+    },
+    actionHandleSSOCallback: async (token: string) => {
+        try {
+            document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
+            
+            const profileRes = await axios.get('/user/profile')
+            const userData = (profileRes.data.data || profileRes.data) as UserSchema;
+
+            const roleMap: Record<number, string> = {
+                1: 'admin',
+                2: 'owner', 
+                3: 'intern',
+            };
+            const role = roleMap[userData.roleId] ?? 'intern';
+
+            document.cookie = `user_role=${role}; path=/; max-age=86400; SameSite=Lax`;
+
+            set({ token, user: userData });
+
+        } catch (error) {
+            console.error("SSO Callback failed:", error);
             throw error;
         }
     },

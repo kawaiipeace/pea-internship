@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Swal from 'sweetalert2';
 import useAuthStore from '@/store/authStore';
+import axios from '../api/axios';
 
 
 export default function CustomLoginForm() {
@@ -18,10 +19,13 @@ export default function CustomLoginForm() {
         switch (roleId) {
             case 1: return '/admin';
             case 2: return '/mentor';
-            case 4: return '/mentor'; // owner
             default: return '/intern';
         }
     };
+
+    const handleEmployeeLogin = async () => {
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in/keycloak/itt`;
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,16 +44,14 @@ export default function CustomLoginForm() {
             });
 
             setTimeout(() => {
-                // ใช้ callbackUrl ถ้ามี แต่ต้องเป็น path ภายใน (ไม่เริ่มด้วย http)
-                const searchParams = new URL(window.location.href).searchParams;
                 const callbackUrl = searchParams.get('callbackUrl');
                 const freshUser = useAuthStore.getState().user;
                 const home = getHomeByRole(freshUser?.roleId);
 
                 if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.includes('/login')) {
-                    window.location.href = callbackUrl;
+                    router.push(callbackUrl);
                 } else {
-                    window.location.href = home;
+                    router.push(home);
                 }
             }, 500);
 
@@ -147,6 +149,7 @@ export default function CustomLoginForm() {
                         เข้าสู่ระบบ
                     </button>
                     <button
+                        onClick={handleEmployeeLogin}
                         type="button"
                         className="w-full py-3 px-4 bg-white border-[1px] border-[#A80689] text-[#A80689] rounded-[5px] text-[16px] font-normal transition-all hover:bg-[#9A0D8A]/5 hover:-translate-y-[1px]"
                     >

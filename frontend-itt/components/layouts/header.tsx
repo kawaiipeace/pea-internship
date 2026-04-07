@@ -35,6 +35,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getTranslation } from '@/i18n';
 import Swal from 'sweetalert2';
 import useAuthStore from '@/store/authStore';
+import ImageWithAuth from '../ImageWithAuth';
 
 const Header = () => {
     const pathname = usePathname();
@@ -275,7 +276,7 @@ const Header = () => {
                                                         <div className="group flex items-center px-4 py-2">
                                                             <div className="grid place-content-center rounded">
                                                                 <div className="relative h-12 w-12">
-                                                                    <img className="h-12 w-12 rounded-full object-cover" alt="profile" src={`/assets/images/${notification.profile}`} />
+                                                                    <ImageWithAuth className="h-12 w-12 rounded-full object-cover" />
                                                                     <span className="absolute bottom-0 right-[6px] block h-2 w-2 rounded-full bg-success"></span>
                                                                 </div>
                                                             </div>
@@ -324,12 +325,24 @@ const Header = () => {
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
                                 btnClassName="relative group block"
-                                button={<img className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" src="/assets/images/user-profile.jpeg" alt="userProfile" />}
+                                button={
+                                    <div className="relative group block h-9 w-9">
+                                        {user?.roleId === 3 ? (
+                                            <ImageWithAuth className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
+                                        ) : (
+                                            <img className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" src="/assets/images/user-profile.jpeg" alt="userProfile" />
+                                        )}
+                                    </div>
+                                }
                             >
                                 <ul className="w-max min-w-[230px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
                                     <li>
                                         <div className="flex items-center px-4 py-4">
-                                            <img className="h-10 w-10 rounded-md object-cover" src="/assets/images/user-profile.jpeg" alt="userProfile" />
+                                            {user?.roleId === 3 ? (
+                                                <ImageWithAuth className="h-10 w-10 rounded-md object-cover" />
+                                            ) : (
+                                                <img className="h-10 w-10 rounded-md object-cover" src="/assets/images/user-profile.jpeg" alt="userProfile" />
+                                            )}
                                             <div className="ltr:pl-4 rtl:pr-4">
                                                 <h4 className="text-base whitespace-nowrap">
                                                     {fullName}
@@ -347,8 +360,8 @@ const Header = () => {
                                             Profile
                                         </Link>
                                     </li>
-                                    
-                                    
+
+
                                     <li className="border-t border-white-light dark:border-white-light/10">
                                         <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-white-light/10" onClick={handleLogout}>
                                             <IconLogout className="h-4.5 w-4.5 shrink-0 rotate-90 ltr:mr-2 rtl:ml-2" />
