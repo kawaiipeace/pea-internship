@@ -290,9 +290,9 @@ export default function NavbarIntern({
             <Image
               src="/images/logo.png"
               alt="PEA Internship Logo"
-              width={160}
-              height={48}
-              className="h-12 w-auto"
+              width={195}
+              height={112}
+              style={{ width: 'auto', height: '3rem' }}
               priority
             />
           </Link>
@@ -696,9 +696,9 @@ export default function NavbarIntern({
                 <Image
                   src="/images/logo.png"
                   alt="PEA Internship Logo"
-                  width={120}
-                  height={36}
-                  className="h-9 w-auto"
+                  width={195}
+                  height={112}
+                  style={{ width: 'auto', height: '2.25rem' }}
                 />
               </Link>
               <button
@@ -842,9 +842,9 @@ export default function NavbarIntern({
               <Image
                 src="/images/logo.png"
                 alt="PEA Internship Logo"
-                width={160}
-                height={48}
-                className="h-12 w-auto"
+                width={195}
+                height={112}
+                style={{ width: 'auto', height: '3rem' }}
               />
             </Link>
             <div className="flex items-center gap-3">
@@ -1052,9 +1052,9 @@ export default function NavbarIntern({
               <Image
                 src="/images/logo.png"
                 alt="PEA Internship Logo"
-                width={160}
-                height={48}
-                className="h-12 w-auto"
+                width={195}
+                height={112}
+                style={{ width: 'auto', height: '3rem' }}
               />
             </Link>
             <div className="flex items-center gap-3">
