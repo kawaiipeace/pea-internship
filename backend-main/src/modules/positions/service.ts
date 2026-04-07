@@ -451,7 +451,8 @@ export class PositionService {
 
       if ("name" in data) updateData.name = data.name;
       if ("location" in data) updateData.location = data.location;
-      if ("positionCount" in data) updateData.positionCount = data.positionCount;
+      if ("positionCount" in data)
+        updateData.positionCount = data.positionCount;
       if ("major" in data) updateData.major = data.major;
 
       if ("recruitStart" in data) updateData.recruitStart = data.recruitStart;

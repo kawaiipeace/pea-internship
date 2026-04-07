@@ -29,11 +29,7 @@ export const ApplicationInformationBody = t.Object({
 export const UploadDocumentBody = t.Object({
   file: t.File({
     maxSize: 30 * 1024 * 1024,
-    type: [
-      "application/pdf",
-      "image/jpeg",
-      "image/png",
-    ],
+    type: ["application/pdf", "image/jpeg", "image/png"],
   }),
 });
 

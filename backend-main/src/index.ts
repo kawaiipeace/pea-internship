@@ -2,13 +2,13 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { logger } from "elysia-logger";
 import swagger from "@/config/swagger";
+import { positionStatusCron } from "@/cron/position-status-cron";
 import { auth } from "@/lib/auth";
 import { errorMiddleware } from "@/middlewares/error.middleware";
 import modules from "@/modules";
 import { applicationInterviewTimeoutCron } from "./cron/application-interview-timeout";
 import { applicationRequestTimeoutCron } from "./cron/application-request-timeout";
 import { applicationTranscriptTimeoutCron } from "./cron/application-transcript-timeout";
-import { positionStatusCron } from "@/cron/position-status-cron";
 import { awaitingCron } from "./cron/awaiting-cron";
 
 const PORT = Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 8080;

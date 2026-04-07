@@ -37,6 +37,8 @@ CREATE TYPE public.check_time_status_type AS ENUM ('PRESENT', 'LATE', 'ABSENT', 
 
 CREATE TYPE public.leave_period_enum AS ENUM ('FULL_DAY', 'MORNING', 'AFTERNOON');
 
+CREATE TYPE public.internship_end_history_enum AS ENUM ('COMPLETE', 'CANCEL');
+
 CREATE TABLE -- all
   public.roles (
     id SERIAL PRIMARY KEY,
@@ -208,8 +210,30 @@ CREATE TABLE -- all
     FOREIGN KEY (user_id) REFERENCES public.users (id) ON DELETE CASCADE,
     FOREIGN KEY (institution_id) REFERENCES public.institutions (id)
   );
-
 COMMENT ON TABLE public.student_profiles IS 'ข้อมูลเฉพาะนักศึกษา';
+
+CREATE TABLE public.internship_end_history ( -- intern
+  id SERIAL PRIMARY KEY,
+  student_profile_id INT NOT NULL,
+  status public.internship_end_history_enum NOT NULL,
+  reason TEXT,
+  changed_by VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT internship_end_history_student_profile_id_fkey
+    FOREIGN KEY (student_profile_id)
+    REFERENCES public.student_profiles (id)
+    ON DELETE CASCADE,
+  CONSTRAINT internship_end_history_changed_by_fkey
+    FOREIGN KEY (changed_by)
+    REFERENCES public.users (id)
+    ON DELETE RESTRICT
+);
+CREATE INDEX idx_internship_end_history_student_profile_id
+  ON public.internship_end_history (student_profile_id);
+CREATE INDEX idx_internship_end_history_changed_by
+  ON public.internship_end_history (changed_by);
+CREATE INDEX idx_internship_end_history_created_at
+  ON public.internship_end_history (created_at DESC);
 
 CREATE TABLE -- better auth
   public.sessions (

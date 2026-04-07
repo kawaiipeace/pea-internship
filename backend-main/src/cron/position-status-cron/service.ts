@@ -1,4 +1,4 @@
-import { and, eq, inArray, lte, or, gt } from "drizzle-orm";
+import { and, eq, gt, inArray, lte, or } from "drizzle-orm";
 import { db } from "@/db";
 import { internshipPositions } from "@/db/schema";
 
@@ -9,20 +9,20 @@ export class PositionStatusCronService {
         const now = new Date().toISOString();
 
         const toOpen = await tx
-        .select({
+          .select({
             id: internshipPositions.id,
-        })
-        .from(internshipPositions)
-        .where(
+          })
+          .from(internshipPositions)
+          .where(
             and(
-            eq(internshipPositions.recruitmentStatus, "NOT_OPEN_YET"),
-            lte(internshipPositions.recruitStart, now),
-            or(
+              eq(internshipPositions.recruitmentStatus, "NOT_OPEN_YET"),
+              lte(internshipPositions.recruitStart, now),
+              or(
                 eq(internshipPositions.recruitEnd, null as never),
                 gt(internshipPositions.recruitEnd, now)
+              )
             )
-            )
-        );
+          );
 
         if (toOpen.length > 0) {
           await tx

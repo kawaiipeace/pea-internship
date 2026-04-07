@@ -8,6 +8,7 @@ import { db } from "@/db";
 import {
   applicationStatuses,
   departments,
+  internshipEndHistory,
   internshipPositions,
   notifications,
   studentProfiles,
@@ -24,6 +25,65 @@ export class OwnerStudentStatusService {
       mailService.sendEmail(to, subject, html).catch((err) => {
         console.error("[MAIL ERROR]", err);
       });
+    });
+  }
+
+  async getInternshipEndHistory(ownerUserId: string, studentUserId: string) {
+    return await db.transaction(async (tx) => {
+      const [owner] = await tx
+        .select({
+          roleId: users.roleId,
+          departmentId: users.departmentId,
+        })
+        .from(users)
+        .where(eq(users.id, ownerUserId));
+
+      if (!owner) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
+      if (owner.roleId === 3)
+        throw new ForbiddenError("อนุญาตเฉพาะ Admin, Owner");
+      if (!owner.departmentId) throw new ForbiddenError("Owner ไม่ได้สังกัดกอง");
+
+      const [stuUser] = await tx
+        .select({
+          id: users.id,
+          roleId: users.roleId,
+          departmentId: users.departmentId,
+        })
+        .from(users)
+        .where(eq(users.id, studentUserId));
+
+      if (!stuUser) throw new NotFoundError("ไม่พบนักศึกษา");
+      if (stuUser.roleId !== 3) throw new BadRequestError("ผู้ใช้นี้ไม่ใช่นักศึกษา");
+
+      if (stuUser.departmentId !== owner.departmentId) {
+        throw new ForbiddenError("ไม่สามารถดูนักศึกษาต่างกองได้");
+      }
+
+      const [sp] = await tx
+        .select({
+          id: studentProfiles.id,
+        })
+        .from(studentProfiles)
+        .where(eq(studentProfiles.userId, studentUserId));
+
+      if (!sp) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
+
+      const rows = await tx
+        .select({
+          id: internshipEndHistory.id,
+          status: internshipEndHistory.status,
+          reason: internshipEndHistory.reason,
+          createdAt: internshipEndHistory.createdAt,
+          changedBy: users.id,
+          fname: users.fname,
+          lname: users.lname,
+        })
+        .from(internshipEndHistory)
+        .leftJoin(users, eq(users.id, internshipEndHistory.changedBy))
+        .where(eq(internshipEndHistory.studentProfileId, sp.id))
+        .orderBy(sql`${internshipEndHistory.createdAt} DESC`);
+
+      return rows;
     });
   }
 
@@ -44,7 +104,7 @@ export class OwnerStudentStatusService {
       if (!owner) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
       if (owner.roleId === 3)
         throw new ForbiddenError("อนุญาตเฉพาะ Admin, Owner");
-      if (!owner.departmentId) throw new ForbiddenError("Owner ไม่ได้สังกัดกอง");
+      if (!owner.departmentId) throw new ForbiddenError("ไม่ได้สังกัดกอง");
 
       const [stuUser] = await tx
         .select({
@@ -140,6 +200,13 @@ export class OwnerStudentStatusService {
           })
           .where(eq(applicationStatuses.id, app.id));
 
+        await tx.insert(internshipEndHistory).values({
+          studentProfileId: sp.id,
+          status: "CANCEL",
+          reason,
+          changedBy: ownerUserId,
+        });
+
         await tx.insert(notifications).values({
           userId: studentUserId,
           title: "การฝึกงานถูกยกเลิก",
@@ -187,6 +254,13 @@ export class OwnerStudentStatusService {
           updatedAt: new Date(),
         })
         .where(eq(applicationStatuses.id, app.id));
+
+      await tx.insert(internshipEndHistory).values({
+        studentProfileId: sp.id,
+        status: "COMPLETE",
+        reason: null,
+        changedBy: ownerUserId,
+      });
 
       await tx.insert(notifications).values({
         userId: studentUserId,

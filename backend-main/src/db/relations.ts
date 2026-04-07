@@ -14,6 +14,7 @@ import {
   favorites,
   institutions,
   internProjects,
+  internshipEndHistory,
   internshipPositionMentors,
   internshipPositions,
   leaveRequests,
@@ -64,6 +65,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   studentOffsiteTasks: many(offsiteTaskStudents, {
     relationName: "studentOffsiteTasks",
   }),
+  internshipEndHistoryChangedBy: many(internshipEndHistory),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -111,6 +113,21 @@ export const studentProfilesRelations = relations(
       references: [institutions.id],
     }),
     attendanceLogs: many(attendanceLogs),
+    internshipEndHistory: many(internshipEndHistory),
+  })
+);
+
+export const internshipEndHistoryRelations = relations(
+  internshipEndHistory,
+  ({ one }) => ({
+    studentProfile: one(studentProfiles, {
+      fields: [internshipEndHistory.studentProfileId],
+      references: [studentProfiles.id],
+    }),
+    changedByUser: one(users, {
+      fields: [internshipEndHistory.changedBy],
+      references: [users.id],
+    }),
   })
 );
 
