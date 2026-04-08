@@ -231,6 +231,7 @@ export class ApplicationService {
       .update(applicationStatuses)
       .set({
         applicationStatus: "ABORT",
+        isActive: false,
         statusNote: "ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
         updatedAt: new Date(),
       })
@@ -1768,6 +1769,7 @@ export class ApplicationService {
         .update(applicationStatuses)
         .set({
           applicationStatus: "ABORT",
+          isActive: false,
           statusNote: null,
           updatedAt: new Date(),
         })
@@ -1843,6 +1845,7 @@ export class ApplicationService {
         .update(applicationStatuses)
         .set({
           applicationStatus: "CANCEL",
+          isActive: false,
           statusNote: reason.trim(),
           updatedAt: new Date(),
         })
