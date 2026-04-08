@@ -81,7 +81,7 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
             {isLoggedIn && userRole === "intern" ? (
               <>
                 {/* Navigation Links - moved to right side when logged in */}
-                <div className="hidden md:flex items-center gap-8 mr-4">
+                <div className="hidden lg:flex items-center gap-8 mr-4">
                   <Link
                     href="/"
                     className={`font-medium transition-colors ${pathname === "/"
@@ -312,7 +312,7 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
             ) : (
               <>
                 {/* Navigation Links - for non-logged in users */}
-                <div className="hidden md:flex items-center gap-8 mr-4">
+                <div className="hidden lg:flex items-center gap-8 mr-4">
                   <Link
                     href="/"
                     className={`font-medium transition-colors ${pathname === "/"
@@ -353,20 +353,20 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                 </div>
                 <Link
                   href="/login/intern"
-                  className="hidden md:block px-8 py-3 border-2 border-primary-600 text-primary-600 rounded-2xl font-medium hover:bg-primary-600 hover:text-white transition-colors text-base cursor-pointer"
+                  className="hidden lg:block px-8 py-3 border-2 border-primary-600 text-primary-600 rounded-2xl font-medium hover:bg-primary-600 hover:text-white transition-colors text-base cursor-pointer"
                 >
                   เข้าสู่ระบบผู้สมัคร
                 </Link>
                 <button
                   onClick={handleKeycloakRedirect}
-                  className="hidden md:block px-8 py-3 bg-primary-600 text-white rounded-2xl font-medium hover:bg-primary-700 hover:text-white border-2 border-primary-600 transition-colors text-base cursor-pointer"
+                  className="hidden lg:block px-8 py-3 bg-primary-600 text-white rounded-2xl font-medium hover:bg-primary-700 hover:text-white border-2 border-primary-600 transition-colors text-base cursor-pointer"
                 >
                   เข้าสู่ระบบพนักงาน PEA
                 </button>
-                {/* Hamburger Menu - Mobile Only */}
+                {/* Hamburger Menu - Mobile/Tablet Only */}
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="md:hidden p-2 text-gray-600 hover:text-primary-600 transition-colors"
+                  className="lg:hidden p-2 text-gray-600 hover:text-primary-600 transition-colors"
                   aria-label="Open menu"
                 >
                   <svg
@@ -389,9 +389,9 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile/Tablet Sidebar Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/30"
@@ -496,6 +496,27 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                   />
                 </svg>
                 FAQs
+              </Link>
+              <Link
+                href="/credits"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/credits" ? "text-primary-600 font-medium bg-primary-50" : ""
+                  }`}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                ผู้จัดทำ
               </Link>
               <Link
                 href="/login/intern"
