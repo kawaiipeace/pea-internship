@@ -323,10 +323,10 @@ const Sidebar = () => {
                                                 <AnimateHeight duration={300} height={currentMenu === 'mentor-approval' ? 'auto' : 0}>
                                                     <ul className="sub-menu text-gray-500">
                                                         <li>
-                                                            <Link href="/mentor/approval/request">{t('อนุมัติการลาและแก้ไขเวลา')}</Link>
+                                                            <Link href="/mentor/approve/request">{t('อนุมัติการลาและแก้ไขเวลา')}</Link>
                                                         </li>
                                                         <li>
-                                                            <Link href="/mentor/approval/history">{t('ประวัติการอนุมัติ')}</Link>
+                                                            <Link href="/mentor/approve/history">{t('ประวัติการอนุมัติ')}</Link>
                                                         </li>
                                                     </ul>
                                                 </AnimateHeight>
