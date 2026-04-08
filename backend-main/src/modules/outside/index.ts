@@ -91,4 +91,20 @@ export const offsiteTasks = new Elysia({
         summary: "ดูตารางงานนอกสถานที่ (มุมมอง Student)",
       },
     }
+  )
+  // ดูงานที่มอบหมาย (มุมมองระดับแผนกของ Mentor)
+  .get(
+    "/mentor",
+    async ({ user, query }) => {
+      return await offsiteTaskService.getTasksForDept(user.id, query);
+    },
+    {
+      role: [ROLE_IDS.MENTOR],
+      query: offsiteModel.GetOffsiteTasksQuerySchema,
+      detail: {
+        summary: "ดูประวัติการมอบหมายงาน (มุมมองของ Mentor/แผนก)",
+        description:
+          "แสดงงานนอกสถานที่ทั้งหมดของคนในแผนก รองรับ Pagination, กรองรายเดือน/ปี และผู้มอบหมาย",
+      },
+    }
   );

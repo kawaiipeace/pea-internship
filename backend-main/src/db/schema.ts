@@ -92,7 +92,6 @@ export const correctionStatusEnum = pgEnum("correction_status_enum", [
   "PENDING",
   "APPROVED",
   "REJECTED",
-
 ]);
 
 export const internshipEndHistoryEnum = pgEnum("internship_end_history_enum", [

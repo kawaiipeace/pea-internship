@@ -61,7 +61,8 @@ export const leave = new Elysia({
       params: model.params,
       detail: {
         summary: "ยกเลิกคำขอลา (Cancel/Delete Leave Request)",
-        description: "ลบรายการลาที่ส่งไปแล้ว (ลบได้เฉพาะสถานะ PENDING และต้องเป็นเจ้าของเท่านั้น)",
+        description:
+          "ลบรายการลาที่ส่งไปแล้ว (ลบได้เฉพาะสถานะ PENDING และต้องเป็นเจ้าของเท่านั้น)",
       },
     }
   )
