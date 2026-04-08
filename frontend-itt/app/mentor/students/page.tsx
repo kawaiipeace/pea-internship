@@ -13,7 +13,10 @@ import Flatpickr from 'react-flatpickr';
 import Dropdown from '@/components/dropdown';
 import IconMinus from '@/components/icon/icon-minus';
 
+import { useRouter } from 'next/navigation';
+
 const StudentsPage = () => {
+    const router = useRouter();
     const [page, setPage] = useState(1);
     const PAGE_SIZES = [5, 10, 20, 50];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
@@ -156,7 +159,34 @@ const StudentsPage = () => {
                         <div className="w-8 h-8 flex items-center justify-center bg-[#079455] text-white rounded-full shrink-0 shadow-sm">
                             <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>check</span>
                         </div>
-                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">เข้างานปกติ</span>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">เข้างานปกติ</span>
+                    </div>
+                );
+            case 'ลากิจ':
+                return (
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EEEFFF] border border-[#1A3CFF]/50 w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#1A3CFF] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>business_center</span>
+                        </div>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลากิจ</span>
+                    </div>
+                );
+            case 'ลาป่วย':
+                return (
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFEFF3] border border-[#FF1A7D]/50 w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#FF1A7D] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>health_cross</span>
+                        </div>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลาป่วย</span>
+                    </div>
+                );
+            case 'ไม่ลงเวลาออก':
+                return (
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#F0F1F1] border border-[#94969C] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#85888E] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>hourglass_disabled</span>
+                        </div>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ไม่ลงเวลาออก</span>
                     </div>
                 );
             case 'ลา':
@@ -165,7 +195,7 @@ const StudentsPage = () => {
                         <div className="w-8 h-8 flex items-center justify-center bg-[#1AB3FF] text-white rounded-full shrink-0 shadow-sm">
                             <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>lab_profile</span>
                         </div>
-                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">ลา</span>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลา</span>
                     </div>
                 );
             case 'ขาด':
@@ -174,7 +204,7 @@ const StudentsPage = () => {
                         <div className="w-8 h-8 flex items-center justify-center bg-[#ef4444] text-white rounded-full shrink-0 shadow-sm">
                             <IconXCircle className="w-5 h-5" />
                         </div>
-                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">ขาด</span>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ขาด</span>
                     </div>
                 );
             case 'สาย':
@@ -183,7 +213,7 @@ const StudentsPage = () => {
                         <div className="w-8 h-8 flex items-center justify-center bg-[#FDB022] text-white rounded-full shrink-0 shadow-sm transition-transform">
                             <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>schedule</span>
                         </div>
-                        <span className="text-[#4b5563] font-medium text-[15px] whitespace-nowrap">สาย</span>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">สาย</span>
                     </div>
                 );
             default:
@@ -194,185 +224,69 @@ const StudentsPage = () => {
     return (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
             <div className="flex flex-col gap-1.5">
-                <h1 className="text-xl sm:text-2xl font-bold text-[#111827]">นักศึกษาในความดูแล</h1>
-                <p className="text-sm sm:text-base text-[#6B7280]">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษาในความดูแล</p>
+                <h1 className="text-[24px] font-bold text-[#000000]">นักศึกษาในความดูแล</h1>
+                <p className="text-[16px] font-normal text-[#61646C]">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษาในความดูแล</p>
             </div>
 
-            <div className="flex flex-col gap-4">
-                <div className="relative group w-full">
-                    <span className="absolute inset-y-0 left-4 flex items-center text-[#9CA3AF] group-focus-within:text-primary transition-colors">
-                        <IconSearch className="w-5 h-5" />
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative w-[328px] h-[36px]">
+                    <span className="absolute inset-y-0 left-[12px] flex items-center text-[#667085] pointer-events-none">
+                        <span className="material-symbols-outlined select-none text-[20px]">search</span>
                     </span>
                     <input
                         type="text"
-                        placeholder="ค้นหาชื่อนักศึกษาหรือตำแหน่ง..."
-                        className="form-input w-full pl-12 h-12 bg-white border-[#E5E7EB] rounded-lg focus:ring-primary/10 transition-all text-[14px] sm:text-[15px]"
+                        placeholder="พิมพ์ชื่อหรือตำแหน่งที่ต้องการค้นหา..."
+                        className="w-full h-full pl-[42px] pr-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] placeholder:text-[#61646C] transition-all"
                     />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                    <div className="relative">
-                        <Flatpickr
-                            value={dateRange}
-                            options={flatpickrOptions}
-                            className="form-input h-12 bg-white border-[#E5E7EB] rounded-lg text-base pr-10"
-                            placeholder="เลือกวันที่ที่ต้องการดู..."
-                            onChange={(date) => setDateRange(date)}
-                        />
-                        {dateRange && (
-                            <button
-                                type="button"
-                                onClick={() => setDateRange('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-danger"
-                            >
-                                <IconXCircle className="w-5 h-5" />
-                            </button>
-                        )}
-                    </div>
-                    <div className="relative">
-                        <Dropdown
-                            offset={[0, 5]}
-                            placement="bottom-start"
-                            btnClassName="w-full"
-                            button={
-                                <div className="flex items-center justify-between w-full h-12 px-4 bg-white border border-[#E5E7EB] rounded-lg cursor-pointer">
-                                    <span className={dateRange ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
-                                        ชื่อสถาบันศึกษา
-                                    </span>
-                                    <IconCaretDown className="w-5 h-5 text-[#9CA3AF]" />
-                                </div>
-                            }
+                <div className="relative w-[348px] h-[36px]">
+                    <Flatpickr
+                        value={dateRange}
+                        options={flatpickrOptions}
+                        className="w-full h-full px-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] placeholder:text-[#61646C]"
+                        placeholder="เลือกช่วงเวลาที่ต้องการดู..."
+                        onChange={(date) => setDateRange(date)}
+                    />
+                    {dateRange && (
+                        <button
+                            type="button"
+                            onClick={() => setDateRange('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-danger"
                         >
-                            <div 
-                                className="bg-white border border-[#E5E7EB] rounded-xl shadow-2xl w-[90vw] sm:w-[400px] max-w-full py-4"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <div className="px-4 mb-4">
-                                    <div className="relative group">
-                                        <span className="absolute inset-y-0 left-4 flex items-center text-[#9CA3AF]">
-                                            <IconSearch className="w-5 h-5" />
-                                        </span>
-                                        <input
-                                            type="text"
-                                            placeholder="ค้นหาชื่อสถาบันศึกษา..."
-                                            className="form-input pl-12 h-11 bg-white border-[#E5E7EB] rounded-lg focus:ring-0 focus:border-[#E5E7EB] text-base"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="max-h-[400px] overflow-y-auto px-2">
-                                    <div 
-                                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer rounded-lg mb-1"
-                                        onClick={() => {
-                                            const allSchools = [
-                                                'โรงเรียนหอวัง', 'โรงเรียนสวนกุหลาบ',
-                                                'สถาบันนวัตกรรม', 'วิทยาลัยเทคนิค',
-                                                'วิทยาลัยเทคโนโลยี', 'วิทยาลัยชุมชน',
-                                                'มหาวิทยาลัยธรรมศาสตร์', 'มหาวิทยาลัยเกษตรศาสตร์'
-                                            ];
-                                            if (selectedSchools.length === allSchools.length) {
-                                                setSelectedSchools([]);
-                                            } else {
-                                                setSelectedSchools(allSchools);
-                                            }
-                                        }}
-                                    >
-                                        <div className={`w-6 h-6 rounded flex items-center justify-center border-2 ${selectedSchools.length > 0 ? 'bg-[#A80689] border-[#A80689]' : 'border-[#6B7280]'}`}>
-                                            {selectedSchools.length > 0 && selectedSchools.length < 8 && <IconMinus className="w-4 h-4 text-white" />}
-                                            {selectedSchools.length === 8 && <IconCircleCheck className="w-4 h-4 text-white" />}
-                                        </div>
-                                        <span className="text-[#4B5563] font-medium text-base">ทั้งหมด ({selectedSchools.length})</span>
-                                    </div>
-
-                                    {[
-                                        { id: 'high-school', name: 'มัธยมศึกษาตอนปลาย', schools: ['โรงเรียนหอวัง', 'โรงเรียนสวนกุหลาบ'] },
-                                        { id: 'vocational-1', name: 'ประกาศนียบัตรวิชาชีพ (ปวช.)', schools: ['สถาบันนวัตกรรม', 'วิทยาลัยเทคนิค'] },
-                                        { id: 'vocational-2', name: 'ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)', schools: ['วิทยาลัยเทคโนโลยี', 'วิทยาลัยชุมชน'] },
-                                        { id: 'university', name: 'มหาวิทยาลัย', schools: ['มหาวิทยาลัยธรรมศาสตร์', 'มหาวิทยาลัยเกษตรศาสตร์'] }
-                                    ].map((cat) => {
-                                        const selectedInCat = cat.schools.filter(s => selectedSchools.includes(s));
-                                        const isAllSelected = selectedInCat.length === cat.schools.length;
-                                        const isPartial = selectedInCat.length > 0 && selectedInCat.length < cat.schools.length;
-
-                                        return (
-                                            <div key={cat.id} className="mb-2">
-                                                <div 
-                                                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer rounded-lg group"
-                                                    onClick={() => {
-                                                        setExpandedCats(prev => prev.includes(cat.id) ? prev.filter(c => c !== cat.id) : [...prev, cat.id]);
-                                                    }}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div 
-                                                            className={`w-6 h-6 rounded flex items-center justify-center border-2 ${selectedInCat.length > 0 ? 'bg-[#A80689] border-[#A80689]' : 'border-[#6B7280]'}`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (isAllSelected) {
-                                                                    setSelectedSchools(prev => prev.filter(s => !cat.schools.includes(s)));
-                                                                } else {
-                                                                    setSelectedSchools(prev => Array.from(new Set([...prev, ...cat.schools])));
-                                                                }
-                                                            }}
-                                                        >
-                                                            {isPartial && <IconMinus className="w-4 h-4 text-white" />}
-                                                            {isAllSelected && <IconCircleCheck className="w-4 h-4 text-white" />}
-                                                        </div>
-                                                        <span className="text-[#4B5563] font-medium text-base">{cat.name}</span>
-                                                    </div>
-                                                    <IconCaretDown className={`w-5 h-5 text-[#9CA3AF] transition-transform ${expandedCats.includes(cat.id) ? '' : '-rotate-90'}`} />
-                                                </div>
-
-                                                {expandedCats.includes(cat.id) && (
-                                                    <div className="ml-12 mt-1 space-y-1">
-                                                        {cat.schools.map(school => (
-                                                            <div
-                                                                key={school}
-                                                                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer rounded-lg"
-                                                                onClick={() => {
-                                                                    setSelectedSchools(prev => prev.includes(school) ? prev.filter(s => s !== school) : [...prev, school]);
-                                                                }}
-                                                            >
-                                                                <div className={`w-6 h-6 rounded flex items-center justify-center border-2 ${selectedSchools.includes(school) ? 'bg-[#A80689] border-[#A80689]' : 'border-[#6B7280]'}`}>
-                                                                    {selectedSchools.includes(school) && <IconCircleCheck className="w-4 h-4 text-white" />}
-                                                                </div>
-                                                                <span className="text-[#4B5563] text-base">{school}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </Dropdown>
-                    </div>
+                            <IconXCircle className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </div>
 
-            <div className="panel p-0 border-[#E5E7EB] shadow-sm overflow-hidden rounded-xl">
+            <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl">
                 <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <table className="w-full border-collapse table-auto min-w-[1100px]">
-                        <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                        <thead className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
                             <tr>
-                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">นักศึกษา</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">สถานะวันนี้</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">ชั่วโมงทำงาน</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-semibold text-[15px] whitespace-nowrap">ผลการพิจารณา</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">นักศึกษา</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถานะวันนี้</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ชั่วโมงทำงาน</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ผลการพิจารณา</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E5E7EB]">
+                        <tbody className="divide-y divide-[#F2F4F7]">
                             {records.map((student) => (
-                                <tr key={student.id} className="hover:bg-gray-50/50 transition-colors">
+                                <tr 
+                                    key={student.id} 
+                                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                    onClick={() => router.push(`/mentor/students/${student.id}`)}
+                                >
                                     <td className="py-4 px-6 text-left">
                                         <div className="flex items-center gap-4">
                                             <img src={student.avatar} alt={student.name} className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
                                                 onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${student.name}&background=random` }} 
                                             />
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-[#111827] text-[17px] whitespace-nowrap">{student.name}</span>
-                                                <span className="text-[14px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
+                                                <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">{student.name}</span>
+                                                <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
                                             </div>
                                         </div>
                                     </td>
@@ -389,28 +303,28 @@ const StudentsPage = () => {
                                             <div className="flex flex-col items-center gap-1">
                                                 <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
                                                     <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">มา</span>
+                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">มา</span>
                                                 </div>
                                             </div>
                                             {/* สาย */}
                                             <div className="flex flex-col items-center gap-1">
                                                 <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
                                                     <span className="text-[18px] font-bold text-[#E2A727] leading-none">{student.attendance.late}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">สาย</span>
+                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">สาย</span>
                                                 </div>
                                             </div>
                                             {/* ลา */}
                                             <div className="flex flex-col items-center gap-1">
                                                 <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
                                                     <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">ลา</span>
+                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">ลา</span>
                                                 </div>
                                             </div>
                                             {/* ขาด */}
                                             <div className="flex flex-col items-center gap-1">
                                                 <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
                                                     <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0.5">ขาด</span>
+                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">ขาด</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -418,8 +332,8 @@ const StudentsPage = () => {
                                     <td className="py-4 px-6">
                                         <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
                                             <div className="flex items-center justify-end px-1 mb-1">
-                                                <span className="text-[15px] text-[#9ca3af] font-medium uppercase tracking-wider">
-                                                    <b className="text-[#a80689] text-[18px]">{student.progress.current}</b>
+                                                <span className="text-[10px] text-[#9ca3af] font-medium uppercase tracking-wider">
+                                                    <b className="text-[#a80689] text-[14px]">{student.progress.current}</b>
                                                     / {student.progress.total} ชั่วโมง
                                                 </span>
                                             </div>
@@ -430,15 +344,15 @@ const StudentsPage = () => {
                                                 />
                                             </div>
                                             <div className="flex items-center gap-2 px-1 mt-1">
-                                                <div className={`w-5 h-5 flex items-center justify-center rounded-full ${
-                                                    student.statusType === 'ended' ? 'bg-[#ef4444]' : 
-                                                    student.statusType === 'last-day' ? 'bg-[#f97316]' : 'bg-[#9ca3af]'
-                                                } text-white`}>
-                                                    <IconClock className="w-3 h-3" />
-                                                </div>
-                                                <span className={`text-[13px] font-medium ${
-                                                    student.statusType === 'ended' ? 'text-[#ef4444]' : 
-                                                    student.statusType === 'last-day' ? 'text-[#f97316]' : 'text-[#6b7280]'
+                                                <span 
+                                                    className="material-symbols-outlined select-none" 
+                                                    style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
+                                                >
+                                                    schedule
+                                                </span>
+                                                <span className={`text-[10px] font-normal ${
+                                                    student.statusType === 'ended' ? 'text-[#D92D20]' : 
+                                                    student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
                                                 }`}>
                                                     {student.statusMessage}
                                                 </span>
@@ -447,7 +361,7 @@ const StudentsPage = () => {
                                     </td>
                                     <td className="py-4 px-6 text-center">
                                         <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
-                                            <span className={`font-semibold text-[15px] whitespace-nowrap ${
+                                            <span className={`font-semibold text-[10px] whitespace-nowrap ${
                                                 student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
                                             }`}>
                                                 {student.consideration}
@@ -462,37 +376,41 @@ const StudentsPage = () => {
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 pb-10 gap-6 px-2">
-                <button className="flex items-center gap-2.5 text-[#A80689] font-bold text-[16px] hover:opacity-80 transition-all group">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#A80689]/5 group-hover:bg-[#A80689]/10 transition-colors">
-                        <IconExport className="w-6 h-6 stroke-[2.5px]" />
+                <button className="flex items-center  text-[#A80689] font-bold text-[14px] ">
+                    <div className="w-10 h-10 flex items-center justify-center rounded-lg text-[#A80689]">
+                        <span className="material-symbols-outlined select-none text-[24px]">ios_share</span>
                     </div>
                     ส่งออกตาราง
                 </button>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center border border-[#CECFD2] rounded-full overflow-hidden bg-white shadow-sm">
                     <button
                         onClick={() => setPage(Math.max(1, page - 1))}
                         disabled={page === 1}
-                        className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-gray-50 disabled:opacity-30 transition-colors"
+                        className="w-11 h-10 flex items-center justify-center text-[#000000] border-r border-[#CECFD2] disabled:opacity-30 disabled:bg-gray-50/50"
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
+                        <span className="material-symbols-outlined text-[22px]">chevron_left</span>
                     </button>
                     
-                    <button onClick={() => setPage(1)} className={`w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold transition-all ${page === 1 ? 'bg-[#F1F5F9] text-[#1e293b]' : 'text-[#64748b] hover:bg-gray-50'}`}>1</button>
-                    <button onClick={() => setPage(2)} className={`w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold transition-all ${page === 2 ? 'bg-[#F1F5F9] text-[#1e293b]' : 'text-[#64748b] hover:bg-gray-50'}`}>2</button>
-                    <div className="w-10 h-10 flex items-center justify-center text-[#94a3b8] font-bold">...</div>
-                    <button className="w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold text-[#64748b] hover:bg-gray-50">9</button>
-                    <button className="w-10 h-10 flex items-center justify-center rounded-lg text-[15px] font-bold text-[#64748b] hover:bg-gray-50">10</button>
+                    {Array.from({ length: Math.ceil(filteredItems.length / pageSize) }).map((_, index) => {
+                        const pageNum = index + 1;
+                        return (
+                            <button 
+                                key={pageNum}
+                                onClick={() => setPage(pageNum)} 
+                                className={`w-11 h-10 flex items-center justify-center text-[14px] font-medium transition-all border-r border-[#CECFD2] ${page === pageNum ? 'bg-[#E4E7EC] text-[#1F2937]' : 'text-[#6B7280] hover:bg-gray-50'}`}
+                            >
+                                {pageNum}
+                            </button>
+                        );
+                    })}
 
                     <button
-                        onClick={() => setPage(page + 1)}
-                        className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-gray-50 transition-colors"
+                        onClick={() => setPage(Math.min(Math.ceil(filteredItems.length / pageSize), page + 1))}
+                        disabled={page >= Math.ceil(filteredItems.length / pageSize)}
+                        className="w-11 h-10 flex items-center justify-center text-[#000] font-bold hover:bg-gray-50 transition-colors disabled:opacity-30"
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
+                        <span className="material-symbols-outlined text-[24px]">chevron_right</span>
                     </button>
                 </div>
             </div>
