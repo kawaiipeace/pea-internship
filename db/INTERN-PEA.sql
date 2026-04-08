@@ -38,9 +38,9 @@ CREATE TYPE public.check_time_status_type AS ENUM ('PRESENT', 'LATE', 'ABSENT', 
 
 CREATE TYPE public.leave_period_enum AS ENUM ('FULL_DAY', 'MORNING', 'AFTERNOON');
 
-CREATE TYPE public.internship_end_history_enum AS ENUM ('COMPLETE', 'CANCEL');
-
 CREATE TYPE public.correction_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+CREATE TYPE public.internship_end_history_enum AS ENUM ('COMPLETE', 'CANCEL');
 
 CREATE TABLE -- all
   public.roles (
