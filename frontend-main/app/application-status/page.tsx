@@ -133,7 +133,8 @@ function ApplicationStatusContent() {
           // Check if application is active (not cancelled or completed without stepParam)
           if (
             app.applicationStatus === "CANCEL" ||
-            app.applicationStatus === "ABORT"
+            app.applicationStatus === "ABORT" ||
+            app.applicationStatus === "REJECTED"
           ) {
             if (!stepParam) {
               // No active application, show empty state
@@ -252,8 +253,8 @@ function ApplicationStatusContent() {
             }
           }
 
-          // If CANCEL, mark as rejected and store the reason
-          if (app.applicationStatus === "CANCEL") {
+          // If CANCEL or REJECTED, mark as rejected and store the reason
+          if (app.applicationStatus === "CANCEL" || app.applicationStatus === "REJECTED") {
             setIsRejected(true);
             if (app.statusNote) {
               setRejectionReason(app.statusNote);

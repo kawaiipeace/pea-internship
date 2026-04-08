@@ -152,8 +152,9 @@ const STATUS_MAP: Record<StatusChartKey, { label: string; color: string }> = {
   PENDING_REQUEST: { label: "รอเอกสารขอความอนุเคราะห์", color: "#8B5CF6" },
   PENDING_REVIEW: { label: "รอตรวจเอกสาร", color: "#14B8A6" },
   COMPLETE: { label: "รับเข้าฝึกงาน", color: "#0E9F58" },
-  CANCEL: { label: "ไม่ผ่าน", color: "#C02116" },
+  CANCEL: { label: "ยกเลิกฝึกงาน", color: "#C02116" },
   ABORT: { label: "ยกเลิกการสมัคร", color: "#9CA3AF" },
+  REJECTED: { label: "ไม่ผ่าน", color: "#FF2D2D" },
   INTERNSHIP_CANCELLED: { label: "ยกเลิกฝึกงาน", color: "#FF2D2D" },
 };
 
@@ -401,6 +402,7 @@ export default function OwnerDashboard() {
     });
 
     const statusOrder: StatusChartKey[] = [
+      "REJECTED",
       "CANCEL",
       "INTERNSHIP_CANCELLED",
       "PENDING_REQUEST",
