@@ -716,10 +716,10 @@ const LeaveHistoryPage = () => {
                                                                         onClick={() => handleViewFile(selectedHistoryItem)}
                                                                         className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-auto min-w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                                                                     >
-                                                                        <div className="flex items-center justify-center shrink-0">
+                                                                        <div className="flex items-center justify-center shrink-0 text-black">
                                                                             <span className="material-symbols-rounded !text-[20px]">picture_as_pdf</span>
                                                                         </div>
-                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-white truncate max-w-[250px] px-1">
+                                                                        <div className="text-[12px] font-medium text-black dark:text-white truncate max-w-[250px] px-1">
                                                                             {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'}
                                                                         </div>
                                                                     </button>

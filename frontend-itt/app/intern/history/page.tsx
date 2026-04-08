@@ -139,6 +139,55 @@ const AttendanceHistoryPage = () => {
     }
   };
 
+  const handleViewLeaveFile = async (item: any) => {
+    try {
+      if (!item.evidenceUrl) return;
+      
+      Swal.fire({
+        title: 'กำลังโหลดไฟล์...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // The evidenceUrl is likely "/leave-documents/..."
+      // We need to extract the key. If it starts with "/", remove it.
+      const key = item.evidenceUrl.startsWith('/') ? item.evidenceUrl.substring(1) : item.evidenceUrl;
+      
+      const response = await axiosInstance.get(`/files/${encodeURIComponent(key)}`, {
+        responseType: 'blob'
+      });
+
+      if (!response.data || response.data.size === 0) {
+        throw new Error('ไม่พบข้อมูลไฟล์');
+      }
+
+      const blobUrl = URL.createObjectURL(response.data);
+      
+      // Open in new tab
+      const newTab = window.open(blobUrl, '_blank');
+      if (!newTab) {
+        Swal.fire({
+          title: 'เปิดไฟล์ไม่สำเร็จ',
+          text: 'กรุณาอนุญาตให้เบราว์เซอร์เปิดหน้าต่างป็อปอัพ',
+          icon: 'warning',
+          confirmButtonText: 'ตกลง',
+          customClass: {
+            confirmButton: 'bg-[#A80689] text-white px-6 py-2 rounded-lg'
+          }
+        });
+      }
+      
+      Swal.close();
+      // Clean up
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch (error) {
+      console.error('Error fetching file:', error);
+      Swal.fire('Error', 'ไม่สามารถเปิดไฟล์ได้', 'error');
+    }
+  };
+
   const handleViewFile = async (key: string, filename: string) => {
     try {
       const response = await axiosInstance.get(`/check-time/file`, {
@@ -1042,7 +1091,7 @@ const AttendanceHistoryPage = () => {
                                     {/* Header Region */}
                                     <div className="w-full h-auto flex flex-col pt-1 touch-none">
                                       <div className="flex items-center justify-between mt-1 mb-2">
-                                        <div className="text-[16px] font-bold text-gray-800 dark:text-gray-200">
+                                        <div className="text-[16px]  text-gray-800 dark:text-gray-200">
                                           {selectedHistoryItem.date} {selectedHistoryItem.month} {selectedHistoryItem.year}
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -1094,16 +1143,19 @@ const AttendanceHistoryPage = () => {
                                         <button
                                           type="button"
                                           onClick={() => {
-                                            if (selectedHistoryItem.evidenceUrl) {
+                                            if (selectedHistoryItem.isLeave) {
+                                              handleViewLeaveFile(selectedHistoryItem);
+                                            } else if (selectedHistoryItem.evidenceUrl) {
+                                              // Fallback or for non-leave items if needed
                                               window.open(selectedHistoryItem.evidenceUrl, '_blank');
                                             }
                                           }}
                                           className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-auto min-w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                                         >
-                                          <div className="flex items-center justify-center shrink-0 ">
+                                          <div className="flex items-center justify-center shrink-0 text-black">
                                             <span className="material-symbols-rounded !text-[20px]">picture_as_pdf</span>
                                           </div>
-                                          <div className="text-[12px] font-medium text-[#000000] dark:text-white truncate max-w-[250px] px-1">
+                                          <div className="text-[12px] font-medium text-black dark:text-white truncate max-w-[250px] px-1">
                                             {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'}
                                           </div>
                                         </button>
@@ -1276,12 +1328,12 @@ const AttendanceHistoryPage = () => {
                                                 }
                                                 className="bg-[#F2F4F7] active:scale-95 transition-transform border border-[#CECFD2] rounded-[8px] px-2 flex items-center gap-1.5 h-[35px] shrink-0 shadow-sm hover:bg-gray-100 min-w-[120px]"
                                               >
-                                                <div className="flex items-center justify-center shrink-0">
-                                                  <span className="material-symbols-rounded text-[#4B5563] text-[20px]">
+                                                <div className="flex items-center justify-center shrink-0 text-black">
+                                                  <span className="material-symbols-rounded text-[20px]">
                                                     picture_as_pdf
                                                   </span>
                                                 </div>
-                                                <div className="text-[12px] font-bold text-gray-600 truncate max-w-[80px]">
+                                                <div className="text-[12px] font-bold text-black truncate max-w-[80px]">
                                                   {selectedHistoryItem.evidence}
                                                 </div>
                                               </button>
