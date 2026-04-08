@@ -699,7 +699,10 @@ export class ApplicationService {
             .select({ id: users.id })
             .from(users)
             .where(
-              and(eq(users.roleId, 2), eq(users.departmentId, app.departmentId))
+              and(
+                or(eq(users.roleId, 1), eq(users.roleId, 2)),
+                eq(users.departmentId, app.departmentId)
+              )
             );
 
           if (owners.length > 0) {
