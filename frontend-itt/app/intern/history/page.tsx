@@ -4,7 +4,6 @@ import IconCircleCheck from "@/components/icon/icon-circle-check";
 import IconClock from "@/components/icon/icon-clock";
 import IconFile from "@/components/icon/icon-file";
 import IconArrowLeft from "@/components/icon/icon-arrow-left";
-import IconShare from "@/components/icon/icon-share";
 import { Transition, Dialog } from "@headlessui/react";
 
 import IconCamera from "@/components/icon/icon-camera";

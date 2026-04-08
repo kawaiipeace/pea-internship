@@ -7,7 +7,6 @@ import IconCircleCheck from '@/components/icon/icon-circle-check';
 import IconClock from '@/components/icon/icon-clock';
 import IconFile from '@/components/icon/icon-file';
 import IconXCircle from '@/components/icon/icon-x-circle';
-import IconShare from '@/components/icon/icon-share';
 import { Transition, Dialog } from '@headlessui/react';
 
 import IconCamera from '@/components/icon/icon-camera';
@@ -535,7 +534,9 @@ const LeaveHistoryPage = () => {
                 {/* Footer / Pagination & Export */}
                 <div className="flex flex-row items-center justify-between gap-4 shrink-0 pb-8 mt-auto pt-4">
                     <button type="button" className="flex items-center gap-2 font-bold text-[15px] hover:opacity-80 text-[#b40e56] whitespace-nowrap">
-                        <IconShare className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2px]" />
+                        <span className="material-symbols-rounded !text-[20px] sm:!text-[24px]">
+                            ios_share
+                        </span>
                         <span className="hidden sm:inline">ส่งออกตาราง</span>
                         <span className="sm:hidden text-sm">ส่งออกตาราง</span>
                     </button>
