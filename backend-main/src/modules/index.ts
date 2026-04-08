@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { application } from "./application";
 import { applicationStatusActionsModule } from "./application_status_actions";
+import { applicationCompleteModal } from "./application-complete-modal";
 import { ApplicationDocuments } from "./application-documents";
 import { auth } from "./auth";
 import { checkTime } from "./check-time";
@@ -36,5 +37,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(checkTime)
   .use(leave)
   .use(file)
-  .use(applicationStatusActionsModule);
+  .use(applicationStatusActionsModule)
+  .use(applicationCompleteModal);
 export default modules;

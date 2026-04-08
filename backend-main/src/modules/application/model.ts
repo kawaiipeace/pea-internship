@@ -27,7 +27,10 @@ export const ApplicationInformationBody = t.Object({
 });
 
 export const UploadDocumentBody = t.Object({
-  file: t.File(),
+  file: t.File({
+    maxSize: 30 * 1024 * 1024,
+    type: ["application/pdf", "image/jpeg", "image/png"],
+  }),
 });
 
 export const ReviewDocumentBody = t.Object({
@@ -73,6 +76,8 @@ export const AllStudentsHistoryQuery = t.Object({
       t.Literal("PENDING_REVIEW"),
       t.Literal("COMPLETE"),
       t.Literal("CANCEL"),
+      t.Literal("ABORT"),
+      t.Literal("REJECTED"),
     ])
   ),
   positionId: t.Optional(t.Numeric()),

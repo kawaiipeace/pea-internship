@@ -426,25 +426,18 @@ export class PositionService {
 
       const autoStatus = computeAutoStatus(newRecruitStart, newRecruitEnd);
 
-      let finalStatus: "NOT_OPEN_YET" | "OPEN" | "CLOSE" | "EXPIRED" =
-        autoStatus;
+      let finalStatus: "NOT_OPEN_YET" | "OPEN" | "CLOSE" | "EXPIRED";
 
-      if (data.recruitmentStatus === "CLOSE") {
-        if (autoStatus !== "OPEN") {
-          throw new ForbiddenError(
-            "สามารถปิดประกาศได้เฉพาะตอนที่สถานะเป็น OPEN เท่านั้น"
-          );
+      if ("recruitmentStatus" in data && data.recruitmentStatus !== undefined) {
+        if (data.recruitmentStatus === "CLOSE") {
+          finalStatus = "CLOSE";
+        } else {
+          finalStatus = autoStatus;
         }
-        finalStatus = "CLOSE";
-      } else if (data.recruitmentStatus === "OPEN") {
-        if (autoStatus !== "OPEN") {
-          throw new ForbiddenError(
-            "ไม่สามารถเปิดรับสมัครได้ เพราะยังไม่ถึงเวลาเปิดรับสมัครหรือประกาศหมดอายุ"
-          );
-        }
-        finalStatus = "OPEN";
       } else {
         if (existing.recruitmentStatus === "CLOSE" && autoStatus === "OPEN") {
+          finalStatus = "CLOSE";
+        } else if (existing.recruitmentStatus === "CLOSE") {
           finalStatus = "CLOSE";
         } else {
           finalStatus = autoStatus;

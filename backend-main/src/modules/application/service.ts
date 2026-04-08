@@ -231,6 +231,7 @@ export class ApplicationService {
       .update(applicationStatuses)
       .set({
         applicationStatus: "ABORT",
+        isActive: false,
         statusNote: "ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
         updatedAt: new Date(),
       })
@@ -699,7 +700,10 @@ export class ApplicationService {
             .select({ id: users.id })
             .from(users)
             .where(
-              and(eq(users.roleId, 2), eq(users.departmentId, app.departmentId))
+              and(
+                or(eq(users.roleId, 1), eq(users.roleId, 2)),
+                eq(users.departmentId, app.departmentId)
+              )
             );
 
           if (owners.length > 0) {
@@ -1765,6 +1769,7 @@ export class ApplicationService {
         .update(applicationStatuses)
         .set({
           applicationStatus: "ABORT",
+          isActive: false,
           statusNote: null,
           updatedAt: new Date(),
         })
@@ -1839,7 +1844,8 @@ export class ApplicationService {
       await tx
         .update(applicationStatuses)
         .set({
-          applicationStatus: "CANCEL",
+          applicationStatus: "REJECTED",
+          isActive: false,
           statusNote: reason.trim(),
           updatedAt: new Date(),
         })

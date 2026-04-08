@@ -8,12 +8,14 @@ import {
   applicationStatuses,
   attendanceLogs,
   checkTimes,
+  completeAcknowledge,
   dailyWorkLogs,
   departments,
   docTypes,
   favorites,
   institutions,
   internProjects,
+  internshipEndHistory,
   internshipPositionMentors,
   internshipPositions,
   leaveRequests,
@@ -68,6 +70,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   studentOffsiteTasks: many(offsiteTaskStudents, {
     relationName: "studentOffsiteTasks",
   }),
+  internshipEndHistoryChangedBy: many(internshipEndHistory),
+  completeAcknowledge: many(completeAcknowledge),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -115,6 +119,35 @@ export const studentProfilesRelations = relations(
       references: [institutions.id],
     }),
     attendanceLogs: many(attendanceLogs),
+    internshipEndHistory: many(internshipEndHistory),
+  })
+);
+
+export const internshipEndHistoryRelations = relations(
+  internshipEndHistory,
+  ({ one }) => ({
+    studentProfile: one(studentProfiles, {
+      fields: [internshipEndHistory.studentProfileId],
+      references: [studentProfiles.id],
+    }),
+    changedByUser: one(users, {
+      fields: [internshipEndHistory.changedBy],
+      references: [users.id],
+    }),
+  })
+);
+
+export const completeAcknowledgeRelations = relations(
+  completeAcknowledge,
+  ({ one }) => ({
+    applicationStatus: one(applicationStatuses, {
+      fields: [completeAcknowledge.applicationStatusId],
+      references: [applicationStatuses.id],
+    }),
+    user: one(users, {
+      fields: [completeAcknowledge.userId],
+      references: [users.id],
+    }),
   })
 );
 
@@ -238,6 +271,7 @@ export const applicationStatusesRelations = relations(
     applicationDocuments: many(applicationDocuments),
     applicationMentors: many(applicationMentors),
     applicationStatusActions: many(applicationStatusActions),
+    completeAcknowledge: many(completeAcknowledge),
   })
 );
 
