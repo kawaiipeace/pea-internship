@@ -24,7 +24,8 @@ CREATE TYPE public.app_status_enum AS ENUM (
   'PENDING_REVIEW',
   'COMPLETE',
   'CANCEL',
-  'ABORT'
+  'ABORT',
+  'REJECTED'
 );
 
 CREATE TYPE public.validation_status_enum AS ENUM ('PENDING', 'INVALID', 'VERIFIED');

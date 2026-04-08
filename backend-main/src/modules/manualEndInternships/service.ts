@@ -173,7 +173,7 @@ export class OwnerStudentStatusService {
 
       if (nextStatus === "CANCEL") {
         const reason = body.reason?.trim();
-        if (!reason) throw new BadRequestError("กรุณาระบุเหตุผลการ CANCEL");
+        if (!reason) throw new BadRequestError("กรุณาระบุเหตุผลการ CANCEฟL");
 
         await tx
           .update(internshipPositions)

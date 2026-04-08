@@ -1844,7 +1844,7 @@ export class ApplicationService {
       await tx
         .update(applicationStatuses)
         .set({
-          applicationStatus: "CANCEL",
+          applicationStatus: "REJECTED",
           isActive: false,
           statusNote: reason.trim(),
           updatedAt: new Date(),
