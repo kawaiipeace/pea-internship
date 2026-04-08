@@ -152,8 +152,9 @@ const STATUS_MAP: Record<StatusChartKey, { label: string; color: string }> = {
   PENDING_REQUEST: { label: "รอเอกสารขอความอนุเคราะห์", color: "#8B5CF6" },
   PENDING_REVIEW: { label: "รอตรวจเอกสาร", color: "#14B8A6" },
   COMPLETE: { label: "รับเข้าฝึกงาน", color: "#0E9F58" },
-  CANCEL: { label: "ไม่ผ่าน", color: "#C02116" },
+  CANCEL: { label: "ยกเลิกฝึกงาน", color: "#C02116" },
   ABORT: { label: "ยกเลิกการสมัคร", color: "#9CA3AF" },
+  REJECTED: { label: "ไม่ผ่าน", color: "#FF2D2D" },
   INTERNSHIP_CANCELLED: { label: "ยกเลิกฝึกงาน", color: "#FF2D2D" },
 };
 
@@ -382,6 +383,11 @@ export default function OwnerDashboard() {
   const statusData = useMemo(() => {
     const counts: Partial<Record<StatusChartKey, number>> = {};
     allApps.forEach((app) => {
+      if (app.applicationStatus === "ABORT") {
+        counts.ABORT = (counts.ABORT || 0) + 1;
+        return;
+      }
+
       const isInternshipCancelled =
         app.studentInternshipStatus === "CANCEL" ||
         (app.applicationStatus === "CANCEL" && app.isActive === false);
@@ -396,6 +402,7 @@ export default function OwnerDashboard() {
     });
 
     const statusOrder: StatusChartKey[] = [
+      "REJECTED",
       "CANCEL",
       "INTERNSHIP_CANCELLED",
       "PENDING_REQUEST",
@@ -487,83 +494,20 @@ export default function OwnerDashboard() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    return allApps
-      .map((app) => {
-        const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
-        const endDate = toDateOnly(app.infoEndDate || app.profileEndDate);
-        const fullName = `${app.fname || ""} ${app.lname || ""}`.trim() || "-";
-        const positionName = app.positionName || "ตำแหน่งไม่ระบุ";
-        const periodText = `${formatShortThaiDate(app.infoStartDate || app.profileStartDate)} - ${formatShortThaiDate(app.infoEndDate || app.profileEndDate)}`;
+    const buildInternRow = (
+      app: AllStudentsHistoryItem,
+    ): InternTableRow | null => {
+      const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
+      const endDate = toDateOnly(app.infoEndDate || app.profileEndDate);
+      const fullName = `${app.fname || ""} ${app.lname || ""}`.trim() || "-";
+      const positionName = app.positionName || "ตำแหน่งไม่ระบุ";
+      const periodText = `${formatShortThaiDate(app.infoStartDate || app.profileStartDate)} - ${formatShortThaiDate(app.infoEndDate || app.profileEndDate)}`;
 
-        const internshipCancelled =
-          app.studentInternshipStatus === "CANCEL" ||
-          (app.applicationStatus === "CANCEL" && app.isActive === false);
+      const internshipCancelled =
+        app.studentInternshipStatus === "CANCEL" ||
+        (app.applicationStatus === "CANCEL" && app.isActive === false);
 
-        if (internshipCancelled) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "ยกเลิกฝึกงาน",
-            statusType: "cancelled" as const,
-          };
-        }
-
-        // Accepted + document passed flow for this dashboard view.
-        if (app.applicationStatus !== "COMPLETE") return null;
-
-        const isAwaiting = app.studentInternshipStatus === "AWAITING";
-        if (isAwaiting) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "รอเริ่มฝึกงาน",
-            statusType: "awaiting" as const,
-          };
-        }
-
-        const isActiveByPeriod =
-          !!startDate &&
-          !!endDate &&
-          now.getTime() >= startDate.getTime() &&
-          now.getTime() <= endDate.getTime();
-        const isActiveByStatus = app.studentInternshipStatus === "ACTIVE";
-        if (isActiveByPeriod || isActiveByStatus) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "อยู่ระหว่างฝึกงาน",
-            statusType: "active" as const,
-          };
-        }
-
-        const isCompleted =
-          app.studentInternshipStatus === "COMPLETE" ||
-          (!!endDate && now.getTime() > endDate.getTime());
-        if (isCompleted) {
-          return {
-            id: app.applicationId,
-            fullName,
-            positionName,
-            periodText,
-            startDate,
-            endDate,
-            statusLabel: "ฝึกงานเสร็จสิ้น",
-            statusType: "completed" as const,
-          };
-        }
-
+      if (internshipCancelled) {
         return {
           id: app.applicationId,
           fullName,
@@ -571,11 +515,124 @@ export default function OwnerDashboard() {
           periodText,
           startDate,
           endDate,
-          statusLabel: "รับเข้าฝึกงาน",
-          statusType: "accepted" as const,
+          statusLabel: "ยกเลิกฝึกงาน",
+          statusType: "cancelled" as const,
         };
-      })
-      .filter((row): row is InternTableRow => row !== null);
+      }
+
+      // Accepted + document passed flow for this dashboard view.
+      if (app.applicationStatus !== "COMPLETE") return null;
+
+      const isAwaiting = app.studentInternshipStatus === "AWAITING";
+      if (isAwaiting) {
+        return {
+          id: app.applicationId,
+          fullName,
+          positionName,
+          periodText,
+          startDate,
+          endDate,
+          statusLabel: "รอเริ่มฝึกงาน",
+          statusType: "awaiting" as const,
+        };
+      }
+
+      const isActiveByPeriod =
+        !!startDate &&
+        !!endDate &&
+        now.getTime() >= startDate.getTime() &&
+        now.getTime() <= endDate.getTime();
+      const isActiveByStatus = app.studentInternshipStatus === "ACTIVE";
+      if (isActiveByPeriod || isActiveByStatus) {
+        return {
+          id: app.applicationId,
+          fullName,
+          positionName,
+          periodText,
+          startDate,
+          endDate,
+          statusLabel: "อยู่ระหว่างฝึกงาน",
+          statusType: "active" as const,
+        };
+      }
+
+      const isCompleted =
+        app.studentInternshipStatus === "COMPLETE" ||
+        (!!endDate && now.getTime() > endDate.getTime());
+      if (isCompleted) {
+        return {
+          id: app.applicationId,
+          fullName,
+          positionName,
+          periodText,
+          startDate,
+          endDate,
+          statusLabel: "ฝึกงานเสร็จสิ้น",
+          statusType: "completed" as const,
+        };
+      }
+
+      return {
+        id: app.applicationId,
+        fullName,
+        positionName,
+        periodText,
+        startDate,
+        endDate,
+        statusLabel: "รับเข้าฝึกงาน",
+        statusType: "accepted" as const,
+      };
+    };
+
+    const latestNonCancelledByUser = new Map<
+      string,
+      { row: InternTableRow; createdAt: number }
+    >();
+    const cancelledEntries: Array<{
+      userKey: string;
+      row: InternTableRow;
+      createdAt: number;
+    }> = [];
+    const usersWithCancelled = new Set<string>();
+
+    allApps.forEach((app) => {
+      const row = buildInternRow(app);
+      if (!row) return;
+
+      const userKey =
+        app.studentUserId ||
+        app.email ||
+        app.phoneNumber ||
+        `${app.fname || ""}-${app.lname || ""}` ||
+        `app-${app.applicationId}`;
+      const createdAt = new Date(app.createdAt).getTime() || 0;
+
+      if (row.statusType === "cancelled") {
+        // Keep every cancelled internship row (do not dedupe).
+        cancelledEntries.push({ userKey, row, createdAt });
+        usersWithCancelled.add(userKey);
+        return;
+      }
+
+      const existing = latestNonCancelledByUser.get(userKey);
+      if (!existing) {
+        latestNonCancelledByUser.set(userKey, { row, createdAt });
+        return;
+      }
+
+      // Keep the latest non-cancelled row for each user.
+      if (createdAt > existing.createdAt) {
+        latestNonCancelledByUser.set(userKey, { row, createdAt });
+      }
+    });
+
+    const nonCancelledEntries = Array.from(latestNonCancelledByUser.entries())
+      .filter(([userKey]) => !usersWithCancelled.has(userKey))
+      .map(([, entry]) => entry);
+
+    return [...cancelledEntries, ...nonCancelledEntries]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((entry) => entry.row);
   }, [allApps]);
 
   const filteredInternTableData = useMemo(() => {

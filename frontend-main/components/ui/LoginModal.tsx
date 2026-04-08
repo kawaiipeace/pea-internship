@@ -12,13 +12,24 @@ interface LoginModalProps {
   onLoginSuccess?: () => void;
 }
 
-export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home", pendingBookmarkJobId, onLoginSuccess }: LoginModalProps) {
+export default function LoginModal({
+  isOpen,
+  onClose,
+  redirectTo = "/intern-home",
+  pendingBookmarkJobId,
+  onLoginSuccess,
+}: LoginModalProps) {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
-  const [touched, setTouched] = useState<{ phone?: boolean; password?: boolean }>({});
+  const [errors, setErrors] = useState<{ phone?: string; password?: string }>(
+    {},
+  );
+  const [touched, setTouched] = useState<{
+    phone?: boolean;
+    password?: boolean;
+  }>({});
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,14 +37,23 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
 
   // Error icon component
   const ErrorIcon = () => (
-    <svg className="w-4 h-4 text-red-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+    <svg
+      className="w-4 h-4 text-red-500 shrink-0"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path
+        fillRule="evenodd"
+        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+        clipRule="evenodd"
+      />
     </svg>
   );
 
   const validatePhone = (value: string): string | undefined => {
-    if (!value.trim()) return "ระบุเบอร์โทรศัพท์";
-    if (!/^[0-9]{9,10}$/.test(value.replace(/[-\s]/g, ""))) return "รูปแบบเบอร์โทรไม่ถูกต้อง";
+    const normalizedPhone = value.replace(/\D/g, "");
+    if (!normalizedPhone) return "ระบุเบอร์โทรศัพท์";
+    if (normalizedPhone.length !== 10) return "กรุณาระบุเบอร์โทร 10 หลัก";
     return undefined;
   };
 
@@ -43,10 +63,11 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
   };
 
   const handlePhoneChange = (value: string) => {
-    setPhone(value);
+    const normalizedPhone = value.replace(/\D/g, "").slice(0, 10);
+    setPhone(normalizedPhone);
     setLoginError(null); // Clear login error when typing
     if (touched.phone) {
-      setErrors((prev) => ({ ...prev, phone: validatePhone(value) }));
+      setErrors((prev) => ({ ...prev, phone: validatePhone(normalizedPhone) }));
     }
   };
 
@@ -69,25 +90,25 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate all fields
     const phoneError = validatePhone(phone);
     const passwordError = validatePassword(password);
-    
+
     setTouched({ phone: true, password: true });
     setErrors({ phone: phoneError, password: passwordError });
     setLoginError(null);
-    
+
     if (!phoneError && !passwordError) {
       setIsLoading(true);
-      
+
       try {
         // เรียก API login จริง
         await authApi.loginIntern({
           phoneNumber: phone,
           password: password,
         });
-        
+
         // ดึง session หลัง login สำเร็จ เพื่อเก็บข้อมูล user
         try {
           const session = await authApi.getSession();
@@ -109,23 +130,25 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
             roleId: 3, // intern role
           } as any);
         }
-        
+
         // Login สำเร็จ
         console.log("Login สำเร็จ");
-        
+
         // Set user_role cookie สำหรับ middleware
         document.cookie = `user_role=intern; path=/; max-age=86400`;
-        
+
         // ถ้ามี pending bookmark ให้เพิ่มใน favorites
         if (pendingBookmarkJobId) {
           const savedFavorites = localStorage.getItem("favorites");
-          const currentFavorites: string[] = savedFavorites ? JSON.parse(savedFavorites) : [];
+          const currentFavorites: string[] = savedFavorites
+            ? JSON.parse(savedFavorites)
+            : [];
           if (!currentFavorites.includes(pendingBookmarkJobId)) {
             const newFavorites = [...currentFavorites, pendingBookmarkJobId];
             localStorage.setItem("favorites", JSON.stringify(newFavorites));
           }
         }
-        
+
         onClose();
         if (onLoginSuccess) {
           onLoginSuccess();
@@ -135,9 +158,14 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
       } catch (error: unknown) {
         console.error("Login error:", error);
         // แสดง error message
-        if (error && typeof error === 'object' && 'response' in error) {
-          const axiosError = error as { response?: { data?: { message?: string } } };
-          setLoginError(axiosError.response?.data?.message || "เบอร์โทรศัพท์หรือรหัสผ่าน ไม่ถูกต้อง กรุณาระบุข้อมูลอีกครั้ง");
+        if (error && typeof error === "object" && "response" in error) {
+          const axiosError = error as {
+            response?: { data?: { message?: string } };
+          };
+          setLoginError(
+            axiosError.response?.data?.message ||
+              "เบอร์โทรศัพท์หรือรหัสผ่าน ไม่ถูกต้อง กรุณาระบุข้อมูลอีกครั้ง",
+          );
         } else {
           setLoginError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
         }
@@ -147,7 +175,8 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
     }
   };
 
-  const hasError = (field: "phone" | "password") => touched[field] && errors[field];
+  const hasError = (field: "phone" | "password") =>
+    touched[field] && errors[field];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -190,7 +219,9 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Phone Input */}
           <div>
-            <label className={`block font-semibold mb-2 text-sm ${hasError("phone") || loginError ? "text-red-500" : "text-gray-800"}`}>
+            <label
+              className={`block font-semibold mb-2 text-sm ${hasError("phone") || loginError ? "text-red-500" : "text-gray-800"}`}
+            >
               เบอร์โทรศัพท์
             </label>
             <input
@@ -199,6 +230,8 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
               value={phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               onBlur={() => handleBlur("phone")}
+              inputMode="numeric"
+              maxLength={10}
               className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors ${
                 hasError("phone") || loginError
                   ? "border-red-500 focus:border-red-500"
@@ -215,7 +248,9 @@ export default function LoginModal({ isOpen, onClose, redirectTo = "/intern-home
 
           {/* Password Input */}
           <div>
-            <label className={`block font-semibold mb-2 text-sm ${hasError("password") || loginError ? "text-red-500" : "text-gray-800"}`}>
+            <label
+              className={`block font-semibold mb-2 text-sm ${hasError("password") || loginError ? "text-red-500" : "text-gray-800"}`}
+            >
               รหัสผ่าน
             </label>
             <div className="relative">

@@ -66,6 +66,8 @@ function mapBackendStatusToDisplay(app: {
       if (app.infoEndDate && new Date(app.infoEndDate) > new Date())
         return "in-training";
       return "completed";
+    case "REJECTED":
+      return "rejected";
     case "CANCEL":
       if (!app.isActive) return "intern-cancelled";
       return "rejected";
@@ -167,7 +169,8 @@ function JobDetailContent() {
           : null;
         if (
           matchedApp.applicationStatus === "CANCEL" ||
-          matchedApp.applicationStatus === "ABORT"
+          matchedApp.applicationStatus === "ABORT" ||
+          matchedApp.applicationStatus === "REJECTED"
         ) {
           if (matchedApp.statusNote) setRejectionReason(matchedApp.statusNote);
         } else if (hasInvalidDoc && invalidDocNote) {
@@ -218,7 +221,7 @@ function JobDetailContent() {
       case "rejected":
         return (
           <div className="flex flex-wrap gap-2">
-            <button className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm  transition-transform ">
+            <button className="px-3 py-2 bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA] rounded-full font-bold text-sm  transition-transform ">
               ไม่ผ่าน
             </button>
           </div>
@@ -242,7 +245,7 @@ function JobDetailContent() {
       case "intern-cancelled":
         return (
           <div className="flex flex-wrap gap-2">
-            <button className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm  transition-transform ">
+            <button className="px-3 py-2 bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA] rounded-full font-bold text-sm  transition-transform ">
               ยกเลิกฝึกงาน
             </button>
           </div>
@@ -470,20 +473,23 @@ function JobDetailContent() {
         {rejectionReason &&
           (status === "rejected" ||
             status === "cancelled" ||
-            status === "accepted-doc-failed") && (
+            status === "accepted-doc-failed" ||
+            status === "intern-cancelled") && (
             <div className="mt-4">
               <h4 className="font-bold text-gray-800 text-sm mb-1.5">
                 {status === "rejected"
                   ? "เหตุผลที่ไม่ผ่าน"
                   : status === "cancelled"
                     ? "เหตุผลที่ยกเลิก"
-                    : "เหตุผลที่เอกสารไม่ผ่าน"}
+                    : status === "intern-cancelled"
+                      ? "เหตุผลที่ยกเลิกฝึกงาน"
+                      : "เหตุผลที่เอกสารไม่ผ่าน"}
               </h4>
               <div
-                className={`${status === "rejected" || status === "accepted-doc-failed" ? "bg-red-50 border-red-200" : status === "cancelled" ? "bg-gray-50 border-gray-200" : "bg-red-50 border-red-200"} border rounded-lg p-3`}
+                className={`${status === "rejected" || status === "accepted-doc-failed" || status === "intern-cancelled" ? "bg-red-50 border-red-200" : status === "cancelled" ? "bg-gray-50 border-gray-200" : "bg-red-50 border-red-200"} border rounded-lg p-3`}
               >
                 <p
-                  className={`${status === "rejected" || status === "accepted-doc-failed" ? "text-red-700" : status === "cancelled" ? "text-gray-600" : "text-red-700"} text-sm`}
+                  className={`${status === "rejected" || status === "accepted-doc-failed" || status === "intern-cancelled" ? "text-red-700" : status === "cancelled" ? "text-gray-600" : "text-red-700"} text-sm`}
                 >
                   {rejectionReason}
                 </p>

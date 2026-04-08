@@ -110,23 +110,29 @@ body {
 }
 
 /* Navbar blended into dark background for credits page */
-.credits-nav-glass nav {
+.credits-nav-glass > nav {
   background: transparent !important;
   border-color: transparent !important;
   box-shadow: none !important;
 }
-.credits-nav-glass nav a,
-.credits-nav-glass nav button {
-  color: rgba(255, 255, 255, 0.85);
+/* Only color the top bar (first child div = max-w-7xl wrapper) white */
+.credits-nav-glass > nav > div:first-child a,
+.credits-nav-glass > nav > div:first-child button {
+  color: rgba(255, 255, 255, 0.65);
 }
-.credits-nav-glass nav a:hover,
-.credits-nav-glass nav button:hover {
+.credits-nav-glass > nav > div:first-child a:hover,
+.credits-nav-glass > nav > div:first-child button:hover {
   color: #ffffff;
 }
-.credits-nav-glass nav .border-primary-600 {
+/* Active link on desktop credits navbar - full white + bold */
+.credits-nav-glass > nav > div:first-child .text-primary-600 {
+  color: rgba(255, 255, 255, 1) !important;
+  font-weight: 700 !important;
+}
+.credits-nav-glass > nav > div:first-child .border-primary-600 {
   border-color: rgba(255, 255, 255, 0.3);
 }
-.credits-nav-glass nav .bg-primary-600 {
+.credits-nav-glass > nav > div:first-child .bg-primary-600 {
   background: rgba(168, 6, 137, 0.8);
   border-color: rgba(168, 6, 137, 0.8);
 }

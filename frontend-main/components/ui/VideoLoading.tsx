@@ -32,6 +32,7 @@ export default function VideoLoading({
             src="/images/01_Sawasdee.jpg"
             alt="Loading"
             fill
+            sizes="1000px"
             className="object-cover"
             priority
           />

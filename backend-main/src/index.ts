@@ -2,6 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { logger } from "elysia-logger";
 import swagger from "@/config/swagger";
+import { positionStatusCron } from "@/cron/position-status-cron";
 import { auth } from "@/lib/auth";
 import { errorMiddleware } from "@/middlewares/error.middleware";
 import modules from "@/modules";
@@ -70,6 +71,7 @@ const app = new Elysia()
   .use(awaitingCron)
   .use(dailyAttendanceSyncCron)
   .use(applicationInterviewTimeoutCron)
+  .use(positionStatusCron)
   .listen(PORT);
 
 console.log(

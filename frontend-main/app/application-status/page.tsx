@@ -11,6 +11,8 @@ import {
   APP_STATUS_TO_STEP,
   positionApi,
   positionToJob,
+  userApi,
+  extractStudentProfile,
 } from "@/services/api";
 import type { Job } from "@/components/ui/JobCard";
 
@@ -88,6 +90,7 @@ function ApplicationStatusContent() {
     "Transcript",
   ]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [transcriptName, setTranscriptName] = useState<string>("");
@@ -100,14 +103,38 @@ function ApplicationStatusContent() {
     const loadApplication = async () => {
       setIsLoadingData(true);
       try {
+        let profileInternshipStatus: string | null = null;
+        try {
+          const userProfile = await userApi.getUserProfile();
+          profileInternshipStatus =
+            extractStudentProfile(userProfile.profile)?.internshipStatus ||
+            null;
+        } catch {
+          profileInternshipStatus = null;
+        }
+
         const app = await applicationApi.getMyLatestApplication();
         if (app) {
           setApplicationId(app.applicationId);
 
+          // Keep source-of-truth aligned with history page:
+          // if internship is cancelled at profile level, this page should not
+          // continue showing active/accepted tracking flow.
+          const isInternshipCancelled =
+            profileInternshipStatus === "CANCEL" ||
+            (app.applicationStatus === "CANCEL" && !app.isActive);
+          if (isInternshipCancelled && !stepParam) {
+            setHasApplication(false);
+            setIsRejected(false);
+            setDocumentError("");
+            return;
+          }
+
           // Check if application is active (not cancelled or completed without stepParam)
           if (
             app.applicationStatus === "CANCEL" ||
-            app.applicationStatus === "ABORT"
+            app.applicationStatus === "ABORT" ||
+            app.applicationStatus === "REJECTED"
           ) {
             if (!stepParam) {
               // No active application, show empty state
@@ -128,7 +155,10 @@ function ApplicationStatusContent() {
 
             // When docs are rejected, status goes back to PENDING_REQUEST with a statusNote
             const docNote = app.documents?.find((d) => d.note)?.note;
-            if (app.applicationStatus === "PENDING_REQUEST" && (docNote || app.statusNote)) {
+            if (
+              app.applicationStatus === "PENDING_REQUEST" &&
+              (docNote || app.statusNote)
+            ) {
               setDocumentStatus("เอกสารไม่ผ่าน");
               setDocumentError(docNote || app.statusNote || "");
               setIsCourtesySubmitted(false);
@@ -223,8 +253,8 @@ function ApplicationStatusContent() {
             }
           }
 
-          // If CANCEL, mark as rejected and store the reason
-          if (app.applicationStatus === "CANCEL") {
+          // If CANCEL or REJECTED, mark as rejected and store the reason
+          if (app.applicationStatus === "CANCEL" || app.applicationStatus === "REJECTED") {
             setIsRejected(true);
             if (app.statusNote) {
               setRejectionReason(app.statusNote);
@@ -314,6 +344,35 @@ function ApplicationStatusContent() {
   const [isReuploadReady, setIsReuploadReady] = useState(false);
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string>("");
+  const [showFileSizeErrorModal, setShowFileSizeErrorModal] = useState(false);
+  const [fileSizeErrorMessage, setFileSizeErrorMessage] = useState<string>("");
+
+  const MAX_FILE_SIZE_MB = 30;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+  const ALLOWED_FILE_TYPES = [".png", ".jpg", ".jpeg", ".pdf"];
+  const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "application/pdf"];
+
+  const validateFile = (file: File): boolean => {
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    if (
+      !ALLOWED_FILE_TYPES.includes(ext) &&
+      !ALLOWED_MIME_TYPES.includes(file.type)
+    ) {
+      setFileSizeErrorMessage(
+        `ไฟล์ "${file.name}" ไม่รองรับ กรุณาอัปโหลดไฟล์ .png, .jpg หรือ .pdf เท่านั้น`,
+      );
+      setShowFileSizeErrorModal(true);
+      return false;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setFileSizeErrorMessage(
+        `ไฟล์ "${file.name}" มีขนาด ${(file.size / (1024 * 1024)).toFixed(1)} MB ซึ่งเกินขนาดที่กำหนด (ไม่เกิน ${MAX_FILE_SIZE_MB} MB)`,
+      );
+      setShowFileSizeErrorModal(true);
+      return false;
+    }
+    return true;
+  };
 
   const transcriptInputRef = useRef<HTMLInputElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -334,31 +393,51 @@ function ApplicationStatusContent() {
 
   const handleTranscriptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setTranscript(e.target.files[0]);
-      setTranscriptName(e.target.files[0].name);
+      const file = e.target.files[0];
+      if (!validateFile(file)) {
+        e.target.value = "";
+        return;
+      }
+      setTranscript(file);
+      setTranscriptName(file.name);
       setShowSuccessModal(true);
     }
   };
 
   const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setResume(e.target.files[0]);
-      setResumeName(e.target.files[0].name);
+      const file = e.target.files[0];
+      if (!validateFile(file)) {
+        e.target.value = "";
+        return;
+      }
+      setResume(file);
+      setResumeName(file.name);
       setShowSuccessModal(true);
     }
   };
 
   const handlePortfolioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setPortfolio(e.target.files[0]);
-      setPortfolioName(e.target.files[0].name);
+      const file = e.target.files[0];
+      if (!validateFile(file)) {
+        e.target.value = "";
+        return;
+      }
+      setPortfolio(file);
+      setPortfolioName(file.name);
       setShowSuccessModal(true);
     }
   };
 
   const handleCourtesyDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setCourtesyDocument(e.target.files[0]);
+      const file = e.target.files[0];
+      if (!validateFile(file)) {
+        e.target.value = "";
+        return;
+      }
+      setCourtesyDocument(file);
       setShowSuccessModal(true);
       // If document status was "ไม่ครบถ้วน", mark as ready for reupload
       if (documentStatus === "เอกสารไม่ผ่าน") {
@@ -504,11 +583,12 @@ function ApplicationStatusContent() {
   };
 
   const handleFinalCancel = async () => {
-    setShowCancelModal(false);
+    setIsCanceling(true);
     try {
       if (applicationId) {
         await applicationApi.cancelApplication(applicationId);
       }
+      setShowCancelModal(false);
       setShowCancelSuccessModal(true);
       // Auto close after 2 seconds and redirect to intern home
       setTimeout(() => {
@@ -520,6 +600,8 @@ function ApplicationStatusContent() {
       const error = err as { response?: { data?: { message?: string } } };
       const msg = error?.response?.data?.message || "ไม่สามารถยกเลิกใบสมัครได้";
       alert(msg);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -1103,7 +1185,7 @@ function ApplicationStatusContent() {
               <span className="text-red-500">*</span>เอกสารที่ต้องอัปโหลด
             </h2>
             {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
-              <div className="flex items-center gap-1.5 mb-3 md:mb-4 text-red-600">
+              <div className="flex items-center gap-1.5 mb-2 md:mb-3 text-red-600">
                 <svg
                   width="18"
                   height="18"
@@ -1117,10 +1199,15 @@ function ApplicationStatusContent() {
                   />
                 </svg>
                 <span className="text-xs md:text-sm font-medium">
-                  กรุณาอัปโหลดเอกสารภายใน 30 วัน
+                  กรุณาอัปโหลดเอกสารภายใน 15 วัน
                   มิฉะนั้นใบสมัครนี้จะถูกยกเลิกอัตโนมัติ{" "}
                 </span>
               </div>
+            )}
+            {currentStep === "รอยื่นเอกสาร" && !isViewingCompleted && (
+              <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">
+                รองรับไฟล์ .png, .jpg, .pdf เท่านั้น (ไฟล์ละไม่เกิน 30 MB)
+              </p>
             )}
 
             {/* Transcript Upload */}
@@ -1138,7 +1225,7 @@ function ApplicationStatusContent() {
                   />
                 </svg>
                 <span className="font-bold text-gray-800 text-sm md:text-base">
-                  Transcript (PDF)<span className="text-red-500">*</span>
+                  Transcript<span className="text-red-500">*</span>
                 </span>
               </div>
               {/* Sample Document Button */}
@@ -1217,7 +1304,7 @@ function ApplicationStatusContent() {
               <input
                 ref={transcriptInputRef}
                 type="file"
-                accept=".pdf"
+                accept=".png,.jpg,.jpeg,.pdf"
                 onChange={handleTranscriptChange}
                 className="hidden"
               />
@@ -1239,7 +1326,7 @@ function ApplicationStatusContent() {
                     />
                   </svg>
                   <span className="font-bold text-gray-800 text-sm md:text-base">
-                    Resume (PDF)<span className="text-red-500">*</span>
+                    Resume<span className="text-red-500">*</span>
                   </span>
                 </div>
                 <div
@@ -1320,7 +1407,7 @@ function ApplicationStatusContent() {
                     />
                   </svg>
                   <span className="font-bold text-gray-800 text-sm md:text-base">
-                    Portfolio (PDF)<span className="text-red-500">*</span>
+                    Portfolio<span className="text-red-500">*</span>
                   </span>
                 </div>
                 <div
@@ -1400,6 +1487,7 @@ function ApplicationStatusContent() {
                   {currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" &&
                     documentStatus !== "เอกสารไม่ผ่าน" && (
                       <div className="flex items-start gap-2 mb-3 text-red-500 text-sm leading-5">
+                        {" "}
                         <svg
                           width="15"
                           height="16"
@@ -1419,6 +1507,11 @@ function ApplicationStatusContent() {
                         </div>
                       </div>
                     )}
+                  {currentStep === "รอยื่นเอกสารขอความอนุเคราะห์" && (
+                    <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">
+                      รองรับไฟล์ .png, .jpg, .pdf เท่านั้น (ไฟล์ละไม่เกิน 30 MB)
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mb-2">
                     <svg
                       width="24"
@@ -1433,7 +1526,7 @@ function ApplicationStatusContent() {
                       />
                     </svg>
                     <span className="font-medium text-gray-700">
-                      เอกสารขอความอนุเคราะห์ (PDF)
+                      เอกสารขอความอนุเคราะห์
                     </span>
                   </div>
 
@@ -1561,7 +1654,7 @@ function ApplicationStatusContent() {
                       <input
                         ref={courtesyDocInputRef}
                         type="file"
-                        accept=".pdf"
+                        accept=".png,.jpg,.jpeg,.pdf"
                         onChange={handleCourtesyDocChange}
                         className="hidden"
                       />
@@ -1798,6 +1891,7 @@ function ApplicationStatusContent() {
               </button>
               <button
                 type="button"
+                disabled={isUploading}
                 onClick={
                   isReuploadReady
                     ? handleFinalReuploadConfirm
@@ -1805,9 +1899,34 @@ function ApplicationStatusContent() {
                       ? handleFinalCourtesyConfirm
                       : handleFinalConfirm
                 }
-                className="flex-1 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer"
+                className="flex-1 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                ยืนยัน
+                {isUploading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 22 6.373 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    กำลังอัปโหลด...
+                  </span>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -1867,10 +1986,36 @@ function ApplicationStatusContent() {
               </button>
               <button
                 type="button"
+                disabled={isCanceling}
                 onClick={handleFinalCancel}
-                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                className="flex-1 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                ยืนยัน
+                {isCanceling ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 22 6.373 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    กำลังยกเลิก...
+                  </span>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -1904,6 +2049,41 @@ function ApplicationStatusContent() {
             <button
               type="button"
               onClick={() => setShowUploadErrorModal(false)}
+              className="w-full py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer"
+            >
+              ตกลง
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* File Size/Type Error Modal */}
+      {showFileSizeErrorModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 text-center">
+            {/* Warning Icon */}
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01M12 2L2 22h20L12 2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-black mb-2">
+              ไม่สามารถอัปโหลดไฟล์ได้
+            </h3>
+            <p className="text-gray-500 text-sm mb-6">{fileSizeErrorMessage}</p>
+            <button
+              type="button"
+              onClick={() => setShowFileSizeErrorModal(false)}
               className="w-full py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors cursor-pointer"
             >
               ตกลง

@@ -24,9 +24,12 @@ export default function InternLoginPage() {
 
   const validateForm = () => {
     const newErrors: typeof errors = {};
+    const normalizedPhone = phone.replace(/\D/g, "");
 
-    if (!phone.trim()) {
+    if (!normalizedPhone) {
       newErrors.phone = "ระบุเบอร์โทรศัพท์";
+    } else if (normalizedPhone.length !== 10) {
+      newErrors.phone = "กรุณาระบุเบอร์โทร 10 หลัก";
     }
 
     if (!password.trim()) {
@@ -62,7 +65,8 @@ export default function InternLoginPage() {
           }
           authStorage.clearAuth();
           setErrors({
-            general: "บัญชีนี้ไม่ใช่บัญชีนักศึกษา กรุณาใช้หน้าเข้าสู่ระบบที่ถูกต้อง",
+            general:
+              "บัญชีนี้ไม่ใช่บัญชีนักศึกษา กรุณาใช้หน้าเข้าสู่ระบบที่ถูกต้อง",
           });
           return;
         }
@@ -78,15 +82,23 @@ export default function InternLoginPage() {
         router.push("/intern-home");
       } catch (error: unknown) {
         console.error("Login error:", error);
-        if (error && typeof error === 'object' && 'response' in error) {
-          const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
-          if (axiosError.response?.status === 401 || axiosError.response?.status === 400) {
+        if (error && typeof error === "object" && "response" in error) {
+          const axiosError = error as {
+            response?: { status?: number; data?: { message?: string } };
+          };
+          if (
+            axiosError.response?.status === 401 ||
+            axiosError.response?.status === 400
+          ) {
             setErrors({
-              general: "เบอร์โทรศัพท์หรือรหัสผ่าน ไม่ถูกต้อง กรุณาระบุข้อมูลอีกครั้ง",
+              general:
+                "เบอร์โทรศัพท์หรือรหัสผ่าน ไม่ถูกต้อง กรุณาระบุข้อมูลอีกครั้ง",
             });
           } else {
             setErrors({
-              general: axiosError.response?.data?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+              general:
+                axiosError.response?.data?.message ||
+                "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
             });
           }
         } else {
@@ -128,8 +140,9 @@ export default function InternLoginPage() {
             <div>
               <label
                 htmlFor="phone"
-                className={`block text-sm font-medium mb-2 ${hasPhoneError ? "text-red-500" : "text-gray-700"
-                  }`}
+                className={`block text-sm font-medium mb-2 ${
+                  hasPhoneError ? "text-red-500" : "text-gray-700"
+                }`}
               >
                 เบอร์โทรศัพท์
               </label>
@@ -137,13 +150,18 @@ export default function InternLoginPage() {
                 type="tel"
                 id="phone"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) =>
+                  setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                }
                 onBlur={() => handleBlur("phone")}
                 placeholder="เบอร์โทรศัพท์"
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasPhoneError
-                  ? "border-red-500 focus:border-red-500"
-                  : "border-gray-200 focus:border-primary-600"
-                  }`}
+                inputMode="numeric"
+                maxLength={10}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                  hasPhoneError
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-gray-200 focus:border-primary-600"
+                }`}
               />
               {touched.phone && errors.phone && (
                 <div className="mt-2 flex items-center gap-2">
@@ -168,8 +186,9 @@ export default function InternLoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className={`block text-sm font-medium mb-2 ${hasPasswordError ? "text-red-500" : "text-gray-700"
-                  }`}
+                className={`block text-sm font-medium mb-2 ${
+                  hasPasswordError ? "text-red-500" : "text-gray-700"
+                }`}
               >
                 รหัสผ่าน
               </label>
@@ -181,10 +200,11 @@ export default function InternLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onBlur={() => handleBlur("password")}
                   placeholder="รหัสผ่าน"
-                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${hasPasswordError
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-200 focus:border-primary-600"
-                    }`}
+                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasPasswordError
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-200 focus:border-primary-600"
+                  }`}
                 />
                 <button
                   type="button"
@@ -280,18 +300,30 @@ export default function InternLoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3 border-1 border-primary-700 bg-primary-600 text-white rounded-xl font-medium transition-all ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-700 active:bg-white active:text-primary-700 active:border-1 active:border-primary-700 active:scale-[0.98] cursor-pointer'}`}
+              className={`w-full py-3 border-1 border-primary-700 bg-primary-600 text-white rounded-xl font-medium transition-all ${isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-primary-700 active:bg-white active:text-primary-700 active:border-1 active:border-primary-700 active:scale-[0.98] cursor-pointer"}`}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   กำลังเข้าสู่ระบบ...
                 </span>
               ) : (
-                'เข้าสู่ระบบ'
+                "เข้าสู่ระบบ"
               )}
             </button>
 

@@ -107,16 +107,22 @@ const statusMap: Record<
     stepDescription: "รับผู้สมัครฝึกงานเรียบร้อยแล้ว",
   },
   CANCEL: {
-    step: 1,
+    step: 6,
     status: "cancelled",
     detailedStatus: "cancelled",
-    stepDescription: "ไม่ผ่าน",
+    stepDescription: "ยกเลิกฝึกงาน",
   },
   ABORT: {
     step: 0,
     status: "cancelled",
     detailedStatus: "cancelled",
     stepDescription: "ยกเลิกการสมัคร",
+  },
+  REJECTED: {
+    step: 1,
+    status: "rejected",
+    detailedStatus: "rejected",
+    stepDescription: "ไม่ผ่าน",
   },
 };
 
@@ -152,9 +158,13 @@ export function mapApiToApplication(
 ): Application {
   let mapped = statusMap[item.applicationStatus] || statusMap.PENDING_DOCUMENT;
 
-  // CANCEL + isActive=false = internship cancelled by owner (ยกเลิกฝึกงาน)
-  // manualEndInternships sets isActive=false; cancelByOwner leaves isActive=true
-  if (item.applicationStatus === "CANCEL" && item.isActive === false) {
+  // CANCEL = internship cancelled (was active, then ended)
+  if (
+    item.applicationStatus === "COMPLETE" &&
+    item.studentInternshipStatus === "CANCEL"
+  ) {
+    // Backward compatibility for legacy records where profile was cancelled
+    // but applicationStatus stayed COMPLETE.
     mapped = {
       step: 6,
       status: "cancelled",
@@ -180,14 +190,6 @@ export function mapApiToApplication(
       status: "cancelled",
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกการสมัคร",
-    };
-  } else if (item.applicationStatus === "CANCEL" && item.statusNote) {
-    // CANCEL + isActive=true + statusNote = owner rejected during application (ไม่ผ่าน)
-    mapped = {
-      step: 3,
-      status: "rejected",
-      detailedStatus: "rejected",
-      stepDescription: "ไม่ผ่านการคัดเลือก",
     };
   }
 
@@ -240,7 +242,11 @@ export function mapApiToApplication(
     faculty: item.faculty?.trim() || undefined,
     studentNote: item.studentNote || undefined,
     cancellationReason:
-      item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
+      item.applicationStatus === "CANCEL" ||
+      item.applicationStatus === "ABORT" ||
+      item.applicationStatus === "REJECTED" ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL")
         ? item.statusNote || undefined
         : undefined,
     cancelledBy:
@@ -248,7 +254,10 @@ export function mapApiToApplication(
         ? "ระบบ (อัตโนมัติ)"
         : undefined,
     cancelledDate:
-      (item.applicationStatus === "CANCEL" && item.isActive === false) ||
+      item.applicationStatus === "CANCEL" ||
+      item.applicationStatus === "REJECTED" ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL") ||
       item.applicationStatus === "ABORT"
         ? item.updatedAt || undefined
         : undefined,

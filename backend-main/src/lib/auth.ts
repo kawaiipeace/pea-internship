@@ -67,7 +67,7 @@ export const auth = betterAuth({
               roleId: roleId,
               departmentId: null,
               fname: profile.given_name.split(" ")[0],
-              lname: profile.given_name.split(" ")[0],
+              lname: profile.given_name.split(" ")[1],
               emailVerified: profile.email_verified || false,
               gender: "OTHER",
               username:

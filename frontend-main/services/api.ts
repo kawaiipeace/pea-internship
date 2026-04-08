@@ -1082,9 +1082,22 @@ export type AppStatusEnum =
   | "PENDING_REVIEW"
   | "COMPLETE"
   | "CANCEL"
-  | "ABORT";
+  | "ABORT"
+  | "REJECTED";
 
 // ข้อมูลใบสมัครจาก GET /applications/history/me
+
+export interface CompleteModalResponse {
+  shouldShow: boolean;
+  applicationStatusId: number | null;
+  title: string | null;
+  message: string | null;
+}
+
+export interface AcknowledgeResponse {
+  message: string;
+}
+
 export interface MyApplicationData {
   applicationId: number;
   applicationStatus: AppStatusEnum;
@@ -1109,15 +1122,16 @@ export const APP_STATUS_TO_STEP: Record<AppStatusEnum, string> = {
   PENDING_REQUEST: "รอยื่นเอกสารขอความอนุเคราะห์",
   PENDING_REVIEW: "รอการตรวจสอบ",
   COMPLETE: "เสร็จสิ้น",
-  CANCEL: "ไม่ผ่าน",
+  CANCEL: "ยกเลิกฝึกงาน",
   ABORT: "ยกเลิกการสมัคร",
+  REJECTED: "ไม่ผ่าน",
 };
 
 // ตรวจสอบว่าสมัครใหม่ได้หรือไม่ (ไม่มี active application)
 export function canApplyForNewJob(app: MyApplicationData | null): boolean {
   if (!app) return true;
   // สมัครได้เมื่อ ยกเลิก/ไม่ผ่าน หรือ application ไม่ active แล้ว (ฝึกงานเสร็จสิ้น)
-  return app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || !app.isActive;
+  return app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || app.applicationStatus === "REJECTED" || !app.isActive;
 }
 
 // ประเภทข้อมูล Application (ใบสมัคร)
@@ -1245,6 +1259,21 @@ export const applicationApi = {
     const list = response.data;
     return list && list.length > 0 ? list[0] : null;
   },
+
+  getApplicationCompleteModal: async (): Promise<CompleteModalResponse> => {
+    const response = await api.get<CompleteModalResponse>(
+      "/student/application-complete-modal"
+    );
+    return response.data;
+  },
+
+  // add
+  acknowledgeApplicationCompleteModal: async (): Promise<AcknowledgeResponse> => {
+    const response = await api.post<AcknowledgeResponse>(
+      "/student/application-complete-modal/acknowledge"
+    );
+    return response.data;
+  },  
 
   // สร้างใบสมัครใหม่ (คลิกสมัครตำแหน่งฝึกงาน)
   createApplication: async (positionId: number): Promise<ApplicationData> => {

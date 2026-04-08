@@ -113,57 +113,6 @@ const formatDateTimeThai = (dateString: string): string => {
   return `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${displayYear} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
-// LocalStorage keys
-const STORAGE_KEYS = {
-  INTERVIEWED_APPS: "pea_interviewed_apps",
-  APPROVED_APPS: "pea_approved_apps",
-  REJECTED_APPS: "pea_rejected_apps",
-  DOC_UPLOADED_APPS: "pea_doc_uploaded_apps",
-  DOC_APPROVED_APPS: "pea_doc_approved_apps",
-  DOC_REJECTED_APPS: "pea_doc_rejected_apps",
-  UPLOADED_FILENAMES: "pea_uploaded_filenames",
-  REJECTED_APPS_DATA: "pea_rejected_apps_data",
-};
-
-// Helper to get from localStorage
-const getFromStorage = (key: string): string[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-// Helper to save to localStorage
-const saveToStorage = (key: string, value: string[]) => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(value));
-};
-
-// Helper to get uploaded filenames from localStorage
-const getFilenamesFromStorage = (): Record<string, string> => {
-  if (typeof window === "undefined") return {};
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.UPLOADED_FILENAMES);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
-};
-
-// Helper to save uploaded filename to localStorage
-const saveFilenameToStorage = (appId: string, filename: string) => {
-  if (typeof window === "undefined") return;
-  const current = getFilenamesFromStorage();
-  current[appId] = filename;
-  localStorage.setItem(
-    STORAGE_KEYS.UPLOADED_FILENAMES,
-    JSON.stringify(current),
-  );
-};
-
 // Mapping: backend applicationStatus → frontend Application fields
 function mapApiToApplication(item: AllStudentsHistoryItem): Application {
   const statusMap: Record<
@@ -212,10 +161,10 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       stepDescription: "รับผู้สมัครฝึกงานเรียบร้อยแล้ว",
     },
     CANCEL: {
-      step: 1,
+      step: 6,
       status: "cancelled",
       detailedStatus: "cancelled",
-      stepDescription: "ไม่ผ่าน",
+      stepDescription: "ยกเลิกฝึกงาน",
     },
     ABORT: {
       step: 0,
@@ -223,13 +172,20 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกการสมัคร",
     },
+    REJECTED: {
+      step: 1,
+      status: "rejected",
+      detailedStatus: "rejected",
+      stepDescription: "ไม่ผ่าน",
+    },
   };
 
   let mapped = statusMap[item.applicationStatus] || statusMap.PENDING_DOCUMENT;
 
-  // CANCEL + isActive=false = internship cancelled by owner (ยกเลิกฝึกงาน)
-  // manualEndInternships sets isActive=false; cancelByOwner leaves isActive=true
-  if (item.applicationStatus === "CANCEL" && item.isActive === false) {
+  if (
+    item.applicationStatus === "COMPLETE" &&
+    item.studentInternshipStatus === "CANCEL"
+  ) {
     mapped = {
       step: 6,
       status: "cancelled",
@@ -252,14 +208,6 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
       status: "cancelled",
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกการสมัคร",
-    };
-  } else if (item.applicationStatus === "CANCEL" && item.statusNote) {
-    // CANCEL + isActive=true + statusNote = owner rejected during application (ไม่ผ่าน)
-    mapped = {
-      step: 3,
-      status: "rejected",
-      detailedStatus: "rejected",
-      stepDescription: "ไม่ผ่านการคัดเลือก",
     };
   }
 
@@ -338,15 +286,20 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
     faculty: item.faculty?.trim() || undefined,
     studentNote: item.studentNote || undefined,
     cancellationReason:
-      item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
+      item.applicationStatus === "CANCEL" ||
+      item.applicationStatus === "ABORT" ||
+      item.applicationStatus === "REJECTED" ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL")
         ? item.statusNote || undefined
         : undefined,
     cancelledBy:
-      item.applicationStatus === "ABORT"
-        ? "ระบบ (อัตโนมัติ)"
-        : undefined,
+      item.applicationStatus === "ABORT" ? "ระบบ (อัตโนมัติ)" : undefined,
     cancelledDate:
-      (item.applicationStatus === "CANCEL" && item.isActive === false) ||
+      item.applicationStatus === "CANCEL" ||
+      item.applicationStatus === "REJECTED" ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL") ||
       item.applicationStatus === "ABORT"
         ? item.updatedAt || undefined
         : undefined,
@@ -380,18 +333,23 @@ function ApplicationsContent() {
   // Popup states
   const [showInterviewConfirm, setShowInterviewConfirm] = useState(false);
   const [showInterviewSuccess, setShowInterviewSuccess] = useState(false);
+  const [interviewSubmitting, setInterviewSubmitting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [showRejectSuccess, setShowRejectSuccess] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [showApproveSuccess, setShowApproveSuccess] = useState(false);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
   const [showDocRejectModal, setShowDocRejectModal] = useState(false);
   const [showDocumentPopup, setShowDocumentPopup] = useState(false);
   const [docRejectReason, setDocRejectReason] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showCancelSuccess, setShowCancelSuccess] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   // Application history modal state
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -401,16 +359,13 @@ function ApplicationsContent() {
   // Tab loading state
   const [tabLoading, setTabLoading] = useState(false);
 
-  // State with localStorage persistence
+  // Ephemeral UI state (not persisted)
   const [interviewedApps, setInterviewedApps] = useState<string[]>([]);
   const [approvedApps, setApprovedApps] = useState<string[]>([]);
   const [rejectedApps, setRejectedApps] = useState<string[]>([]);
   const [docUploadedApps, setDocUploadedApps] = useState<string[]>([]);
   const [docApprovedApps, setDocApprovedApps] = useState<string[]>([]);
   const [docRejectedApps, setDocRejectedApps] = useState<string[]>([]);
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    { id: string; reason: string; cancelledBy: string; cancelledDate: string }[]
-  >([]);
   const [rejectedAppsData, setRejectedAppsData] = useState<
     { id: string; reason: string; rejectedBy: string; rejectedDate: string }[]
   >([]);
@@ -711,13 +666,6 @@ function ApplicationsContent() {
       !docUploadedApps.includes(selectedApplication.id))
   );
 
-  // Clear stale localStorage on mount — API is the source of truth now
-  useEffect(() => {
-    // Remove all localStorage keys that used to override API status
-    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
-    localStorage.removeItem("pea_cancelled_apps");
-  }, []);
-
   // Fetch applications from API
   const fetchApplications = useCallback(async () => {
     try {
@@ -765,14 +713,8 @@ function ApplicationsContent() {
     fetchApplications();
   }, [fetchApplications]);
 
-  // Derive cancelled app IDs from localStorage data (memoized to avoid infinite re-renders)
-  const cancelledAppIds = useMemo(
-    () => cancelledAppsData.map((c) => c.id),
-    [cancelledAppsData],
-  );
-
   // Helper function to get effective status of an app
-  // API data is the source of truth; localStorage only used for optimistic UI within current session
+  // API data is the source of truth
   const getEffectiveAppStatus = (app: Application) => {
     return { status: app.status, detailedStatus: app.detailedStatus };
   };
@@ -821,6 +763,7 @@ function ApplicationsContent() {
       rejected,
       cancelled,
       abort,
+      cancelled_all: cancelled + abort,
     };
   };
 
@@ -879,9 +822,15 @@ function ApplicationsContent() {
         case "rejected":
           return app.status === "rejected";
         case "cancelled":
-          return app.status === "cancelled" && app.stepDescription !== "ยกเลิกการสมัคร";
+          return (
+            app.status === "cancelled" &&
+            app.stepDescription !== "ยกเลิกการสมัคร"
+          );
         case "abort":
-          return app.status === "cancelled" && app.stepDescription === "ยกเลิกการสมัคร";
+          return (
+            app.status === "cancelled" &&
+            app.stepDescription === "ยกเลิกการสมัคร"
+          );
         default:
           return true;
       }
@@ -1125,13 +1074,12 @@ function ApplicationsContent() {
 
   // Handle interview confirmation (Owner approves interview → PENDING_INTERVIEW → PENDING_CONFIRMATION)
   const handleConfirmInterview = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !interviewSubmitting) {
+      setInterviewSubmitting(true);
       try {
         await applicationApi.approveInterview(Number(selectedApplication.id));
-        // Also update localStorage for backward compatibility
         const newInterviewed = [...interviewedApps, selectedApplication.id];
         setInterviewedApps(newInterviewed);
-        saveToStorage(STORAGE_KEYS.INTERVIEWED_APPS, newInterviewed);
         setShowInterviewConfirm(false);
         setShowInterviewSuccess(true);
         setTimeout(() => {
@@ -1142,18 +1090,20 @@ function ApplicationsContent() {
       } catch (err) {
         console.error("Failed to approve interview:", err);
         setShowInterviewConfirm(false);
+      } finally {
+        setInterviewSubmitting(false);
       }
     }
   };
 
   // Handle approve application (Owner confirms accept → PENDING_CONFIRMATION → PENDING_REQUEST)
   const handleApprove = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !approveSubmitting) {
+      setApproveSubmitting(true);
       try {
         await applicationApi.confirmAccept(Number(selectedApplication.id));
         const newApproved = [...approvedApps, selectedApplication.id];
         setApprovedApps(newApproved);
-        saveToStorage(STORAGE_KEYS.APPROVED_APPS, newApproved);
         setShowApproveConfirm(false);
         // Show success popup
         setShowApproveSuccess(true);
@@ -1165,13 +1115,16 @@ function ApplicationsContent() {
       } catch (err) {
         console.error("Failed to confirm accept:", err);
         setShowApproveConfirm(false);
+      } finally {
+        setApproveSubmitting(false);
       }
     }
   };
 
   // Handle reject application (Owner rejects → CANCEL)
   const handleReject = async () => {
-    if (selectedApplication) {
+    if (selectedApplication && !rejectSubmitting) {
+      setRejectSubmitting(true);
       try {
         await applicationApi.rejectApplication(
           Number(selectedApplication.id),
@@ -1179,7 +1132,6 @@ function ApplicationsContent() {
         );
         const newRejected = [...rejectedApps, selectedApplication.id];
         setRejectedApps(newRejected);
-        saveToStorage(STORAGE_KEYS.REJECTED_APPS, newRejected);
         // Save reject reason data
         const now = new Date();
         const buddhistYear = now.getFullYear() + 543;
@@ -1203,10 +1155,6 @@ function ApplicationsContent() {
           },
         ];
         setRejectedAppsData(newRejectedData);
-        localStorage.setItem(
-          STORAGE_KEYS.REJECTED_APPS_DATA,
-          JSON.stringify(newRejectedData),
-        );
         setShowRejectConfirm(false);
         setShowRejectModal(false);
         setRejectReason("");
@@ -1222,6 +1170,8 @@ function ApplicationsContent() {
         setShowRejectConfirm(false);
         setShowRejectModal(false);
         setRejectReason("");
+      } finally {
+        setRejectSubmitting(false);
       }
     }
   };
@@ -1231,10 +1181,6 @@ function ApplicationsContent() {
     if (selectedApplication && uploadedFileName) {
       const newDocUploaded = [...docUploadedApps, selectedApplication.id];
       setDocUploadedApps(newDocUploaded);
-      saveToStorage(STORAGE_KEYS.DOC_UPLOADED_APPS, newDocUploaded);
-
-      // Save uploaded filename to localStorage
-      saveFilenameToStorage(selectedApplication.id, uploadedFileName);
       setUploadedFilenames((prev) => ({
         ...prev,
         [selectedApplication.id]: uploadedFileName,
@@ -1251,7 +1197,6 @@ function ApplicationsContent() {
     if (selectedApplication) {
       const newDocApproved = [...docApprovedApps, selectedApplication.id];
       setDocApprovedApps(newDocApproved);
-      saveToStorage(STORAGE_KEYS.DOC_APPROVED_APPS, newDocApproved);
     }
   };
 
@@ -1260,7 +1205,6 @@ function ApplicationsContent() {
     if (selectedApplication && docRejectReason.trim()) {
       const newDocRejected = [...docRejectedApps, selectedApplication.id];
       setDocRejectedApps(newDocRejected);
-      saveToStorage(STORAGE_KEYS.DOC_REJECTED_APPS, newDocRejected);
       setShowDocRejectModal(false);
       setDocRejectReason("");
     }
@@ -1274,13 +1218,6 @@ function ApplicationsContent() {
     if (app.status === "cancelled") return "cancelled";
     if (app.status === "accepted") return "accepted";
     return "pending";
-  };
-
-  // Helper: get cancellation data for an app from localStorage
-  const getCancellationData = (appId: string) => {
-    const fromStorage = cancelledAppsData.find((c) => c.id === appId);
-    if (fromStorage) return fromStorage;
-    return null;
   };
 
   // Helper: get education text shown to owner (use entered text for "other")
@@ -1401,6 +1338,8 @@ function ApplicationsContent() {
     if (status === "COMPLETE") {
       return isInternshipEndDatePassed(endDate) ? "complete" : null;
     }
+
+    if (status === "REJECTED") return "rejected";
 
     if (status === "CANCEL" || status === "ABORT") {
       if (!isActive) return "cancelled";
@@ -1527,7 +1466,7 @@ function ApplicationsContent() {
     if (statusCat === "rejected") {
       // Use timeline actions to determine where the rejection happened
       const rejectAction = timelineActions.find(
-        (a) => a.newStatus === "CANCEL"
+        (a) => a.newStatus === "CANCEL",
       );
       if (rejectAction?.oldStatus) {
         const rejectStepMap: Record<string, number> = {
@@ -1555,7 +1494,7 @@ function ApplicationsContent() {
       } else {
         // Use step from mapper which is based on statusNote/oldStatus for ABORT
         const abortAction = timelineActions.find(
-          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL",
         );
         if (abortAction?.oldStatus) {
           const abortStepMap: Record<string, number> = {
@@ -1566,7 +1505,8 @@ function ApplicationsContent() {
             PENDING_REVIEW: 4,
           };
           completedUpTo =
-            abortStepMap[abortAction.oldStatus] ?? (app.step > 0 ? app.step - 1 : 0);
+            abortStepMap[abortAction.oldStatus] ??
+            (app.step > 0 ? app.step - 1 : 0);
           currentStep = 0;
         } else if (app.step > 0) {
           completedUpTo = app.step > 0 ? app.step - 1 : 0;
@@ -1812,7 +1752,9 @@ function ApplicationsContent() {
             {(() => {
               const detailBadge = getStatusBadge(selectedApplication);
               return (
-                <span className={`text-sm px-3 py-1 rounded-full ${detailBadge.color}`}>
+                <span
+                  className={`text-sm px-3 py-1 rounded-full ${detailBadge.color}`}
+                >
                   {detailBadge.text}
                 </span>
               );
@@ -1839,86 +1781,78 @@ function ApplicationsContent() {
             </span>
           </div>
           {/* Cancellation reason - show for owner-cancelled or cron-aborted with reason */}
-          {(selectedApplication.stepDescription !== "ยกเลิกการสมัคร" || selectedApplication.cancellationReason) && (
-          <div className={`${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mb-6`}>
-            <div className="flex items-start gap-2">
-              <svg
-                className={`w-5 h-5 ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "text-gray-500" : "text-red-500"} mt-0.5 shrink-0`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <div>
-                <p className={`font-semibold ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "text-gray-600" : "text-red-600"} mb-2`}>
-                  {selectedApplication.stepDescription === "ยกเลิกการสมัคร"
-                    ? "เหตุผลการยกเลิกการสมัคร"
-                    : "เหตุผลประกอบการยกเลิกฝึกงาน"}
-                </p>
-                <p className="text-gray-700 text-sm">
-                  {(() => {
-                    const cancelData = getCancellationData(
-                      selectedApplication.id,
-                    );
-                    return (
-                      cancelData?.reason ||
-                      selectedApplication.cancellationReason ||
-                      "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"
-                    );
-                  })()}
-                </p>
-              </div>
-            </div>
-            <div className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "border-gray-200" : "border-red-200"}`}>
-              <div>
-                <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
-                <p className="text-gray-900 text-sm">
-                  {(() => {
-                    const cancelData = getCancellationData(
-                      selectedApplication.id,
-                    );
-                    const od =
-                      positionInfo?.owner ||
-                      (positionInfo?.owners && positionInfo.owners.length > 0
-                        ? positionInfo.owners[0]
-                        : null);
-                    const ownerName = od
-                      ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
-                      : "-";
-                    return (
-                      cancelData?.cancelledBy ||
-                      selectedApplication.cancelledBy ||
-                      ownerName
-                    );
-                  })()}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
-                <p className="text-gray-900 text-sm">
-                  {formatDateThai(
-                    (() => {
-                      const cancelData = getCancellationData(
-                        selectedApplication.id,
-                      );
+          {(selectedApplication.stepDescription !== "ยกเลิกการสมัคร" ||
+            selectedApplication.cancellationReason) && (
+            <div
+              className={`${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mb-6`}
+            >
+              <div className="flex items-start gap-2">
+                <svg
+                  className={`w-5 h-5 ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "text-gray-500" : "text-red-500"} mt-0.5 shrink-0`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div>
+                  <p
+                    className={`font-semibold ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "text-gray-600" : "text-red-600"} mb-2`}
+                  >
+                    {selectedApplication.stepDescription === "ยกเลิกการสมัคร"
+                      ? "เหตุผลการยกเลิกการสมัคร"
+                      : "เหตุผลประกอบการยกเลิกฝึกงาน"}
+                  </p>
+                  <p className="text-gray-700 text-sm">
+                    {(() => {
                       return (
-                        cancelData?.cancelledDate ||
-                        selectedApplication.cancelledDate ||
-                        selectedApplication.actionDate ||
-                        ""
+                        selectedApplication.cancellationReason ||
+                        "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"
                       );
-                    })(),
-                  )}
-                </p>
+                    })()}
+                  </p>
+                </div>
+              </div>
+              <div
+                className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${selectedApplication.stepDescription === "ยกเลิกการสมัคร" ? "border-gray-200" : "border-red-200"}`}
+              >
+                <div>
+                  <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
+                  <p className="text-gray-900 text-sm">
+                    {(() => {
+                      const od =
+                        positionInfo?.owner ||
+                        (positionInfo?.owners && positionInfo.owners.length > 0
+                          ? positionInfo.owners[0]
+                          : null);
+                      const ownerName = od
+                        ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
+                        : "-";
+                      return selectedApplication.cancelledBy || ownerName;
+                    })()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
+                  <p className="text-gray-900 text-sm">
+                    {formatDateThai(
+                      (() => {
+                        return (
+                          selectedApplication.cancelledDate ||
+                          selectedApplication.actionDate ||
+                          ""
+                        );
+                      })(),
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
           )}
           {/* Status Progress Dropdown */}
           <div className="mb-6">
@@ -2682,7 +2616,8 @@ function ApplicationsContent() {
                         {stepCompletedInfo[currentStepIndex - 1].operator}
                       </p>
                     )}
-                    {selectedApplication.status === "cancelled" || selectedApplication.status === "rejected" ? (
+                    {selectedApplication.status === "cancelled" ||
+                    selectedApplication.status === "rejected" ? (
                       <p className="text-gray-400 text-sm">
                         กระบวนการสมัครสิ้นสุดแล้ว
                       </p>
@@ -4022,7 +3957,7 @@ function ApplicationsContent() {
                   fill="CurrentColor"
                 />
               </svg>
-              ยืนยันผลการสัมภาษณ์
+              สัมภาษณ์เสร็จสิ้น
             </button>
           )}
 
@@ -5390,7 +5325,7 @@ function ApplicationsContent() {
               </svg>
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {tabCounts.cancelled}
+              {tabCounts.cancelled_all}
             </p>
             <p className="text-gray-500 text-sm">สถานะยกเลิก</p>
           </Link>
@@ -6011,7 +5946,9 @@ function ApplicationsContent() {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-3">
-                        <span className={`text-sm px-3 py-1 rounded-full ${badge.color}`}>
+                        <span
+                          className={`text-sm px-3 py-1 rounded-full ${badge.color}`}
+                        >
                           {badge.text}
                         </span>
                       </div>
@@ -6331,15 +6268,44 @@ function ApplicationsContent() {
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowInterviewConfirm(false)}
-                className="px-8 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-sm cursor-pointer"
+                disabled={interviewSubmitting}
+                className="px-8 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 ย้อนกลับ
               </button>
               <button
                 onClick={handleConfirmInterview}
-                className="px-8 py-2.5 bg-green-600 border border-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white transition-colors font-sm cursor-pointer"
+                disabled={interviewSubmitting}
+                className="px-8 py-2.5 bg-green-600 border border-green-600 text-white rounded-lg hover:bg-green-700 hover:text-white transition-colors font-sm disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
               >
-                ยืนยัน
+                {interviewSubmitting ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                      />
+                    </svg>
+                    กำลังยืนยัน...
+                  </>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -6408,15 +6374,44 @@ function ApplicationsContent() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowApproveConfirm(false)}
-                className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 cursor-pointer"
+                disabled={approveSubmitting}
+                className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={handleApprove}
-                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 cursor-pointer"
+                disabled={approveSubmitting}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer inline-flex items-center justify-center gap-2"
               >
-                ยืนยัน
+                {approveSubmitting ? (
+                  <>
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="opacity-90"
+                        fill="currentColor"
+                        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                      />
+                    </svg>
+                    กำลังยืนยัน...
+                  </>
+                ) : (
+                  "ยืนยัน"
+                )}
               </button>
             </div>
           </div>
@@ -6457,8 +6452,11 @@ function ApplicationsContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             <button
-              onClick={() => setShowRejectModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!rejectSubmitting) setShowRejectModal(false);
+              }}
+              disabled={rejectSubmitting}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -6512,6 +6510,7 @@ function ApplicationsContent() {
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
+                disabled={rejectSubmitting}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -6519,7 +6518,8 @@ function ApplicationsContent() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={rejectSubmitting}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
@@ -6527,23 +6527,46 @@ function ApplicationsContent() {
                 onClick={() => {
                   if (rejectReason.trim()) handleReject();
                 }}
-                disabled={!rejectReason.trim()}
+                disabled={!rejectReason.trim() || rejectSubmitting}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                ยืนยันการปฏิเสธ
+                {rejectSubmitting ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
+                {rejectSubmitting ? "กำลังดำเนินการ..." : "ยืนยันการปฏิเสธ"}
               </button>
             </div>
           </div>
@@ -6585,8 +6608,11 @@ function ApplicationsContent() {
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             {/* Close button */}
             <button
-              onClick={() => setShowCancelModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!cancelSubmitting) setShowCancelModal(false);
+              }}
+              disabled={cancelSubmitting}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -6642,6 +6668,7 @@ function ApplicationsContent() {
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                disabled={cancelSubmitting}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -6650,33 +6677,81 @@ function ApplicationsContent() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={cancelSubmitting}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
               <button
-                onClick={() => {
-                  if (cancelReason.trim()) {
-                    setShowCancelConfirm(true);
+                onClick={async () => {
+                  if (
+                    !cancelReason.trim() ||
+                    !selectedApplication ||
+                    cancelSubmitting
+                  )
+                    return;
+
+                  setCancelSubmitting(true);
+                  try {
+                    await ownerStudentsApi.updateInternshipStatus(
+                      selectedApplication.internId,
+                      "CANCEL",
+                      cancelReason,
+                    );
+                    setShowCancelModal(false);
+                    setCancelReason("");
+                    setShowCancelSuccess(true);
+                    setTimeout(() => {
+                      setShowCancelSuccess(false);
+                    }, 500);
+                    await fetchApplications();
+                  } catch (err) {
+                    console.error("Cancel internship failed:", err);
+                    alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
+                  } finally {
+                    setCancelSubmitting(false);
                   }
                 }}
-                disabled={!cancelReason.trim()}
+                disabled={!cancelReason.trim() || cancelSubmitting}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                ยืนยันการยกเลิกฝึกงาน
+                {cancelSubmitting ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
+                {cancelSubmitting ? "กำลังยืนยัน..." : "ยืนยันการยกเลิกฝึกงาน"}
               </button>
             </div>
           </div>
@@ -6732,6 +6807,10 @@ function ApplicationsContent() {
                     setShowCancelConfirm(false);
                     setShowCancelModal(false);
                     setCancelReason("");
+                    setShowCancelSuccess(true);
+                    setTimeout(() => {
+                      setShowCancelSuccess(false);
+                    }, 500);
                     await fetchApplications();
                   } catch (err) {
                     console.error("Cancel internship failed:", err);
@@ -6781,6 +6860,34 @@ function ApplicationsContent() {
                 ยืนยัน
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Success Popup */}
+      {showCancelSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl p-8 max-w-xs w-full mx-4 text-center shadow-2xl">
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full flex items-center justify-center">
+                <svg
+                  width="70"
+                  height="70"
+                  viewBox="0 0 45 45"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect width="45" height="45" rx="22.5" fill="#DCFAE6" />
+                  <path
+                    d="M20.1654 25.5007L16.582 21.9173C16.2765 21.6118 15.8876 21.459 15.4154 21.459C14.9431 21.459 14.5543 21.6118 14.2487 21.9173C13.9431 22.2229 13.7904 22.6118 13.7904 23.084C13.7904 23.5562 13.9431 23.9451 14.2487 24.2507L18.9987 29.0007C19.332 29.334 19.7209 29.5007 20.1654 29.5007C20.6098 29.5007 20.9987 29.334 21.332 29.0007L30.7487 19.584C31.0543 19.2784 31.207 18.8895 31.207 18.4173C31.207 17.9451 31.0543 17.5562 30.7487 17.2507C30.4431 16.9451 30.0543 16.7923 29.582 16.7923C29.1098 16.7923 28.7209 16.9451 28.4154 17.2507L20.1654 25.5007ZM22.4987 39.1673C20.1931 39.1673 18.0265 38.7298 15.9987 37.8548C13.9709 36.9798 12.207 35.7923 10.707 34.2923C9.20703 32.7923 8.01953 31.0284 7.14453 29.0007C6.26953 26.9729 5.83203 24.8062 5.83203 22.5007C5.83203 20.1951 6.26953 18.0284 7.14453 16.0007C8.01953 13.9729 9.20703 12.209 10.707 10.709C12.207 9.20898 13.9709 8.02148 15.9987 7.14648C18.0265 6.27148 20.1931 5.83398 22.4987 5.83398C24.8043 5.83398 26.9709 6.27148 28.9987 7.14648C31.0265 8.02148 32.7904 9.20898 34.2904 10.709C35.7904 12.209 36.9779 13.9729 37.8529 16.0007C38.7279 18.0284 39.1654 20.1951 39.1654 22.5007C39.1654 24.8062 38.7279 26.9729 37.8529 29.0007C36.9779 31.0284 35.7904 32.7923 34.2904 34.2923C32.7904 35.7923 31.0265 36.9798 28.9987 37.8548C26.9709 38.7298 24.8043 39.1673 22.4987 39.1673Z"
+                    fill="#17B26A"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">
+              ยกเลิกฝึกงานเรียบร้อยแล้ว
+            </h3>
           </div>
         </div>
       )}
@@ -6921,7 +7028,9 @@ function ApplicationsContent() {
                             </div>
 
                             {item.statusNote && (
-                              <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
+                              <div
+                                className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}
+                              >
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
                                     width="20"
@@ -6932,20 +7041,28 @@ function ApplicationsContent() {
                                   >
                                     <path
                                       d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                      fill={item.applicationStatus === "ABORT" ? "#6B7280" : "#D92D20"}
+                                      fill={
+                                        item.applicationStatus === "ABORT"
+                                          ? "#6B7280"
+                                          : "#D92D20"
+                                      }
                                     />
                                   </svg>
-                                  <span className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}>
+                                  <span
+                                    className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}
+                                  >
                                     {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
                                       : historyOutcome === "cancelled"
-                                        ? (item.applicationStatus === "ABORT"
-                                            ? "เหตุผลการยกเลิกการสมัคร"
-                                            : "เหตุผลประกอบการยกเลิกฝึกงาน")
+                                        ? item.applicationStatus === "ABORT"
+                                          ? "เหตุผลการยกเลิกการสมัคร"
+                                          : "เหตุผลประกอบการยกเลิกฝึกงาน"
                                         : "หมายเหตุ"}
                                   </span>
                                 </div>
-                                <div className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`} />
+                                <div
+                                  className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`}
+                                />
                                 <div className="px-4 pt-3 pb-4">
                                   <p className="text-sm text-gray-700 leading-relaxed">
                                     {item.statusNote}

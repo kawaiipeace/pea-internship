@@ -13,6 +13,7 @@ import {
 import {
   applicationApi,
   applicationStatusActionsApi,
+  ownerStudentsApi,
   type ApplicationStatusAction,
   type AppStatusEnum,
   type MyApplicationData,
@@ -50,24 +51,6 @@ const formatDateThai = (dateString: string): string => {
   return `${day} ${thaiMonths[month]} ${year}`;
 };
 
-// LocalStorage keys
-const STORAGE_KEYS = {
-  DOC_APPROVED_APPS: "pea_doc_approved_apps",
-  DOC_REJECTED_APPS: "pea_doc_rejected_apps",
-  DOC_UPLOADED_APPS: "pea_doc_uploaded_apps",
-  APPROVED_APPS: "pea_approved_apps",
-};
-
-const getFromStorage = (key: string): string[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
 function NearStartApplicationsContent() {
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
@@ -91,12 +74,6 @@ function NearStartApplicationsContent() {
     );
   }, [positionId]);
 
-  // localStorage state
-  const [docApprovedApps, setDocApprovedApps] = useState<string[]>([]);
-  const [docRejectedApps, setDocRejectedApps] = useState<string[]>([]);
-  const [docUploadedApps, setDocUploadedApps] = useState<string[]>([]);
-  const [approvedApps, setApprovedApps] = useState<string[]>([]);
-
   // UI toggles
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [showMentorInfo, setShowMentorInfo] = useState(false);
@@ -117,10 +94,7 @@ function NearStartApplicationsContent() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
-  // Cancelled apps data
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    { id: string; reason: string; cancelledBy: string; cancelledDate: string }[]
-  >([]);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   // Search and filter states
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -233,25 +207,8 @@ function NearStartApplicationsContent() {
     );
   };
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    setDocApprovedApps(getFromStorage(STORAGE_KEYS.DOC_APPROVED_APPS));
-    setDocRejectedApps(getFromStorage(STORAGE_KEYS.DOC_REJECTED_APPS));
-    setDocUploadedApps(getFromStorage(STORAGE_KEYS.DOC_UPLOADED_APPS));
-    setApprovedApps(getFromStorage(STORAGE_KEYS.APPROVED_APPS));
-    try {
-      const stored = localStorage.getItem("pea_cancelled_apps");
-      if (stored) setCancelledAppsData(JSON.parse(stored));
-    } catch {}
-  }, []);
-
   // Get effective detailed status for accepted apps
   const getAcceptedEffectiveDetailed = (app: Application) => {
-    if (docApprovedApps.includes(app.id)) return "doc_passed";
-    if (docRejectedApps.includes(app.id)) return "doc_rejected";
-    if (docUploadedApps.includes(app.id)) return "doc_sent";
-    if (approvedApps.includes(app.id) && app.status !== "accepted")
-      return "waiting_analysis_doc";
     return app.detailedStatus;
   };
 
@@ -426,6 +383,8 @@ function NearStartApplicationsContent() {
     if (status === "COMPLETE") {
       return isInternshipEndDatePassed(endDate) ? "complete" : null;
     }
+
+    if (status === "REJECTED") return "rejected";
 
     if (status === "CANCEL" || status === "ABORT") {
       if (!isActive) return "cancelled";
@@ -1965,42 +1924,37 @@ function NearStartApplicationsContent() {
                 ย้อนกลับ
               </button>
               <button
-                onClick={() => {
-                  const existingCancelled = (() => {
-                    try {
-                      const stored = localStorage.getItem("pea_cancelled_apps");
-                      return stored ? JSON.parse(stored) : [];
-                    } catch {
-                      return [];
-                    }
-                  })();
-                  const today = new Date();
-                  const buddhistYear = today.getFullYear() + 543;
-                  const month = String(today.getMonth() + 1).padStart(2, "0");
-                  const day = String(today.getDate()).padStart(2, "0");
-                  const cancelDate = `${buddhistYear}-${month}-${day}`;
+                onClick={async () => {
                   if (
-                    !existingCancelled.find(
-                      (c: { id: string }) => c.id === selectedApplication.id,
-                    )
-                  ) {
-                    existingCancelled.push({
-                      id: selectedApplication.id,
-                      reason: cancelReason,
-                      cancelledBy: "เจ้าของหน่วยงาน",
-                      cancelledDate: cancelDate,
-                    });
-                    localStorage.setItem(
-                      "pea_cancelled_apps",
-                      JSON.stringify(existingCancelled),
+                    !selectedApplication.internId ||
+                    !cancelReason.trim() ||
+                    cancelSubmitting
+                  )
+                    return;
+
+                  setCancelSubmitting(true);
+                  try {
+                    await ownerStudentsApi.updateInternshipStatus(
+                      selectedApplication.internId,
+                      "CANCEL",
+                      cancelReason.trim(),
                     );
-                    setCancelledAppsData(existingCancelled);
+                    const apps = await fetchAllApplications(
+                      positionId ? Number(positionId) : undefined,
+                    );
+                    setAllApps(apps);
+                    setShowCancelConfirm(false);
+                    setShowCancelModal(false);
+                    setCancelReason("");
+                  } catch (err) {
+                    console.error("Cancel internship failed:", err);
+                    alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
+                  } finally {
+                    setCancelSubmitting(false);
                   }
-                  setShowCancelConfirm(false);
-                  setShowCancelModal(false);
-                  setCancelReason("");
                 }}
-                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer font-medium"
+                disabled={cancelSubmitting}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยืนยัน
               </button>

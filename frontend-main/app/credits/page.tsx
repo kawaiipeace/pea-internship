@@ -11,39 +11,80 @@ const dmSerif = DM_Serif_Display({
   style: ["normal", "italic"],
 });
 
-// 2D noise helper for topographic contour generation
-function noise2D(x: number, y: number, seed: number): number {
-  const dot = x * 12.9898 + y * 78.233 + seed * 43.1234;
-  const s = Math.sin(dot) * 43758.5453;
-  return s - Math.floor(s);
-}
-
-function smoothNoise(x: number, y: number, seed: number): number {
-  const ix = Math.floor(x);
-  const iy = Math.floor(y);
-  const fx = x - ix;
-  const fy = y - iy;
-  const u = fx * fx * (3 - 2 * fx);
-  const v = fy * fy * (3 - 2 * fy);
-
-  const a = noise2D(ix, iy, seed);
-  const b = noise2D(ix + 1, iy, seed);
-  const c = noise2D(ix, iy + 1, seed);
-  const d = noise2D(ix + 1, iy + 1, seed);
-
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-}
-
-function fbm(x: number, y: number, seed: number, octaves = 5): number {
-  let val = 0;
-  let amp = 0.5;
-  let freq = 1;
-  for (let i = 0; i < octaves; i++) {
-    val += amp * smoothNoise(x * freq, y * freq, seed + i * 17.3);
-    amp *= 0.5;
-    freq *= 2;
+// ============================================================
+// 2D Simplex Noise (Stefan Gustavson's algorithm)
+// ============================================================
+const _F2 = 0.5 * (Math.sqrt(3) - 1);
+const _G2 = (3 - Math.sqrt(3)) / 6;
+const _GRAD: [number, number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+const _perm = new Uint8Array(512);
+const _permMod8 = new Uint8Array(512);
+(function _seed(s: number) {
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) {
+    s = (s * 16807) % 2147483647;
+    const j = s % (i + 1);
+    [p[i], p[j]] = [p[j], p[i]];
   }
-  return val;
+  for (let i = 0; i < 512; i++) {
+    _perm[i] = p[i & 255];
+    _permMod8[i] = _perm[i] & 7;
+  }
+})(42);
+
+function simplexNoise(xin: number, yin: number): number {
+  const s = (xin + yin) * _F2;
+  const i = Math.floor(xin + s), j = Math.floor(yin + s);
+  const t = (i + j) * _G2;
+  const x0 = xin - (i - t), y0 = yin - (j - t);
+  const i1 = x0 > y0 ? 1 : 0, j1 = x0 > y0 ? 0 : 1;
+  const x1 = x0 - i1 + _G2, y1 = y0 - j1 + _G2;
+  const x2 = x0 - 1 + 2 * _G2, y2 = y0 - 1 + 2 * _G2;
+  const ii = i & 255, jj = j & 255;
+  let n0 = 0, n1 = 0, n2 = 0;
+  let t0 = 0.5 - x0*x0 - y0*y0;
+  if (t0 > 0) { t0 *= t0; const g = _GRAD[_permMod8[ii + _perm[jj]]]; n0 = t0*t0*(g[0]*x0+g[1]*y0); }
+  let t1 = 0.5 - x1*x1 - y1*y1;
+  if (t1 > 0) { t1 *= t1; const g = _GRAD[_permMod8[ii+i1+_perm[jj+j1]]]; n1 = t1*t1*(g[0]*x1+g[1]*y1); }
+  let t2 = 0.5 - x2*x2 - y2*y2;
+  if (t2 > 0) { t2 *= t2; const g = _GRAD[_permMod8[ii+1+_perm[jj+1]]]; n2 = t2*t2*(g[0]*x2+g[1]*y2); }
+  return 70 * (n0 + n1 + n2);
+}
+
+// ============================================================
+// Marching-squares edge table  (Bits: TL=8 TR=4 BR=2 BL=1)
+// ============================================================
+const _EDGES: [number, number][][] = [
+  [],             // 0
+  [[3,2]],        // 1
+  [[2,1]],        // 2
+  [[3,1]],        // 3
+  [[0,1]],        // 4
+  [[0,3],[2,1]],  // 5 saddle
+  [[0,2]],        // 6
+  [[0,3]],        // 7
+  [[0,3]],        // 8
+  [[0,2]],        // 9
+  [[0,1],[3,2]],  // 10 saddle
+  [[0,1]],        // 11
+  [[3,1]],        // 12
+  [[2,1]],        // 13
+  [[3,2]],        // 14
+  [],             // 15
+];
+
+function _edgePoint(
+  x: number, y: number, edge: number, step: number,
+  tl: number, tr: number, bl: number, br: number, th: number
+): [number, number] | undefined {
+  const px = x * step, py = y * step;
+  switch (edge) {
+    case 0: { const a = (th - tl) / (tr - tl); return [px + step * a, py]; }
+    case 1: { const a = (th - tr) / (br - tr); return [px + step, py + step * a]; }
+    case 2: { const a = (th - bl) / (br - bl); return [px + step * a, py + step]; }
+    case 3: { const a = (th - tl) / (bl - tl); return [px, py + step * a]; }
+  }
 }
 
 export default function CreditsPage() {
@@ -141,152 +182,117 @@ export default function CreditsPage() {
     };
   }, []);
 
-  // Topographic contour map canvas (matching reference image style)
+  // Topographic contour map canvas — Simplex Noise + Marching Squares
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let width = 0;
-    let height = 0;
-    let pageHeight = 0;
+    let dpr = 1;
 
     const resize = () => {
-      width = canvas.width = window.innerWidth;
-      pageHeight = document.documentElement.scrollHeight;
-      height = canvas.height = pageHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.innerWidth, h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
     };
 
-    const onMouseMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY + window.scrollY };
+    const onPointer = (e: PointerEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    const onLeave = () => {
+      mouseRef.current = { x: -9999, y: -9999 };
     };
 
     resize();
     window.addEventListener("resize", resize);
-    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("pointermove", onPointer);
+    window.addEventListener("pointerleave", onLeave);
 
-    let time = 0;
+    // Thresholds & styling — same structure as resume Background3D
+    const thresholds = [-0.38, -0.24, -0.10, 0.04, 0.18, 0.32, 0.46];
+    const opacities  = [ 0.04,  0.07,  0.10, 0.12, 0.10, 0.07,  0.04];
+    const widths     = [ 0.8,   1.0,   1.3,  1.5,  1.3,  1.0,   0.8 ];
+    const MOUSE_RADIUS = 200;
+    const GRID_STEP = 22;
 
-    const contourLevels = 12;
-    const gridStep = 6;
+    const draw = (time: number) => {
+      const w = window.innerWidth, h = window.innerHeight;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
 
-    const animate = () => {
-      time += 0.025;
-      ctx.clearRect(0, 0, width, height);
+      const t = time * 0.00006;
+      const cols = Math.ceil(w / GRID_STEP) + 2;
+      const rows = Math.ceil(h / GRID_STEP) + 2;
+      const mx = mouseRef.current.x, my = mouseRef.current.y;
 
-      // Build scalar field using fbm noise
-      const cols = Math.ceil(width / gridStep) + 1;
-      const rows = Math.ceil(height / gridStep) + 1;
-      const field = new Float32Array(cols * rows);
+      // Build noise field
+      const field = new Float32Array(rows * cols);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const px = c * GRID_STEP, py = r * GRID_STEP;
+          const nx = c * 0.035, ny = r * 0.035;
 
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
+          let v = simplexNoise(nx + t, ny + t * 0.6) * 0.55
+                + simplexNoise(nx * 2.2 + t * 1.4, ny * 2.2 - t * 0.4) * 0.3
+                + simplexNoise(nx * 4.5 + t * 0.8, ny * 4.5 + t * 1.2) * 0.15;
 
-      for (let gy = 0; gy < rows; gy++) {
-        for (let gx = 0; gx < cols; gx++) {
-          const px = gx * gridStep;
-          const py = gy * gridStep;
-          // Use time only as phase — field topology stays fixed, just breathes
-          const nx = px * 0.003;
-          const ny = py * 0.003;
-          let val = fbm(
-            nx + Math.sin(time * 0.4) * 0.3,
-            ny + Math.cos(time * 0.3) * 0.3,
-            42
-          );
-
-          // Mouse distortion
-          const dx = px - mx;
-          const dy = py - my;
+          // Mouse scatter
+          const dx = px - mx, dy = py - my;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 250) {
-            const strength = (1 - dist / 250);
-            val += strength * strength * 0.35;
+          if (dist < MOUSE_RADIUS) {
+            const strength = Math.pow(1 - dist / MOUSE_RADIUS, 2.5) * 0.7;
+            v += strength * (v >= 0 ? 1 : -1);
           }
 
-          field[gy * cols + gx] = val;
+          field[r * cols + c] = v;
         }
       }
 
-      // Marching squares for contour lines
-      for (let level = 0; level < contourLevels; level++) {
-        const threshold = level / contourLevels;
-        const alpha = 0.35 + Math.sin(time * 0.5 + level * 0.4) * 0.12;
-
+      // Draw contour lines
+      for (let ti = 0; ti < thresholds.length; ti++) {
+        const th = thresholds[ti];
+        // Keep original amber/orange color from credits page
+        ctx.strokeStyle = `rgba(255, 184, 107, ${opacities[ti]})`;
+        ctx.lineWidth = widths[ti];
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(255, 184, 107, ${alpha})`;
-        ctx.lineWidth = 0.8;
 
-        for (let gy = 0; gy < rows - 1; gy++) {
-          for (let gx = 0; gx < cols - 1; gx++) {
-            const i = gy * cols + gx;
-            const a = field[i];
-            const b = field[i + 1];
-            const c = field[i + cols + 1];
-            const d = field[i + cols];
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const tl = field[r * cols + c];
+            const tr = field[r * cols + c + 1];
+            const br = field[(r+1) * cols + c + 1];
+            const bl = field[(r+1) * cols + c];
 
-            const state =
-              (a >= threshold ? 8 : 0) |
-              (b >= threshold ? 4 : 0) |
-              (c >= threshold ? 2 : 0) |
-              (d >= threshold ? 1 : 0);
+            const idx = (tl >= th ? 8 : 0)
+                      | (tr >= th ? 4 : 0)
+                      | (br >= th ? 2 : 0)
+                      | (bl >= th ? 1 : 0);
 
-            if (state === 0 || state === 15) continue;
-
-            const x0 = gx * gridStep;
-            const y0 = gy * gridStep;
-            const x1 = x0 + gridStep;
-            const y1 = y0 + gridStep;
-
-            const lerp = (v1: number, v2: number) => {
-              const denom = v2 - v1;
-              if (Math.abs(denom) < 0.0001) return 0.5;
-              return (threshold - v1) / denom;
-            };
-
-            const topX = x0 + lerp(a, b) * gridStep;
-            const rightY = y0 + lerp(b, c) * gridStep;
-            const bottomX = x0 + lerp(d, c) * gridStep;
-            const leftY = y0 + lerp(a, d) * gridStep;
-
-            const segments: [number, number, number, number][] = [];
-
-            switch (state) {
-              case 1: case 14: segments.push([x0, leftY, bottomX, y1]); break;
-              case 2: case 13: segments.push([bottomX, y1, x1, rightY]); break;
-              case 3: case 12: segments.push([x0, leftY, x1, rightY]); break;
-              case 4: case 11: segments.push([topX, y0, x1, rightY]); break;
-              case 5:
-                segments.push([x0, leftY, topX, y0]);
-                segments.push([bottomX, y1, x1, rightY]);
-                break;
-              case 6: case 9: segments.push([topX, y0, bottomX, y1]); break;
-              case 7: case 8: segments.push([x0, leftY, topX, y0]); break;
-              case 10:
-                segments.push([topX, y0, x1, rightY]);
-                segments.push([x0, leftY, bottomX, y1]);
-                break;
-            }
-
-            for (const [sx, sy, ex, ey] of segments) {
-              ctx.moveTo(sx, sy);
-              ctx.lineTo(ex, ey);
+            const segs = _EDGES[idx];
+            for (let s = 0; s < segs.length; s++) {
+              const p1 = _edgePoint(c, r, segs[s][0], GRID_STEP, tl, tr, bl, br, th);
+              const p2 = _edgePoint(c, r, segs[s][1], GRID_STEP, tl, tr, bl, br, th);
+              if (p1 && p2) { ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); }
             }
           }
         }
         ctx.stroke();
       }
 
-      frameRef.current = requestAnimationFrame(animate);
+      frameRef.current = requestAnimationFrame(draw);
     };
 
-    frameRef.current = requestAnimationFrame(animate);
+    frameRef.current = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(frameRef.current);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("pointermove", onPointer);
+      window.removeEventListener("pointerleave", onLeave);
     };
   }, []);
 
@@ -358,11 +364,12 @@ export default function CreditsPage() {
       {/* Navbar - always blended into dark background */}
       <div
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 credits-nav-glass ${
-          navHidden
-            ? "-translate-y-full opacity-0"
-            : "translate-y-0 opacity-100"
-        }`}
+        className="fixed left-0 right-0 z-50 credits-nav-glass"
+        style={{
+          top: navHidden ? "-100%" : "0",
+          opacity: navHidden ? 0 : 1,
+          transition: "top 0.5s ease, opacity 0.5s ease",
+        }}
       >
         <NavbarPublic />
       </div>
@@ -422,7 +429,7 @@ export default function CreditsPage() {
 
             {/* Gradient Card - starts fullscreen, shrinks to card */}
             <div
-              className={`z-10 flex flex-col items-center justify-center transition-opacity duration-[1800ms] ease-out ${heroVisible ? "opacity-100" : "opacity-0"}`}
+              className={`z-10 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-[1800ms] ease-out px-4 ${heroVisible ? "opacity-100" : "opacity-0"}`}
               style={{
                 background:
                   "linear-gradient(135deg, #f472b6, #f9a8d4, #fbbf24, #f472b6, #f9a8d4)",
@@ -438,9 +445,9 @@ export default function CreditsPage() {
               }}
             >
               <h2
-                className="text-white font-normal tracking-[0.25em] uppercase drop-shadow-md"
+                className="text-white font-normal tracking-[0.1em] sm:tracking-[0.25em] uppercase drop-shadow-md text-center whitespace-nowrap"
                 style={{
-                  fontSize: `clamp(1rem, ${2.5 - scrollProgress * 1}rem, 2.5rem)`,
+                  fontSize: `clamp(0.65rem, 4vw, ${2.5 - scrollProgress * 1}rem)`,
                 }}
               >
                 Meet the Team
@@ -448,7 +455,7 @@ export default function CreditsPage() {
 
               {/* Initial text: PEA Internship Present - fades out on scroll */}
               <div
-                className="flex items-baseline gap-3 mt-2"
+                className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 mt-2"
                 style={{
                   opacity: Math.max(0, 1 - scrollProgress * 3),
                   transform: `translateY(${scrollProgress * -20}px)`,
@@ -457,17 +464,17 @@ export default function CreditsPage() {
                 }}
               >
                 <span
-                  className="text-primary-600 italic drop-shadow-sm"
+                  className="text-primary-600 italic drop-shadow-sm text-center"
                   style={{
-                    fontSize: `clamp(1.5rem, ${4 - scrollProgress * 1.5}rem, 4rem)`,
+                    fontSize: `clamp(1.25rem, 7vw, ${4 - scrollProgress * 1.5}rem)`,
                   }}
                 >
                   PEA Internship
                 </span>
                 <span
-                  className="text-white drop-shadow-sm uppercase"
+                  className="text-white drop-shadow-sm uppercase text-center"
                   style={{
-                    fontSize: `clamp(1.5rem, ${4 - scrollProgress * 1.5}rem, 4rem)`,
+                    fontSize: `clamp(1.25rem, 7vw, ${4 - scrollProgress * 1.5}rem)`,
                   }}
                 >
                   Present
@@ -476,7 +483,7 @@ export default function CreditsPage() {
 
               {/* Final text: Our Designers - fades in on scroll */}
               <h1
-                className="text-purple-900 italic mt-2 drop-shadow-sm"
+                className="text-primary-600 italic mt-2 drop-shadow-sm"
                 style={{
                   fontSize: `clamp(1.5rem, ${3 - scrollProgress * 0.5}rem, 3.5rem)`,
                   opacity: Math.max(0, (scrollProgress - 0.4) / 0.4),

@@ -5,6 +5,9 @@ const BACKEND_URL =
   "http://localhost:2702";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: ".",
+  },
   async rewrites() {
     return [
       {
