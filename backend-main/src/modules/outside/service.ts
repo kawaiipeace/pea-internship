@@ -253,4 +253,72 @@ export class OffsiteTaskService {
       },
     };
   }
+
+  async getTaskById(taskId: number, userId: string, roleId: number) {
+    const currentUser = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { id: true, departmentId: true },
+    });
+
+    if (!currentUser) throw new BadRequestError("ไม่พบข้อมูลผู้ใช้");
+
+    const task = await db.query.offsiteTasks.findFirst({
+      where: eq(offsiteTasks.id, taskId),
+      with: {
+        assignedByUser: {
+          columns: { id: true, fname: true, lname: true, departmentId: true }, // ดึงแผนกของคนสร้างมาเช็ค
+        },
+        students: {
+          with: {
+            student: {
+              columns: { id: true, fname: true, lname: true },
+              with: {
+                studentProfiles: {
+                  columns: { image: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundError("ไม่พบข้อมูลงานนอกสถานที่รายการนี้");
+    }
+
+    const isMentor = roleId === 2;
+    const isStudent = roleId === 3;
+
+    if (isMentor) {
+      if (task.assignedByUser.departmentId !== currentUser.departmentId) {
+        throw new BadRequestError("คุณไม่มีสิทธิ์เข้าถึงงานของแผนกอื่น");
+      }
+    } else if (isStudent) {
+      const isAssignedToThisTask = task.students.some(
+        (s) => s.student.id === userId
+      );
+      if (!isAssignedToThisTask) {
+        throw new BadRequestError("คุณไม่มีสิทธิ์เข้าถึงงานนี้ เนื่องจากไม่ได้รับมอบหมาย");
+      }
+    } else {
+      throw new BadRequestError("ไม่มีสิทธิ์เข้าถึง");
+    }
+
+    return {
+      id: task.id,
+      workDate: task.workDate,
+      createdAt: task.createdAt,
+      locationName: task.locationName,
+      taskDetail: task.taskDetail,
+      note: task.note,
+      isOwner: task.assignedByUser.id === userId,
+      assignedBy: `${task.assignedByUser.fname} ${task.assignedByUser.lname}`,
+      students: task.students.map((s) => ({
+        id: s.student.id,
+        name: `${s.student.fname} ${s.student.lname}`,
+        image: s.student.studentProfiles[0]?.image || null,
+      })),
+    };
+  }
 }
