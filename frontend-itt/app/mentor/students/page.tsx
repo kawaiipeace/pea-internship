@@ -297,35 +297,27 @@ const StudentsPage = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="py-4 px-6 text-center">
+                                    <td className="py-4 px-6 text-center text-center">
                                         <div className="flex justify-center gap-2">
                                             {/* มา */}
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
-                                                    <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
-                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">มา</span>
-                                                </div>
+                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
+                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">มา</span>
                                             </div>
                                             {/* สาย */}
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
-                                                    <span className="text-[18px] font-bold text-[#E2A727] leading-none">{student.attendance.late}</span>
-                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">สาย</span>
-                                                </div>
+                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                <span className="text-[18px] font-bold text-[#FDB022] leading-none">{student.attendance.late}</span>
+                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">สาย</span>
                                             </div>
                                             {/* ลา */}
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
-                                                    <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
-                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">ลา</span>
-                                                </div>
+                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                <span className="text-[18px] font-bold text-[#1A3CFF] leading-none">{student.attendance.leave}</span>
+                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
                                             </div>
                                             {/* ขาด */}
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="w-12 h-12 flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-lg">
-                                                    <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
-                                                    <span className="text-[10px] text-[#61646C] font-medium mt-0.5">ขาด</span>
-                                                </div>
+                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
+                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">ขาด</span>
                                             </div>
                                         </div>
                                     </td>
