@@ -68,13 +68,34 @@ export const offsiteTasks = new Elysia({
   // ดูงานที่ Mentor คนนี้เป็นคนสั่งทั้งหมด
   .get(
     "/mentor",
-    async ({ user }) => {
-      return await offsiteTaskService.getTasksByMentor(user.id);
+    async ({ user, query }) => {
+      return await offsiteTaskService.getTasksForDept(user.id, query);
     },
     {
       role: [ROLE_IDS.MENTOR],
+      query: offsiteModel.GetOffsiteTasksQuerySchema,
       detail: {
-        summary: "ดูประวัติการมอบหมายงาน (มุมมอง Mentor)",
+        summary: "ดูประวัติการมอบหมายงาน (มุมมองของ Mentor/แผนก)",
+        description:
+          "แสดงงานนอกสถานที่ทั้งหมดของคนในแผนก รองรับ Pagination, กรองรายเดือน/ปี และผู้มอบหมาย",
+      },
+    }
+  )
+
+  .get(
+    "/:id",
+    async ({ params, user }) => {
+      const taskId = Number(params.id);
+
+      return await offsiteTaskService.getTaskById(taskId, user.id, user.roleId);
+    },
+    {
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.STUDENT],
+      params: t.Object({ id: t.Numeric() }),
+      detail: {
+        summary: "ดูรายละเอียดงานนอกสถานที่ (ราย ID)",
+        description:
+          "ดูข้อมูล 1 รายการ (Student ดูได้เฉพาะงานตัวเอง, Mentor ดูได้เฉพาะงานในแผนก)",
       },
     }
   )

@@ -26,3 +26,42 @@ export type CreateOffsiteTaskDto = typeof CreateOffsiteTaskSchema.static;
 export const UpdateOffsiteTaskSchema = t.Partial(CreateOffsiteTaskSchema);
 
 export type UpdateOffsiteTaskDto = typeof UpdateOffsiteTaskSchema.static;
+
+export const GetOffsiteTasksQuerySchema = t.Object({
+  page: t.Optional(
+    t.Numeric({ default: 1, description: "หน้าที่ต้องการ (เริ่มต้น 1)" })
+  ),
+  limit: t.Optional(
+    t.Numeric({ default: 10, description: "จำนวนรายการต่อหน้า" })
+  ),
+  sortBy: t.Optional(
+    t.Union([t.Literal("workDate"), t.Literal("createdAt")], {
+      default: "workDate",
+      description: "ฟิลด์ที่ต้องการจัดเรียง: workDate หรือ createdAt",
+    })
+  ),
+  sortOrder: t.Optional(
+    t.Union([t.Literal("asc"), t.Literal("desc")], {
+      default: "desc",
+      description: "ลำดับการจัดเรียง: asc (เก่าไปใหม่), desc (ใหม่ไปเก่า)",
+    })
+  ),
+  viewMode: t.Optional(
+    t.Union([t.Literal("mine"), t.Literal("all")], {
+      default: "all",
+      description: "เลือกดูเฉพาะ 'ของฉัน' (mine) หรือ 'ทั้งหมดในแผนก' (all)",
+    })
+  ),
+  month: t.Optional(
+    t.Numeric({
+      description: "เดือนที่ต้องการค้นหา (1-12)",
+    })
+  ),
+  year: t.Optional(
+    t.Numeric({
+      description: "ปี ค.ศ. ที่ต้องการค้นหา",
+    })
+  ),
+});
+
+export type GetOffsiteTasksQueryDto = typeof GetOffsiteTasksQuerySchema.static;

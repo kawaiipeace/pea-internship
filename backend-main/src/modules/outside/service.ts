@@ -1,7 +1,7 @@
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { BadRequestError, NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
-import { offsiteTaskStudents, offsiteTasks } from "@/db/schema";
+import { offsiteTaskStudents, offsiteTasks, users } from "@/db/schema";
 import type * as offsiteModel from "./model";
 
 export class OffsiteTaskService {
@@ -146,5 +146,179 @@ export class OffsiteTaskService {
 
       return { success: true, message: "ลบงานนอกสถานที่สำเร็จ" };
     });
+  }
+
+  async getTasksForDept(
+    mentorId: string,
+    query: offsiteModel.GetOffsiteTasksQueryDto
+  ) {
+    const currentUser = await db.query.users.findFirst({
+      where: eq(users.id, mentorId),
+      columns: { departmentId: true },
+    });
+
+    if (!currentUser || !currentUser.departmentId) {
+      throw new BadRequestError("ไม่พบข้อมูลแผนกของคุณ");
+    }
+
+    const conditions = [];
+
+    if (query.viewMode === "mine") {
+      conditions.push(eq(offsiteTasks.assignedBy, mentorId));
+    } else {
+      const usersInDept = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.departmentId, currentUser.departmentId));
+      const validMentorIds = usersInDept.map((u) => u.id);
+
+      conditions.push(inArray(offsiteTasks.assignedBy, validMentorIds));
+    }
+
+    if (query.year && query.month) {
+      const formattedMonth = query.month.toString().padStart(2, "0");
+      const lastDay = new Date(query.year, query.month, 0).getDate();
+
+      const startDateStr = `${query.year}-${formattedMonth}-01`;
+      const endDateStr = `${query.year}-${formattedMonth}-${lastDay}`;
+
+      conditions.push(
+        gte(offsiteTasks.workDate, startDateStr),
+        lte(offsiteTasks.workDate, endDateStr)
+      );
+    }
+
+    const orderCol =
+      query.sortBy === "createdAt"
+        ? offsiteTasks.createdAt
+        : offsiteTasks.workDate;
+    const orderFn = query.sortOrder === "asc" ? asc(orderCol) : desc(orderCol);
+
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const offset = (page - 1) * limit;
+
+    const [totalResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(offsiteTasks)
+      .where(and(...conditions));
+
+    const totalCount = Number(totalResult.count);
+
+    const tasks = await db.query.offsiteTasks.findMany({
+      where: and(...conditions),
+      orderBy: [orderFn],
+      limit: limit,
+      offset: offset,
+      with: {
+        assignedByUser: {
+          columns: { id: true, fname: true, lname: true },
+        },
+        students: {
+          with: {
+            student: {
+              columns: { id: true, fname: true, lname: true },
+              with: {
+                studentProfiles: {
+                  columns: { image: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      data: tasks.map((t) => ({
+        id: t.id,
+        workDate: t.workDate,
+        createdAt: t.createdAt,
+        locationName: t.locationName,
+        assignedBy: t.assignedByUser
+          ? `${t.assignedByUser.fname} ${t.assignedByUser.lname}`
+          : "ไม่ระบุ",
+        isOwner: t.assignedByUser?.id === mentorId,
+        students: t.students.map((s) => ({
+          id: s.student.id,
+          name: `${s.student.fname} ${s.student.lname}`,
+          image: s.student.studentProfiles[0]?.image || null,
+        })),
+      })),
+      meta: {
+        total: totalCount,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    };
+  }
+
+  async getTaskById(taskId: number, userId: string, roleId: number) {
+    const currentUser = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { id: true, departmentId: true },
+    });
+
+    if (!currentUser) throw new BadRequestError("ไม่พบข้อมูลผู้ใช้");
+
+    const task = await db.query.offsiteTasks.findFirst({
+      where: eq(offsiteTasks.id, taskId),
+      with: {
+        assignedByUser: {
+          columns: { id: true, fname: true, lname: true, departmentId: true }, // ดึงแผนกของคนสร้างมาเช็ค
+        },
+        students: {
+          with: {
+            student: {
+              columns: { id: true, fname: true, lname: true },
+              with: {
+                studentProfiles: {
+                  columns: { image: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundError("ไม่พบข้อมูลงานนอกสถานที่รายการนี้");
+    }
+
+    const isMentor = roleId === 2;
+    const isStudent = roleId === 3;
+
+    if (isMentor) {
+      if (task.assignedByUser.departmentId !== currentUser.departmentId) {
+        throw new BadRequestError("คุณไม่มีสิทธิ์เข้าถึงงานของแผนกอื่น");
+      }
+    } else if (isStudent) {
+      const isAssignedToThisTask = task.students.some(
+        (s) => s.student.id === userId
+      );
+      if (!isAssignedToThisTask) {
+        throw new BadRequestError("คุณไม่มีสิทธิ์เข้าถึงงานนี้ เนื่องจากไม่ได้รับมอบหมาย");
+      }
+    } else {
+      throw new BadRequestError("ไม่มีสิทธิ์เข้าถึง");
+    }
+
+    return {
+      id: task.id,
+      workDate: task.workDate,
+      createdAt: task.createdAt,
+      locationName: task.locationName,
+      taskDetail: task.taskDetail,
+      note: task.note,
+      isOwner: task.assignedByUser.id === userId,
+      assignedBy: `${task.assignedByUser.fname} ${task.assignedByUser.lname}`,
+      students: task.students.map((s) => ({
+        id: s.student.id,
+        name: `${s.student.fname} ${s.student.lname}`,
+        image: s.student.studentProfiles[0]?.image || null,
+      })),
+    };
   }
 }

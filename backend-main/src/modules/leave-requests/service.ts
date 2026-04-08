@@ -67,7 +67,7 @@ export class LeaveService {
 
       const datesToLeave = this.getDatesInRange(data.startDate, data.endDate);
 
-      const targetDatetimes = datesToLeave.map((date) => 
+      const targetDatetimes = datesToLeave.map((date) =>
         new Date(`${date}T00:00:00+07:00`).toISOString()
       );
 
@@ -75,17 +75,19 @@ export class LeaveService {
         where: and(
           eq(leaveRequests.userId, userId),
           inArray(leaveRequests.leaveDatetime, targetDatetimes),
-          inArray(leaveRequests.status, ["PENDING", "APPROVED"]) 
+          inArray(leaveRequests.status, ["PENDING", "APPROVED"])
         ),
       });
 
       if (existingLeaves.length > 0) {
-        const duplicatedDates = existingLeaves.map((leave) => {
-           const dateStr = leave.leaveDatetime
-             ? leave.leaveDatetime
-             : String(leave.leaveDatetime);
-           return dateStr.substring(0, 10);
-        }).join(", ");
+        const duplicatedDates = existingLeaves
+          .map((leave) => {
+            const dateStr = leave.leaveDatetime
+              ? leave.leaveDatetime
+              : String(leave.leaveDatetime);
+            return dateStr.substring(0, 10);
+          })
+          .join(", ");
 
         throw new ConflictError(
           `ไม่สามารถบันทึกคำขอลาได้ เนื่องจากคุณมีรายการขอลา (สถานะรออนุมัติหรืออนุมัติแล้ว) ในวันที่ ${duplicatedDates} อยู่ในระบบแล้ว`
@@ -130,8 +132,8 @@ export class LeaveService {
 
       if (!student) throw new NotFoundError("ไม่พบข้อมูลนักศึกษาของคำขอลานี้");
 
-      const leaveDateStr = new Intl.DateTimeFormat('en-CA', { 
-        timeZone: 'Asia/Bangkok' 
+      const leaveDateStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Bangkok",
       }).format(new Date(request.leaveDatetime!));
 
       await tx
