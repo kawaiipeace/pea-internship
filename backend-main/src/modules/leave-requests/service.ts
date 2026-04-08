@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ConflictError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -66,6 +66,31 @@ export class LeaveService {
       if (!student) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
 
       const datesToLeave = this.getDatesInRange(data.startDate, data.endDate);
+
+      const targetDatetimes = datesToLeave.map((date) => 
+        new Date(`${date}T00:00:00+07:00`).toISOString()
+      );
+
+      const existingLeaves = await tx.query.leaveRequests.findMany({
+        where: and(
+          eq(leaveRequests.userId, userId),
+          inArray(leaveRequests.leaveDatetime, targetDatetimes),
+          inArray(leaveRequests.status, ["PENDING", "APPROVED"]) 
+        ),
+      });
+
+      if (existingLeaves.length > 0) {
+        const duplicatedDates = existingLeaves.map((leave) => {
+           const dateStr = leave.leaveDatetime
+             ? leave.leaveDatetime
+             : String(leave.leaveDatetime);
+           return dateStr.substring(0, 10);
+        }).join(", ");
+
+        throw new ConflictError(
+          `ไม่สามารถบันทึกคำขอลาได้ เนื่องจากคุณมีรายการขอลา (สถานะรออนุมัติหรืออนุมัติแล้ว) ในวันที่ ${duplicatedDates} อยู่ในระบบแล้ว`
+        );
+      }
 
       const requestsToInsert = datesToLeave.map((date) => ({
         leaveRequestType: data.leaveType as "ABSENCE" | "SICK",
