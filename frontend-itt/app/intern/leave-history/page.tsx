@@ -599,7 +599,7 @@ const LeaveHistoryPage = () => {
                                       >
                                         <Dialog.Panel
                                             as="div"
-                                            className={`w-full ${isEditingTime ? 'sm:max-w-[880px]' : 'sm:max-w-[700px]'} transform text-left align-middle shadow-xl transition-all ${isEditingTime
+                                            className={`w-full ${isEditingTime ? 'sm:max-w-[880px]' : 'sm:max-w-[550px]'} transform text-left align-middle shadow-xl transition-all ${isEditingTime
                                                     ? "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] px-6 pb-6 pt-2 h-[calc(100vh-48px)] mt-12 sm:mt-0 sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden sm:block sm:overflow-y-auto"
                                                     : "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] p-6 h-[62vh] sm:h-auto max-h-[62vh] sm:max-h-none flex flex-col overflow-hidden sm:block sm:overflow-y-auto sm:overflow-visible"
                                                 }`}
@@ -626,13 +626,13 @@ const LeaveHistoryPage = () => {
 
                                             {selectedHistoryItem && (
                                                     <div className="flex-1 overflow-y-auto sm:overflow-visible space-y-4 text-black dark:text-white-light sm:pb-0 pb-6 pr-0.5 custom-scrollbar">
-                                                        {/* Mobile Bottom Sheet (Restored & Refined) */}
-                                                        <div className="sm:hidden flex flex-col items-center">
+                                                        {/* Unified Detail Layout */}
+                                                        <div className="flex flex-col items-center">
                                                             {/* Header Region */}
                                                             <div className="w-full h-auto flex flex-col pt-1 touch-none">
                                                                 <div className="flex items-center justify-between mt-1 mb-2">
                                                                     <div className="text-[16px] font-bold text-gray-800 dark:text-gray-200">
-                                                                        {selectedHistoryItem.date} {thaiMonthsFull[currentMonth]} {currentYear}
+                                                                        {selectedHistoryItem.date} {selectedHistoryItem.month} {selectedHistoryItem.year}
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
                                                                         {getStatusBadge(selectedHistoryItem.statusType, selectedHistoryItem.status)}
@@ -670,7 +670,7 @@ const LeaveHistoryPage = () => {
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="text-[19px] font-bold text-gray-900 dark:text-white mb-2 leading-tight">
+                                                                <div className="text-[19px] sm:text-[22px] font-bold text-gray-900 dark:text-white mb-2 leading-tight">
                                                                     ลางาน
                                                                 </div>
 
@@ -694,7 +694,7 @@ const LeaveHistoryPage = () => {
                                                                 </div>
 
                                                                 {/* Divider */}
-                                                                <hr className="w-full h-[1px] bg-[#ECECED] border-none mb-3" />
+                                                                <hr className="w-full h-[1px] bg-[#ECECED] dark:bg-gray-700 border-none mb-3" />
                                                             </div>
 
                                                             {/* Reasoning Section */}
@@ -711,7 +711,7 @@ const LeaveHistoryPage = () => {
                                                             {/* Evidence Section */}
                                                             <div className="w-full space-y-3">
                                                                 <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
-                                                                    <span className="whitespace-nowrap">ไฟล์แนบ :</span>
+                                                                    <span className="whitespace-nowrap font-bold">ไฟล์แนบ :</span>
                                                                     <button 
                                                                         type="button"
                                                                         onClick={() => handleViewFile(selectedHistoryItem)}
@@ -720,119 +720,10 @@ const LeaveHistoryPage = () => {
                                                                         <div className="flex items-center justify-center shrink-0 text-[#A80689]">
                                                                             <span className="material-symbols-rounded !text-[20px]">description</span>
                                                                         </div>
-                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-white truncate max-w-[150px]">
+                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-white truncate max-w-[250px]">
                                                                             {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'}
                                                                         </div>
                                                                     </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Desktop Layout (Maintained exactly as was) */}
-                                                        <div className="hidden sm:flex flex-col items-center">
-                                                            {/* Header */}
-                                                            <div className="w-full sm:w-[636px] h-auto sm:h-[153px] flex flex-col pt-2 transition-all">
-                                                                <div className="flex items-center justify-between mt-2 mb-3">
-                                                                    <div className="text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                        {selectedHistoryItem.date} {selectedHistoryItem.month}
-                                                                    </div>
-                                                                    <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                                                                        selectedHistoryItem.statusType === 'success' ? 'bg-[#E6F4EA] text-[#0D652D]' :
-                                                                        selectedHistoryItem.statusType === 'danger' ? 'bg-[#FFE4E6] text-[#E11D48]' :
-                                                                        selectedHistoryItem.statusType === 'warning' ? 'bg-[#F0F1F1] text-[#61646C]' :
-                                                                        'bg-[#F3F4F6] text-gray-600'
-                                                                    }`}>
-                                                                        {selectedHistoryItem.status}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="text-[18px] sm:text-[22px] font-bold text-[#1A1A1A] dark:text-white mb-2">
-                                                                    ลางาน
-                                                                </div>
-
-                                                                {/* Tag */}
-                                                                <div>
-                                                                    <div className="inline-flex items-center px-2.5 py-1.5 bg-[#EEF4FF] text-[#1C1C1C] border border-[#4386F9] rounded-full text-[12.5px] font-bold gap-1 mt-0.5">
-                                                                        <div className="w-5 h-5 rounded-full bg-[#4386F9] flex items-center justify-center text-white shrink-0">
-                                                                            <span className="material-symbols-rounded !text-[14px]">lab_profile</span>
-                                                                        </div>
-                                                                        ลา
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Divider */}
-                                                                <hr className="w-full sm:w-[353px] h-[1px] bg-[#CECFD2] border-none mt-3 sm:mt-3 mb-1 self-start" />
-                                                            </div>
-
-                                                            {/* Card 1: Details */}
-                                                            <div className="w-full sm:w-[636px] sm:h-[168px] bg-[#FEFBF6] dark:bg-[#1C1710] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className="material-symbols-rounded text-[20px] text-gray-800 dark:text-gray-300">location_on</span>
-                                                                    <div className="font-bold text-[14px] text-gray-800 dark:text-gray-100">อยู่นอกสถานที่</div>
-                                                                </div>
-                                                                
-                                                                <div className="space-y-0.5">
-                                                                    <div className="text-[12px] font-bold text-gray-400">ระยะเวลาการลา :</div>
-                                                                    <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200">
-                                                                        <IconClock className="w-[18px] h-[18px] stroke-[1.5px]" />
-                                                                        <div className="font-bold text-[14px]">{selectedHistoryItem.leaveDuration}</div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="space-y-0.5">
-                                                                    <div className="text-[12px] font-bold text-gray-400">ประเภทการลา :</div>
-                                                                    <div className="pt-0.5">
-                                                                        {selectedHistoryItem.leaveType === 'ลากิจ' ? (
-                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4B5E71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
-                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#1A3CFF] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                                                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0.5px]">business_center</span>
-                                                                                </div>
-                                                                                ลากิจ
-                                                                            </div>
-                                                                        ) : selectedHistoryItem.leaveType === 'ลาป่วย' ? (
-                                                                            <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4B5E71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1 mt-1">
-                                                                                <div className="w-[18px] h-[18px] rounded-full bg-[#FF1A7D] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                                                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0px]">health_cross</span>
-                                                                                </div>
-                                                                                ลาป่วย
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="inline-flex items-center w-[75px] justify-center px-2 py-1 bg-[#F0F9FF] text-[#0EA5E9] border border-[#BAE6FD] rounded-full text-[10px] font-bold gap-1 mt-0.5">
-                                                                                <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-[#0ea5e9]">
-                                                                                    <span className="material-symbols-rounded !text-[12px] text-white">lab_profile</span>
-                                                                                </div>
-                                                                                {selectedHistoryItem.leaveType}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Card 2: Evidence & Reason */}
-                                                            <div className="w-full sm:w-[636px] sm:h-[190px] bg-[#FEFBF6] dark:bg-[#1A1A1A] border-none rounded-[5px] px-5 py-5 mt-4 flex flex-col mx-auto space-y-2">
-                                                                <div className="space-y-1.5">
-                                                                    <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                        <span className="material-symbols-rounded text-[20px]">description</span>
-                                                                        หลักฐานการลางาน
-                                                                    </div>
-                                                                    <div className="flex items-center bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 py-2 gap-3 w-[450px] h-[45px]">
-                                                                        <div className="w-8 h-8 rounded-[4px] overflow-hidden flex items-center justify-center shrink-0 bg-gray-100">
-                                                                            <img src="/assets/images/profile-34.jpeg" alt="thumbnail" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                                                                        </div>
-                                                                        <div className="text-[13px] font-bold text-gray-700 dark:text-white truncate flex-1">
-                                                                            {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'} <span className="font-normal text-gray-400">({selectedHistoryItem.evidenceSize || ''})</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="space-y-1.5 mt-2">
-                                                                    <div className="flex items-center gap-2 text-[14px] font-bold text-gray-800 dark:text-gray-200">
-                                                                        <span className="material-symbols-rounded text-[20px]">description</span>
-                                                                        รายละเอียดการลา
-                                                                    </div>
-                                                                    <div className="bg-[#F9FAFB] dark:bg-gray-800 border border-[#85888E] dark:border-gray-700 rounded-[8px] px-3 w-full sm:w-[450px] min-h-[45px] py-3 text-[13px] text-gray-600 dark:text-gray-300 font-medium flex items-center h-auto">
-                                                                        {selectedHistoryItem.leaveReason || 'ไม่ได้ระบุเหตุผล'}
-                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>

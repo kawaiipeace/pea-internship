@@ -251,7 +251,7 @@ const AttendanceHistoryPage = () => {
             monthFull: thaiMonthsFull[monthIndex],
             year: year,
             labelMobile: `${day} ${thaiMonthsFull[monthIndex]} ${year}`,
-            time: log.displayStatus === 'ABSENT' ? 'ขาดงาน' : `${inTimeDisplay} - ${outTimeDisplay}`,
+            time: log.displayStatus === 'ABSENT' ? 'ขาดงาน' : log.displayStatus === 'LEAVE' ? 'ลางาน' : `${inTimeDisplay} - ${outTimeDisplay}`,
             status: statusLabel,
             statusType: statusType,
             checkInTime: inTimeDisplay,
@@ -272,8 +272,8 @@ const AttendanceHistoryPage = () => {
         const bkkCurrentTime = bkkNow.getHours() * 100 + bkkNow.getMinutes();
 
         const filteredRecords = mappedRecords.filter((item: any) => {
-          // If it's today and no check-out, hide it until 23:50
-          if (item.workDate === bkkTodayStr && item.checkOutTime === "ไม่ลงเวลา" && bkkCurrentTime < 2350) {
+          // If it's today and no check-out, hide it until 23:50 (except for LEAVE records)
+          if (item.workDate === bkkTodayStr && item.checkOutTime === "ไม่ลงเวลา" && bkkCurrentTime < 2350 && !item.isLeave) {
             return false;
           }
           return true;
@@ -281,7 +281,12 @@ const AttendanceHistoryPage = () => {
 
         // Adjust summary counts based on filtered records
         const activeSummary = { ...summary };
-        const missingRecord = mappedRecords.find((item: any) => item.workDate === bkkTodayStr && item.checkOutTime === "ไม่ลงเวลา" && bkkCurrentTime < 2350);
+        const missingRecord = mappedRecords.find((item: any) => 
+          item.workDate === bkkTodayStr && 
+          item.checkOutTime === "ไม่ลงเวลา" && 
+          bkkCurrentTime < 2350 && 
+          !item.isLeave
+        );
         if (missingRecord) {
           activeSummary.missingOut = Math.max(0, activeSummary.missingOut - 1);
         }

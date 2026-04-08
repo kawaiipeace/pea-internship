@@ -105,9 +105,9 @@ export class LeaveService {
 
       if (!student) throw new NotFoundError("ไม่พบข้อมูลนักศึกษาของคำขอลานี้");
 
-      const leaveDateStr = new Date(request.leaveDatetime!)
-        .toISOString()
-        .split("T")[0];
+      const leaveDateStr = new Intl.DateTimeFormat('en-CA', { 
+        timeZone: 'Asia/Bangkok' 
+      }).format(new Date(request.leaveDatetime!));
 
       await tx
         .update(leaveRequests)
