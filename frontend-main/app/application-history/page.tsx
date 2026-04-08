@@ -319,7 +319,7 @@ export default function ApplicationHistoryPage() {
       case "rejected":
         return (
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm">
+            <span className="px-3 py-2 bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA] rounded-full font-bold text-sm">
               ไม่ผ่าน
             </span>
           </div>
@@ -343,7 +343,7 @@ export default function ApplicationHistoryPage() {
       case "intern-cancelled":
         return (
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm">
+            <span className="px-3 py-2 bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA] rounded-full font-bold text-sm">
               ยกเลิกฝึกงาน
             </span>
           </div>

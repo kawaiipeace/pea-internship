@@ -189,6 +189,7 @@ function getViewMode(app: AllStudentsHistoryItem): ViewMode {
     (d) => d.validationStatus === "INVALID",
   );
   if (hasInvalidDocs) return "docs_invalid";
+  if (app.applicationStatus === "CANCEL") return "cancelled";
   if (app.applicationStatus === "PENDING_REVIEW") return "pending_review";
   if (app.applicationStatus === "COMPLETE") {
     switch (app.studentInternshipStatus) {

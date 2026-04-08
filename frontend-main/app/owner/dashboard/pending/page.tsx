@@ -884,6 +884,8 @@ function PendingStatusContent() {
       return isInternshipEndDatePassed(endDate) ? "complete" : null;
     }
 
+    if (status === "REJECTED") return "rejected";
+
     if (status === "CANCEL" || status === "ABORT") {
       if (!isActive) return "cancelled";
       if (statusNote) return "rejected";

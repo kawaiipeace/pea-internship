@@ -221,7 +221,7 @@ function JobDetailContent() {
       case "rejected":
         return (
           <div className="flex flex-wrap gap-2">
-            <button className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm  transition-transform ">
+            <button className="px-3 py-2 bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA] rounded-full font-bold text-sm  transition-transform ">
               ไม่ผ่าน
             </button>
           </div>
@@ -245,7 +245,7 @@ function JobDetailContent() {
       case "intern-cancelled":
         return (
           <div className="flex flex-wrap gap-2">
-            <button className="px-3 py-2 bg-red-100 text-red-500 rounded-full font-bold text-sm  transition-transform ">
+            <button className="px-3 py-2 bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA] rounded-full font-bold text-sm  transition-transform ">
               ยกเลิกฝึกงาน
             </button>
           </div>

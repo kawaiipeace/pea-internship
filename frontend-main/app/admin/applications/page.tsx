@@ -65,6 +65,7 @@ function getDocStatus(app: AllStudentsHistoryItem): AdminDocStatus {
     return "pending_review";
   }
   if (app.applicationStatus === "COMPLETE") return "approved";
+  if (app.applicationStatus === "CANCEL") return "approved";
   return "pending_upload";
 }
 
@@ -152,6 +153,7 @@ function getApprovedInternStatus(
   const startDate = toDateOnly(app.infoStartDate || app.profileStartDate);
   const endDate = toDateOnly(app.infoEndDate || app.profileEndDate);
 
+  if (app.applicationStatus === "CANCEL") return "cancelled";
   if (app.studentInternshipStatus === "CANCEL") return "cancelled";
   if (app.studentInternshipStatus === "AWAITING") return "awaiting";
   if (app.studentInternshipStatus === "COMPLETE") return "completed";
@@ -240,6 +242,12 @@ function getBadge(app: AllStudentsHistoryItem, tab: ActiveTab) {
   }
 
   if (tab === "approved") {
+    if (app.applicationStatus === "CANCEL") {
+      return {
+        text: "ยกเลิกฝึกงาน",
+        className: "bg-[#FEE4E2] text-[#B42318] border border-[#FECDCA]",
+      };
+    }
     if (app.studentInternshipStatus === "CANCEL") {
       return {
         text: "ยกเลิกฝึกงาน",
@@ -383,7 +391,7 @@ function AdminApplicationsPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [reqRes, revRes, compRes] = await Promise.all([
+      const [reqRes, revRes, compRes, cancelRes] = await Promise.all([
         applicationApi.getAllStudentsHistory({
           limit: 500,
           status: "PENDING_REQUEST" as AppStatusEnum,
@@ -396,8 +404,13 @@ function AdminApplicationsPage() {
           limit: 500,
           status: "COMPLETE" as AppStatusEnum,
         }),
+        applicationApi.getAllStudentsHistory({
+          limit: 500,
+          status: "CANCEL" as AppStatusEnum,
+          includeCanceled: true,
+        }),
       ]);
-      const allApps = [...reqRes.data, ...revRes.data, ...compRes.data];
+      const allApps = [...reqRes.data, ...revRes.data, ...compRes.data, ...cancelRes.data];
       setApplications(allApps);
 
       // Collect unique departmentIds that need lookup
