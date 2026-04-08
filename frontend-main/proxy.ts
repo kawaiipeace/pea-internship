@@ -43,7 +43,7 @@ function getHomeByRole(role: string | undefined): string {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const forceLogin = searchParams.get("forceLogin") === "1";
 

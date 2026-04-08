@@ -91,30 +91,11 @@ function AcceptedStatusPage() {
 
   // Dynamic summary stats computed from API data
   const summaryStats = computeApplicationStats(allApps);
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    {
-      id: string;
-      reason?: string;
-      cancelledBy?: string;
-      cancelledDate?: string;
-    }[]
-  >([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showCancelSuccess, setShowCancelSuccess] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("pea_cancelled_apps");
-      if (stored) {
-        setCancelledAppsData(JSON.parse(stored));
-      }
-    } catch {}
-  }, []);
-  const cancelledAppIds = useMemo(
-    () => cancelledAppsData.map((c) => c.id),
-    [cancelledAppsData],
-  );
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   // Application history modal state
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -425,11 +406,10 @@ function AcceptedStatusPage() {
     return cells;
   }, [trainingDateViewMonth]);
 
-  // Get accepted applications only (exclude localStorage-cancelled)
+  // Get accepted applications from API source of truth only
   const getAcceptedApplications = () => {
     return allApps.filter(
       (app) =>
-        !cancelledAppIds.includes(app.id) &&
         app.status === "accepted" &&
         (app.detailedStatus === "waiting_analysis_doc" ||
           app.detailedStatus === "waiting_send_doc" ||
@@ -581,17 +561,16 @@ function AcceptedStatusPage() {
     selectedTrainingEndDate,
     selectedInstitutions,
     selectedSchools,
-    cancelledAppIds,
     allApps,
   ]);
 
-  // Set first application as selected on mount / when cancelledAppIds changes
+  // Set first application as selected on mount / when API data changes
   useEffect(() => {
     const acceptedApps = filterDynamicApplications("all");
     if (acceptedApps.length > 0 && !selectedApplication) {
       setSelectedApplication(acceptedApps[0]);
     }
-  }, [cancelledAppIds, allApps]);
+  }, [allApps]);
 
   // Pagination
   const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
@@ -2656,8 +2635,11 @@ function AcceptedStatusPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative">
             <button
-              onClick={() => setShowCancelModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+              onClick={() => {
+                if (!cancelSubmitting) setShowCancelModal(false);
+              }}
+              disabled={cancelSubmitting}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-6 h-6"
@@ -2711,6 +2693,7 @@ function AcceptedStatusPage() {
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
+                disabled={cancelSubmitting}
                 className="w-full p-3 border border-gray-300 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder="กรุณาระบุเหตุผลที่ชัดเจน..."
               />
@@ -2718,52 +2701,84 @@ function AcceptedStatusPage() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer"
+                disabled={cancelSubmitting}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={async () => {
-                  if (cancelReason.trim() && selectedApplication) {
-                    try {
-                      await ownerStudentsApi.updateInternshipStatus(
-                        selectedApplication.internId,
-                        "CANCEL",
-                        cancelReason,
-                      );
-                      setShowCancelModal(false);
-                      setCancelReason("");
-                      setShowCancelSuccess(true);
-                      setTimeout(() => {
-                        setShowCancelSuccess(false);
-                      }, 500);
-                      const apps = await fetchAllApplications(
-                        positionId ? Number(positionId) : undefined,
-                      );
-                      setAllApps(apps);
-                    } catch (err) {
-                      console.error("Cancel internship failed:", err);
-                      alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
-                    }
+                  if (
+                    !cancelReason.trim() ||
+                    !selectedApplication ||
+                    cancelSubmitting
+                  )
+                    return;
+
+                  setCancelSubmitting(true);
+                  try {
+                    await ownerStudentsApi.updateInternshipStatus(
+                      selectedApplication.internId,
+                      "CANCEL",
+                      cancelReason,
+                    );
+                    setShowCancelModal(false);
+                    setCancelReason("");
+                    setShowCancelSuccess(true);
+                    setTimeout(() => {
+                      setShowCancelSuccess(false);
+                    }, 500);
+                    const apps = await fetchAllApplications(
+                      positionId ? Number(positionId) : undefined,
+                    );
+                    setAllApps(apps);
+                  } catch (err) {
+                    console.error("Cancel internship failed:", err);
+                    alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
+                  } finally {
+                    setCancelSubmitting(false);
                   }
                 }}
-                disabled={!cancelReason.trim()}
+                disabled={!cancelReason.trim() || cancelSubmitting}
                 className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                ยืนยันการยกเลิกฝึกงาน
+                {cancelSubmitting ? (
+                  <svg
+                    className="w-5 h-5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                )}
+                {cancelSubmitting ? "กำลังยืนยัน..." : "ยืนยันการยกเลิกฝึกงาน"}
               </button>
             </div>
           </div>
@@ -2895,7 +2910,9 @@ function AcceptedStatusPage() {
                           </h4>
                         </div>
                         {item.statusNote && (
-                          <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
+                          <div
+                            className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}
+                          >
                             <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                               <svg
                                 width="20"
@@ -2906,20 +2923,28 @@ function AcceptedStatusPage() {
                               >
                                 <path
                                   d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                  fill={item.applicationStatus === "ABORT" ? "#6B7280" : "#D92D20"}
+                                  fill={
+                                    item.applicationStatus === "ABORT"
+                                      ? "#6B7280"
+                                      : "#D92D20"
+                                  }
                                 />
                               </svg>
-                              <span className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}>
+                              <span
+                                className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}
+                              >
                                 {historyOutcome === "rejected"
                                   ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
                                   : historyOutcome === "cancelled"
-                                    ? (item.applicationStatus === "ABORT"
-                                        ? "เหตุผลการยกเลิกการสมัคร"
-                                        : "เหตุผลประกอบการยกเลิกฝึกงาน")
+                                    ? item.applicationStatus === "ABORT"
+                                      ? "เหตุผลการยกเลิกการสมัคร"
+                                      : "เหตุผลประกอบการยกเลิกฝึกงาน"
                                     : "หมายเหตุ"}
                               </span>
                             </div>
-                            <div className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`} />
+                            <div
+                              className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`}
+                            />
                             <div className="px-4 pt-3 pb-4">
                               <p className="text-sm text-gray-700 leading-relaxed">
                                 {item.statusNote}

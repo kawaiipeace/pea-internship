@@ -209,9 +209,9 @@ export default function AdminNavbar() {
             <Image
               src="/images/logo.png"
               alt="PEA Internship Logo"
-              width={160}
-              height={48}
-              className="h-12 w-auto"
+              width={195}
+              height={112}
+              style={{ width: 'auto', height: '3rem' }}
               priority
             />
           </Link>

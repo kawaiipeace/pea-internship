@@ -4,6 +4,7 @@ import {
   date,
   doublePrecision,
   foreignKey,
+  index,
   integer,
   numeric,
   pgEnum,
@@ -14,7 +15,6 @@ import {
   text,
   timestamp,
   unique,
-  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -27,6 +27,7 @@ export const appStatusEnum = pgEnum("app_status_enum", [
   "COMPLETE",
   "CANCEL",
   "ABORT",
+  "REJECTED",
 ]);
 export const internshipStatusEnum = pgEnum("internship_status_enum", [
   "IDLE",
@@ -91,6 +92,12 @@ export const correctionStatusEnum = pgEnum("correction_status_enum", [
   "PENDING",
   "APPROVED",
   "REJECTED",
+
+]);
+
+export const internshipEndHistoryEnum = pgEnum("internship_end_history_enum", [
+  "COMPLETE",
+  "CANCEL",
 ]);
 
 export const docTypes = pgTable(
@@ -330,6 +337,39 @@ export const studentProfiles = pgTable(
       foreignColumns: [institutions.id],
       name: "student_profiles_institution_id_fkey",
     }),
+  ]
+);
+
+export const internshipEndHistory = pgTable(
+  "internship_end_history",
+  {
+    id: serial().primaryKey().notNull(),
+    studentProfileId: integer("student_profile_id").notNull(),
+    status: internshipEndHistoryEnum("status").notNull(),
+    reason: text("reason"),
+    changedBy: varchar("changed_by", { length: 50 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.studentProfileId],
+      foreignColumns: [studentProfiles.id],
+      name: "internship_end_history_student_profile_id_fkey",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.changedBy],
+      foreignColumns: [users.id],
+      name: "internship_end_history_changed_by_fkey",
+    }).onDelete("restrict"),
+
+    index("idx_internship_end_history_student_profile_id").on(
+      table.studentProfileId
+    ),
+    index("idx_internship_end_history_changed_by").on(table.changedBy),
+    index("idx_internship_end_history_created_at").on(table.createdAt),
   ]
 );
 
@@ -573,16 +613,17 @@ export const internshipPositionMentors = pgTable(
   "internship_position_mentors",
   {
     id: serial().primaryKey().notNull(),
-    positionId: integer("position_id").notNull(), // added
-    mentorStaffId: integer("mentor_staff_id").notNull(), // added
+    positionId: integer("position_id").notNull(),
+    mentorStaffId: integer("mentor_staff_id").notNull(),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(), // added
+      .notNull(),
   },
   (table) => [
-    uniqueIndex(
-      "internship_position_mentors_position_id_mentor_staff_id_key"
-    ).on(table.positionId, table.mentorStaffId),
+    index("internship_position_mentors_position_id_mentor_staff_id_key").on(
+      table.positionId,
+      table.mentorStaffId
+    ),
 
     foreignKey({
       columns: [table.positionId],
@@ -796,6 +837,37 @@ export const applicationMentors = pgTable(
       table.mentorId,
       table.applicationStatusId
     ),
+  ]
+);
+
+export const completeAcknowledge = pgTable(
+  "complete_acknowledge",
+  {
+    id: serial().primaryKey().notNull(),
+    applicationStatusId: integer("application_status_id").notNull(),
+    userId: varchar("user_id", { length: 50 }).notNull(),
+    acknowledgedAt: timestamp("acknowledged_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.applicationStatusId],
+      foreignColumns: [applicationStatuses.id],
+      name: "complete_acknowledge_application_status_id_fkey",
+    }).onDelete("cascade"),
+
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "complete_acknowledge_user_id_fkey",
+    }).onDelete("cascade"),
+
+    unique("complete_acknowledge_application_status_id_key").on(
+      table.applicationStatusId
+    ),
+
+    index("idx_app_complete_acks_user_id").on(table.userId),
   ]
 );
 
