@@ -1082,7 +1082,8 @@ export type AppStatusEnum =
   | "PENDING_REVIEW"
   | "COMPLETE"
   | "CANCEL"
-  | "ABORT";
+  | "ABORT"
+  | "REJECTED";
 
 // ข้อมูลใบสมัครจาก GET /applications/history/me
 
@@ -1121,15 +1122,16 @@ export const APP_STATUS_TO_STEP: Record<AppStatusEnum, string> = {
   PENDING_REQUEST: "รอยื่นเอกสารขอความอนุเคราะห์",
   PENDING_REVIEW: "รอการตรวจสอบ",
   COMPLETE: "เสร็จสิ้น",
-  CANCEL: "ไม่ผ่าน",
+  CANCEL: "ยกเลิกฝึกงาน",
   ABORT: "ยกเลิกการสมัคร",
+  REJECTED: "ไม่ผ่าน",
 };
 
 // ตรวจสอบว่าสมัครใหม่ได้หรือไม่ (ไม่มี active application)
 export function canApplyForNewJob(app: MyApplicationData | null): boolean {
   if (!app) return true;
   // สมัครได้เมื่อ ยกเลิก/ไม่ผ่าน หรือ application ไม่ active แล้ว (ฝึกงานเสร็จสิ้น)
-  return app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || !app.isActive;
+  return app.applicationStatus === "CANCEL" || app.applicationStatus === "ABORT" || app.applicationStatus === "REJECTED" || !app.isActive;
 }
 
 // ประเภทข้อมูล Application (ใบสมัคร)

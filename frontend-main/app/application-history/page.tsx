@@ -62,6 +62,8 @@ function mapBackendStatus(app: {
     app.studentInternshipStatus as InternshipProfileStatus | null;
 
   switch (app.applicationStatus) {
+    case "REJECTED":
+      return "rejected";
     case "CANCEL":
       if (!app.isActive) {
         return "intern-cancelled";
@@ -156,7 +158,8 @@ export default function ApplicationHistoryPage() {
             : null;
           const reason =
             app.applicationStatus === "CANCEL" ||
-            app.applicationStatus === "ABORT"
+            app.applicationStatus === "ABORT" ||
+            app.applicationStatus === "REJECTED"
               ? app.statusNote || ""
               : invalidDocNote || "";
 
@@ -643,6 +646,19 @@ export default function ApplicationHistoryPage() {
                       <div className="mt-3">
                         <h4 className="font-bold text-gray-800 text-sm mb-1.5">
                           เหตุผลที่เอกสารไม่ผ่าน
+                        </h4>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <p className="text-red-700 text-sm">
+                            {job.rejectionReason}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  {job.applicationStatus === "intern-cancelled" &&
+                    job.rejectionReason && (
+                      <div className="mt-3">
+                        <h4 className="font-bold text-gray-800 text-sm mb-1.5">
+                          เหตุผลที่ยกเลิกฝึกงาน
                         </h4>
                         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                           <p className="text-red-700 text-sm">
