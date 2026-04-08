@@ -100,7 +100,7 @@ const LeaveHistoryPage = () => {
                     month: thaiMonthsFull[dateObj.getMonth()],
                     monthShort: thaiMonthsShort[dateObj.getMonth()],
                     year: (dateObj.getFullYear() + 543).toString(),
-                    labelMobile: `${dateObj.getDate()} ${thaiMonthsShort[dateObj.getMonth()]}`,
+                    labelMobile: `${dateObj.getDate()} ${thaiMonthsFull[dateObj.getMonth()]} ${(dateObj.getFullYear() + 543).toString()}`,
                     time: 'ลางานเต็มวัน',
                     status: mapStatusToText(r.status),
                     statusType: mapStatusToType(r.status),
@@ -293,7 +293,7 @@ const LeaveHistoryPage = () => {
                 {/* Header Section */}
                 <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 shrink-0 px-1 sm:px-0">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลา</h1>
+                        <h1 className="text-[24px] sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลา</h1>
                         <p className="text-gray-500 text-xs sm:text-sm">รายงานการลาปฏิบัติงาน ประจำเดือน</p>
                     </div>
                     <div className="flex items-center justify-between bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 sm:px-3 sm:py-1.5 shrink-0 shadow-sm">
@@ -310,7 +310,7 @@ const LeaveHistoryPage = () => {
                 {/* Summary Section */}
                 <div className="shrink-0 flex flex-col gap-[16px]">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-[17px] font-bold text-[#B10073]">สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})</h2>
+                        <h2 className="text-[16px] font-bold text-[#333]">สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})</h2>
                         {selectedFilter && (
                             <button
                                 onClick={() => setSelectedFilter(null)}
@@ -350,13 +350,13 @@ const LeaveHistoryPage = () => {
                             );
                         })}
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-500">รายการการลาทั้งหมด {pagination.totalRecords} วัน</p>
+                    
                 </div>
 
                 {/* History List Section */}
                 <div className="shrink-0 flex flex-col gap-[16px]">
                     <div className="flex items-center justify-between mt-2 px-1 sm:px-0">
-                        <h2 className="text-[17px] font-bold text-[#B10073]">
+                        <h2 className="text-[20px] font-bold text-[#333]">
                             รายการประวัติการลา
                         </h2>
                         <button 
@@ -425,7 +425,7 @@ const LeaveHistoryPage = () => {
                                             </div>
                                         </div>
                                         
-                                        <div className="font-bold text-[16px] text-gray-900 dark:text-gray-100 leading-none mt-1">
+                                        <div className="font-bold text-[16px] text-gray-900 dark:text-gray-100 leading-none mt-[2px]">
                                             ลางาน
                                         </div>
 
@@ -631,7 +631,7 @@ const LeaveHistoryPage = () => {
                                                             {/* Header Region */}
                                                             <div className="w-full h-auto flex flex-col pt-1 touch-none">
                                                                 <div className="flex items-center justify-between mt-1 mb-2">
-                                                                    <div className="text-[16px] font-bold text-gray-800 dark:text-gray-200">
+                                                                    <div className="text-[16px]  text-gray-800 dark:text-gray-200">
                                                                         {selectedHistoryItem.date} {selectedHistoryItem.month} {selectedHistoryItem.year}
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
@@ -699,28 +699,27 @@ const LeaveHistoryPage = () => {
 
                                                             {/* Reasoning Section */}
                                                             <div className="w-full space-y-3 mb-6">
-                                                                <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
-                                                                    <span className="material-symbols-rounded text-gray-800 dark:text-gray-300 text-[20px]">description</span>
+                                                                <div className="flex items-center gap-2 text-[16px] text-gray-800 dark:text-gray-200">
                                                                     รายละเอียดการลา
                                                                 </div>
-                                                                <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-3 min-h-[48px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
+                                                                <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-2 min-h-[40px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
                                                                     {selectedHistoryItem.leaveReason}
                                                                 </div>
                                                             </div>
 
                                                             {/* Evidence Section */}
                                                             <div className="w-full space-y-3">
-                                                                <div className="flex items-center gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200">
-                                                                    <span className="whitespace-nowrap font-bold">ไฟล์แนบ :</span>
+                                                                <div className="flex items-center gap-2 text-[16px] text-gray-800 dark:text-gray-200">
+                                                                    <span className="whitespace-nowrap">ไฟล์แนบ :</span>
                                                                     <button 
                                                                         type="button"
                                                                         onClick={() => handleViewFile(selectedHistoryItem)}
                                                                         className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-auto min-w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
                                                                     >
-                                                                        <div className="flex items-center justify-center shrink-0 text-[#A80689]">
-                                                                            <span className="material-symbols-rounded !text-[20px]">description</span>
+                                                                        <div className="flex items-center justify-center shrink-0">
+                                                                            <span className="material-symbols-rounded !text-[20px]">picture_as_pdf</span>
                                                                         </div>
-                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-white truncate max-w-[250px]">
+                                                                        <div className="text-[12px] font-medium text-[#000000] dark:text-white truncate max-w-[250px] px-1">
                                                                             {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'}
                                                                         </div>
                                                                     </button>
