@@ -1198,7 +1198,7 @@ function ApplicationStatusContent() {
                   />
                 </svg>
                 <span className="text-xs md:text-sm font-medium">
-                  กรุณาอัปโหลดเอกสารภายใน 30 วัน
+                  กรุณาอัปโหลดเอกสารภายใน 15 วัน
                   มิฉะนั้นใบสมัครนี้จะถูกยกเลิกอัตโนมัติ{" "}
                 </span>
               </div>
