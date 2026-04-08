@@ -113,57 +113,6 @@ const formatDateTimeThai = (dateString: string): string => {
   return `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${displayYear} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
-// LocalStorage keys
-const STORAGE_KEYS = {
-  INTERVIEWED_APPS: "pea_interviewed_apps",
-  APPROVED_APPS: "pea_approved_apps",
-  REJECTED_APPS: "pea_rejected_apps",
-  DOC_UPLOADED_APPS: "pea_doc_uploaded_apps",
-  DOC_APPROVED_APPS: "pea_doc_approved_apps",
-  DOC_REJECTED_APPS: "pea_doc_rejected_apps",
-  UPLOADED_FILENAMES: "pea_uploaded_filenames",
-  REJECTED_APPS_DATA: "pea_rejected_apps_data",
-};
-
-// Helper to get from localStorage
-const getFromStorage = (key: string): string[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-// Helper to save to localStorage
-const saveToStorage = (key: string, value: string[]) => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(value));
-};
-
-// Helper to get uploaded filenames from localStorage
-const getFilenamesFromStorage = (): Record<string, string> => {
-  if (typeof window === "undefined") return {};
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.UPLOADED_FILENAMES);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
-};
-
-// Helper to save uploaded filename to localStorage
-const saveFilenameToStorage = (appId: string, filename: string) => {
-  if (typeof window === "undefined") return;
-  const current = getFilenamesFromStorage();
-  current[appId] = filename;
-  localStorage.setItem(
-    STORAGE_KEYS.UPLOADED_FILENAMES,
-    JSON.stringify(current),
-  );
-};
-
 // Mapping: backend applicationStatus → frontend Application fields
 function mapApiToApplication(item: AllStudentsHistoryItem): Application {
   const statusMap: Record<
@@ -230,6 +179,16 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
   // CANCEL + isActive=false = internship cancelled by owner (ยกเลิกฝึกงาน)
   // manualEndInternships sets isActive=false; cancelByOwner leaves isActive=true
   if (item.applicationStatus === "CANCEL" && item.isActive === false) {
+    mapped = {
+      step: 6,
+      status: "cancelled",
+      detailedStatus: "cancelled",
+      stepDescription: "ยกเลิกฝึกงาน",
+    };
+  } else if (
+    item.applicationStatus === "COMPLETE" &&
+    item.studentInternshipStatus === "CANCEL"
+  ) {
     mapped = {
       step: 6,
       status: "cancelled",
@@ -338,13 +297,18 @@ function mapApiToApplication(item: AllStudentsHistoryItem): Application {
     faculty: item.faculty?.trim() || undefined,
     studentNote: item.studentNote || undefined,
     cancellationReason:
-      item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
+      item.applicationStatus === "CANCEL" ||
+      item.applicationStatus === "ABORT" ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL")
         ? item.statusNote || undefined
         : undefined,
     cancelledBy:
       item.applicationStatus === "ABORT" ? "ระบบ (อัตโนมัติ)" : undefined,
     cancelledDate:
       (item.applicationStatus === "CANCEL" && item.isActive === false) ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL") ||
       item.applicationStatus === "ABORT"
         ? item.updatedAt || undefined
         : undefined,
@@ -404,16 +368,13 @@ function ApplicationsContent() {
   // Tab loading state
   const [tabLoading, setTabLoading] = useState(false);
 
-  // State with localStorage persistence
+  // Ephemeral UI state (not persisted)
   const [interviewedApps, setInterviewedApps] = useState<string[]>([]);
   const [approvedApps, setApprovedApps] = useState<string[]>([]);
   const [rejectedApps, setRejectedApps] = useState<string[]>([]);
   const [docUploadedApps, setDocUploadedApps] = useState<string[]>([]);
   const [docApprovedApps, setDocApprovedApps] = useState<string[]>([]);
   const [docRejectedApps, setDocRejectedApps] = useState<string[]>([]);
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    { id: string; reason: string; cancelledBy: string; cancelledDate: string }[]
-  >([]);
   const [rejectedAppsData, setRejectedAppsData] = useState<
     { id: string; reason: string; rejectedBy: string; rejectedDate: string }[]
   >([]);
@@ -714,13 +675,6 @@ function ApplicationsContent() {
       !docUploadedApps.includes(selectedApplication.id))
   );
 
-  // Clear stale localStorage on mount — API is the source of truth now
-  useEffect(() => {
-    // Remove all localStorage keys that used to override API status
-    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
-    localStorage.removeItem("pea_cancelled_apps");
-  }, []);
-
   // Fetch applications from API
   const fetchApplications = useCallback(async () => {
     try {
@@ -768,14 +722,8 @@ function ApplicationsContent() {
     fetchApplications();
   }, [fetchApplications]);
 
-  // Derive cancelled app IDs from localStorage data (memoized to avoid infinite re-renders)
-  const cancelledAppIds = useMemo(
-    () => cancelledAppsData.map((c) => c.id),
-    [cancelledAppsData],
-  );
-
   // Helper function to get effective status of an app
-  // API data is the source of truth; localStorage only used for optimistic UI within current session
+  // API data is the source of truth
   const getEffectiveAppStatus = (app: Application) => {
     return { status: app.status, detailedStatus: app.detailedStatus };
   };
@@ -1139,10 +1087,8 @@ function ApplicationsContent() {
       setInterviewSubmitting(true);
       try {
         await applicationApi.approveInterview(Number(selectedApplication.id));
-        // Also update localStorage for backward compatibility
         const newInterviewed = [...interviewedApps, selectedApplication.id];
         setInterviewedApps(newInterviewed);
-        saveToStorage(STORAGE_KEYS.INTERVIEWED_APPS, newInterviewed);
         setShowInterviewConfirm(false);
         setShowInterviewSuccess(true);
         setTimeout(() => {
@@ -1167,7 +1113,6 @@ function ApplicationsContent() {
         await applicationApi.confirmAccept(Number(selectedApplication.id));
         const newApproved = [...approvedApps, selectedApplication.id];
         setApprovedApps(newApproved);
-        saveToStorage(STORAGE_KEYS.APPROVED_APPS, newApproved);
         setShowApproveConfirm(false);
         // Show success popup
         setShowApproveSuccess(true);
@@ -1196,7 +1141,6 @@ function ApplicationsContent() {
         );
         const newRejected = [...rejectedApps, selectedApplication.id];
         setRejectedApps(newRejected);
-        saveToStorage(STORAGE_KEYS.REJECTED_APPS, newRejected);
         // Save reject reason data
         const now = new Date();
         const buddhistYear = now.getFullYear() + 543;
@@ -1220,10 +1164,6 @@ function ApplicationsContent() {
           },
         ];
         setRejectedAppsData(newRejectedData);
-        localStorage.setItem(
-          STORAGE_KEYS.REJECTED_APPS_DATA,
-          JSON.stringify(newRejectedData),
-        );
         setShowRejectConfirm(false);
         setShowRejectModal(false);
         setRejectReason("");
@@ -1250,10 +1190,6 @@ function ApplicationsContent() {
     if (selectedApplication && uploadedFileName) {
       const newDocUploaded = [...docUploadedApps, selectedApplication.id];
       setDocUploadedApps(newDocUploaded);
-      saveToStorage(STORAGE_KEYS.DOC_UPLOADED_APPS, newDocUploaded);
-
-      // Save uploaded filename to localStorage
-      saveFilenameToStorage(selectedApplication.id, uploadedFileName);
       setUploadedFilenames((prev) => ({
         ...prev,
         [selectedApplication.id]: uploadedFileName,
@@ -1270,7 +1206,6 @@ function ApplicationsContent() {
     if (selectedApplication) {
       const newDocApproved = [...docApprovedApps, selectedApplication.id];
       setDocApprovedApps(newDocApproved);
-      saveToStorage(STORAGE_KEYS.DOC_APPROVED_APPS, newDocApproved);
     }
   };
 
@@ -1279,7 +1214,6 @@ function ApplicationsContent() {
     if (selectedApplication && docRejectReason.trim()) {
       const newDocRejected = [...docRejectedApps, selectedApplication.id];
       setDocRejectedApps(newDocRejected);
-      saveToStorage(STORAGE_KEYS.DOC_REJECTED_APPS, newDocRejected);
       setShowDocRejectModal(false);
       setDocRejectReason("");
     }
@@ -1293,13 +1227,6 @@ function ApplicationsContent() {
     if (app.status === "cancelled") return "cancelled";
     if (app.status === "accepted") return "accepted";
     return "pending";
-  };
-
-  // Helper: get cancellation data for an app from localStorage
-  const getCancellationData = (appId: string) => {
-    const fromStorage = cancelledAppsData.find((c) => c.id === appId);
-    if (fromStorage) return fromStorage;
-    return null;
   };
 
   // Helper: get education text shown to owner (use entered text for "other")
@@ -1890,11 +1817,7 @@ function ApplicationsContent() {
                   </p>
                   <p className="text-gray-700 text-sm">
                     {(() => {
-                      const cancelData = getCancellationData(
-                        selectedApplication.id,
-                      );
                       return (
-                        cancelData?.reason ||
                         selectedApplication.cancellationReason ||
                         "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"
                       );
@@ -1909,9 +1832,6 @@ function ApplicationsContent() {
                   <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                   <p className="text-gray-900 text-sm">
                     {(() => {
-                      const cancelData = getCancellationData(
-                        selectedApplication.id,
-                      );
                       const od =
                         positionInfo?.owner ||
                         (positionInfo?.owners && positionInfo.owners.length > 0
@@ -1920,11 +1840,7 @@ function ApplicationsContent() {
                       const ownerName = od
                         ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
                         : "-";
-                      return (
-                        cancelData?.cancelledBy ||
-                        selectedApplication.cancelledBy ||
-                        ownerName
-                      );
+                      return selectedApplication.cancelledBy || ownerName;
                     })()}
                   </p>
                 </div>
@@ -1933,11 +1849,7 @@ function ApplicationsContent() {
                   <p className="text-gray-900 text-sm">
                     {formatDateThai(
                       (() => {
-                        const cancelData = getCancellationData(
-                          selectedApplication.id,
-                        );
                         return (
-                          cancelData?.cancelledDate ||
                           selectedApplication.cancelledDate ||
                           selectedApplication.actionDate ||
                           ""
