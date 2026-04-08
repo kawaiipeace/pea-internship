@@ -91,31 +91,11 @@ function AcceptedStatusPage() {
 
   // Dynamic summary stats computed from API data
   const summaryStats = computeApplicationStats(allApps);
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    {
-      id: string;
-      reason?: string;
-      cancelledBy?: string;
-      cancelledDate?: string;
-    }[]
-  >([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showCancelSuccess, setShowCancelSuccess] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("pea_cancelled_apps");
-      if (stored) {
-        setCancelledAppsData(JSON.parse(stored));
-      }
-    } catch {}
-  }, []);
-  const cancelledAppIds = useMemo(
-    () => cancelledAppsData.map((c) => c.id),
-    [cancelledAppsData],
-  );
 
   // Application history modal state
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -426,11 +406,10 @@ function AcceptedStatusPage() {
     return cells;
   }, [trainingDateViewMonth]);
 
-  // Get accepted applications only (exclude localStorage-cancelled)
+  // Get accepted applications from API source of truth only
   const getAcceptedApplications = () => {
     return allApps.filter(
       (app) =>
-        !cancelledAppIds.includes(app.id) &&
         app.status === "accepted" &&
         (app.detailedStatus === "waiting_analysis_doc" ||
           app.detailedStatus === "waiting_send_doc" ||
@@ -582,17 +561,16 @@ function AcceptedStatusPage() {
     selectedTrainingEndDate,
     selectedInstitutions,
     selectedSchools,
-    cancelledAppIds,
     allApps,
   ]);
 
-  // Set first application as selected on mount / when cancelledAppIds changes
+  // Set first application as selected on mount / when API data changes
   useEffect(() => {
     const acceptedApps = filterDynamicApplications("all");
     if (acceptedApps.length > 0 && !selectedApplication) {
       setSelectedApplication(acceptedApps[0]);
     }
-  }, [cancelledAppIds, allApps]);
+  }, [allApps]);
 
   // Pagination
   const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);

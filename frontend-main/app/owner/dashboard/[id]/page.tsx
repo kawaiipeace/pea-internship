@@ -64,33 +64,21 @@ const STORAGE_KEYS = {
   REJECTED_APPS_DATA: "pea_rejected_apps_data",
 };
 
-// Helper to get from localStorage
+// Legacy storage helper kept as API-only fallback.
 const getFromStorage = (key: string): string[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
+  void key;
+  return [];
 };
 
-// Helper to get uploaded filenames from localStorage
+// Legacy storage helper kept as API-only fallback.
 const getFilenamesFromStorage = (): Record<string, string> => {
-  if (typeof window === "undefined") return {};
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.UPLOADED_FILENAMES);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
+  return {};
 };
 
-// Helper to save to localStorage
+// Legacy storage helper kept as API-only fallback.
 const saveToStorage = (key: string, value: string[]) => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
+  void key;
+  void value;
 };
 
 function ApplicationDetailContent() {
@@ -254,7 +242,7 @@ function ApplicationDetailContent() {
   const [cancelReason, setCancelReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Load from localStorage on mount
+  // Initialize ephemeral state without localStorage.
   useEffect(() => {
     setInterviewedApps(getFromStorage(STORAGE_KEYS.INTERVIEWED_APPS));
     setApprovedApps(getFromStorage(STORAGE_KEYS.APPROVED_APPS));
@@ -263,22 +251,8 @@ function ApplicationDetailContent() {
     setDocApprovedApps(getFromStorage(STORAGE_KEYS.DOC_APPROVED_APPS));
     setDocRejectedApps(getFromStorage(STORAGE_KEYS.DOC_REJECTED_APPS));
     setUploadedFilenames(getFilenamesFromStorage());
-    // Load cancelled apps data
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.CANCELLED_APPS);
-      if (stored) setCancelledAppsData(JSON.parse(stored));
-    } catch {
-      /* ignore */
-    }
-    // Load rejected apps data
-    try {
-      const storedRejected = localStorage.getItem(
-        STORAGE_KEYS.REJECTED_APPS_DATA,
-      );
-      if (storedRejected) setRejectedAppsData(JSON.parse(storedRejected));
-    } catch {
-      /* ignore */
-    }
+    setCancelledAppsData([]);
+    setRejectedAppsData([]);
   }, []);
 
   // Fetch real application history for a student

@@ -9,6 +9,7 @@ import {
   fetchAllApplications,
   getEducationDisplayText,
 } from "../../../utils/applicationMapper";
+import { ownerStudentsApi } from "@/services/api";
 
 // Thai month names
 const thaiMonths = [
@@ -55,6 +56,7 @@ export default function CancelInternshipPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [showMentorInfo, setShowMentorInfo] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!application) {
     return (
@@ -72,41 +74,29 @@ export default function CancelInternshipPage() {
   const hasAnalysisDocuments =
     application.analysisDocuments && application.analysisDocuments.length > 0;
 
-  const handleConfirmCancel = () => {
-    // Save cancellation to localStorage
-    const cancelledApps = (() => {
-      try {
-        const stored = localStorage.getItem("pea_cancelled_apps");
-        return stored ? JSON.parse(stored) : [];
-      } catch {
-        return [];
-      }
-    })();
+  const handleConfirmCancel = async () => {
+    if (!reason.trim() || !application.internId || isSubmitting) return;
 
-    const today = new Date();
-    const buddhistYear = today.getFullYear() + 543;
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-    const cancelDate = `${buddhistYear}-${month}-${day}`;
+    setIsSubmitting(true);
+    try {
+      await ownerStudentsApi.updateInternshipStatus(
+        application.internId,
+        "CANCEL",
+        reason.trim(),
+      );
 
-    // Add this cancellation (avoid duplicates)
-    if (!cancelledApps.find((c: { id: string }) => c.id === applicationId)) {
-      cancelledApps.push({
-        id: applicationId,
-        reason: reason,
-        cancelledBy: "เจ้าของหน่วยงาน",
-        cancelledDate: cancelDate,
-      });
-      localStorage.setItem("pea_cancelled_apps", JSON.stringify(cancelledApps));
+      setShowConfirmModal(false);
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        router.push("/owner/dashboard/accepted");
+      }, 500);
+    } catch (error) {
+      console.error("Cancel internship failed:", error);
+      alert("ไม่สามารถยกเลิกฝึกงานได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setShowConfirmModal(false);
-    setShowSuccessModal(true);
-    // Auto close success modal after 2 seconds
-    setTimeout(() => {
-      setShowSuccessModal(false);
-      router.push("/owner/dashboard/accepted");
-    }, 500);
   };
 
   const handleSuccessClose = () => {

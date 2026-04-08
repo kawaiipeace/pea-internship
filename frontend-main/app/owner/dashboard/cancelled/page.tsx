@@ -119,7 +119,8 @@ const getEducationLabel = (education: string): string => {
 type CancelSubFilter = "all" | "abort" | "cancel_internship";
 
 // Helper to check if an application is a student self-cancel (ABORT)
-const isStudentAbort = (app: Application) => app.stepDescription === "ยกเลิกการสมัคร";
+const isStudentAbort = (app: Application) =>
+  app.stepDescription === "ยกเลิกการสมัคร";
 
 function CancelledApplicationsContent() {
   const router = useRouter();
@@ -131,7 +132,8 @@ function CancelledApplicationsContent() {
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [showMentorInfo, setShowMentorInfo] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [cancelSubFilter, setCancelSubFilter] = useState<CancelSubFilter>("all");
+  const [cancelSubFilter, setCancelSubFilter] =
+    useState<CancelSubFilter>("all");
   const [historyData, setHistoryData] = useState<MyApplicationData[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -457,26 +459,6 @@ function CancelledApplicationsContent() {
     return cells;
   }, [trainingDateViewMonth]);
 
-  // Load cancelled apps from localStorage
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    { id: string; reason: string; cancelledBy: string; cancelledDate: string }[]
-  >([]);
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("pea_cancelled_apps");
-      if (stored) setCancelledAppsData(JSON.parse(stored));
-    } catch {}
-  }, []);
-  const cancelledAppIds = useMemo(
-    () => cancelledAppsData.map((c) => c.id),
-    [cancelledAppsData],
-  );
-
-  // Helper: get cancellation data for an app from localStorage
-  const getCancellationData = (appId: string) => {
-    return cancelledAppsData.find((c) => c.id === appId) || null;
-  };
-
   const handleDownloadDocument = async (docFile: string) => {
     try {
       await applicationApi.downloadDocument(docFile, true);
@@ -617,14 +599,16 @@ function CancelledApplicationsContent() {
     return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
-  // Filter cancelled applications (API + localStorage)
+  // Filter cancelled applications from API source of truth only
   const cancelledApplications = allApps.filter(
-    (app) => app.status === "cancelled" || cancelledAppIds.includes(app.id),
+    (app) => app.status === "cancelled",
   );
 
   // Sub-filter tab counts
   const cancelTabCounts = useMemo(() => {
-    const abortCount = cancelledApplications.filter((app) => isStudentAbort(app)).length;
+    const abortCount = cancelledApplications.filter((app) =>
+      isStudentAbort(app),
+    ).length;
     return {
       all: cancelledApplications.length,
       abort: abortCount,
@@ -722,7 +706,6 @@ function CancelledApplicationsContent() {
     selectedInstitutions,
     selectedSchools,
     cancelSubFilter,
-    cancelledAppsData,
     allApps,
   ]);
 
@@ -731,7 +714,7 @@ function CancelledApplicationsContent() {
     if (cancelledApplications.length > 0) {
       setSelectedApplication(cancelledApplications[0]);
     }
-  }, [cancelledAppsData, allApps]);
+  }, [allApps]);
 
   // Navigate to detail page
   const handleNavigateToDetail = () => {
@@ -755,7 +738,7 @@ function CancelledApplicationsContent() {
     } else {
       // Use timeline actions to determine actual step for ABORT
       const abortAction = timelineActions.find(
-        (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+        (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL",
       );
       if (abortAction?.oldStatus) {
         const abortStepMap: Record<string, number> = {
@@ -766,7 +749,8 @@ function CancelledApplicationsContent() {
           PENDING_REVIEW: 4,
         };
         completedUpTo =
-          abortStepMap[abortAction.oldStatus] ?? (app.step > 0 ? app.step - 1 : 0);
+          abortStepMap[abortAction.oldStatus] ??
+          (app.step > 0 ? app.step - 1 : 0);
       } else if (app.step > 0) {
         completedUpTo = app.step > 0 ? app.step - 1 : 0;
       } else {
@@ -934,9 +918,7 @@ function CancelledApplicationsContent() {
             รายละเอียดประกาศและผู้สมัคร
           </Link>
           <span className="text-gray-400">&gt;</span>
-          <span className="text-primary-600 font-medium">
-            สถานะยกเลิก
-          </span>
+          <span className="text-primary-600 font-medium">สถานะยกเลิก</span>
         </div>
 
         {/* Title */}
@@ -944,7 +926,9 @@ function CancelledApplicationsContent() {
           <h1 className="text-2xl font-bold text-gray-900">
             ใบสมัครสถานะยกเลิก
           </h1>
-          <p className="text-gray-600">รายการใบสมัครที่ถูกยกเลิกการสมัครหรือยกเลิกฝึกงาน</p>
+          <p className="text-gray-600">
+            รายการใบสมัครที่ถูกยกเลิกการสมัครหรือยกเลิกฝึกงาน
+          </p>
         </div>
 
         {/* Status Summary Cards */}
@@ -1561,11 +1545,13 @@ function CancelledApplicationsContent() {
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1 mb-3">
-                    <span className={`font-semibold text-sm px-3 py-1 rounded-full ${
-                      isStudentAbort(app)
-                        ? "bg-gray-100 text-gray-600 border border-gray-300"
-                        : "bg-[#FEE4E2] border border-[#FECDCA] text-[#912018]"
-                    }`}>
+                    <span
+                      className={`font-semibold text-sm px-3 py-1 rounded-full ${
+                        isStudentAbort(app)
+                          ? "bg-gray-100 text-gray-600 border border-gray-300"
+                          : "bg-[#FEE4E2] border border-[#FECDCA] text-[#912018]"
+                      }`}
+                    >
                       {isStudentAbort(app) ? "ยกเลิกการสมัคร" : "ยกเลิกฝึกงาน"}
                     </span>
                   </div>
@@ -1717,12 +1703,16 @@ function CancelledApplicationsContent() {
                   </div>
                   {/* Status badge below name */}
                   <div className="flex flex-wrap gap-1 mb-4">
-                    <span className={`font-semibold px-3 py-1 text-sm rounded-full ${
-                      isStudentAbort(selectedApplication)
-                        ? "bg-gray-100 text-gray-600 border border-gray-300"
-                        : "bg-[#FEE4E2] border border-[#FECDCA] text-[#912018]"
-                    }`}>
-                      {isStudentAbort(selectedApplication) ? "ยกเลิกการสมัคร" : "ยกเลิกฝึกงาน"}
+                    <span
+                      className={`font-semibold px-3 py-1 text-sm rounded-full ${
+                        isStudentAbort(selectedApplication)
+                          ? "bg-gray-100 text-gray-600 border border-gray-300"
+                          : "bg-[#FEE4E2] border border-[#FECDCA] text-[#912018]"
+                      }`}
+                    >
+                      {isStudentAbort(selectedApplication)
+                        ? "ยกเลิกการสมัคร"
+                        : "ยกเลิกฝึกงาน"}
                     </span>
                   </div>
 
@@ -1748,74 +1738,79 @@ function CancelledApplicationsContent() {
                   </div>
 
                   {/* Cancellation Reason Box - show for owner-cancelled or cron-aborted with reason */}
-                  {(!isStudentAbort(selectedApplication) || selectedApplication.cancellationReason) && (
-                  <div className={`${isStudentAbort(selectedApplication) ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mb-6`}>
-                    <div className="flex items-start gap-2">
-                      <svg
-                        className={`w-5 h-5 ${isStudentAbort(selectedApplication) ? "text-gray-500" : "text-red-500"} mt-0.5 shrink-0`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                  {(!isStudentAbort(selectedApplication) ||
+                    selectedApplication.cancellationReason) && (
+                    <div
+                      className={`${isStudentAbort(selectedApplication) ? "bg-gray-50 border border-gray-200" : "bg-red-50 border border-red-200"} rounded-lg p-4 mb-6`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <svg
+                          className={`w-5 h-5 ${isStudentAbort(selectedApplication) ? "text-gray-500" : "text-red-500"} mt-0.5 shrink-0`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <div>
+                          <p
+                            className={`font-semibold ${isStudentAbort(selectedApplication) ? "text-gray-600" : "text-red-600"} mb-2`}
+                          >
+                            {isStudentAbort(selectedApplication)
+                              ? "เหตุผลการยกเลิกการสมัคร"
+                              : "เหตุผลประกอบการยกเลิกฝึกงาน"}
+                          </p>
+                          <p className="text-gray-700 text-sm">
+                            {(() => {
+                              return (
+                                selectedApplication.cancellationReason ||
+                                "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"
+                              );
+                            })()}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Operator and Date */}
+                      <div
+                        className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${isStudentAbort(selectedApplication) ? "border-gray-200" : "border-red-200"}`}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <div>
-                        <p className={`font-semibold ${isStudentAbort(selectedApplication) ? "text-gray-600" : "text-red-600"} mb-2`}>
-                          {isStudentAbort(selectedApplication)
-                            ? "เหตุผลการยกเลิกการสมัคร"
-                            : "เหตุผลประกอบการยกเลิกฝึกงาน"}
-                        </p>
-                        <p className="text-gray-700 text-sm">
-                          {(() => {
-                            const cancelData = getCancellationData(
-                              selectedApplication.id,
-                            );
-                            return (
-                              cancelData?.reason ||
-                              selectedApplication.cancellationReason ||
-                              "เนื่องจากผู้สมัครไม่สามารถปฏิบัติงานได้ตามกำหนดเวลาที่ตกลงไว้ในแผนการฝึกงาน และไม่มีการแจ้งล่วงหน้า ซึ่งทางหน่วยงานพิจารณาแล้วเห็นสมควรให้ยกเลิกการฝึกงาน"
-                            );
-                          })()}
-                        </p>
+                        <div>
+                          <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
+                          <p className="text-gray-900 text-sm">
+                            {(() => {
+                              const od =
+                                positionInfo?.owner ||
+                                (positionInfo?.owners &&
+                                positionInfo.owners.length > 0
+                                  ? positionInfo.owners[0]
+                                  : null);
+                              const ownerName = od
+                                ? `${od.fname || ""} ${od.lname || ""}`.trim() ||
+                                  "-"
+                                : "-";
+                              return (
+                                selectedApplication.cancelledBy || ownerName
+                              );
+                            })()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
+                          <p className="text-gray-900 text-sm">
+                            {formatDateThai(
+                              selectedApplication.cancelledDate ||
+                                selectedApplication.actionDate ||
+                                "",
+                            )}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    {/* Operator and Date */}
-                    <div className={`grid grid-cols-2 gap-4 mt-4 pt-4 border-t ${isStudentAbort(selectedApplication) ? "border-gray-200" : "border-red-200"}`}>
-                      <div>
-                        <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
-                        <p className="text-gray-900 text-sm">
-                          {(() => {
-                            const od =
-                              positionInfo?.owner ||
-                              (positionInfo?.owners &&
-                              positionInfo.owners.length > 0
-                                ? positionInfo.owners[0]
-                                : null);
-                            const ownerName = od
-                              ? `${od.fname || ""} ${od.lname || ""}`.trim() ||
-                                "-"
-                              : "-";
-                            return selectedApplication.cancelledBy || ownerName;
-                          })()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-xs">วันที่ยกเลิก:</p>
-                        <p className="text-gray-900 text-sm">
-                          {formatDateThai(
-                            selectedApplication.cancelledDate ||
-                              selectedApplication.actionDate ||
-                              "",
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                   )}
                 </div>
 
@@ -1856,7 +1851,8 @@ function CancelledApplicationsContent() {
                       if (isAbort) {
                         // Use timeline actions to determine actual step for ABORT
                         const abortAction = timelineActions.find(
-                          (a) => a.newStatus === "ABORT" || a.newStatus === "CANCEL"
+                          (a) =>
+                            a.newStatus === "ABORT" || a.newStatus === "CANCEL",
                         );
                         if (abortAction?.oldStatus) {
                           const abortStepMap: Record<string, number> = {
@@ -1868,9 +1864,14 @@ function CancelledApplicationsContent() {
                           };
                           completedSteps =
                             abortStepMap[abortAction.oldStatus] ??
-                            (selectedApplication.step > 0 ? selectedApplication.step - 1 : 0);
+                            (selectedApplication.step > 0
+                              ? selectedApplication.step - 1
+                              : 0);
                         } else if (selectedApplication.step > 0) {
-                          completedSteps = selectedApplication.step > 0 ? selectedApplication.step - 1 : 0;
+                          completedSteps =
+                            selectedApplication.step > 0
+                              ? selectedApplication.step - 1
+                              : 0;
                         } else {
                           completedSteps = 0;
                         }
@@ -2672,7 +2673,9 @@ function CancelledApplicationsContent() {
                               </p>
                             </div>
                             {item.statusNote && (
-                              <div className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}>
+                              <div
+                                className={`mx-4 mb-4 rounded-xl ${item.applicationStatus === "ABORT" ? "bg-gray-50" : "bg-red-50"} overflow-hidden`}
+                              >
                                 <div className="flex items-center gap-2 px-4 pt-4 pb-3">
                                   <svg
                                     width="20"
@@ -2683,20 +2686,28 @@ function CancelledApplicationsContent() {
                                   >
                                     <path
                                       d="M10 15C10.2833 15 10.5208 14.9042 10.7125 14.7125C10.9042 14.5208 11 14.2833 11 14V10C11 9.71667 10.9042 9.47917 10.7125 9.2875C10.5208 9.09583 10.2833 9 10 9C9.71667 9 9.47917 9.09583 9.2875 9.2875C9.09583 9.47917 9 9.71667 9 10V14C9 14.2833 9.09583 14.5208 9.2875 14.7125C9.47917 14.9042 9.71667 15 10 15ZM10 7C10.2833 7 10.5208 6.90417 10.7125 6.7125C10.9042 6.52083 11 6.28333 11 6C11 5.71667 10.9042 5.47917 10.7125 5.2875C10.5208 5.09583 10.2833 5 10 5C9.71667 5 9.47917 5.09583 9.2875 5.2875C9.09583 5.47917 9 5.71667 9 6C9 6.28333 9.09583 6.52083 9.2875 6.7125C9.47917 6.90417 9.71667 7 10 7ZM10 20C8.61667 20 7.31667 19.7375 6.1 19.2125C4.88333 18.6875 3.825 17.975 2.925 17.075C2.025 16.175 1.3125 15.1167 0.7875 13.9C0.2625 12.6833 0 11.3833 0 10C0 8.61667 0.2625 7.31667 0.7875 6.1C1.3125 4.88333 2.025 3.825 2.925 2.925C3.825 2.025 4.88333 1.3125 6.1 0.7875C7.31667 0.2625 8.61667 0 10 0C11.3833 0 12.6833 0.2625 13.9 0.7875C15.1167 1.3125 16.175 2.025 17.075 2.925C17.975 3.825 18.6875 4.88333 19.2125 6.1C19.7375 7.31667 20 8.61667 20 10C20 11.3833 19.7375 12.6833 19.2125 13.9C18.6875 15.1167 17.975 16.175 17.075 17.075C16.175 17.975 15.1167 18.6875 13.9 19.2125C12.6833 19.7375 11.3833 20 10 20ZM10 18C12.2333 18 14.125 17.225 15.675 15.675C17.225 14.125 18 12.2333 18 10C18 7.76667 17.225 5.875 15.675 4.325C14.125 2.775 12.2333 2 10 2C7.76667 2 5.875 2.775 4.325 4.325C2.775 5.875 2 7.76667 2 10C2 12.2333 2.775 14.125 4.325 15.675C5.875 17.225 7.76667 18 10 18Z"
-                                      fill={item.applicationStatus === "ABORT" ? "#6B7280" : "#D92D20"}
+                                      fill={
+                                        item.applicationStatus === "ABORT"
+                                          ? "#6B7280"
+                                          : "#D92D20"
+                                      }
                                     />
                                   </svg>
-                                  <span className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}>
+                                  <span
+                                    className={`text-sm font-semibold ${item.applicationStatus === "ABORT" ? "text-gray-500" : "text-red-500"}`}
+                                  >
                                     {historyOutcome === "rejected"
                                       ? "เหตุผลที่ไม่ผ่านการคัดเลือก"
                                       : historyOutcome === "cancelled"
-                                        ? (item.applicationStatus === "ABORT"
-                                            ? "เหตุผลการยกเลิกการสมัคร"
-                                            : "เหตุผลประกอบการยกเลิกฝึกงาน")
+                                        ? item.applicationStatus === "ABORT"
+                                          ? "เหตุผลการยกเลิกการสมัคร"
+                                          : "เหตุผลประกอบการยกเลิกฝึกงาน"
                                         : "หมายเหตุ"}
                                   </span>
                                 </div>
-                                <div className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`} />
+                                <div
+                                  className={`mx-4 border-t ${item.applicationStatus === "ABORT" ? "border-gray-200" : "border-red-200"}`}
+                                />
                                 <div className="px-4 pt-3 pb-4">
                                   <p className="text-sm text-gray-700 leading-relaxed">
                                     {item.statusNote}

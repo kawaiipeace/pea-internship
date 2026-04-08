@@ -161,6 +161,18 @@ export function mapApiToApplication(
       detailedStatus: "cancelled",
       stepDescription: "ยกเลิกฝึกงาน",
     };
+  } else if (
+    item.applicationStatus === "COMPLETE" &&
+    item.studentInternshipStatus === "CANCEL"
+  ) {
+    // Backward compatibility for legacy records where profile was cancelled
+    // but applicationStatus stayed COMPLETE.
+    mapped = {
+      step: 6,
+      status: "cancelled",
+      detailedStatus: "cancelled",
+      stepDescription: "ยกเลิกฝึกงาน",
+    };
   } else if (item.applicationStatus === "ABORT") {
     // Determine step from statusNote set by cron
     let abortStep = 1;
@@ -240,7 +252,10 @@ export function mapApiToApplication(
     faculty: item.faculty?.trim() || undefined,
     studentNote: item.studentNote || undefined,
     cancellationReason:
-      item.applicationStatus === "CANCEL" || item.applicationStatus === "ABORT"
+      item.applicationStatus === "CANCEL" ||
+      item.applicationStatus === "ABORT" ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL")
         ? item.statusNote || undefined
         : undefined,
     cancelledBy:
@@ -249,6 +264,8 @@ export function mapApiToApplication(
         : undefined,
     cancelledDate:
       (item.applicationStatus === "CANCEL" && item.isActive === false) ||
+      (item.applicationStatus === "COMPLETE" &&
+        item.studentInternshipStatus === "CANCEL") ||
       item.applicationStatus === "ABORT"
         ? item.updatedAt || undefined
         : undefined,

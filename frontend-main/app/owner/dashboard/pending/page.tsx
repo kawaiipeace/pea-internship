@@ -102,26 +102,6 @@ function PendingStatusContent() {
   const [approvedApps, setApprovedApps] = useState<string[]>([]);
   const [rejectedApps, setRejectedApps] = useState<string[]>([]);
 
-  // Cancelled apps from localStorage
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    { id: string; reason: string; cancelledBy: string; cancelledDate: string }[]
-  >([]);
-  const cancelledAppIds = cancelledAppsData.map((c) => c.id);
-
-  // Load persisted state from localStorage on mount
-  useEffect(() => {
-    try {
-      const storedInterviewed = localStorage.getItem("pea_interviewed_apps");
-      const storedApproved = localStorage.getItem("pea_approved_apps");
-      const storedRejected = localStorage.getItem("pea_rejected_apps");
-      const storedCancelled = localStorage.getItem("pea_cancelled_apps");
-      if (storedInterviewed) setInterviewedApps(JSON.parse(storedInterviewed));
-      if (storedApproved) setApprovedApps(JSON.parse(storedApproved));
-      if (storedRejected) setRejectedApps(JSON.parse(storedRejected));
-      if (storedCancelled) setCancelledAppsData(JSON.parse(storedCancelled));
-    } catch {}
-  }, []);
-
   // Document request popup state
   const [showDocumentPopup, setShowDocumentPopup] = useState(false);
 
@@ -540,7 +520,7 @@ function PendingStatusContent() {
       rejected = 0,
       cancelled = 0;
     allApps.forEach((app) => {
-      if (app.status === "cancelled" || cancelledAppIds.includes(app.id)) {
+      if (app.status === "cancelled") {
         cancelled++;
       } else if (app.status === "accepted" || approvedApps.includes(app.id)) {
         accepted++;
@@ -737,13 +717,6 @@ function PendingStatusContent() {
     }
   };
 
-  // Helper to save to localStorage
-  const saveToStorage = (key: string, value: string[]) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {}
-  };
-
   // Handle interview confirmation (Owner approves interview → PENDING_INTERVIEW → PENDING_CONFIRMATION)
   const handleConfirmInterview = async () => {
     if (selectedApplication && !interviewSubmitting) {
@@ -752,7 +725,6 @@ function PendingStatusContent() {
         await applicationApi.approveInterview(Number(selectedApplication.id));
         const newInterviewed = [...interviewedApps, selectedApplication.id];
         setInterviewedApps(newInterviewed);
-        saveToStorage("pea_interviewed_apps", newInterviewed);
         setShowInterviewConfirm(false);
         setShowInterviewSuccess(true);
         setTimeout(() => {
@@ -780,7 +752,6 @@ function PendingStatusContent() {
         await applicationApi.confirmAccept(Number(selectedApplication.id));
         const newApproved = [...approvedApps, selectedApplication.id];
         setApprovedApps(newApproved);
-        saveToStorage("pea_approved_apps", newApproved);
         setShowApproveConfirm(false);
         // Show success popup
         setShowApproveSuccess(true);
@@ -812,7 +783,6 @@ function PendingStatusContent() {
         );
         const newRejected = [...rejectedApps, selectedApplication.id];
         setRejectedApps(newRejected);
-        saveToStorage("pea_rejected_apps", newRejected);
         setShowRejectConfirm(false);
         setShowRejectModal(false);
         setRejectReason("");
