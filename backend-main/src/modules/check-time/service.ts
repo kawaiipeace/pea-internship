@@ -586,8 +586,8 @@ export class CheckTimeService {
       where: and(
         eq(leaveRequests.userId, userId),
         gte(leaveRequests.leaveDatetime, startDate),
-        lte(leaveRequests.leaveDatetime, endDate + " 23:59:59")
-      )
+        lte(leaveRequests.leaveDatetime, `${endDate} 23:59:59`)
+      ),
     });
 
     const logIds = historyData.map((log) => log.id);
@@ -635,8 +635,10 @@ export class CheckTimeService {
         (req) => req.attendanceLogId === log.id
       );
 
-      const leaveData = leaveRecords.find(l => {
-        const lDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date(l.leaveDatetime!));
+      const leaveData = leaveRecords.find((l) => {
+        const lDate = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Bangkok",
+        }).format(new Date(l.leaveDatetime!));
         return lDate === logDateStr;
       });
 
@@ -653,7 +655,11 @@ export class CheckTimeService {
         isEdited: !!correctionData,
         correctionStatus: correctionData?.status || null,
         correctionId: correctionData?.id || null,
-        leaveType: leaveData ? (leaveData.leaveRequestType === 'ABSENCE' ? 'ลากิจ' : 'ลาป่วย') : null,
+        leaveType: leaveData
+          ? leaveData.leaveRequestType === "ABSENCE"
+            ? "ลากิจ"
+            : "ลาป่วย"
+          : null,
         leaveReason: leaveData?.reason || null,
         attachmentUrl: leaveData?.file || null,
       };
