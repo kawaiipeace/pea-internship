@@ -76,6 +76,8 @@ export const AllStudentsHistoryQuery = t.Object({
       t.Literal("PENDING_REVIEW"),
       t.Literal("COMPLETE"),
       t.Literal("CANCEL"),
+      t.Literal("ABORT"),
+      t.Literal("REJECTED"),
     ])
   ),
   positionId: t.Optional(t.Numeric()),
