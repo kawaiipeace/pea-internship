@@ -342,7 +342,7 @@ const StudentsPage = () => {
                                                 >
                                                     schedule
                                                 </span>
-                                                <span className={`text-[10px] font-normal ${
+                                                <span className={`text-[12px] font-normal ${
                                                     student.statusType === 'ended' ? 'text-[#D92D20]' : 
                                                     student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
                                                 }`}>
@@ -353,7 +353,7 @@ const StudentsPage = () => {
                                     </td>
                                     <td className="py-4 px-6 text-center">
                                         <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
-                                            <span className={`font-semibold text-[10px] whitespace-nowrap ${
+                                            <span className={`font-semibold text-[12px] whitespace-nowrap ${
                                                 student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
                                             }`}>
                                                 {student.consideration}

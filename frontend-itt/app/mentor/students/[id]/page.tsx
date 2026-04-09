@@ -197,10 +197,10 @@ const StudentDetailPage = () => {
                         <tbody className="divide-y divide-[#F2F4F7]">
                             {history.map((row, i) => (
                                 <tr key={i}>
-                                    <td className="py-4 px-6 text-center text-[14px] text-[#475467]">{row.date}</td>
+                                    <td className="py-4 px-6 text-center text-[16px] text-[#475467]">{row.date}</td>
                                     <td className="py-4 px-6 flex justify-center">{renderStatusBadge(row.status)}</td>
-                                    <td className="py-4 px-6 text-center text-[14px] text-[#475467]">{row.login}</td>
-                                    <td className="py-4 px-6 text-center text-[14px] text-[#475467] font-bold">{row.hours}</td>
+                                    <td className="py-4 px-6 text-center text-[16px] text-[#475467]">{row.login}</td>
+                                    <td className="py-4 px-6 text-center text-[16px] text-[#475467] font-bold">{row.hours}</td>
                                     <td className="py-4 px-6 text-center">
                                         {row.evidence && (
                                             <div className="inline-flex items-center gap-2.5 pl-1.5 pr-3 py-1 rounded-lg border border-[#D0D5DD] bg-[#F2F4F7] text-[13px] font-medium text-[#111827]">
@@ -212,7 +212,7 @@ const StudentDetailPage = () => {
                                         )}
                                     </td>
                                     <td className="py-4 px-6 text-center">
-                                        <span className={`text-[12px] font-medium ${
+                                        <span className={`text-[16px] font-medium ${
                                             row.noteType === 'warning' ? 'text-[#D92D20]' : 
                                             row.noteType === 'location' ? 'text-[#D92D20]' : 'text-[#000000]'
                                         }`}>
