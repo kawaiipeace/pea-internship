@@ -62,6 +62,12 @@ export const GetOffsiteTasksQuerySchema = t.Object({
       description: "ปี ค.ศ. ที่ต้องการค้นหา",
     })
   ),
+  viewMode: t.Optional(
+    t.Union([t.Literal("all"), t.Literal("mine")], {
+      default: "mine",
+      description: "โหมดการดู: 'all' (ทั้งหมดในแผนก), 'mine' (เฉพาะของตัวเอง)",
+    })
+  ),
 });
 
 export type GetOffsiteTasksQueryDto = typeof GetOffsiteTasksQuerySchema.static;

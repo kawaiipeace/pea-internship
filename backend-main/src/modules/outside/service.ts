@@ -177,12 +177,31 @@ export class OffsiteTaskService {
         throw new BadRequestError("ไม่พบข้อมูลพี่เลี้ยงที่ระบุ");
       }
 
-      if (targetMentor.departmentId !== currentUser.departmentId) {
+      const isSameDept = targetMentor.departmentId === currentUser.departmentId;
+      if (!isSameDept) {
         throw new ForbiddenError("คุณไม่มีสิทธิ์ดูข้อมูลการมอบหมายงานของบุคลากรนอกแผนก");
       }
 
       conditions.push(eq(offsiteTasks.assignedBy, query.targetMentorId));
+    } else if (query.viewMode === "mine") {
+      conditions.push(eq(offsiteTasks.assignedBy, mentorId));
+    } else if (query.viewMode === "all") {
+      // Find all mentors in this department
+      const deptMentors = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.departmentId, currentUser.departmentId));
+      
+      const mentorIds = deptMentors.map(m => m.id);
+      
+      if (mentorIds.length > 0) {
+        conditions.push(sql`${offsiteTasks.assignedBy} IN ${mentorIds}`);
+      } else {
+        // Fallback: This shouldn't really happen since the caller is a mentor in the dept
+        conditions.push(eq(offsiteTasks.assignedBy, mentorId));
+      }
     } else {
+      // Default to mine if no viewMode or invalid
       conditions.push(eq(offsiteTasks.assignedBy, mentorId));
     }
 

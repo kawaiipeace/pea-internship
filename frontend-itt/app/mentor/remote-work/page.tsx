@@ -23,6 +23,13 @@ interface OffsiteTask {
     students: Student[];
 }
 
+interface Staff {
+    id: string;
+    fname: string;
+    lname: string;
+    displayUsername: string | null;
+}
+
 interface MetaData {
     total: number;
     page: number;
@@ -35,11 +42,15 @@ const RemoteWorkPage = () => {
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear() + 543);
     const [currentPage, setCurrentPage] = useState(1);
-    const [assignerFilter, setAssignerFilter] = useState("ทั้งหมด");
+    const [assignerFilter, setAssignerFilter] = useState({ label: "ทั้งหมด", value: "all" });
     const [isAssignerDropdownOpen, setIsAssignerDropdownOpen] = useState(false);
     const [dateSortOrder, setDateSortOrder] = useState<'desc' | 'asc'>('desc');
     const [assignedDateSortOrder, setAssignedDateSortOrder] = useState<'desc' | 'asc'>('desc');
     const [activeSortField, setActiveSortField] = useState<'workDate' | 'assignedDate'>('workDate');
+
+    // Filter States
+    const [staffList, setStaffList] = useState<Staff[]>([]);
+    const [currentUser, setCurrentUser] = useState<any>(null);
 
     // Real Data State
     const [tasks, setTasks] = useState<OffsiteTask[]>([]);
@@ -77,15 +88,22 @@ const RemoteWorkPage = () => {
     const fetchTasks = useCallback(async () => {
         setIsLoading(true);
         try {
-            const params = {
+            const params: any = {
                 month: currentMonth + 1,
                 year: currentYear - 543, // Convert Buddhist year to AD
                 page: currentPage,
                 limit: 10,
                 sortBy: activeSortField === 'assignedDate' ? 'createdAt' : 'workDate',
                 sortOrder: activeSortField === 'assignedDate' ? assignedDateSortOrder : dateSortOrder,
-                viewMode: assignerFilter === "ที่ฉันสร้าง" ? "mine" : "all"
             };
+
+            if (assignerFilter.value === "mine") {
+                params.viewMode = "mine";
+            } else if (assignerFilter.value === "all") {
+                params.viewMode = "all";
+            } else {
+                params.targetMentorId = assignerFilter.value;
+            }
 
             const response = await axiosInstance.get('/offsite-tasks/mentor', { params });
             setTasks(response.data?.data || []);
@@ -129,6 +147,36 @@ const RemoteWorkPage = () => {
             }
         }
     };
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                // 1. Get current user profile to find departmentId
+                const profileRes = await axiosInstance.get('/user/profile');
+                const user = profileRes.data;
+                setCurrentUser(user);
+
+                // 2. Get staff in the same department
+                if (user.departmentId) {
+                    const staffRes = await axiosInstance.get('/user/staff', {
+                        params: { departmentId: user.departmentId }
+                    });
+                    const list = staffRes.data || [];
+                    setStaffList(list);
+
+                    // Set initial filter to current user
+                    setAssignerFilter({ 
+                        label: `${user.fname} ${user.lname}`, 
+                        value: user.id 
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching initial filter data:', error);
+            }
+        };
+
+        fetchInitialData();
+    }, []);
 
     useEffect(() => {
         fetchTasks();
@@ -237,7 +285,7 @@ const RemoteWorkPage = () => {
                             onClick={() => setIsAssignerDropdownOpen(!isAssignerDropdownOpen)}
                             className="flex items-center gap-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-[12px] font-medium text-[#333] shadow-sm min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                         >
-                            ผู้มอบหมาย : {assignerFilter}
+                            ผู้มอบหมาย : {assignerFilter.label}
                             <span className={`material-symbols-rounded !text-[18px] transition-transform ${isAssignerDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
                         </button>
 
@@ -246,25 +294,24 @@ const RemoteWorkPage = () => {
                                 {/* Backdrop to close dropdown */}
                                 <div className="fixed inset-0 z-[40]" onClick={() => setIsAssignerDropdownOpen(false)}></div>
                                 
-                                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[50] overflow-hidden py-1">
-                                    <button 
-                                        onClick={() => {
-                                            setAssignerFilter("ทั้งหมด");
-                                            setIsAssignerDropdownOpen(false);
-                                        }}
-                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${assignerFilter === "ทั้งหมด" ? 'bg-[#FDF2FE] text-[#A80689] font-medium' : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                                    >
-                                        ทั้งหมด
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            setAssignerFilter("ที่ฉันสร้าง");
-                                            setIsAssignerDropdownOpen(false);
-                                        }}
-                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${assignerFilter === "ที่ฉันสร้าง" ? 'bg-[#FDF2FE] text-[#A80689] font-medium' : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
-                                    >
-                                        ที่ฉันสร้าง
-                                    </button>
+                                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[50] overflow-hidden py-1 max-h-[300px] overflow-y-auto">
+                                    {/* Staff List Only */}
+                                    {staffList.map((staff) => (
+                                        <button 
+                                            key={staff.id}
+                                            onClick={() => {
+                                                setAssignerFilter({ 
+                                                    label: `${staff.fname} ${staff.lname}`, 
+                                                    value: staff.id 
+                                                });
+                                                setIsAssignerDropdownOpen(false);
+                                                setCurrentPage(1);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${assignerFilter.value === staff.id ? 'bg-[#FDF2FE] text-[#A80689] font-medium' : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                        >
+                                            {staff.fname} {staff.lname}
+                                        </button>
+                                    ))}
                                 </div>
                             </>
                         )}
