@@ -1,13 +1,17 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import Swal from 'sweetalert2';
+import ImageWithAuth from "@/components/ImageWithAuth";
 
 interface Student {
     id: string;
     name: string;
     image: string | null;
+    nickname: string;
+    faculty: string;
+    major: string;
 }
 
 interface OffsiteTask {
@@ -16,6 +20,7 @@ interface OffsiteTask {
     createdAt: string;
     locationName: string;
     assignedBy: string;
+    assignedByEmployeeId: string | null;
     taskDetail: string;
     note?: string;
     isOwner: boolean;
@@ -30,33 +35,66 @@ const RemoteWorkDetailPage = () => {
     const [task, setTask] = useState<OffsiteTask | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const fetchTaskDetail = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await axiosInstance.get(`/offsite-tasks/${taskId}`);
+            setTask(response.data);
+        } catch (error) {
+            console.error('Error fetching task details:', error);
+            Swal.fire('Error', 'ไม่สามารถดึงข้อมูลรายละเอียดได้', 'error');
+            router.push('/mentor/remote-work');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [taskId, router]);
+
     useEffect(() => {
-        const fetchTaskDetail = async () => {
-            setIsLoading(true);
-            try {
-                const response = await axiosInstance.get(`/offsite-tasks/${taskId}`);
-                setTask(response.data);
-            } catch (error) {
-                console.error('Error fetching task details:', error);
-                Swal.fire('Error', 'ไม่สามารถดึงข้อมูลรายละเอียดได้', 'error');
-                router.push('/mentor/remote-work');
-            } finally {
-                setIsLoading(false);
-            }
-        };
         if (taskId) {
             fetchTaskDetail();
         }
-    }, [taskId, router]);
+    }, [taskId, fetchTaskDetail]);
 
     const formatFullThaiDate = (dateStr: string) => {
         if (!dateStr) return "";
         const date = new Date(dateStr);
-        const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษาายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
         const day = date.getDate();
         const month = months[date.getMonth()];
         const year = date.getFullYear() + 543;
         return `${day} ${month} ${year}`;
+    };
+
+    const handleDelete = async () => {
+        if (!task) return;
+        
+        const result = await Swal.fire({
+            title: 'ยืนยันการลบ?',
+            text: "คุณต้องการลบรายการมอบหมายงานนี้ใช่หรือไม่?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#61646C',
+            confirmButtonText: 'ลบข้อมูล',
+            cancelButtonText: 'ยกเลิก',
+            reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await axiosInstance.delete(`/offsite-tasks/${task.id}`);
+                await Swal.fire({
+                    title: 'ลบสำเร็จ!',
+                    text: 'ข้อมูลถูกลบเรียบร้อยแล้ว',
+                    icon: 'success',
+                    confirmButtonColor: '#A80689',
+                });
+                router.push('/mentor/remote-work');
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                Swal.fire('Error', 'ไม่สามารถลบข้อมูลได้', 'error');
+            }
+        }
     };
 
     if (isLoading) {
@@ -70,118 +108,107 @@ const RemoteWorkDetailPage = () => {
     if (!task) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-black py-10 px-4">
-            <div className="mx-auto w-full max-w-[800px] bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-[15px] shadow-sm flex flex-col p-10">
+        <div className="h-full bg-gray-50 dark:bg-black py-4 px-4">
+            {/* Redesigned Card Container */}
+            <div className="mx-auto w-[892px] max-w-[900px] bg-white dark:bg-[#121212] border border-[#EEEEEE] dark:border-gray-800 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden relative">
                 
-                {/* Header with Back Button */}
-                <div className="flex justify-between items-start mb-8">
-                    <div>
+                {/* Header Section: Date and Actions */}
+                <div className="p-8 pb-0 flex flex-col gap-1">
+                    <div className="flex justify-end">
+                        <span className="text-[12px] text-[#344054] dark:text-gray-400">
+                            วันที่ทำการมอบหมาย : {formatFullThaiDate(task.createdAt)}
+                        </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                        {/* Back Button */}
                         <button 
                             onClick={() => router.back()}
-                            className="flex items-center gap-1 text-[#A80689] font-medium mb-4 hover:underline transition-all"
+                            className="flex items-center gap-2 text-[#94969C] dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors group"
                         >
-                            <span className="material-symbols-rounded !text-[20px]">arrow_back</span>
-                            กลับไปหน้าก่อนหน้า
+                            <span className="material-symbols-rounded !text-[24px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                            <span className="text-[16px] font-medium">ย้อนกลับ</span>
                         </button>
-                        <h1 className="text-[24px] font-bold text-black dark:text-white mb-1">
-                            รายละเอียดการปฏิบัติงานนอกสถานที่
-                        </h1>
-                        <p className="text-[16px] text-[#61646C] dark:text-gray-400">
-                            ข้อมูลรายละเอียดการมอบหมายงานนอกสถานที่
-                        </p>
+
+                        {/* Action Buttons */}
+                        {task.isOwner && (
+                            <div className="flex items-center gap-1">
+                                <button 
+                                    onClick={() => router.push(`/mentor/remote-work/form?id=${task.id}`)}
+                                    className="p-2 text-[#61646C] hover:text-[#A80689] transition-colors"
+                                    title="แก้ไข"
+                                >
+                                    <span className="material-symbols-rounded !text-[24px]">edit_square</span>
+                                </button>
+                                <button 
+                                    onClick={handleDelete}
+                                    className="p-2 text-[#61646C] hover:text-red-500 transition-colors"
+                                    title="ลบ"
+                                >
+                                    <span className="material-symbols-rounded !text-[24px]">delete</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
-                    {task.isOwner && (
-                        <button 
-                            onClick={() => router.push(`/mentor/remote-work/form?id=${task.id}`)}
-                            className="bg-[#FDF2FE] text-[#A80689] border border-[#F9E1F9] px-4 py-2 rounded-lg flex items-center gap-2 font-bold hover:bg-[#A80689] hover:text-white transition-all"
-                        >
-                            <span className="material-symbols-rounded !text-[20px]">edit</span>
-                            แก้ไขข้อมูล
-                        </button>
-                    )}
                 </div>
 
-                <div className="space-y-8">
-                    {/* 1. Date & Location Card */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-[#FDF2FE] dark:bg-[#251025] rounded-2xl p-6 border border-[#F9E1F9] dark:border-[#3d1a3d]">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="material-symbols-rounded text-[#A80689]">calendar_today</span>
-                                <span className="text-[14px] font-bold text-[#A80689] uppercase tracking-wider">วันที่ปฏิบัติงาน</span>
-                            </div>
-                            <p className="text-[20px] font-bold text-black dark:text-white">
-                                {formatFullThaiDate(task.workDate)}
-                            </p>
-                            <p className="text-[12px] text-gray-500 mt-2 italic">
-                                วันที่มอบหมาย: {formatFullThaiDate(task.createdAt)}
-                            </p>
-                        </div>
+                {/* Main Content Area */}
+                <div className="p-10 pt-2">
+                    <hr className="mb-6 border-[#CECFD2] h-[1px] dark:border-gray-800" />
+                    
+                    {/* Date Badge */}
+                    <div className="inline-block px-4 py-1.5 bg-[#FFF5E2] dark:bg-[#2a1a10] rounded-lg mb-3">
+                        <span className="text-[14px] font-bold text-[#333] dark:text-[#ef6820]">
+                            {formatFullThaiDate(task.workDate)}
+                        </span>
+                    </div>
 
-                        <div className="bg-[#FDF2FE] dark:bg-[#251025] rounded-2xl p-6 border border-[#F9E1F9] dark:border-[#3d1a3d]">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="material-symbols-rounded text-[#A80689]">location_on</span>
-                                <span className="text-[14px] font-bold text-[#A80689] uppercase tracking-wider">สถานที่</span>
-                            </div>
-                            <p className="text-[20px] font-bold text-black dark:text-white">
-                                {task.locationName}
-                            </p>
-                            <p className="text-[12px] text-gray-500 mt-2">
-                                ผู้มอบหมาย: {task.assignedBy}
-                            </p>
+                    {/* Location Title */}
+                    <h1 className="text-[24px] font-bold text-[#1F242F] dark:text-white mb-3 leading-tight ">
+                        สถานที่ : {task.locationName}
+                    </h1>
+
+                    {/* Task Details */}
+                    <div className="space-y-2 mb-10">
+                        <div className="flex text-[16px] leading-relaxed">
+                            <span className="text-[#85888E] dark:text-gray-400 min-w-[170px]">รายละเอียดการปฏิบัติงาน :</span>
+                            <span className="text-[#000000] dark:text-gray-100 font-medium">{task.taskDetail}</span>
+                        </div>
+                        <div className="flex text-[16px]">
+                            <span className="text-[#85888E] dark:text-gray-400 min-w-[170px]">หมายเหตุ :</span>
+                            <span className="text-[#000000] dark:text-gray-100 font-medium">{task.note || '-'}</span>
+                        </div>
+                        <div className="flex text-[16px]">
+                            <span className="text-[#85888E] dark:text-gray-400 min-w-[170px]">ผู้มอบหมาย :</span>
+                            <span className="text-[#000000] dark:text-gray-100 font-medium">
+                                {task.assignedBy} {task.assignedByEmployeeId && `<${task.assignedByEmployeeId}>`}
+                            </span>
                         </div>
                     </div>
 
-                    {/* 2. Details */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-1 h-6 bg-[#A80689] rounded-full"></div>
-                            <h2 className="text-[18px] font-bold text-black dark:text-white">รายละเอียดงาน</h2>
-                        </div>
-                        <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-100 dark:border-gray-800">
-                            <p className="text-[16px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                                {task.taskDetail}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* 3. Note */}
-                    {task.note && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-1 h-6 bg-[#A80689] rounded-full"></div>
-                                <h2 className="text-[18px] font-bold text-black dark:text-white">หมายเหตุ</h2>
-                            </div>
-                            <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-gray-100 dark:border-gray-800 border-l-4 border-l-[#A80689]">
-                                <p className="text-[16px] text-gray-700 dark:text-gray-300 italic">
-                                    {task.note}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 4. Students */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-1 h-6 bg-[#A80689] rounded-full"></div>
-                            <h2 className="text-[18px] font-bold text-black dark:text-white">
-                                นักศึกษาที่เข้าร่วม ({task.students.length} คน)
-                            </h2>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Students Section */}
+                    <div className="mt-10">
+                        <h2 className="text-[16px] font-bold text-[#1F242F] dark:text-white mb-6 flex items-center gap-2">
+                            นักศึกษาที่ได้รับมอบหมาย ({task.students.length} คน)
+                        </h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {task.students.map((student) => (
-                                <div key={student.id} className="flex items-center gap-3 p-3 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all shadow-sm">
-                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-gray-800 shadow-sm shrink-0 bg-gray-100">
-                                        {student.image ? (
-                                            <img src={student.image} alt={student.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-lg text-gray-400 font-bold bg-gray-200">
-                                                {student.name.charAt(0)}
-                                            </div>
-                                        )}
+                                <div key={student.id} className="p-4 bg-white dark:bg-gray-900 border border-[#CECFD2] dark:border-gray-800 rounded-xl flex items-center gap-4 hover:border-[#A80689] transition-colors group">
+                                    <div className="w-12 h-10 rounded-full overflow-hidden shrink-0 border border-gray-100 dark:border-gray-800 ring-2 ring-transparent group-hover:ring-[#A80689]/20 transition-all">
+                                        <ImageWithAuth 
+                                            userId={student.id} 
+                                            className="w-full h-full object-cover" 
+                                            fallbackSrc="/assets/images/user-profile.jpeg"
+                                        />
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-black dark:text-white">{student.name}</p>
-                                        <p className="text-[12px] text-gray-500">รหัสนักศึกษา: {student.id}</p>
+                                    <div className="min-w-0">
+                                        <p className="text-[14px] font-bold text-[#101828] dark:text-white truncate">
+                                            {student.name} {student.nickname && `(${student.nickname})`}
+                                        </p>
+                                        <p className="text-[12px] text-[#667085] dark:text-gray-400 truncate">
+                                            {student.major || student.faculty || "นักศึกษาฝึกงาน"}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
@@ -189,14 +216,8 @@ const RemoteWorkDetailPage = () => {
                     </div>
                 </div>
 
-                <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800 flex justify-end">
-                    <button 
-                        onClick={() => router.back()}
-                        className="px-8 py-3 bg-[#61646C] text-white rounded-xl font-bold hover:bg-black transition-all shadow-md active:scale-95"
-                    >
-                        ปิดหน้าต่างนี้
-                    </button>
-                </div>
+                {/* Optional Footer spacing */}
+                <div className="h-10"></div>
             </div>
         </div>
     );

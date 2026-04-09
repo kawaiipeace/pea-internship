@@ -266,15 +266,20 @@ export class OffsiteTaskService {
       where: eq(offsiteTasks.id, taskId),
       with: {
         assignedByUser: {
-          columns: { id: true, fname: true, lname: true, departmentId: true }, // ดึงแผนกของคนสร้างมาเช็ค
+          columns: { id: true, fname: true, lname: true, departmentId: true },
+          with: {
+            staffProfiles: {
+              columns: { employeeId: true },
+            },
+          },
         },
         students: {
           with: {
             student: {
-              columns: { id: true, fname: true, lname: true },
+              columns: { id: true, fname: true, lname: true, displayUsername: true },
               with: {
                 studentProfiles: {
-                  columns: { image: true },
+                  columns: { image: true, faculty: true, major: true },
                 },
               },
             },
@@ -314,10 +319,14 @@ export class OffsiteTaskService {
       note: task.note,
       isOwner: task.assignedByUser.id === userId,
       assignedBy: `${task.assignedByUser.fname} ${task.assignedByUser.lname}`,
+      assignedByEmployeeId: task.assignedByUser.staffProfiles[0]?.employeeId || null,
       students: task.students.map((s) => ({
         id: s.student.id,
         name: `${s.student.fname} ${s.student.lname}`,
         image: s.student.studentProfiles[0]?.image || null,
+        nickname: s.student.displayUsername || "",
+        faculty: s.student.studentProfiles[0]?.faculty || "",
+        major: s.student.studentProfiles[0]?.major || "",
       })),
     };
   }

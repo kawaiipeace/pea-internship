@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import Swal from 'sweetalert2';
+import CustomDatePicker from '@/components/forms/date-picker/CustomDatePicker';
 
 interface Student {
     id: string;
@@ -29,6 +30,22 @@ const RemoteWorkFormPage = () => {
     const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     // Fetch initial data on mount
     useEffect(() => {
@@ -105,8 +122,15 @@ const RemoteWorkFormPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!workDate || !locationName || !taskDetail || studentIds.length === 0) {
-            Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วนและเลือกนักศึกษาอย่างน้อย 1 คน', 'warning');
+        const newErrors: Record<string, string> = {};
+        if (!workDate) newErrors.workDate = 'กรุณาระบุระยะเวลาปฏิบัติงาน';
+        if (!locationName) newErrors.locationName = 'กรุณาระบุสถานที่ปฏิบัติงาน';
+        if (!taskDetail) newErrors.taskDetail = 'กรุณาระบุรายละเอียดการปฏิบัติงาน';
+        if (studentIds.length === 0) newErrors.studentIds = 'กรุณาเลือกนักศึกษาอย่างน้อย 1 คน';
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
             return;
         }
 
@@ -147,16 +171,16 @@ const RemoteWorkFormPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-black py-10 px-4">
+        <div className="min-h-screen bg-gray-50 dark:bg-black py-4 px-4">
             {/* Main Form Container */}
             <div 
-                className="mx-auto w-[700px] h-full bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-[15px] shadow-sm flex flex-col p-10 overflow-hidden"
+                className="mx-auto w-[700px] bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-[15px] shadow-sm flex flex-col p-10 overflow-visible"
                 
             >
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-[24px] font-bold text-black dark:text-white mb-1">
-                        {isEditMode ? 'แก้ไขงานนอกสถานที่' : 'มอบหมายงานนอกสถานที่'}
+                    <h1 className="text-[24px] font-semibold text-black dark:text-white mb-4">
+                        {isEditMode ? 'แก้ไขงานนอกสถานที่' : 'ปฏิบัติงานนอกสถานที่'}
                     </h1>
                     <p className="text-[16px] text-[#61646C] dark:text-gray-400">
                         {isEditMode ? 'แก้ไขรายละเอียดกำหนดการปฏิบัติงานนอกสถานที่' : 'กำหนดการวันที่นักศึกษาต้องไปปฏิบัติงานนอกสถานที่'}
@@ -164,25 +188,27 @@ const RemoteWorkFormPage = () => {
                 </div>
 
                 {/* Form Sections */}
-                <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+                <div className="flex-1 flex flex-col gap-4 overflow-visible">
                     
-                    {/* 1. Work Period */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-[44px] h-[44px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-[10px] flex items-center justify-center shrink-0">
-                                <span className="material-symbols-rounded !text-[24px] text-[#A80689]">edit_calendar</span>
+                            <div className="w-[50px] h-[50px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-full flex items-center justify-center shrink-0">
+                                <span className="material-symbols-rounded !text-[32px] text-[#A80689]">edit_calendar</span>
                             </div>
                             <div>
-                                <h2 className="text-[18px] font-bold text-[#A80689]">ระยะเวลาปฏิบัติงาน</h2>
-                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 font-medium">ระบุวันที่และเวลาให้ชัดเจน</p>
+                                <h2 className="text-[20px] font-bold text-[#A80689]">ระยะเวลาปฏิบัติงาน</h2>
+                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">ระบุวันที่และเวลาให้ชัดเจน</p>
                             </div>
                         </div>
-                        <div className="relative">
-                            <input 
-                                type="date" 
+                        <div className="w-[348px]">
+                            <CustomDatePicker 
                                 value={workDate}
-                                onChange={(e) => setWorkDate(e.target.value)}
-                                className="w-full h-[54px] px-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors"
+                                onChange={(date) => {
+                                    setWorkDate(date);
+                                    if (errors.workDate) setErrors(prev => ({ ...prev, workDate: '' }));
+                                }}
+                                placeholder="วว/ดด/ปปปป"
+                                error={errors.workDate}
                             />
                         </div>
                     </div>
@@ -190,89 +216,132 @@ const RemoteWorkFormPage = () => {
                     {/* 2. Work Location */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-[44px] h-[44px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-[10px] flex items-center justify-center shrink-0">
-                                <span className="material-symbols-rounded !text-[24px] text-[#A80689]">location_on</span>
+                            <div className="w-[50px] h-[50px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-full flex items-center justify-center shrink-0">
+                                <span className="material-symbols-rounded !text-[32px] text-[#A80689]">location_on</span>
                             </div>
                             <div>
-                                <h2 className="text-[18px] font-bold text-[#A80689]">สถานที่การปฏิบัติงาน</h2>
-                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 font-medium">ระบุสถานที่การทำงานนอกสถานที่ให้ชัดเจน</p>
+                                <h2 className="text-[20px] font-bold text-[#A80689]">สถานที่การปฏิบัติงาน</h2>
+                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">ระบุสถานที่การทำงานนอกสถานที่ให้ชัดเจน</p>
                             </div>
                         </div>
-                        <input 
-                            type="text" 
-                            placeholder="กรอกชื่อสถานที่ เช่น การท่องเที่ยวแห่งประเทศไทย" 
-                            value={locationName}
-                            onChange={(e) => setLocationName(e.target.value)}
-                            className="w-full h-[54px] px-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors"
-                        />
+                        <div>
+                            <input 
+                                type="text" 
+                                placeholder="กรอกชื่อสถานที่ เช่น การท่องเที่ยวแห่งประเทศไทย" 
+                                value={locationName}
+                                onChange={(e) => {
+                                    setLocationName(e.target.value);
+                                    if (errors.locationName) setErrors(prev => ({ ...prev, locationName: '' }));
+                                }}
+                                className={`w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border ${errors.locationName ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[5px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors `}
+                            />
+                            {errors.locationName && <p className="text-[#D92D20] text-[12px] mt-0.5">{errors.locationName}</p>}
+                        </div>
                     </div>
 
                     {/* 3. Work Details */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-[44px] h-[44px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-[10px] flex items-center justify-center shrink-0">
-                                <span className="material-symbols-rounded !text-[24px] text-[#A80689]">assignment</span>
+                            <div className="w-[50px] h-[50px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-full flex items-center justify-center shrink-0">
+                                <span className="material-symbols-rounded !text-[32px] text-[#A80689]">description</span>
                             </div>
                             <div>
-                                <h2 className="text-[18px] font-bold text-[#A80689]">รายละเอียดการปฏิบัติงาน</h2>
-                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 font-medium">ระบุรายละเอียดของงาน</p>
+                                <h2 className="text-[20px] font-bold text-[#A80689]">รายละเอียดการปฏิบัติงาน</h2>
+                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">ระบุรายละเอียดของงาน</p>
                             </div>
                         </div>
-                        <textarea 
-                            placeholder="รายละเอียดการปฏิบัติงาน เช่น ลักษณะงาน, สถานที่, รายชื่อพี่เลี้ยงที่ร่วมปฏิบัติงาน" 
-                            value={taskDetail}
-                            onChange={(e) => setTaskDetail(e.target.value)}
-                            className="w-full h-[120px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
-                        ></textarea>
+                        <div>
+                            <textarea 
+                                placeholder="รายละเอียดการปฏิบัติงาน เช่น ลักษณะงาน, สถานที่, รายชื่อพี่เลี้ยงที่ร่วมปฏิบัติงาน" 
+                                value={taskDetail}
+                                onChange={(e) => {
+                                    setTaskDetail(e.target.value);
+                                    if (errors.taskDetail) setErrors(prev => ({ ...prev, taskDetail: '' }));
+                                }}
+                                className={`w-[618px] h-[100px] p-4 bg-white dark:bg-gray-900 border ${errors.taskDetail ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[5px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors resize-none`}
+                            ></textarea>
+                            {errors.taskDetail && <p className="text-[#D92D20] text-[12px] mt-0.5">{errors.taskDetail}</p>}
+                        </div>
                     </div>
 
                     {/* 4. Remarks (Optional) */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-[44px] h-[44px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-[10px] flex items-center justify-center shrink-0">
-                                <span className="material-symbols-rounded !text-[24px] text-[#A80689]">article</span>
+                            <div className="w-[50px] h-[50px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-full flex items-center justify-center shrink-0">
+                                <span className="material-symbols-rounded !text-[32px] text-[#A80689]">lab_profile</span>
                             </div>
                             <div>
-                                <h2 className="text-[18px] font-bold text-[#A80689]">หมายเหตุ (ถ้ามี)</h2>
-                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 font-medium">ระบุรายละเอียดของงานเพิ่มเติม</p>
+                                <h2 className="text-[20px] font-bold text-[#A80689]">หมายเหตุ (ถ้ามี)</h2>
+                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">ระบุรายละเอียดของงานเพิ่มเติม</p>
                             </div>
                         </div>
                         <textarea 
                             placeholder="รายละเอียดของงานเพิ่มเติม" 
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
-                            className="w-full h-[120px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
+                            className="w-[618px] h-[100px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
                         ></textarea>
                     </div>
 
                     {/* 5. Assigned Students */}
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                            <div className="w-[44px] h-[44px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-[10px] flex items-center justify-center shrink-0">
-                                <span className="material-symbols-rounded !text-[24px] text-[#A80689]">person_add</span>
+                            <div className="w-[50px] h-[50px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-full flex items-center justify-center shrink-0">
+                                <span className="material-symbols-rounded !text-[32px] text-[#A80689]">person</span>
                             </div>
                             <div>
-                                <h2 className="text-[18px] font-bold text-[#A80689]">นักศึกษาที่ได้รับมอบหมาย</h2>
-                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 font-medium">เลือกรายชื่อนักศึกษาที่ทำงานนอกสถานที่</p>
+                                <h2 className="text-[20px] font-bold text-[#A80689]">นักศึกษาที่ได้รับมอบหมาย</h2>
+                                <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">เลือกรายชื่อนักศึกษาที่ทำงานนอกสถานที่</p>
                             </div>
                         </div>
-                        <div className="relative">
-                            <select 
-                                className="w-full h-[54px] px-4 bg-white dark:bg-gray-900 border border-[#CECFD2] dark:border-gray-700 rounded-[8px] text-[16px] text-gray-500 appearance-none focus:outline-none focus:border-[#A80689] transition-colors"
-                                defaultValue=""
-                                onChange={(e) => handleAddStudent(e.target.value)}
+                        
+                        {/* Custom Dropdown for Student Selection */}
+                        <div className="relative" ref={dropdownRef}>
+                            {/* Dropdown Toggle Box */}
+                            <div 
+                                className={`w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border-2 ${errors.studentIds ? 'border-[#D92D20]' : 'border-[#A80689]'} rounded-[8px] flex items-center justify-between cursor-pointer focus:outline-none`}
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                             >
-                                <option value="" disabled>{isLoading ? 'กำลังโหลด...' : 'เลือกรายชื่อนักศึกษา'}</option>
-                                {availableStudents
-                                    .filter(s => !studentIds.includes(s.id))
-                                    .map(student => (
-                                        <option key={student.id} value={student.id}>
-                                            {student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id}
-                                        </option>
-                                    ))
-                                }
-                            </select>
-                            <span className="material-symbols-rounded absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">expand_more</span>
+                                <span className="text-[14px] text-gray-500">ชื่อนักศึกษา</span>
+                                <span className={`material-symbols-rounded ${errors.studentIds ? 'text-[#D92D20]' : 'text-[#A80689]'} transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                            </div>
+                            {errors.studentIds && <p className="text-[#D92D20] text-[12px] mt-0.5 ml-1">{errors.studentIds}</p>}
+
+                            {/* Dropdown Menu */}
+                            {isDropdownOpen && (
+                                <div className="absolute top-[50px] left-0 w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
+                                    {availableStudents.filter(s => !studentIds.includes(s.id)).length === 0 ? (
+                                        <div className="px-4 py-3 text-[14px] text-gray-500 text-center italic">
+                                            {isLoading ? 'กำลังโหลด...' : 'ไม่มีรายชื่อนักศึกษาเพิ่มเติม'}
+                                        </div>
+                                    ) : (
+                                        availableStudents
+                                            .filter(s => !studentIds.includes(s.id))
+                                            .map(student => (
+                                                <div 
+                                                    key={student.id} 
+                                                    className="px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer transition-all duration-200"
+                                                    onClick={() => {
+                                                        handleAddStudent(student.id);
+                                                        setIsDropdownOpen(false);
+                                                        if (errors.studentIds) setErrors(prev => ({ ...prev, studentIds: '' }));
+                                                    }}
+                                                >
+                                                    {student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id}
+                                                </div>
+                                            ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Dashed Add Student Box */}
+                        <div 
+                            className="w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        >
+                            <span className="material-symbols-rounded text-[#61646C]">add</span>
+                            <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
                         </div>
                         
                         {/* Selected Students List */}
