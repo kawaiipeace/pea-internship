@@ -12,6 +12,7 @@ import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
 import { leave } from "./leave-requests";
 import { ownerStudents } from "./manualEndInternships";
+import { mentor } from "./mentor";
 import { notification } from "./notification";
 import { offsiteTasks } from "./outside";
 import { position } from "./positions";
@@ -36,6 +37,7 @@ const modules = new Elysia({ prefix: "/api" })
   .use(offsiteTasks)
   .use(checkTime)
   .use(leave)
+  .use(mentor)
   .use(file)
   .use(applicationStatusActionsModule)
   .use(applicationCompleteModal);

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Pagination } from '@mantine/core';
 import IconSearch from '@/components/icon/icon-search';
 import IconCaretDown from '@/components/icon/icon-caret-down';
@@ -12,8 +12,9 @@ import IconExport from '@/components/icon/icon-export';
 import Flatpickr from 'react-flatpickr';
 import Dropdown from '@/components/dropdown';
 import IconMinus from '@/components/icon/icon-minus';
-
 import { useRouter } from 'next/navigation';
+import axiosInstance from '@/api/axios';
+import ImageWithAuth from '@/components/ImageWithAuth';
 
 const StudentsPage = () => {
     const router = useRouter();
@@ -21,85 +22,88 @@ const StudentsPage = () => {
     const PAGE_SIZES = [5, 10, 20, 50];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
     const [dateRange, setDateRange] = useState<any>('');
-    const [expandedCats, setExpandedCats] = useState<string[]>([]);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [students, setStudents] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const items = [
-        {
-            id: 1,
-            name: 'สมใจ ใฝ่ฝัน (ใจฝัน)',
-            role: 'นักออกแบบ UX/UI',
-            university: 'มหาวิทยาลัยธรรมศาสตร์',
-            status: 'ปกติ',
-            avatar: '/assets/images/profile-1.jpeg',
-            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
-            progress: { current: 420, total: 560, percent: 75 },
-            statusMessage: 'เหลืออีก 26 วันก่อนสิ้นสุดการฝึกงาน',
-            statusType: 'remaining',
-            consideration: '',
-        },
-        {
-            id: 2,
-            name: 'สมหมาย สายเสมอ (มาย)',
-            role: 'Fronted Developer',
-            university: 'มหาวิทยาลัยเกษตรศาสตร์',
-            status: 'สาย',
-            avatar: '/assets/images/profile-2.jpeg',
-            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
-            progress: { current: 555, total: 560, percent: 99 },
-            statusMessage: 'สิ้นสุดการฝึกงาน',
-            statusType: 'ended',
-            consideration: 'รออนุมัติการฝึกงาน',
-        },
-        {
-            id: 3,
-            name: 'สมนึก คึกคะนอง (นิค)',
-            role: 'Fronted Developer',
-            university: 'มหาวิทยาลัยเกษตรศาสตร์',
-            status: 'ปกติ',
-            avatar: '/assets/images/profile-3.jpeg',
-            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
-            progress: { current: 420, total: 560, percent: 75 },
-            statusMessage: 'เหลืออีก 26 วันก่อนสิ้นสุดการฝึกงาน',
-            statusType: 'remaining',
-            consideration: '',
-        },
-        {
-            id: 4,
-            name: 'สมชาย ลำฝัน (ชาย)',
-            role: 'นักออกแบบ UX/UI',
-            university: 'โรงเรียนสวนกุหลาบ',
-            status: 'ลา',
-            avatar: '/assets/images/profile-4.jpeg',
-            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
-            progress: { current: 540, total: 560, percent: 96 },
-            statusMessage: 'สิ้นสุดการฝึกงาน',
-            statusType: 'ended',
-            consideration: 'ชดเชยวันทำงาน 2 วัน',
-            considerationType: 'compensation',
-        },
-        {
-            id: 5,
-            name: 'สมศรี สตรีไทย (เฟิร์น)',
-            role: 'นักออกแบบ UX/UI',
-            university: 'โรงเรียนหอวัง',
-            status: 'ปกติ',
-            avatar: '/assets/images/profile-5.jpeg',
-            attendance: { present: 56, late: 2, leave: 3, absent: 1 },
-            progress: { current: 558, total: 560, percent: 99 },
-            statusMessage: 'วันสุดท้ายของการฝึกงาน',
-            statusType: 'last-day',
-            consideration: 'รออนุมัติการฝึกงาน',
-        },
-    ];
+    const fetchStudents = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            // 1. Fetch mentor profile to get departmentId
+            const profileResponse = await axiosInstance.get('/user/profile');
+            const departmentId = profileResponse.data.departmentId;
+
+            // 2. Fetch students in the same department
+            const studentsResponse = await axiosInstance.get('/user/student', {
+                params: { departmentId }
+            });
+            
+            // Map the API data to the UI format
+            const mappedStudents = (studentsResponse.data || []).map((s: any) => {
+                const profile = Array.isArray(s.studentProfiles) ? s.studentProfiles[0] : s.studentProfiles;
+                const stats = Array.isArray(s.studentAttendanceSummaries) ? s.studentAttendanceSummaries[0] : (s.attendanceSummary || {});
+                
+                // Calculate percentage
+                const current = Number(stats.totalAccumulatedHours || 0);
+                const total = Number(stats.totalHoursGoal || 560);
+                const percent = total > 0 ? (current / total) * 100 : 0;
+
+                return {
+                    id: s.id,
+                    name: `${s.fname || ''} ${s.lname || ''}`,
+                    role: profile?.major || 'Intern',
+                    university: profile?.institution?.name || 'มหาวิทยาลัย',
+                    status: s.displayStatus || 'PRESENT', 
+                    avatar: s.avatar || `https://ui-avatars.com/api/?name=${s.fname}+${s.lname}&background=random`,
+                    attendance: { 
+                        present: stats.countPresentDays || 0, 
+                        late: stats.countLateDays || 0, 
+                        leave: stats.countLeaveDays || 0, 
+                        absent: stats.countAbsentDays || 0 
+                    },
+                    progress: { 
+                        current: current, 
+                        total: total, 
+                        percent: percent > 100 ? 100 : percent 
+                    },
+                    statusMessage: profile?.internshipStatus === 'COMPLETE' ? 'สิ้นสุดการฝึกงาน' : 'กำลังฝึกงาน',
+                    statusType: profile?.internshipStatus === 'COMPLETE' ? 'ended' : 'remaining',
+                    consideration: profile?.statusNote || '',
+                };
+            });
+            
+            setStudents(mappedStudents);
+        } catch (error) {
+            console.error('Error fetching students:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchStudents();
+    }, [fetchStudents]);
 
     const filteredItems = useMemo(() => {
-        let result = [...items];
+        let result = [...students];
+        
+        // Filter by school
         if (selectedSchools.length > 0) {
             result = result.filter((item) => selectedSchools.includes(item.university));
         }
+
+        // Filter by search term
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            result = result.filter((item) => 
+                item.name.toLowerCase().includes(searchLower) || 
+                item.role.toLowerCase().includes(searchLower)
+            );
+        }
+
         return result;
-    }, [selectedSchools]);
+    }, [selectedSchools, searchTerm, students]);
 
     const records = useMemo(() => {
         const from = (page - 1) * pageSize;
@@ -153,7 +157,7 @@ const StudentsPage = () => {
 
     const renderStatusBadge = (status: string) => {
         switch (status) {
-            case 'ปกติ':
+            case 'PRESENT':
                 return (
                     <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#E4FFEE] border border-[#75E0A7] w-max">
                         <div className="w-8 h-8 flex items-center justify-center bg-[#079455] text-white rounded-full shrink-0 shadow-sm">
@@ -162,34 +166,7 @@ const StudentsPage = () => {
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">เข้างานปกติ</span>
                     </div>
                 );
-            case 'ลากิจ':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EEEFFF] border border-[#1A3CFF]/50 w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#1A3CFF] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>business_center</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลากิจ</span>
-                    </div>
-                );
-            case 'ลาป่วย':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFEFF3] border border-[#FF1A7D]/50 w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#FF1A7D] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>health_cross</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลาป่วย</span>
-                    </div>
-                );
-            case 'ไม่ลงเวลาออก':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#F0F1F1] border border-[#94969C] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#85888E] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>hourglass_disabled</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ไม่ลงเวลาออก</span>
-                    </div>
-                );
-            case 'ลา':
+            case 'LEAVE':
                 return (
                     <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EFF8FF] border border-[#1AB3FF]/50 w-max">
                         <div className="w-8 h-8 flex items-center justify-center bg-[#1AB3FF] text-white rounded-full shrink-0 shadow-sm">
@@ -198,7 +175,16 @@ const StudentsPage = () => {
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลา</span>
                     </div>
                 );
-            case 'ขาด':
+            case 'MISSING_OUT':
+                return (
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#F0F1F1] border border-[#94969C] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#85888E] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>hourglass_disabled</span>
+                        </div>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ไม่ลงเวลาออก</span>
+                    </div>
+                );
+            case 'ABSENT':
                 return (
                     <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#fef2f2] border border-[#fee2e2] w-max">
                         <div className="w-8 h-8 flex items-center justify-center bg-[#ef4444] text-white rounded-full shrink-0 shadow-sm">
@@ -207,7 +193,7 @@ const StudentsPage = () => {
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ขาด</span>
                     </div>
                 );
-            case 'สาย':
+            case 'LATE':
                 return (
                     <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF9E5] border border-[#FFCA5F] w-max">
                         <div className="w-8 h-8 flex items-center justify-center bg-[#FDB022] text-white rounded-full shrink-0 shadow-sm transition-transform">
@@ -220,6 +206,7 @@ const StudentsPage = () => {
                 return null;
         }
     };
+
 
     return (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
@@ -236,6 +223,8 @@ const StudentsPage = () => {
                     <input
                         type="text"
                         placeholder="พิมพ์ชื่อหรือตำแหน่งที่ต้องการค้นหา..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full h-full pl-[42px] pr-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] placeholder:text-[#61646C] transition-all"
                     />
                 </div>
@@ -273,7 +262,15 @@ const StudentsPage = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#F2F4F7]">
-                            {records.map((student) => (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={5} className="py-10 text-center text-gray-500">กำลังโหลดข้อมูล...</td>
+                                </tr>
+                            ) : records.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="py-10 text-center text-gray-500">ไม่พบข้อมูลนักศึกษา</td>
+                                </tr>
+                            ) : records.map((student) => (
                                 <tr 
                                     key={student.id} 
                                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
@@ -281,8 +278,10 @@ const StudentsPage = () => {
                                 >
                                     <td className="py-4 px-6 text-left">
                                         <div className="flex items-center gap-4">
-                                            <img src={student.avatar} alt={student.name} className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
-                                                onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${student.name}&background=random` }} 
+                                            <ImageWithAuth 
+                                                userId={student.id} 
+                                                className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
+                                                fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
                                             />
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">{student.name}</span>
@@ -297,7 +296,7 @@ const StudentsPage = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="py-4 px-6 text-center text-center">
+                                    <td className="py-4 px-6 text-center">
                                         <div className="flex justify-center gap-2">
                                             {/* มา */}
                                             <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
@@ -411,3 +410,4 @@ const StudentsPage = () => {
 };
 
 export default StudentsPage;
+

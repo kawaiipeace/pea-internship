@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   authApi,
   authStorage,
+  favoriteApi,
   notificationApi,
   type NotificationItem,
 } from "@/services/api";
@@ -206,32 +207,39 @@ export default function NavbarIntern({
     [unreadCount, markAllAsRead],
   );
 
-  // Load favorites count from localStorage
+  const loadFavoritesCount = useCallback(async () => {
+    try {
+      const response = await favoriteApi.getFavorites();
+      setFavoritesCount(response.data.length);
+    } catch {
+      setFavoritesCount(0);
+    }
+  }, []);
+
   useEffect(() => {
-    const loadFavoritesCount = () => {
-      const savedFavorites = localStorage.getItem("favorites");
-      if (savedFavorites) {
-        const favorites = JSON.parse(savedFavorites);
-        setFavoritesCount(favorites.length);
+    loadFavoritesCount();
+
+    const handleFavoritesUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ count?: number }>;
+      if (typeof customEvent.detail?.count === "number") {
+        setFavoritesCount(customEvent.detail.count);
       } else {
-        setFavoritesCount(0);
+        loadFavoritesCount();
       }
     };
 
-    // Load initially
-    loadFavoritesCount();
-
-    // Listen for storage changes (from other tabs or when favorites change)
-    window.addEventListener("storage", loadFavoritesCount);
-
-    // Also listen for custom event for same-tab updates
-    window.addEventListener("favoritesUpdated", loadFavoritesCount);
+    window.addEventListener(
+      "favoritesUpdated",
+      handleFavoritesUpdated as EventListener,
+    );
 
     return () => {
-      window.removeEventListener("storage", loadFavoritesCount);
-      window.removeEventListener("favoritesUpdated", loadFavoritesCount);
+      window.removeEventListener(
+        "favoritesUpdated",
+        handleFavoritesUpdated as EventListener,
+      );
     };
-  }, []);
+  }, [loadFavoritesCount]);
 
   // Update from props if provided (for real-time updates on same page)
   useEffect(() => {
@@ -269,11 +277,7 @@ export default function NavbarIntern({
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      // ล้าง token และ user data จาก localStorage และ cookie
       authStorage.clearAuth();
-      // ลบ localStorage ทั้งหมดที่เกี่ยวกับ user
-      localStorage.removeItem("current_user");
-      localStorage.removeItem("registered_interns");
       // Redirect ไปหน้าแรก (ใช้ replace เพื่อไม่ให้กดย้อนกลับได้)
       router.replace("/");
     }
@@ -292,7 +296,7 @@ export default function NavbarIntern({
               alt="PEA Internship Logo"
               width={195}
               height={112}
-              style={{ width: 'auto', height: '3rem' }}
+              style={{ width: "auto", height: "3rem" }}
               priority
             />
           </Link>
@@ -698,7 +702,7 @@ export default function NavbarIntern({
                   alt="PEA Internship Logo"
                   width={195}
                   height={112}
-                  style={{ width: 'auto', height: '2.25rem' }}
+                  style={{ width: "auto", height: "2.25rem" }}
                 />
               </Link>
               <button
@@ -844,7 +848,7 @@ export default function NavbarIntern({
                 alt="PEA Internship Logo"
                 width={195}
                 height={112}
-                style={{ width: 'auto', height: '3rem' }}
+                style={{ width: "auto", height: "3rem" }}
               />
             </Link>
             <div className="flex items-center gap-3">
@@ -1054,7 +1058,7 @@ export default function NavbarIntern({
                 alt="PEA Internship Logo"
                 width={195}
                 height={112}
-                style={{ width: 'auto', height: '3rem' }}
+                style={{ width: "auto", height: "3rem" }}
               />
             </Link>
             <div className="flex items-center gap-3">

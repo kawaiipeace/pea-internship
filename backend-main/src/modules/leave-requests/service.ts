@@ -5,6 +5,7 @@ import { NotFoundError } from "elysia";
 import { ConflictError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
+  applicationStatuses,
   attendanceLogs,
   leaveRequests,
   studentProfiles,
@@ -250,7 +251,7 @@ export class LeaveService {
     const records = historyData.map((record) => {
       return {
         id: record.id,
-        leaveDate: new Date(record.leaveDatetime!).toISOString(),
+        leaveDate: record.leaveDatetime,
         leaveType: record.leaveRequestType,
         status: record.status,
         reason: record.reason,
@@ -269,6 +270,145 @@ export class LeaveService {
       },
       records,
     };
+  }
+
+  async getMentorLeaveRequests(
+    mentorUserId: string,
+    query: model.GetMentorLeaveRequestsQueryType
+  ) {
+    const { page = 1, limit = 10, status, viewType } = query;
+
+    const mentor = await db.query.users.findFirst({
+      where: eq(users.id, mentorUserId),
+      with: { staffProfiles: true },
+    });
+
+    if (!mentor || !mentor.staffProfiles) {
+      throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
+    }
+
+    const appConditions = [eq(applicationStatuses.isActive, true)];
+
+    if (viewType === "ALL") {
+    } else {
+      if (mentor.departmentId) {
+        appConditions.push(
+          eq(applicationStatuses.departmentId, mentor.departmentId)
+        );
+      }
+    }
+
+    const applications = await db.query.applicationStatuses.findMany({
+      where: and(...appConditions),
+    });
+
+    const studentUserIds = applications.map((a) => a.userId);
+
+    if (studentUserIds.length === 0) {
+      return {
+        data: [],
+        meta: { page, limit, totalPages: 0, totalRecords: 0 },
+      };
+    }
+
+    const leaveConditions = [inArray(leaveRequests.userId, studentUserIds)];
+
+    if (status) {
+      leaveConditions.push(eq(leaveRequests.status, status));
+    }
+
+    const finalCondition = and(...leaveConditions);
+
+    const [totalCountResult] = await db
+      .select({ count: count() })
+      .from(leaveRequests)
+      .where(finalCondition);
+
+    const totalFilteredRecords = Number(totalCountResult.count);
+    const totalPages = Math.ceil(totalFilteredRecords / limit);
+    const offset = (page - 1) * limit;
+
+    const historyData = await db
+      .select({
+        id: leaveRequests.id,
+        leaveDatetime: leaveRequests.leaveDatetime,
+        leaveRequestType: leaveRequests.leaveRequestType,
+        status: leaveRequests.status,
+        reason: leaveRequests.reason,
+        file: leaveRequests.file,
+        fname: users.fname,
+        lname: users.lname,
+        image: studentProfiles.image,
+      })
+      .from(leaveRequests)
+      .innerJoin(users, eq(users.id, leaveRequests.userId))
+      .innerJoin(
+        studentProfiles,
+        eq(studentProfiles.userId, leaveRequests.userId)
+      )
+      .where(finalCondition)
+      .orderBy(desc(leaveRequests.leaveDatetime))
+      .limit(limit)
+      .offset(offset);
+
+    const records = historyData.map((record) => {
+      return {
+        id: record.id,
+        leaveDate: record.leaveDatetime,
+        leaveType: record.leaveRequestType,
+        status: record.status,
+        reason: record.reason,
+        attachmentUrl: record.file,
+        studentName:
+          `${record.fname || ""} ${record.lname || ""}`.trim() ||
+          "นักศึกษา (ไม่ระบุชื่อ)",
+        profileImg: record.image || null,
+      };
+    });
+
+    return {
+      data: records,
+      meta: {
+        page,
+        limit,
+        totalPages,
+        totalRecords: totalFilteredRecords,
+      },
+    };
+  }
+
+  async rejectLeaveRequest(
+    approverUserId: string,
+    leaveRequestId: number,
+    reason: string
+  ) {
+    await this.assertUserExists(approverUserId);
+
+    return await db.transaction(async (tx) => {
+      const request = await tx.query.leaveRequests.findFirst({
+        where: eq(leaveRequests.id, leaveRequestId),
+      });
+
+      if (!request) throw new NotFoundError("ไม่พบคำขอลา");
+      if (request.status !== "PENDING") {
+        throw new ConflictError("คำขอลานี้ถูกดำเนินการไปแล้ว");
+      }
+
+      await tx
+        .update(leaveRequests)
+        .set({
+          status: "REJECTED",
+          approvedBy: approverUserId,
+          approverNote: reason,
+          approvedAt: new Date().toISOString(),
+        })
+        .where(eq(leaveRequests.id, leaveRequestId));
+
+      return {
+        success: true,
+        message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว",
+      };
+    });
   }
 
   async deleteLeaveRequest(userId: string, id: number) {

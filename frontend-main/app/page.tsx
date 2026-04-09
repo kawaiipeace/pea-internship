@@ -9,7 +9,14 @@ import JobDetailPanel from "@/components/ui/JobDetailPanel";
 import Pagination from "@/components/ui/Pagination";
 import LoginModal from "@/components/ui/LoginModal";
 import { VideoLoading } from "@/components";
-import { positionApi, positionToJobWithStaff, favoriteApi, applicationApi, jobIdToPositionId, StaffUser } from "@/services/api";
+import {
+  positionApi,
+  positionToJobWithStaff,
+  favoriteApi,
+  applicationApi,
+  jobIdToPositionId,
+  StaffUser,
+} from "@/services/api";
 
 export default function Home() {
   const router = useRouter();
@@ -63,7 +70,7 @@ export default function Home() {
           })
           .map((p) => positionToJobWithStaff(p, staffList));
 
-        // Combine API jobs with mock jobs (API jobs first)
+        // Use API jobs as the source of truth
         const combinedJobs = [...apiJobs];
         const majors = Array.from(
           new Set(
@@ -80,7 +87,7 @@ export default function Home() {
           majors.map((major) => ({ value: major, label: major })),
         );
       } catch {
-        // API requires auth - use mock jobs for public view
+        // If API is unavailable, show empty state
         setAllJobs([]);
         setFilteredJobs([]);
         setMajorOptions([]);
@@ -292,12 +299,6 @@ export default function Home() {
                     setIsLoginModalOpen(true);
                   }}
                   onViewDetailClick={() => {
-                    if (selectedJob) {
-                      localStorage.setItem(
-                        "selectedJobDetail",
-                        JSON.stringify(selectedJob),
-                      );
-                    }
                     setPendingBookmarkJobId(null);
                     setPendingAction("viewDetail");
                     setIsLoginModalOpen(true);
@@ -334,20 +335,29 @@ export default function Home() {
             router.push("/intern-home");
           } else if (action === "apply" && job) {
             const positionId = jobIdToPositionId(job.id);
-            if (positionId) {
-              try {
-                await applicationApi.createApplication(positionId);
-                localStorage.setItem("currentPositionId", String(positionId));
-              } catch (err: unknown) {
-                const error = err as { response?: { data?: { message?: string } } };
-                alert(error?.response?.data?.message || "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง");
-                router.push("/intern-home");
-                return;
-              }
+            if (!positionId) {
+              alert("ไม่พบข้อมูลตำแหน่งที่สมัคร กรุณาลองใหม่อีกครั้ง");
+              router.push("/intern-home");
+              return;
             }
-            router.push("/intern-info");
+            try {
+              await applicationApi.createApplication(positionId);
+            } catch (err: unknown) {
+              const error = err as {
+                response?: { data?: { message?: string } };
+              };
+              alert(
+                error?.response?.data?.message ||
+                  "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง",
+              );
+              router.push("/intern-home");
+              return;
+            }
+            router.push(`/intern-info?positionId=${positionId}`);
           } else if (action === "viewDetail" && job) {
-            router.push("/intern-home/job-detail");
+            router.push(
+              `/intern-home/job-detail?jobId=${encodeURIComponent(job.id)}`,
+            );
           } else {
             router.push("/intern-home");
           }
