@@ -64,8 +64,8 @@ export default function OwnerNavbar() {
         if (profile) {
           setDisplayName(
             `${profile.fname || ""} ${profile.lname || ""}`.trim() ||
-              profile.username ||
-              "-",
+            profile.username ||
+            "-",
           );
           setDisplayEmail(profile.email || "-");
           setUserRoleId(profile.roleId);
@@ -75,8 +75,8 @@ export default function OwnerNavbar() {
         if (stored) {
           setDisplayName(
             `${stored.fname || ""} ${stored.lname || ""}`.trim() ||
-              stored.username ||
-              "-",
+            stored.username ||
+            "-",
           );
           setDisplayEmail(stored.email || "-");
           setUserRoleId(stored.roleId);
@@ -260,32 +260,29 @@ export default function OwnerNavbar() {
               <div className="hidden md:flex items-center gap-6">
                 <Link
                   href="/owner/announcements"
-                  className={`font-medium transition-colors ${
-                    pathname === "/owner/announcements" ||
-                    pathname?.startsWith("/owner/announcements/")
+                  className={`font-medium transition-colors ${pathname === "/owner/announcements" ||
+                      pathname?.startsWith("/owner/announcements/")
                       ? "text-primary-600 hover:text-primary-700"
                       : "text-gray-600 hover:text-primary-600"
-                  }`}
+                    }`}
                 >
                   ประกาศที่เปิดรับสมัคร
                 </Link>
                 <Link
                   href="/owner/dashboard"
-                  className={`font-medium transition-colors ${
-                    pathname === "/owner/dashboard"
+                  className={`font-medium transition-colors ${pathname === "/owner/dashboard"
                       ? "text-primary-600 hover:text-primary-700"
                       : "text-gray-600 hover:text-primary-600"
-                  }`}
+                    }`}
                 >
                   แดชบอร์ด
                 </Link>
                 <Link
                   href="/owner/faqs"
-                  className={`font-medium transition-colors ${
-                    pathname === "/owner/faqs"
+                  className={`font-medium transition-colors ${pathname === "/owner/faqs"
                       ? "text-primary-600 hover:text-primary-700"
                       : "text-gray-600 hover:text-primary-600"
-                  }`}
+                    }`}
                 >
                   FAQs
                 </Link>
@@ -395,9 +392,8 @@ export default function OwnerNavbar() {
                           <div
                             key={notif.id}
                             onClick={() => handleNotificationClick(notif)}
-                            className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${
-                              !notif.isRead ? "bg-primary-50/50" : ""
-                            }`}
+                            className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${!notif.isRead ? "bg-primary-50/50" : ""
+                              }`}
                           >
                             <button
                               onClick={(event) => {
@@ -480,6 +476,17 @@ export default function OwnerNavbar() {
                         {displayEmail || "-"}
                       </p>
                     </div>
+                    <a
+                      href="https://forms.gle/BvqQv8VwzYDDux2Z7"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 cursor-pointer border-t border-gray-100"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      </svg>
+                      แจ้งปัญหาการใช้งาน
+                    </a>
                     <button
                       onClick={async () => {
                         setShowProfile(false);
