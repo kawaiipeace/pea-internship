@@ -24,6 +24,68 @@ export class LeaveService {
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
   }
 
+  private groupLeaveRecords(records: any[]) {
+    if (records.length === 0) return [];
+
+    // 1. Sort by date ascending to detect consecutive days
+    const sorted = [...records].sort((a, b) =>
+      new Date(a.leaveDate).getTime() - new Date(b.leaveDate).getTime()
+    );
+
+    const grouped: any[] = [];
+    let currentGroup: any = null;
+
+    for (const record of sorted) {
+      if (!currentGroup) {
+        currentGroup = {
+          ...record,
+          ids: [record.id],
+          startDate: record.leaveDate,
+          endDate: record.leaveDate,
+        };
+        delete currentGroup.id;
+        delete currentGroup.leaveDate;
+        grouped.push(currentGroup);
+        continue;
+      }
+
+      const prevDate = new Date(currentGroup.endDate);
+      const currDate = new Date(record.leaveDate);
+
+      // Diff in days (rounded to handle potential floating point issues)
+      const diffDays = Math.round(
+        (currDate.getTime() - prevDate.getTime()) / (1000 * 3600 * 24)
+      );
+
+      if (
+        diffDays === 1 &&
+        record.leaveType === currentGroup.leaveType &&
+        record.status === currentGroup.status &&
+        record.reason === currentGroup.reason &&
+        record.attachmentUrl === currentGroup.attachmentUrl &&
+        record.userId === currentGroup.userId
+      ) {
+        currentGroup.endDate = record.leaveDate;
+        currentGroup.ids.push(record.id);
+      } else {
+        currentGroup = {
+          ...record,
+          ids: [record.id],
+          startDate: record.leaveDate,
+          endDate: record.leaveDate,
+        };
+        delete currentGroup.id;
+        delete currentGroup.leaveDate;
+        grouped.push(currentGroup);
+      }
+    }
+
+    // 2. Sort descending by startDate for presentation
+    return grouped.sort(
+      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+  }
+
   private getDatesInRange(startDate: string, endDate: string): string[] {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -115,55 +177,69 @@ export class LeaveService {
   }
 
   async approveLeaveRequest(approverUserId: string, leaveRequestId: number) {
+    return await this.bulkApproveLeaveRequests(approverUserId, [leaveRequestId]);
+  }
+
+  async bulkApproveLeaveRequests(approverUserId: string, ids: number[]) {
     await this.assertUserExists(approverUserId);
 
     return await db.transaction(async (tx) => {
-      const request = await tx.query.leaveRequests.findFirst({
-        where: eq(leaveRequests.id, leaveRequestId),
+      const requests = await tx.query.leaveRequests.findMany({
+        where: inArray(leaveRequests.id, ids),
       });
 
-      if (!request) throw new NotFoundError("ไม่พบคำขอลา");
-      if (request.status !== "PENDING") {
-        throw new ConflictError("คำขอลานี้ถูกดำเนินการไปแล้ว");
+      if (requests.length === 0) {
+        throw new NotFoundError("ไม่พบข้อมูลคำขอลาที่ต้องการอนุมัติ");
       }
 
-      const student = await tx.query.studentProfiles.findFirst({
-        where: eq(studentProfiles.userId, request.userId),
-      });
+      for (const request of requests) {
+        if (request.status !== "PENDING") continue;
 
-      if (!student) throw new NotFoundError("ไม่พบข้อมูลนักศึกษาของคำขอลานี้");
+        const student = await tx.query.studentProfiles.findFirst({
+          where: eq(studentProfiles.userId, request.userId),
+        });
 
-      const leaveDateStr = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Bangkok",
-      }).format(new Date(request.leaveDatetime!));
+        if (!student) continue;
 
-      await tx
-        .update(leaveRequests)
-        .set({
-          status: "APPROVED",
-          approvedBy: approverUserId,
-          approvedAt: new Date().toISOString(),
-        })
-        .where(eq(leaveRequests.id, leaveRequestId));
+        const leaveDateStr = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Bangkok",
+        }).format(new Date(request.leaveDatetime!));
 
-      const existingLog = await tx.query.attendanceLogs.findFirst({
-        where: and(
-          eq(attendanceLogs.studentProfileId, student.id),
-          eq(attendanceLogs.workDate, leaveDateStr)
-        ),
-      });
-
-      if (existingLog) {
         await tx
-          .update(attendanceLogs)
+          .update(leaveRequests)
           .set({
+            status: "APPROVED",
+            approvedBy: approverUserId,
+            approvedAt: new Date().toISOString(),
+          })
+          .where(eq(leaveRequests.id, request.id));
+
+        const existingLog = await tx.query.attendanceLogs.findFirst({
+          where: and(
+            eq(attendanceLogs.studentProfileId, student.id),
+            eq(attendanceLogs.workDate, leaveDateStr)
+          ),
+        });
+
+        if (existingLog) {
+          await tx
+            .update(attendanceLogs)
+            .set({
+              dailyStatus: "LEAVE",
+              approvedLeaveHours: "7.00",
+              isVerified: true,
+            })
+            .where(eq(attendanceLogs.id, existingLog.id));
+        } else {
+          await tx.insert(attendanceLogs).values({
+            studentProfileId: student.id,
+            workDate: leaveDateStr,
+            checkInTime: null,
+            checkOutTime: null,
             dailyStatus: "LEAVE",
             approvedLeaveHours: "7.00",
+            totalWorkHours: "0.00",
             isVerified: true,
-          })
-          .where(eq(attendanceLogs.id, existingLog.id));
-      } else {
-        await tx.insert(attendanceLogs).values({
           studentProfileId: student.id,
           workDate: leaveDateStr,
           dailyStatus: "LEAVE",
@@ -232,25 +308,15 @@ export class LeaveService {
 
     const finalCondition = and(...listFilters);
 
-    const [totalCountResult] = await db
-      .select({ count: count() })
-      .from(leaveRequests)
-      .where(finalCondition);
-
-    const totalFilteredRecords = Number(totalCountResult.count);
-    const totalPages = Math.ceil(totalFilteredRecords / limit);
-    const offset = (page - 1) * limit;
-
     const historyData = await db.query.leaveRequests.findMany({
       where: finalCondition,
       orderBy: [desc(leaveRequests.leaveDatetime)],
-      limit: limit,
-      offset: offset,
     });
 
-    const records = historyData.map((record) => {
+    const rawRecords = historyData.map((record) => {
       return {
         id: record.id,
+        userId: record.userId,
         leaveDate: record.leaveDatetime,
         leaveType: record.leaveRequestType,
         status: record.status,
@@ -258,6 +324,12 @@ export class LeaveService {
         attachmentUrl: record.file,
       };
     });
+
+    const groupedRecords = this.groupLeaveRecords(rawRecords);
+    const totalFilteredRecords = groupedRecords.length;
+    const totalPages = Math.ceil(totalFilteredRecords / limit);
+    const offset = (page - 1) * limit;
+    const pagedRecords = groupedRecords.slice(offset, offset + limit);
 
     return {
       period: { year: targetYear, month: targetMonth },
@@ -268,7 +340,7 @@ export class LeaveService {
         totalPages,
         totalRecords: totalFilteredRecords,
       },
-      records,
+      records: pagedRecords,
     };
   }
 
@@ -317,17 +389,6 @@ export class LeaveService {
       leaveConditions.push(eq(leaveRequests.status, status));
     }
 
-    const finalCondition = and(...leaveConditions);
-
-    const [totalCountResult] = await db
-      .select({ count: count() })
-      .from(leaveRequests)
-      .where(finalCondition);
-
-    const totalFilteredRecords = Number(totalCountResult.count);
-    const totalPages = Math.ceil(totalFilteredRecords / limit);
-    const offset = (page - 1) * limit;
-
     const historyData = await db
       .select({
         id: leaveRequests.id,
@@ -336,6 +397,7 @@ export class LeaveService {
         status: leaveRequests.status,
         reason: leaveRequests.reason,
         file: leaveRequests.file,
+        userId: leaveRequests.userId,
         fname: users.fname,
         lname: users.lname,
         image: studentProfiles.image,
@@ -348,13 +410,12 @@ export class LeaveService {
         eq(studentProfiles.userId, leaveRequests.userId)
       )
       .where(finalCondition)
-      .orderBy(desc(leaveRequests.leaveDatetime))
-      .limit(limit)
-      .offset(offset);
+      .orderBy(desc(leaveRequests.leaveDatetime));
 
-    const records = historyData.map((record) => {
+    const rawRecords = historyData.map((record) => {
       return {
         id: record.id,
+        userId: record.userId,
         leaveDate: record.leaveDatetime,
         leaveType: record.leaveRequestType,
         status: record.status,
@@ -368,8 +429,14 @@ export class LeaveService {
       };
     });
 
+    const groupedRecords = this.groupLeaveRecords(rawRecords);
+    const totalFilteredRecords = groupedRecords.length;
+    const totalPages = Math.ceil(totalFilteredRecords / limit);
+    const offset = (page - 1) * limit;
+    const pagedRecords = groupedRecords.slice(offset, offset + limit);
+
     return {
-      data: records,
+      data: pagedRecords,
       meta: {
         page,
         limit,
@@ -414,42 +481,51 @@ export class LeaveService {
   }
 
   async deleteLeaveRequest(userId: string, id: number) {
+    return await this.bulkDeleteLeaveRequests(userId, [id]);
+  }
+
+  async bulkDeleteLeaveRequests(userId: string, ids: number[]) {
     await this.assertUserExists(userId);
-    const request = await db.query.leaveRequests.findFirst({
-      where: eq(leaveRequests.id, id),
+
+    const requests = await db.query.leaveRequests.findMany({
+      where: and(
+        inArray(leaveRequests.id, ids),
+        eq(leaveRequests.userId, userId)
+      ),
     });
 
-    if (!request) {
-      throw new NotFoundError(`ไม่พบข้อมูลใบลาที่ต้องการลบ (ID: ${id})`);
+    if (requests.length === 0) {
+      throw new NotFoundError(`ไม่พบข้อมูลใบลาที่ต้องการยกเลิก`);
     }
-    if (request.userId !== userId) {
-      throw new ForbiddenError("คุณไม่มีสิทธิ์ลบรายการลาของผู้อื่น");
-    }
-    if (request.status !== "PENDING") {
+
+    const unprocessible = requests.filter((r) => r.status !== "PENDING");
+    if (unprocessible.length > 0) {
       throw new ConflictError(
-        "ไม่สามารถลบได้ เนื่องจากใบลาถูกดำเนินการไปแล้ว (APPROVED/REJECTED)"
+        "ไม่สามารถยกเลิกได้ เนื่องจากบางรายการถูกดำเนินการไปแล้ว (APPROVED/REJECTED)"
       );
     }
 
     return await db.transaction(async (tx) => {
-      if (request.file) {
-        try {
-          const s3Key = request.file.startsWith("/")
-            ? request.file.slice(1)
-            : request.file;
+      for (const request of requests) {
+        if (request.file) {
+          try {
+            const s3Key = request.file.startsWith("/")
+              ? request.file.slice(1)
+              : request.file;
 
-          await s3Client.send(
-            new DeleteObjectCommand({
-              Bucket: BUCKET_NAME,
-              Key: s3Key,
-            })
-          );
-        } catch (error) {
-          console.error("ลบไฟล์ใน S3 ล้มเหลว:", error);
+            await s3Client.send(
+              new DeleteObjectCommand({
+                Bucket: BUCKET_NAME,
+                Key: s3Key,
+              })
+            );
+          } catch (error) {
+            console.error("ลบไฟล์ใน S3 ล้มเหลว:", error);
+          }
         }
       }
 
-      await tx.delete(leaveRequests).where(eq(leaveRequests.id, id));
+      await tx.delete(leaveRequests).where(inArray(leaveRequests.id, ids));
 
       return { success: true, message: "ยกเลิกคำขอลาเรียบร้อยแล้ว" };
     });

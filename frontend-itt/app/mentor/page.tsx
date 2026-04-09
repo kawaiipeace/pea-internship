@@ -7,7 +7,7 @@ import ImageWithAuth from '@/components/ImageWithAuth';
 
 // ---- Types ----
 interface LeaveRequest {
-    id: number;
+    ids: number[];
     studentName: string;
     type: string;
     typeBg: string;
@@ -483,7 +483,7 @@ const ApprovalRequestPage = () => {
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [selectedId, setSelectedId] = useState<number[] | null>(null);
     const [rejectModal, setRejectModal] = useState<{ open: boolean; title: string }>({ open: false, title: '' });
     const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
     const [approveSuccessOpen, setApproveSuccessOpen] = useState(false);
@@ -544,17 +544,29 @@ const ApprovalRequestPage = () => {
                             typeCircleBg = 'bg-[#FF1A7D]';
                         }
 
-                        const leaveDateObj = new Date(item.leaveDate);
-                        const thaileaveDateStr = leaveDateObj.toLocaleDateString('th-TH', { 
-                            year: 'numeric', month: 'long', day: 'numeric' 
-                        });
+                        const startObj = new Date(item.startDate);
+                        const endObj = new Date(item.endDate);
+                        
+                        const getThaiDate = (date: Date) => {
+                            return date.toLocaleDateString('th-TH', { 
+                                year: 'numeric', month: 'long', day: 'numeric' 
+                            });
+                        };
 
-                        const hasFile = !!item.attachmentUrl;
-                        const fileName = hasFile ? item.attachmentUrl.split('/').pop() : 'ไม่มีไฟล์แนบ';
-                        const fileIcon = hasFile && item.attachmentUrl.toLowerCase().endsWith('.pdf') ? 'picture_as_pdf' : 'image';
+                        const getDay = (date: Date) => {
+                            return new Intl.DateTimeFormat('en-CA', {
+                                timeZone: 'Asia/Bangkok',
+                                day: '2-digit'
+                            }).format(date);
+                        };
+
+                        const leaveDateDisplay = item.startDate === item.endDate
+                            ? getThaiDate(startObj)
+                            : `${getDay(startObj)} - ${getThaiDate(endObj)}`;
 
                         return {
-                            id: item.id,
+                            ids: item.ids,
+                            id: item.ids[0], // fallback
                             studentName: item.studentName || 'นักศึกษา (ไม่ระบุชื่อ)',
                             type: typeText,
                             typeBg,
@@ -562,8 +574,8 @@ const ApprovalRequestPage = () => {
                             typeBorder,
                             typeIcon,
                             typeCircleBg,
-                            submittedDate: thaileaveDateStr, 
-                            leaveDate: thaileaveDateStr,
+                            submittedDate: getThaiDate(startObj), 
+                            leaveDate: leaveDateDisplay,
                             reason: item.reason || '-',
                             profileImg: item.profileImg || '/assets/images/profile-1.jpeg',
                             userId: item.userId,
@@ -591,9 +603,9 @@ const ApprovalRequestPage = () => {
         }
     }, [page, activeTab]);
 
-    const openRejectModal = (tabType: 'leave' | 'time-edit', id: number) => {
+    const openRejectModal = (tabType: 'leave' | 'time-edit', ids: number[]) => {
         const title = tabType === 'leave' ? 'ไม่อนุมัติการลา' : 'ไม่อนุมัติการแก้ไขเวลา';
-        setSelectedId(id);
+        setSelectedId(ids);
         setRejectModal({ open: true, title });
     };
 
@@ -606,8 +618,12 @@ const ApprovalRequestPage = () => {
         if (!selectedId) return;
         setSubmitting(true);
         try {
-            await axiosInstance.post(`/leave/${selectedId}/reject`, { reason });
+            console.log('Rejected with reason:', reason);
+            // TODO: Call API once the reject endpoint is implemented in the backend
+            // await axiosInstance.post(`/leave/${selectedId}/reject`, { reason });
             
+            // Mocking API delay
+            await new Promise(resolve => setTimeout(resolve, 800));
             setRejectModal({ open: false, title: '' });
             setRejectSuccessOpen(true);
             setTimeout(() => {
@@ -624,8 +640,8 @@ const ApprovalRequestPage = () => {
         }
     };
 
-    const openApproveConfirm = (id: number) => {
-        setSelectedId(id);
+    const openApproveConfirm = (ids: number[]) => {
+        setSelectedId(ids);
         setApproveConfirmOpen(true);
     };
 
@@ -633,7 +649,11 @@ const ApprovalRequestPage = () => {
         if (!selectedId) return;
         setSubmitting(true);
         try {
-            await axiosInstance.post(`/leave/${selectedId}/approve`);
+            if (activeTab === 'leave') {
+                await axiosInstance.post(`/leave/bulk-approve`, { ids: selectedId });
+            } else {
+                // await axiosInstance.post(`/time-edit/${selectedId}/approve`);
+            }
             setApproveConfirmOpen(false);
             setApproveSuccessOpen(true);
             setTimeout(() => {
@@ -720,12 +740,12 @@ const ApprovalRequestPage = () => {
                     ) : records.length === 0 ? (
                         <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอลาในขณะนี้</p>
                     ) : records.map((r) => (
-                        <LeaveCard key={r.id} request={r as LeaveRequest} onReject={() => openRejectModal('leave', r.id)} onApprove={() => openApproveConfirm(r.id)} />
+                        <LeaveCard key={r.id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
                     ))
                     : records.length === 0 ? (
                         <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอแก้ไขเวลาในขณะนี้</p>
                     ) : records.map((r) => (
-                        <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', r.id)} onApprove={() => openApproveConfirm(r.id)} />
+                        <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', [(r as any).id])} onApprove={() => openApproveConfirm([(r as any).id])} />
                     ))
                 }
             </div>

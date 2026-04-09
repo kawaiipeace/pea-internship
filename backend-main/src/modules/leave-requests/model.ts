@@ -58,3 +58,16 @@ export const RejectLeaveBody = t.Object({
 export type GetMentorLeaveRequestsQueryType =
   typeof GetMentorLeaveRequestsQuery.static;
 export type RejectLeaveBodyType = typeof RejectLeaveBody.static;
+
+export const BulkDeleteBody = t.Object({
+  ids: t.Array(t.Numeric(), { description: "รายการ ID ที่ต้องการยกเลิก" }),
+});
+
+export const BulkApproveBody = t.Object({
+  ids: t.Array(t.Numeric(), { description: "รายการ ID ที่ต้องการอนุมัติ" }),
+});
+
+export const BulkRejectBody = t.Object({
+  ids: t.Array(t.Numeric(), { description: "รายการ ID ที่ต้องการไม่卧ุมัติ" }),
+  reason: t.String({ description: "เหตุผลที่ไม่อนุมัติ" }),
+});
