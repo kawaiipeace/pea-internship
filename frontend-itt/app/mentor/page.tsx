@@ -1,44 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import axiosInstance from '@/api/axios';
+
+// ---- Types ----
+interface LeaveRequest {
+    id: number;
+    studentName: string;
+    type: string;
+    typeBg: string;
+    typeText: string;
+    typeBorder: string;
+    typeIcon: string;
+    typeCircleBg: string;
+    submittedDate: string;
+    leaveDate: string;
+    reason: string;
+    profileImg: string;
+    fileName: string;
+    fileIcon: string;
+    hasFile: boolean;
+    attachmentUrl?: string;
+}
 
 // ---- Data ----
-
-const leaveRequests = [
-    {
-        id: 1,
-        studentName: 'สมหมาย สายเสมอ (นาย)',
-        type: 'ลากิจ',
-        typeBg: 'bg-[#EEEFFF]',
-        typeText: 'text-[#61646C]',
-        typeBorder: 'border-[#1A3CFF]',
-        typeIcon: 'business_center',
-        typeCircleBg: 'bg-[#1A3CFF]',
-        submittedDate: '11 มกราคม 2569',
-        leaveDate: '12 มกราคม 2569',
-        reason: 'เข้าร่วมกิจกรรมมหาวิทยาลัย ขาดไม่ได้',
-        profileImg: '/assets/images/profile-1.jpeg',
-        fileName: 'หลักฐาน.png',
-        fileIcon: 'image',
-    },
-    {
-        id: 2,
-        studentName: 'สมหมาย สายเสมอ (นาย)',
-        type: 'ลาป่วย',
-        typeBg: 'bg-[#FFEFF3]',
-        typeText: 'text-pink-500',
-        typeBorder: 'border-[#FF1A7D]',
-        typeIcon: 'health_cross',
-        typeCircleBg: 'bg-[#FF1A7D]',
-        submittedDate: '9 มกราคม 2569',
-        leaveDate: '10 มกราคม 2569',
-        reason: 'ท้องเสียเนื่องจากอาหารเป็นพิษ',
-        profileImg: '/assets/images/profile-2.jpeg',
-        fileName: 'หลักฐาน.pdf',
-        fileIcon: 'picture_as_pdf',
-    },
-];
 
 const timeEditRequests = [
     {
@@ -334,7 +320,7 @@ const StudentHeader = ({ profileImg, studentName, type, typeBg, typeText, typeIc
 
 // ---- Leave Request Card ----
 
-const LeaveCard = ({ request, onReject, onApprove }: { request: typeof leaveRequests[0]; onReject: () => void; onApprove: () => void }) => (
+const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; onReject: () => void; onApprove: () => void }) => (
     <div className="bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-white-dark/10 rounded-2xl p-5 shadow-sm">
         <StudentHeader {...request} />
 
@@ -352,18 +338,28 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: typeof leaveRequ
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
             <span className="text-gray-400">ไฟล์แนบ :</span>
-            <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                {request.fileIcon === 'image' ? (
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                ) : (
-                    <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                )}
-                <span className="text-xs font-medium text-gray-600 dark:text-white-light">{request.fileName}</span>
-            </div>
+            {request.hasFile ? (
+                <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+                    {request.fileIcon === 'image' ? (
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    ) : (
+                        <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                    )}
+                    {request.attachmentUrl ? (
+                        <a href={request.attachmentUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-gray-600 dark:text-white-light hover:underline hover:text-blue-500">
+                            {request.fileName}
+                        </a>
+                    ) : (
+                        <span className="text-xs font-medium text-gray-600 dark:text-white-light">{request.fileName}</span>
+                    )}
+                </div>
+            ) : (
+                <span className="text-xs text-gray-400">- ไม่ได้แนบไฟล์ -</span>
+            )}
         </div>
 
         <ActionButtons onReject={onReject} onApprove={onApprove} />
@@ -432,9 +428,85 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: typeof timeEd
 
 const ApprovalRequestPage = () => {
     const [activeTab, setActiveTab] = useState<'leave' | 'time-edit'>('leave');
+    const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [loading, setLoading] = useState(true);
     const [rejectModal, setRejectModal] = useState<{ open: boolean; title: string }>({ open: false, title: '' });
     const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
     const [approveSuccessOpen, setApproveSuccessOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchLeaveRequests = async () => {
+            try {
+                setLoading(true);
+                // Connect API using the GET method based on leave-requests model
+                const response = await axiosInstance.get('/leave/history', {
+                    params: {
+                        page: 1,
+                        limit: 100, // fetch multiple items assuming page/limit logic
+                    }
+                });
+
+                if (response.data && response.data.records) {
+                    const mappedData = response.data.records
+                        .filter((item: any) => item.status === 'PENDING') // Only show pending requests
+                        .map((item: any) => {
+                            const isSick = item.leaveType === 'SICK';
+                            
+                            let typeText = 'ลากิจ';
+                            let typeBg = 'bg-[#EEEFFF]';
+                            let typeTextColor = 'text-[#61646C]';
+                            let typeBorder = 'border-[#1A3CFF]';
+                            let typeIcon = 'business_center';
+                            let typeCircleBg = 'bg-[#1A3CFF]';
+                            
+                            if (isSick) {
+                                typeText = 'ลาป่วย';
+                                typeBg = 'bg-[#FFEFF3]';
+                                typeTextColor = 'text-pink-500';
+                                typeBorder = 'border-[#FF1A7D]';
+                                typeIcon = 'health_cross';
+                                typeCircleBg = 'bg-[#FF1A7D]';
+                            }
+
+                            const leaveDateObj = new Date(item.leaveDate);
+                            const thaileaveDateStr = leaveDateObj.toLocaleDateString('th-TH', { 
+                                year: 'numeric', month: 'long', day: 'numeric' 
+                            });
+
+                            const hasFile = !!item.attachmentUrl;
+                            const fileName = hasFile ? item.attachmentUrl.split('/').pop() : 'ไม่มีไฟล์แนบ';
+                            const fileIcon = hasFile && item.attachmentUrl.toLowerCase().endsWith('.pdf') ? 'picture_as_pdf' : 'image';
+
+                            return {
+                                id: item.id,
+                                studentName: item.studentName || 'นักศึกษา (ไม่ระบุชื่อ)',
+                                type: typeText,
+                                typeBg,
+                                typeText: typeTextColor,
+                                typeBorder,
+                                typeIcon,
+                                typeCircleBg,
+                                submittedDate: thaileaveDateStr, 
+                                leaveDate: thaileaveDateStr,
+                                reason: item.reason || '-',
+                                profileImg: item.profileImg || '/assets/images/profile-1.jpeg',
+                                fileName,
+                                fileIcon,
+                                hasFile,
+                                attachmentUrl: item.attachmentUrl
+                            };
+                        });
+                    setLeaveRequests(mappedData);
+                }
+            } catch (error) {
+                console.error('Error fetching leave requests API:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLeaveRequests();
+    }, []);
 
     const openRejectModal = (tabType: 'leave' | 'time-edit') => {
         const title = tabType === 'leave' ? 'ไม่อนุมัติการลา' : 'ไม่อนุมัติการแก้ไขเวลา';
@@ -524,7 +596,11 @@ const ApprovalRequestPage = () => {
             {/* Request List */}
             <div className="space-y-4">
                 {activeTab === 'leave'
-                    ? leaveRequests.map((r) => (
+                    ? loading ? (
+                        <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
+                    ) : leaveRequests.length === 0 ? (
+                        <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอลาในขณะนี้</p>
+                    ) : leaveRequests.map((r) => (
                         <LeaveCard key={r.id} request={r} onReject={() => openRejectModal('leave')} onApprove={openApproveConfirm} />
                     ))
                     : timeEditRequests.map((r) => (
