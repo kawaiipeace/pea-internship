@@ -254,7 +254,10 @@ function ApplicationStatusContent() {
           }
 
           // If CANCEL or REJECTED, mark as rejected and store the reason
-          if (app.applicationStatus === "CANCEL" || app.applicationStatus === "REJECTED") {
+          if (
+            app.applicationStatus === "CANCEL" ||
+            app.applicationStatus === "REJECTED"
+          ) {
             setIsRejected(true);
             if (app.statusNote) {
               setRejectionReason(app.statusNote);
@@ -334,7 +337,7 @@ function ApplicationStatusContent() {
     "รอการดำเนินการ" | "รอการตรวจสอบ" | "เอกสารผ่าน" | "เอกสารไม่ผ่าน"
   >(getInitialDocumentStatus());
 
-  // Wrapper to persist document status (no longer uses localStorage)
+  // Wrapper to update document status in component state.
   const setDocumentStatus = (
     status: "รอการดำเนินการ" | "รอการตรวจสอบ" | "เอกสารผ่าน" | "เอกสารไม่ผ่าน",
   ) => {

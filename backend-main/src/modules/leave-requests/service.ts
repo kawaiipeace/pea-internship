@@ -5,12 +5,10 @@ import { NotFoundError } from "elysia";
 import { ConflictError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
+  applicationStatuses,
   attendanceLogs,
   leaveRequests,
   studentProfiles,
-  staffProfiles,
-  internshipPositionMentors,
-  applicationStatuses,
   users,
 } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
@@ -251,7 +249,6 @@ export class LeaveService {
     });
 
     const records = historyData.map((record) => {
-      const isSick = record.leaveRequestType === "SICK";
       return {
         id: record.id,
         leaveDate: record.leaveDatetime,
@@ -275,86 +272,52 @@ export class LeaveService {
     };
   }
 
-  async getMentorLeaveRequests(mentorUserId: string, query: model.GetLeaveHistoryQueryType) {
-    await this.assertUserExists(mentorUserId);
+  async getMentorLeaveRequests(
+    mentorUserId: string,
+    query: model.GetMentorLeaveRequestsQueryType
+  ) {
+    const { page = 1, limit = 10, status, viewType } = query;
 
-    const mentorProfile = await db.query.staffProfiles.findFirst({
-        where: eq(staffProfiles.userId, mentorUserId)
+    const mentor = await db.query.users.findFirst({
+      where: eq(users.id, mentorUserId),
+      with: { staffProfiles: true },
     });
-    
-    if (!mentorProfile) throw new ForbiddenError("คุณไม่ใช่เจ้าหน้าที่ดูแลนักศึกษา (Mentor)");
 
-    const positions = await db.query.internshipPositionMentors.findMany({
-        where: eq(internshipPositionMentors.mentorStaffId, mentorProfile.id)
-    });
-    const positionIds = positions.map((p) => p.positionId);
+    if (!mentor || !mentor.staffProfiles) {
+      throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
+    }
 
-    if (positionIds.length === 0) {
-        return {
-            period: { year: query.year || new Date().getFullYear(), month: query.month || new Date().getMonth() + 1 },
-            summary: { total: 0, absence: 0, sick: 0 },
-            pagination: { page: query.page || 1, limit: query.limit || 10, totalPages: 0, totalRecords: 0 },
-            records: []
-        };
+    const appConditions = [eq(applicationStatuses.isActive, true)];
+
+    if (viewType === "ALL") {
+    } else {
+      if (mentor.departmentId) {
+        appConditions.push(
+          eq(applicationStatuses.departmentId, mentor.departmentId)
+        );
+      }
     }
 
     const applications = await db.query.applicationStatuses.findMany({
-        where: and(
-            inArray(applicationStatuses.positionId, positionIds),
-            eq(applicationStatuses.applicationStatus, "ACTIVE")
-        )
+      where: and(...appConditions),
     });
+
     const studentUserIds = applications.map((a) => a.userId);
 
     if (studentUserIds.length === 0) {
-        return {
-            period: { year: query.year || new Date().getFullYear(), month: query.month || new Date().getMonth() + 1 },
-            summary: { total: 0, absence: 0, sick: 0 },
-            pagination: { page: query.page || 1, limit: query.limit || 10, totalPages: 0, totalRecords: 0 },
-            records: []
-        };
+      return {
+        data: [],
+        meta: { page, limit, totalPages: 0, totalRecords: 0 },
+      };
     }
 
-    const { page = 1, limit = 10, type } = query;
-    const now = new Date();
-    const targetYear = query.year || now.getFullYear();
-    const targetMonth = query.month || now.getMonth() + 1;
+    const leaveConditions = [inArray(leaveRequests.userId, studentUserIds)];
 
-    const startOfMonth = new Date(targetYear, targetMonth - 1, 1).toISOString();
-    const endOfMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59).toISOString();
-
-    const baseCondition = and(
-      inArray(leaveRequests.userId, studentUserIds),
-      gte(leaveRequests.leaveDatetime, startOfMonth),
-      lte(leaveRequests.leaveDatetime, endOfMonth)
-    );
-
-    const allRecordsForSummary = await db.query.leaveRequests.findMany({
-      where: baseCondition,
-      columns: { leaveRequestType: true, status: true },
-    });
-
-    let totalAbsence = 0;
-    let totalSick = 0;
-
-    allRecordsForSummary.forEach((log) => {
-      if (log.leaveRequestType === "ABSENCE") totalAbsence++;
-      else if (log.leaveRequestType === "SICK") totalSick++;
-    });
-
-    const summary = {
-      total: totalAbsence + totalSick,
-      absence: totalAbsence,
-      sick: totalSick,
-    };
-
-    const listFilters = [baseCondition];
-
-    if (type) {
-      listFilters.push(eq(leaveRequests.leaveRequestType, type));
+    if (status) {
+      leaveConditions.push(eq(leaveRequests.status, status));
     }
 
-    const finalCondition = and(...listFilters);
+    const finalCondition = and(...leaveConditions);
 
     const [totalCountResult] = await db
       .select({ count: count() })
@@ -375,18 +338,20 @@ export class LeaveService {
         file: leaveRequests.file,
         fname: users.fname,
         lname: users.lname,
-        image: studentProfiles.image
+        image: studentProfiles.image,
       })
       .from(leaveRequests)
       .innerJoin(users, eq(users.id, leaveRequests.userId))
-      .innerJoin(studentProfiles, eq(studentProfiles.userId, leaveRequests.userId))
+      .innerJoin(
+        studentProfiles,
+        eq(studentProfiles.userId, leaveRequests.userId)
+      )
       .where(finalCondition)
       .orderBy(desc(leaveRequests.leaveDatetime))
       .limit(limit)
       .offset(offset);
 
     const records = historyData.map((record) => {
-      const isSick = record.leaveRequestType === "SICK";
       return {
         id: record.id,
         leaveDate: record.leaveDatetime,
@@ -394,22 +359,56 @@ export class LeaveService {
         status: record.status,
         reason: record.reason,
         attachmentUrl: record.file,
-        studentName: `${record.fname || ""} ${record.lname || ""}`.trim() || "นักศึกษา (ไม่ระบุชื่อ)",
-        profileImg: record.image || "/images/default-profile.png"
+        studentName:
+          `${record.fname || ""} ${record.lname || ""}`.trim() ||
+          "นักศึกษา (ไม่ระบุชื่อ)",
+        profileImg: record.image || null,
       };
     });
 
     return {
-      period: { year: targetYear, month: targetMonth },
-      summary,
-      pagination: {
+      data: records,
+      meta: {
         page,
         limit,
         totalPages,
         totalRecords: totalFilteredRecords,
       },
-      records,
     };
+  }
+
+  async rejectLeaveRequest(
+    approverUserId: string,
+    leaveRequestId: number,
+    reason: string
+  ) {
+    await this.assertUserExists(approverUserId);
+
+    return await db.transaction(async (tx) => {
+      const request = await tx.query.leaveRequests.findFirst({
+        where: eq(leaveRequests.id, leaveRequestId),
+      });
+
+      if (!request) throw new NotFoundError("ไม่พบคำขอลา");
+      if (request.status !== "PENDING") {
+        throw new ConflictError("คำขอลานี้ถูกดำเนินการไปแล้ว");
+      }
+
+      await tx
+        .update(leaveRequests)
+        .set({
+          status: "REJECTED",
+          approvedBy: approverUserId,
+          approverNote: reason,
+          approvedAt: new Date().toISOString(),
+        })
+        .where(eq(leaveRequests.id, leaveRequestId));
+
+      return {
+        success: true,
+        message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว",
+      };
+    });
   }
 
   async deleteLeaveRequest(userId: string, id: number) {

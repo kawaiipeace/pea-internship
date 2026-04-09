@@ -46,10 +46,10 @@ export const GetOffsiteTasksQuerySchema = t.Object({
       description: "ลำดับการจัดเรียง: asc (เก่าไปใหม่), desc (ใหม่ไปเก่า)",
     })
   ),
-  viewMode: t.Optional(
-    t.Union([t.Literal("mine"), t.Literal("all")], {
-      default: "all",
-      description: "เลือกดูเฉพาะ 'ของฉัน' (mine) หรือ 'ทั้งหมดในแผนก' (all)",
+  targetMentorId: t.Optional(
+    t.String({
+      description:
+        "ระบุ User ID ของพี่เลี้ยงในแผนกเดียวกันที่ต้องการดู (ถ้าไม่ระบุ ระบบจะดึงเฉพาะข้อมูลของคุณเอง)",
     })
   ),
   month: t.Optional(

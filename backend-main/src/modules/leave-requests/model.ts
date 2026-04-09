@@ -31,3 +31,30 @@ export const GetLeaveHistoryQuery = t.Object({
 });
 
 export type GetLeaveHistoryQueryType = typeof GetLeaveHistoryQuery.static;
+
+export const GetMentorLeaveRequestsQuery = t.Object({
+  page: t.Optional(t.Numeric({ default: 1 })),
+  limit: t.Optional(t.Numeric({ default: 10 })),
+  status: t.Optional(
+    t.Union(
+      [t.Literal("PENDING"), t.Literal("APPROVED"), t.Literal("REJECTED")],
+      {
+        description: "กรองตามสถานะ (เช่น ส่ง PENDING เพื่อดูเฉพาะคนที่รออนุมัติ)",
+      }
+    )
+  ),
+  viewType: t.Optional(
+    t.Union([t.Literal("MINE"), t.Literal("ALL")], {
+      default: "MINE",
+      description: "ดูเฉพาะเด็กในแผนก (MINE) หรือ ทั้งหมด (ALL)",
+    })
+  ),
+});
+
+export const RejectLeaveBody = t.Object({
+  reason: t.String({ description: "เหตุผลที่ไม่อนุมัติ" }),
+});
+
+export type GetMentorLeaveRequestsQueryType =
+  typeof GetMentorLeaveRequestsQuery.static;
+export type RejectLeaveBodyType = typeof RejectLeaveBody.static;

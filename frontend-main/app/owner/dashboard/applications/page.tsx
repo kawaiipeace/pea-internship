@@ -15,12 +15,11 @@ import Link from "next/link";
 import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import {
-  Application,
-  FilterTab,
-  getDetailedStatusLabel,
+  type Application,
+  type FilterTab,
   type ApplicationStatus,
   type DetailedStatus,
-} from "../../../data/mockApplications";
+} from "../utils/applicationMapper";
 import {
   applicationApi,
   applicationStatusActionsApi,
@@ -896,15 +895,24 @@ function ApplicationsContent() {
     if (selectedTrainingStartDate || selectedTrainingEndDate) {
       const filterStart = parseLocalDateOnly(selectedTrainingStartDate);
       const filterEnd = parseLocalDateOnly(selectedTrainingEndDate);
+      const effectiveFilterStart = filterStart || filterEnd;
+      const effectiveFilterEnd = filterEnd || filterStart;
 
       filtered = filtered.filter((app) => {
         const appStart = parseLocalDateOnly(app.startDate);
         const appEnd = parseLocalDateOnly(app.endDate);
         if (!appStart || !appEnd) return false;
 
-        if (filterStart && appEnd.getTime() < filterStart.getTime())
+        if (
+          effectiveFilterStart &&
+          appEnd.getTime() < effectiveFilterStart.getTime()
+        )
           return false;
-        if (filterEnd && appStart.getTime() > filterEnd.getTime()) return false;
+        if (
+          effectiveFilterEnd &&
+          appStart.getTime() > effectiveFilterEnd.getTime()
+        )
+          return false;
         return true;
       });
     }
@@ -1408,7 +1416,7 @@ function ApplicationsContent() {
     return `${d.getDate()} ${thaiShortMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
   };
 
-  // Helper: get effective detailed status for accepted apps (with localStorage overrides)
+  // Helper: get effective detailed status for accepted apps.
   const getAcceptedEffectiveDetailed = (app: Application) => {
     if (docApprovedApps.includes(app.id)) return "doc_passed";
     if (docRejectedApps.includes(app.id)) return "doc_rejected";
@@ -4774,7 +4782,7 @@ function ApplicationsContent() {
                       </h4>
                     </div>
 
-                    {/* Show uploaded file if already uploaded in localStorage OR if mock data has doc_sent/doc_rejected/doc_passed status */}
+                    {/* Show uploaded file when API state indicates doc_sent/doc_rejected/doc_passed status. */}
                     {(docUploadedApps.includes(selectedApplication.id) &&
                       uploadedFilenames[selectedApplication.id]) ||
                     selectedApplication.detailedStatus === "doc_sent" ||

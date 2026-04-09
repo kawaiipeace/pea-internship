@@ -671,15 +671,24 @@ function CancelledApplicationsContent() {
     if (selectedTrainingStartDate || selectedTrainingEndDate) {
       const filterStart = parseLocalDateOnly(selectedTrainingStartDate);
       const filterEnd = parseLocalDateOnly(selectedTrainingEndDate);
+      const effectiveFilterStart = filterStart || filterEnd;
+      const effectiveFilterEnd = filterEnd || filterStart;
 
       filtered = filtered.filter((app) => {
         const appStart = parseLocalDateOnly(app.startDate);
         const appEnd = parseLocalDateOnly(app.endDate);
         if (!appStart || !appEnd) return false;
 
-        if (filterStart && appEnd.getTime() < filterStart.getTime())
+        if (
+          effectiveFilterStart &&
+          appEnd.getTime() < effectiveFilterStart.getTime()
+        )
           return false;
-        if (filterEnd && appStart.getTime() > filterEnd.getTime()) return false;
+        if (
+          effectiveFilterEnd &&
+          appStart.getTime() > effectiveFilterEnd.getTime()
+        )
+          return false;
         return true;
       });
     }

@@ -1,5 +1,9 @@
-import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { BadRequestError, NotFoundError } from "@/common/exceptions";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from "@/common/exceptions";
 import { db } from "@/db";
 import { offsiteTaskStudents, offsiteTasks, users } from "@/db/schema";
 import type * as offsiteModel from "./model";
@@ -163,16 +167,23 @@ export class OffsiteTaskService {
 
     const conditions = [];
 
-    if (query.viewMode === "mine") {
-      conditions.push(eq(offsiteTasks.assignedBy, mentorId));
-    } else {
-      const usersInDept = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.departmentId, currentUser.departmentId));
-      const validMentorIds = usersInDept.map((u) => u.id);
+    if (query.targetMentorId) {
+      const targetMentor = await db.query.users.findFirst({
+        where: eq(users.id, query.targetMentorId),
+        columns: { departmentId: true },
+      });
 
-      conditions.push(inArray(offsiteTasks.assignedBy, validMentorIds));
+      if (!targetMentor) {
+        throw new BadRequestError("ไม่พบข้อมูลพี่เลี้ยงที่ระบุ");
+      }
+
+      if (targetMentor.departmentId !== currentUser.departmentId) {
+        throw new ForbiddenError("คุณไม่มีสิทธิ์ดูข้อมูลการมอบหมายงานของบุคลากรนอกแผนก");
+      }
+
+      conditions.push(eq(offsiteTasks.assignedBy, query.targetMentorId));
+    } else {
+      conditions.push(eq(offsiteTasks.assignedBy, mentorId));
     }
 
     if (query.year && query.month) {

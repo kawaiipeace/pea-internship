@@ -12,7 +12,6 @@ import {
   not,
   or,
   type SQL,
-  sql,
 } from "drizzle-orm";
 import {
   ConflictError,
@@ -98,20 +97,14 @@ export class CheckTimeService {
         where: eq(studentProfiles.userId, userId),
       });
 
-      if (!student) {
-        throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
-      }
+      if (!student) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
 
       const activeApp = await tx.query.applicationStatuses.findFirst({
         where: and(
           eq(applicationStatuses.userId, userId),
           eq(applicationStatuses.isActive, true)
         ),
-        with: {
-          department: {
-            with: { office: true },
-          },
-        },
+        with: { department: { with: { office: true } } },
       });
 
       if (!activeApp || !activeApp.department?.office) {
@@ -131,17 +124,15 @@ export class CheckTimeService {
       const officeLon = activeApp.department.office.longitude;
 
       let isOnsite = false;
-      let distance: number | null = null;
       let finalLocationText = "ไม่สามารถระบุพิกัดได้";
 
       if (data.latitude && data.longitude) {
-        distance = this.getDistanceInMeters(
+        const distance = this.getDistanceInMeters(
           data.latitude,
           data.longitude,
           officeLat,
           officeLon
         );
-
         if (distance <= 300) {
           isOnsite = true;
           finalLocationText = `ในสถานที่ (ห่าง ${Math.round(distance)} เมตร)`;
@@ -163,12 +154,10 @@ export class CheckTimeService {
 
           if (assignedTask.length === 0) {
             throw new ConflictError(
-              "ไม่อนุญาตให้เช็คอินนอกสถานที่ เนื่องจากคุณไม่มีกำหนดการปฏิบัติงานนอกสถานที่ในวันนี้ (ต้องอยู่ในรัศมี 300 เมตรจากสำนักงาน)"
+              "ไม่อนุญาตให้เช็คอินนอกสถานที่ เนื่องจากไม่มีกำหนดการ (ต้องอยู่ในรัศมี 300 เมตร)"
             );
           }
-
-          const locationName = assignedTask[0].offsite_tasks.locationName;
-          finalLocationText = `นอกสถานที่: ${locationName} (ห่างสำนักงาน ${Math.round(distance)} เมตร)`;
+          finalLocationText = `นอกสถานที่: ${assignedTask[0].offsite_tasks.locationName} (ห่างสำนักงาน ${Math.round(distance)} เมตร)`;
         }
       }
 
@@ -181,21 +170,6 @@ export class CheckTimeService {
 
       if (existingLog?.checkInId) {
         throw new ConflictError("คุณได้บันทึกเวลาเข้างานของวันนี้ไปแล้ว");
-      }
-
-      const ipUsedByOther = await tx.query.checkTimes.findFirst({
-        where: and(
-          eq(checkTimes.ip, ip),
-          eq(checkTimes.typeCheck, "IN"),
-          sql`DATE(${checkTimes.time} AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok') = ${todayStr}`,
-          not(eq(checkTimes.userId, userId))
-        ),
-      });
-
-      if (ipUsedByOther) {
-        throw new ConflictError(
-          "ระบบตรวจพบการใช้งานอุปกรณ์ซ้ำ (ไม่อนุญาตให้เช็คอินแทนกันหรือใช้เครือข่ายร่วมกัน)"
-        );
       }
 
       const bkkTimeStr = now.toLocaleString("en-US", {
@@ -216,12 +190,10 @@ export class CheckTimeService {
       const lateCutoffTime = new Date(bkkTimeStr);
       lateCutoffTime.setHours(8, 45, 0, 0);
 
-      let isLate = false;
       let lateMinutes = 0;
       let status: "PRESENT" | "LATE" = "PRESENT";
 
       if (currentBkkTime > lateCutoffTime) {
-        isLate = true;
         status = "LATE";
         const diffMs = currentBkkTime.getTime() - workStartTime.getTime();
         lateMinutes = Math.floor(diffMs / 60000);
@@ -248,6 +220,7 @@ export class CheckTimeService {
           .set({
             checkInId: newCheckIn.id,
             lateMinutes: (existingLog.lateMinutes || 0) + lateMinutes,
+            dailyStatus: status,
           })
           .where(eq(attendanceLogs.id, existingLog.id));
       } else {
@@ -262,7 +235,10 @@ export class CheckTimeService {
 
       return {
         success: true,
-        message: isLate ? `คุณมาสาย ${lateMinutes} นาที` : "บันทึกเวลาเข้างานสำเร็จ",
+        message:
+          status === "LATE"
+            ? `คุณมาสาย ${lateMinutes} นาที`
+            : "บันทึกเวลาเข้างานสำเร็จ",
         checkInTime: now.toISOString(),
         status: status,
         location: finalLocationText,
@@ -277,9 +253,7 @@ export class CheckTimeService {
         where: eq(studentProfiles.userId, userId),
       });
 
-      if (!student) {
-        throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
-      }
+      if (!student) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
 
       const now = new Date();
       const bkkFormatter = new Intl.DateTimeFormat("en-CA", {
@@ -312,14 +286,11 @@ export class CheckTimeService {
           eq(applicationStatuses.userId, userId),
           eq(applicationStatuses.isActive, true)
         ),
-        with: {
-          department: { with: { office: true } },
-        },
+        with: { department: { with: { office: true } } },
       });
 
-      if (!activeApp || !activeApp.department?.office) {
-        throw new NotFoundError("ไม่พบข้อมูลสำนักงานที่คุณกำลังฝึกงานอยู่");
-      }
+      if (!activeApp || !activeApp.department?.office)
+        throw new NotFoundError("ไม่พบข้อมูลสำนักงาน");
 
       const officeLat = activeApp.department.office.latitude;
       const officeLon = activeApp.department.office.longitude;
@@ -334,7 +305,6 @@ export class CheckTimeService {
           officeLat,
           officeLon
         );
-
         if (distance <= 300) {
           isOnsite = true;
           finalLocationText = `ในสถานที่ (ห่าง ${Math.round(distance)} เมตร)`;
@@ -356,12 +326,10 @@ export class CheckTimeService {
 
           if (assignedTask.length === 0) {
             throw new ConflictError(
-              "ไม่อนุญาตให้เช็คเอาท์นอกสถานที่ (ต้องอยู่ในรัศมี 300 เมตรจากสำนักงาน)"
+              "ไม่อนุญาตให้เช็คเอาท์นอกสถานที่ (ต้องอยู่ในรัศมี 300 เมตร)"
             );
           }
-
-          const locationName = assignedTask[0].offsite_tasks.locationName;
-          finalLocationText = `นอกสถานที่: ${locationName} (ห่างสำนักงาน ${Math.round(distance)} เมตร)`;
+          finalLocationText = `นอกสถานที่: ${assignedTask[0].offsite_tasks.locationName} (ห่างสำนักงาน ${Math.round(distance)} เมตร)`;
         }
       }
 
@@ -370,12 +338,12 @@ export class CheckTimeService {
       });
 
       let actualHoursWorked = "0.00";
+
       if (checkInRecord?.time) {
         const inTimeStr = new Date(checkInRecord.time).toLocaleString("en-US", {
           timeZone: "Asia/Bangkok",
         });
         const inTime = new Date(inTimeStr);
-
         const outTimeStr = now.toLocaleString("en-US", {
           timeZone: "Asia/Bangkok",
         });
@@ -395,28 +363,20 @@ export class CheckTimeService {
         let calcIn = inTime;
         let calcOut = outTime;
 
-        if (calcIn <= gracePeriod) {
-          calcIn = shiftStart;
-        }
-
-        if (calcOut > shiftEnd) {
-          calcOut = shiftEnd;
-        }
+        if (calcIn <= gracePeriod) calcIn = shiftStart;
+        if (calcOut > shiftEnd) calcOut = shiftEnd;
 
         let totalMs = 0;
-
         if (calcIn < lunchStart) {
           const morningEnd = calcOut < lunchStart ? calcOut : lunchStart;
           totalMs += morningEnd.getTime() - calcIn.getTime();
         }
-
         if (calcOut > lunchEnd) {
           const afternoonStart = calcIn > lunchEnd ? calcIn : lunchEnd;
           totalMs += calcOut.getTime() - afternoonStart.getTime();
         }
 
         let hours = totalMs / (1000 * 60 * 60);
-
         if (hours < 0) hours = 0;
         if (hours > 7) hours = 7;
 
@@ -452,6 +412,7 @@ export class CheckTimeService {
         message: "บันทึกเวลาออกงานสำเร็จ",
         checkOutTime: now.toISOString(),
         hoursWorked: actualHoursWorked,
+        status: existingLog.dailyStatus, // ส่งสถานะกลับให้ Frontend เอาไปโชว์ (PRESENT/LATE)
         location: finalLocationText,
         isOnsite: isOnsite,
       };

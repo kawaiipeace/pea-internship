@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import { AnnouncementStats } from "@/types/announcement";
-import { positionApi, Position, userApi, applicationApi, UserFullProfileResponse } from "@/services/api";
+import {
+  positionApi,
+  Position,
+  userApi,
+  applicationApi,
+  UserFullProfileResponse,
+} from "@/services/api";
 
 // Helper function to format date in Thai
 const formatDateThai = (dateString: string): string => {
@@ -30,6 +36,24 @@ const formatDateThai = (dateString: string): string => {
   const month = thaiMonths[date.getMonth()];
   const year = date.getFullYear() + 543; // Convert to Buddhist year
   return `${day} ${month} ${year}`;
+};
+
+const getApplicantUniqueKey = (app: {
+  studentUserId?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  fname?: string | null;
+  lname?: string | null;
+  applicationId?: number | null;
+}): string => {
+  if (app.studentUserId) return `uid:${app.studentUserId}`;
+  if (app.email) return `email:${app.email.toLowerCase()}`;
+  if (app.phoneNumber) return `phone:${app.phoneNumber}`;
+
+  const fullName = `${app.fname || ""}|${app.lname || ""}`.toLowerCase();
+  if (fullName !== "|") return `name:${fullName}`;
+
+  return `app:${app.applicationId || "unknown"}`;
 };
 
 export default function AnnouncementsPage() {
@@ -56,10 +80,13 @@ export default function AnnouncementsPage() {
   const [previewPosition, setPreviewPosition] = useState<Position | null>(null);
 
   // Per-position applicant counts: { positionId: { total, accepted } }
-  const [applicantCounts, setApplicantCounts] = useState<Record<number, { total: number; accepted: number }>>({});
+  const [applicantCounts, setApplicantCounts] = useState<
+    Record<number, { total: number; accepted: number }>
+  >({});
 
   // Current user profile for announcer display
-  const [ownerProfile, setOwnerProfile] = useState<UserFullProfileResponse | null>(null);
+  const [ownerProfile, setOwnerProfile] =
+    useState<UserFullProfileResponse | null>(null);
 
   const itemsPerPage = 10;
 
@@ -86,27 +113,61 @@ export default function AnnouncementsPage() {
         setAnnouncements(positions);
 
         // Fetch all applications to compute per-position counts
-        const acceptedStatuses = new Set(["PENDING_CONFIRMATION", "PENDING_REQUEST", "PENDING_REVIEW", "COMPLETE"]);
+        const acceptedStatuses = new Set([
+          "PENDING_CONFIRMATION",
+          "PENDING_REQUEST",
+          "PENDING_REVIEW",
+          "COMPLETE",
+        ]);
         try {
-          const appResponse = await applicationApi.getAllStudentsHistory({ limit: 1000, includeCanceled: false });
+          const appResponse = await applicationApi.getAllStudentsHistory({
+            limit: 1000,
+            includeCanceled: false,
+          });
           // กรองเฉพาะใบสมัครที่อยู่ใน position ของ department นี้
           const deptPositionIds = new Set(positions.map((p) => p.id));
           const apps = (appResponse.data || []).filter(
-            (app) => app.positionId && deptPositionIds.has(app.positionId)
+            (app) => app.positionId && deptPositionIds.has(app.positionId),
           );
-          const counts: Record<number, { total: number; accepted: number }> = {};
+          const uniqueByPosition: Record<
+            number,
+            { totalApplicants: Set<string>; acceptedApplicants: Set<string> }
+          > = {};
+          const uniqueApplicantsAll = new Set<string>();
+
           for (const app of apps) {
             if (!app.positionId) continue;
-            if (!counts[app.positionId]) counts[app.positionId] = { total: 0, accepted: 0 };
-            counts[app.positionId].total += 1;
+            const applicantKey = getApplicantUniqueKey(app);
+            uniqueApplicantsAll.add(applicantKey);
+
+            if (!uniqueByPosition[app.positionId]) {
+              uniqueByPosition[app.positionId] = {
+                totalApplicants: new Set<string>(),
+                acceptedApplicants: new Set<string>(),
+              };
+            }
+
+            uniqueByPosition[app.positionId].totalApplicants.add(applicantKey);
             if (acceptedStatuses.has(app.applicationStatus)) {
-              counts[app.positionId].accepted += 1;
+              uniqueByPosition[app.positionId].acceptedApplicants.add(
+                applicantKey,
+              );
             }
           }
+
+          const counts: Record<number, { total: number; accepted: number }> =
+            {};
+          Object.entries(uniqueByPosition).forEach(([positionId, values]) => {
+            counts[Number(positionId)] = {
+              total: values.totalApplicants.size,
+              accepted: values.acceptedApplicants.size,
+            };
+          });
+
           setApplicantCounts(counts);
 
-          // Calculate total applicants from real data
-          const totalApplicantsReal = Object.values(counts).reduce((sum, c) => sum + c.total, 0);
+          // Calculate total applicants by unique person in this department
+          const totalApplicantsReal = uniqueApplicantsAll.size;
 
           // Calculate stats from positions
           // นับตำแหน่งที่ยังเปิดรับสมัครและยังไม่เต็ม โดยนับแต่ละตำแหน่งเป็น 1
@@ -192,7 +253,10 @@ export default function AnnouncementsPage() {
       const remainingCounts = { ...applicantCounts };
       delete remainingCounts[deletedId];
       setApplicantCounts(remainingCounts);
-      const totalApplicantsReal = Object.values(remainingCounts).reduce((sum, c) => sum + c.total, 0);
+      const totalApplicantsReal = Object.values(remainingCounts).reduce(
+        (sum, c) => sum + c.total,
+        0,
+      );
       setStats({
         totalAnnouncements: updatedAnnouncements.length,
         totalOpenPositions: totalPositions,
@@ -228,13 +292,19 @@ export default function AnnouncementsPage() {
   // Compute date-based status for a position
   type AnnouncementStatus = "OPEN" | "CLOSE" | "EXPIRED" | "NOT_YET";
 
-  const getAnnouncementStatus = (announcement: Position): AnnouncementStatus => {
+  const getAnnouncementStatus = (
+    announcement: Position,
+  ): AnnouncementStatus => {
     // Manual close always takes priority
     if (announcement.recruitmentStatus === "CLOSE") return "CLOSE";
 
     const now = new Date();
-    const recruitStart = announcement.recruitStart ? new Date(announcement.recruitStart) : null;
-    const recruitEnd = announcement.recruitEnd ? new Date(announcement.recruitEnd) : null;
+    const recruitStart = announcement.recruitStart
+      ? new Date(announcement.recruitStart)
+      : null;
+    const recruitEnd = announcement.recruitEnd
+      ? new Date(announcement.recruitEnd)
+      : null;
 
     // No time limit (both null) → always open if OPEN
     if (!recruitStart && !recruitEnd) return "OPEN";
@@ -255,15 +325,30 @@ export default function AnnouncementsPage() {
 
   const getStatusBadge = (announcement: Position) => {
     const status = getAnnouncementStatus(announcement);
-    const config: Record<AnnouncementStatus, { style: string; label: string }> = {
-      OPEN: { style: "bg-green-50 text-green-700 border border-green-500", label: "เปิดรับสมัคร" },
-      CLOSE: { style: "bg-red-50 text-red-600 border border-red-500", label: "ปิดรับสมัคร" },
-      EXPIRED: { style: "bg-gray-50 text-gray-600 border border-gray-400", label: "ประกาศหมดอายุ" },
-      NOT_YET: { style: "bg-yellow-50 text-yellow-700 border border-yellow-500", label: "ยังไม่ถึงกำหนด" },
-    };
+    const config: Record<AnnouncementStatus, { style: string; label: string }> =
+      {
+        OPEN: {
+          style: "bg-green-50 text-green-700 border border-green-500",
+          label: "เปิดรับสมัคร",
+        },
+        CLOSE: {
+          style: "bg-red-50 text-red-600 border border-red-500",
+          label: "ปิดรับสมัคร",
+        },
+        EXPIRED: {
+          style: "bg-gray-50 text-gray-600 border border-gray-400",
+          label: "ประกาศหมดอายุ",
+        },
+        NOT_YET: {
+          style: "bg-yellow-50 text-yellow-700 border border-yellow-500",
+          label: "ยังไม่ถึงกำหนด",
+        },
+      };
     const { style, label } = config[status];
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-normal whitespace-nowrap ${style}`}>
+      <span
+        className={`px-3 py-1 rounded-full text-sm font-normal whitespace-nowrap ${style}`}
+      >
         {label}
       </span>
     );
@@ -284,10 +369,11 @@ export default function AnnouncementsPage() {
         <button
           key={i}
           onClick={() => setCurrentPage(i)}
-          className={`w-8 h-8 flex items-center justify-center rounded text-sm ${currentPage === i
-            ? "bg-primary-600 text-white"
-            : "text-gray-600 hover:bg-gray-100"
-            }`}
+          className={`w-8 h-8 flex items-center justify-center rounded text-sm ${
+            currentPage === i
+              ? "bg-primary-600 text-white"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
         >
           {i}
         </button>,
@@ -343,7 +429,10 @@ export default function AnnouncementsPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <OwnerNavbar />
-        <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 5rem)" }}>
+        <div
+          className="flex items-center justify-center"
+          style={{ minHeight: "calc(100vh - 5rem)" }}
+        >
           <VideoLoading message="กำลังโหลดข้อมูลประกาศ..." />
         </div>
       </div>
@@ -514,13 +603,17 @@ export default function AnnouncementsPage() {
                     ตำแหน่ง
                   </th>
                   <th className="px-4 py-4 text-center font-semibold text-black whitespace-nowrap">
-                    จำนวนผู้สมัคร<br />ที่เปิดรับ
+                    จำนวนผู้สมัคร
+                    <br />
+                    ที่เปิดรับ
                   </th>
                   <th className="px-4 py-4 text-center font-semibold text-black whitespace-nowrap">
                     จำนวนผู้สมัคร
                   </th>
                   <th className="px-4 py-4 text-center font-semibold text-black whitespace-nowrap">
-                    ระยะเวลาที่<br />เปิดรับสมัคร
+                    ระยะเวลาที่
+                    <br />
+                    เปิดรับสมัคร
                   </th>
                   <th className="px-4 py-4 text-center font-semibold text-black whitespace-nowrap">
                     สาขาวิชา
@@ -536,27 +629,27 @@ export default function AnnouncementsPage() {
               <tbody className="divide-y divide-gray-100">
                 {isLoading ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-12 text-center"
-                    >
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <VideoLoading message="กำลังโหลดประกาศ..." />
                     </td>
                   </tr>
                 ) : paginatedAnnouncements.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-12 text-center"
-                    >
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <img
                           src="/images/department_em.png"
                           alt="ยังไม่มีประกาศรับสมัครฝึกงาน"
                           className="w-40 h-40 object-contain opacity-80"
                         />
-                        <p className="text-gray-700 font-semibold text-base mt-2">ยังไม่มีประกาศรับสมัครฝึกงาน</p>
-                        <p className="text-gray-400 text-sm">คุณยังไม่ได้สร้างประกาศรับสมัครฝึกงาน<br />กดปุ่ม &lsquo;+สร้างประกาศใหม่&rsquo; เพื่อเริ่มต้น</p>
+                        <p className="text-gray-700 font-semibold text-base mt-2">
+                          ยังไม่มีประกาศรับสมัครฝึกงาน
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          คุณยังไม่ได้สร้างประกาศรับสมัครฝึกงาน
+                          <br />
+                          กดปุ่ม &lsquo;+สร้างประกาศใหม่&rsquo; เพื่อเริ่มต้น
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -565,13 +658,21 @@ export default function AnnouncementsPage() {
                     // Parse major field to array
                     const majorFields = announcement.major
                       ? announcement.major
-                        .split(",")
-                        .map((m) => m.trim())
-                        .filter((m) => m)
+                          .split(",")
+                          .map((m) => m.trim())
+                          .filter((m) => m)
                       : [];
 
                     return (
-                      <tr key={announcement.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/owner/dashboard/applications?positionId=${announcement.id}`)}>
+                      <tr
+                        key={announcement.id}
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() =>
+                          router.push(
+                            `/owner/dashboard/applications?positionId=${announcement.id}`,
+                          )
+                        }
+                      >
                         <td className="px-4 py-4">
                           <p className="text-sm text-gray-800 font-medium">
                             {announcement.name}
@@ -579,7 +680,9 @@ export default function AnnouncementsPage() {
                         </td>
                         <td className="px-4 py-4 text-center">
                           <span className="px-3 py-1 rounded-full text-sm bg-primary-50 border border-primary-600 text-gray-800 whitespace-nowrap">
-                            {announcement.positionCount ? `${announcement.acceptedCount ?? 0}/${announcement.positionCount} คน` : "ไม่จำกัดจำนวน"}
+                            {announcement.positionCount
+                              ? `${announcement.acceptedCount ?? 0}/${announcement.positionCount} คน`
+                              : "ไม่จำกัดจำนวน"}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center">
@@ -589,8 +692,12 @@ export default function AnnouncementsPage() {
                         </td>
                         <td className="px-4 py-4 text-center">
                           <p className="text-sm text-gray-600 whitespace-nowrap">
-                            {announcement.recruitStart && announcement.recruitEnd ? (
-                              <>{formatDateThai(announcement.recruitStart)} - {formatDateThai(announcement.recruitEnd)}</>
+                            {announcement.recruitStart &&
+                            announcement.recruitEnd ? (
+                              <>
+                                {formatDateThai(announcement.recruitStart)} -{" "}
+                                {formatDateThai(announcement.recruitEnd)}
+                              </>
                             ) : (
                               <>ไม่กำหนดระยะเวลา</>
                             )}
@@ -628,9 +735,24 @@ export default function AnnouncementsPage() {
                               className="w-9 h-9 flex items-center justify-center rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-600 hover:text-white transition-colors cursor-pointer"
                               title="ดูรายละเอียด"
                             >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
                               </svg>
                             </button>
                             {/* แก้ไข */}
@@ -640,8 +762,18 @@ export default function AnnouncementsPage() {
                               className="w-9 h-9 flex items-center justify-center rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-600 hover:text-white transition-colors"
                               title="แก้ไข"
                             >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
                               </svg>
                             </Link>
                             {/* ลบ */}
@@ -654,8 +786,18 @@ export default function AnnouncementsPage() {
                               className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
                               title="ลบ"
                             >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
                               </svg>
                             </button>
                           </div>
@@ -737,8 +879,17 @@ export default function AnnouncementsPage() {
           <div className="bg-white rounded-2xl p-8 w-full max-w-lg">
             <div className="flex items-start gap-5">
               <div className="shrink-0 mt-1">
-                <svg width="30" height="30" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2.38444 18.375C2.22402 18.375 2.07819 18.3349 1.94694 18.2547C1.81569 18.1745 1.7136 18.0688 1.64069 17.9375C1.56777 17.8062 1.52766 17.6641 1.52037 17.5109C1.51308 17.3578 1.55319 17.2083 1.64069 17.0625L9.73444 3.0625C9.82194 2.91667 9.93496 2.80729 10.0735 2.73438C10.212 2.66146 10.3542 2.625 10.5001 2.625C10.6459 2.625 10.7881 2.66146 10.9266 2.73438C11.0652 2.80729 11.1782 2.91667 11.2657 3.0625L19.3594 17.0625C19.4469 17.2083 19.487 17.3578 19.4797 17.5109C19.4725 17.6641 19.4324 17.8062 19.3594 17.9375C19.2865 18.0688 19.1844 18.1745 19.0532 18.2547C18.9219 18.3349 18.7761 18.375 18.6157 18.375H2.38444ZM3.89381 16.625H17.1063L10.5001 5.25L3.89381 16.625ZM11.1235 15.4984C11.2912 15.3307 11.3751 15.1229 11.3751 14.875C11.3751 14.6271 11.2912 14.4193 11.1235 14.2516C10.9558 14.0839 10.748 14 10.5001 14C10.2521 14 10.0443 14.0839 9.87662 14.2516C9.70891 14.4193 9.62506 14.6271 9.62506 14.875C9.62506 15.1229 9.70891 15.3307 9.87662 15.4984C10.0443 15.6661 10.2521 15.75 10.5001 15.75C10.748 15.75 10.9558 15.6661 11.1235 15.4984ZM11.1235 12.8734C11.2912 12.7057 11.3751 12.4979 11.3751 12.25V9.625C11.3751 9.37708 11.2912 9.16927 11.1235 9.00156C10.9558 8.83385 10.748 8.75 10.5001 8.75C10.2521 8.75 10.0443 8.83385 9.87662 9.00156C9.70891 9.16927 9.62506 9.37708 9.62506 9.625V12.25C9.62506 12.4979 9.70891 12.7057 9.87662 12.8734C10.0443 13.0411 10.2521 13.125 10.5001 13.125C10.748 13.125 10.9558 13.0411 11.1235 12.8734Z" fill="#F04438" />
+                <svg
+                  width="30"
+                  height="30"
+                  viewBox="0 0 21 21"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M2.38444 18.375C2.22402 18.375 2.07819 18.3349 1.94694 18.2547C1.81569 18.1745 1.7136 18.0688 1.64069 17.9375C1.56777 17.8062 1.52766 17.6641 1.52037 17.5109C1.51308 17.3578 1.55319 17.2083 1.64069 17.0625L9.73444 3.0625C9.82194 2.91667 9.93496 2.80729 10.0735 2.73438C10.212 2.66146 10.3542 2.625 10.5001 2.625C10.6459 2.625 10.7881 2.66146 10.9266 2.73438C11.0652 2.80729 11.1782 2.91667 11.2657 3.0625L19.3594 17.0625C19.4469 17.2083 19.487 17.3578 19.4797 17.5109C19.4725 17.6641 19.4324 17.8062 19.3594 17.9375C19.2865 18.0688 19.1844 18.1745 19.0532 18.2547C18.9219 18.3349 18.7761 18.375 18.6157 18.375H2.38444ZM3.89381 16.625H17.1063L10.5001 5.25L3.89381 16.625ZM11.1235 15.4984C11.2912 15.3307 11.3751 15.1229 11.3751 14.875C11.3751 14.6271 11.2912 14.4193 11.1235 14.2516C10.9558 14.0839 10.748 14 10.5001 14C10.2521 14 10.0443 14.0839 9.87662 14.2516C9.70891 14.4193 9.62506 14.6271 9.62506 14.875C9.62506 15.1229 9.70891 15.3307 9.87662 15.4984C10.0443 15.6661 10.2521 15.75 10.5001 15.75C10.748 15.75 10.9558 15.6661 11.1235 15.4984ZM11.1235 12.8734C11.2912 12.7057 11.3751 12.4979 11.3751 12.25V9.625C11.3751 9.37708 11.2912 9.16927 11.1235 9.00156C10.9558 8.83385 10.748 8.75 10.5001 8.75C10.2521 8.75 10.0443 8.83385 9.87662 9.00156C9.70891 9.16927 9.62506 9.37708 9.62506 9.625V12.25C9.62506 12.4979 9.70891 12.7057 9.87662 12.8734C10.0443 13.0411 10.2521 13.125 10.5001 13.125C10.748 13.125 10.9558 13.0411 11.1235 12.8734Z"
+                    fill="#F04438"
+                  />
                 </svg>
               </div>
               <div className="flex-1">
@@ -764,15 +915,31 @@ export default function AnnouncementsPage() {
 
       {/* Preview Detail Modal */}
       {previewPosition && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPreviewPosition(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col relative" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setPreviewPosition(null)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close button */}
             <button
               onClick={() => setPreviewPosition(null)}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors z-10 cursor-pointer"
             >
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
 
@@ -780,50 +947,97 @@ export default function AnnouncementsPage() {
             <div className="overflow-y-auto p-6 lg:p-8 space-y-6">
               {/* Header */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">รายละเอียดประกาศรับสมัคร</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                  รายละเอียดประกาศรับสมัคร
+                </h2>
                 <hr className="border-gray-200" />
               </div>
 
               {/* Title + Status Badge */}
               <div className="flex items-start justify-between gap-4">
-                <h3 className="text-xl font-bold text-gray-800">{previewPosition.name}</h3>
+                <h3 className="text-xl font-bold text-gray-800">
+                  {previewPosition.name}
+                </h3>
                 {getStatusBadge(previewPosition)}
               </div>
 
               {/* Info Grid - Row 1 */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg
+                    className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
                   </svg>
                   <div>
-                    <p className="text-xs text-gray-500">จำนวนผู้สมัครที่เปิดรับ</p>
+                    <p className="text-xs text-gray-500">
+                      จำนวนผู้สมัครที่เปิดรับ
+                    </p>
                     <p className="text-sm font-medium text-gray-800">
                       {(() => {
                         const accepted = previewPosition.acceptedCount ?? 0;
                         const total = previewPosition.positionCount || 0;
-                        return total === 0 ? "ไม่จำกัดจำนวน" : `${accepted}/${total} ตำแหน่ง`;
+                        return total === 0
+                          ? "ไม่จำกัดจำนวน"
+                          : `${accepted}/${total} ตำแหน่ง`;
                       })()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <svg
+                    className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
                   </svg>
                   <div>
                     <p className="text-xs text-gray-500">หน่วยงาน</p>
-                    <p className="text-sm font-medium text-gray-800">{previewPosition.department?.deptFull || "-"}</p>
+                    <p className="text-sm font-medium text-gray-800">
+                      {previewPosition.department?.deptFull || "-"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg
+                    className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
                   </svg>
                   <div>
                     <p className="text-xs text-gray-500">สถานที่ปฏิบัติงาน</p>
-                    <p className="text-sm font-medium text-gray-800">{previewPosition.location || "-"}</p>
+                    <p className="text-sm font-medium text-gray-800">
+                      {previewPosition.location || "-"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -831,25 +1045,50 @@ export default function AnnouncementsPage() {
               {/* Info Grid - Row 2 */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
                   <div>
-                    <p className="text-xs text-gray-500">ระยะเวลาที่เปิดรับสมัคร</p>
+                    <p className="text-xs text-gray-500">
+                      ระยะเวลาที่เปิดรับสมัคร
+                    </p>
                     <p className="text-sm font-medium text-gray-800">
-                      {previewPosition.recruitStart && previewPosition.recruitEnd
+                      {previewPosition.recruitStart &&
+                      previewPosition.recruitEnd
                         ? `${formatDateThai(previewPosition.recruitStart)} - ${formatDateThai(previewPosition.recruitEnd)}`
                         : "ไม่กำหนดระยะเวลา"}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <svg
+                    className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
                   </svg>
                   <div>
                     <p className="text-xs text-gray-500">จำนวนผู้สมัคร</p>
-                    <p className="text-sm font-medium text-gray-800">{applicantCounts[previewPosition.id]?.total || 0} คน</p>
+                    <p className="text-sm font-medium text-gray-800">
+                      {applicantCounts[previewPosition.id]?.total || 0} คน
+                    </p>
                   </div>
                 </div>
               </div>
@@ -858,10 +1097,15 @@ export default function AnnouncementsPage() {
 
               {/* สาขาวิชาที่เกี่ยวข้อง */}
               <div>
-                <h4 className="text-base font-bold text-gray-800 mb-3">สาขาวิชาที่เกี่ยวข้อง</h4>
+                <h4 className="text-base font-bold text-gray-800 mb-3">
+                  สาขาวิชาที่เกี่ยวข้อง
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {previewPosition.major?.split(",").map((field, idx) => (
-                    <span key={idx} className="px-3 py-1 bg-primary-50 text-primary-700 border border-primary-300 rounded-full text-sm">
+                    <span
+                      key={idx}
+                      className="px-3 py-1 bg-primary-50 text-primary-700 border border-primary-300 rounded-full text-sm"
+                    >
                       {field.trim()}
                     </span>
                   ))}
@@ -872,17 +1116,26 @@ export default function AnnouncementsPage() {
 
               {/* เอกสารที่ต้องการเพิ่ม */}
               <div>
-                <h4 className="text-base font-bold text-gray-800 mb-3">เอกสารที่ต้องการเพิ่ม</h4>
+                <h4 className="text-base font-bold text-gray-800 mb-3">
+                  เอกสารที่ต้องการเพิ่ม
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {previewPosition.portfolioRq && (
-                    <span className="px-4 py-1 border border-gray-300 rounded-full text-sm text-gray-700">Portfolio</span>
+                    <span className="px-4 py-1 border border-gray-300 rounded-full text-sm text-gray-700">
+                      Portfolio
+                    </span>
                   )}
                   {previewPosition.resumeRq && (
-                    <span className="px-4 py-1 border border-gray-300 rounded-full text-sm text-gray-700">Resume</span>
+                    <span className="px-4 py-1 border border-gray-300 rounded-full text-sm text-gray-700">
+                      Resume
+                    </span>
                   )}
-                  {!previewPosition.portfolioRq && !previewPosition.resumeRq && (
-                    <span className="text-sm text-gray-500">ไม่มีเอกสารที่ต้องการ</span>
-                  )}
+                  {!previewPosition.portfolioRq &&
+                    !previewPosition.resumeRq && (
+                      <span className="text-sm text-gray-500">
+                        ไม่มีเอกสารที่ต้องการ
+                      </span>
+                    )}
                 </div>
               </div>
 
@@ -890,21 +1143,36 @@ export default function AnnouncementsPage() {
 
               {/* รายละเอียดงาน */}
               <div>
-                <h4 className="text-base font-bold text-gray-800 mb-4">รายละเอียดงาน</h4>
+                <h4 className="text-base font-bold text-gray-800 mb-4">
+                  รายละเอียดงาน
+                </h4>
 
                 {/* ลักษณะงาน */}
                 {previewPosition.jobDetails && (
                   <div className="mb-4">
                     <p className="text-sm text-gray-500 mb-2">ลักษณะงาน</p>
                     <ul className="space-y-2">
-                      {previewPosition.jobDetails.split("\n").filter(Boolean).map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-sm text-gray-700">{item}</span>
-                        </li>
-                      ))}
+                      {previewPosition.jobDetails
+                        .split("\n")
+                        .filter(Boolean)
+                        .map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <svg
+                              className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span className="text-sm text-gray-700">
+                              {item}
+                            </span>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 )}
@@ -914,14 +1182,27 @@ export default function AnnouncementsPage() {
                   <div className="mb-4">
                     <p className="text-sm text-gray-500 mb-2">คุณสมบัติ</p>
                     <ul className="space-y-2">
-                      {previewPosition.requirement.split("\n").filter(Boolean).map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-sm text-gray-700">{item}</span>
-                        </li>
-                      ))}
+                      {previewPosition.requirement
+                        .split("\n")
+                        .filter(Boolean)
+                        .map((item, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <svg
+                              className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span className="text-sm text-gray-700">
+                              {item}
+                            </span>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 )}
@@ -931,12 +1212,26 @@ export default function AnnouncementsPage() {
 
               {/* สวัสดิการ */}
               <div>
-                <h4 className="text-base font-bold text-gray-800 mb-3">สวัสดิการ</h4>
+                <h4 className="text-base font-bold text-gray-800 mb-3">
+                  สวัสดิการ
+                </h4>
                 <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
-                  <span className="text-sm text-gray-700">{previewPosition.benefits || "ไม่มีค่าตอบแทน"}</span>
+                  <span className="text-sm text-gray-700">
+                    {previewPosition.benefits || "ไม่มีค่าตอบแทน"}
+                  </span>
                 </div>
               </div>
 
@@ -946,31 +1241,78 @@ export default function AnnouncementsPage() {
               {(() => {
                 // ใช้ข้อมูล current user (ownerProfile) เป็นผู้ประกาศ เพราะ owners[] อาจเรียงลำดับไม่ถูกต้อง
                 const ownerData = ownerProfile
-                  ? { fname: ownerProfile.fname, lname: ownerProfile.lname, email: ownerProfile.email, phoneNumber: ownerProfile.phoneNumber }
-                  : previewPosition.owner || (previewPosition.owners && previewPosition.owners.length > 0 ? previewPosition.owners[0] : null);
+                  ? {
+                      fname: ownerProfile.fname,
+                      lname: ownerProfile.lname,
+                      email: ownerProfile.email,
+                      phoneNumber: ownerProfile.phoneNumber,
+                    }
+                  : previewPosition.owner ||
+                    (previewPosition.owners && previewPosition.owners.length > 0
+                      ? previewPosition.owners[0]
+                      : null);
                 if (!ownerData) return null;
                 return (
                   <>
                     <div>
-                      <h4 className="text-base font-bold text-gray-800 mb-3">รายละเอียดผู้ประกาศรับสมัคร</h4>
+                      <h4 className="text-base font-bold text-gray-800 mb-3">
+                        รายละเอียดผู้ประกาศรับสมัคร
+                      </h4>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-primary-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          <svg
+                            className="w-5 h-5 text-primary-600 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
                           </svg>
-                          <span className="text-sm text-gray-700">{`${ownerData.fname || ""} ${ownerData.lname || ""}`.trim() || "-"}</span>
+                          <span className="text-sm text-gray-700">
+                            {`${ownerData.fname || ""} ${ownerData.lname || ""}`.trim() ||
+                              "-"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-primary-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          <svg
+                            className="w-5 h-5 text-primary-600 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
                           </svg>
-                          <span className="text-sm text-gray-700">{ownerData.email || "-"}</span>
+                          <span className="text-sm text-gray-700">
+                            {ownerData.email || "-"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-primary-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          <svg
+                            className="w-5 h-5 text-primary-600 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                            />
                           </svg>
-                          <span className="text-sm text-gray-700">{ownerData.phoneNumber || "-"}</span>
+                          <span className="text-sm text-gray-700">
+                            {ownerData.phoneNumber || "-"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -980,38 +1322,77 @@ export default function AnnouncementsPage() {
               })()}
 
               {/* รายละเอียดพี่เลี้ยง */}
-              {previewPosition.mentors && previewPosition.mentors.length > 0 && (
-                <div className="space-y-6">
-                  {previewPosition.mentors.map((mentor, idx) => (
-                    <div key={idx}>
-                      <h4 className="text-base font-bold text-gray-800 mb-3">
-                        รายละเอียดพี่เลี้ยง {idx + 1}
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-primary-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          <span className="text-sm text-gray-700">{mentor.name}</span>
+              {previewPosition.mentors &&
+                previewPosition.mentors.length > 0 && (
+                  <div className="space-y-6">
+                    {previewPosition.mentors.map((mentor, idx) => (
+                      <div key={idx}>
+                        <h4 className="text-base font-bold text-gray-800 mb-3">
+                          รายละเอียดพี่เลี้ยง {idx + 1}
+                        </h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-5 h-5 text-primary-600 flex-shrink-0"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                            <span className="text-sm text-gray-700">
+                              {mentor.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-5 h-5 text-primary-600 flex-shrink-0"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span className="text-sm text-gray-700">
+                              {mentor.email || "-"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-5 h-5 text-primary-600 flex-shrink-0"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              />
+                            </svg>
+                            <span className="text-sm text-gray-700">
+                              {mentor.phoneNumber || "-"}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-primary-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          <span className="text-sm text-gray-700">{mentor.email || "-"}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-primary-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                          <span className="text-sm text-gray-700">{mentor.phoneNumber || "-"}</span>
-                        </div>
+                        {idx < previewPosition.mentors!.length - 1 && (
+                          <hr className="border-gray-200 mt-6" />
+                        )}
                       </div>
-                      {idx < previewPosition.mentors!.length - 1 && <hr className="border-gray-200 mt-6" />}
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
             </div>
           </div>
         </div>

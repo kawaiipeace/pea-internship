@@ -137,18 +137,6 @@ export default function LoginModal({
         // Set user_role cookie สำหรับ middleware
         document.cookie = `user_role=intern; path=/; max-age=86400`;
 
-        // ถ้ามี pending bookmark ให้เพิ่มใน favorites
-        if (pendingBookmarkJobId) {
-          const savedFavorites = localStorage.getItem("favorites");
-          const currentFavorites: string[] = savedFavorites
-            ? JSON.parse(savedFavorites)
-            : [];
-          if (!currentFavorites.includes(pendingBookmarkJobId)) {
-            const newFavorites = [...currentFavorites, pendingBookmarkJobId];
-            localStorage.setItem("favorites", JSON.stringify(newFavorites));
-          }
-        }
-
         onClose();
         if (onLoginSuccess) {
           onLoginSuccess();
