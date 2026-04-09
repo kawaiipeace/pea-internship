@@ -632,6 +632,31 @@ export default function NavbarIntern({
 
                   <hr className="my-2 border-gray-100" />
 
+                  {/* ฟอร์มแสดงความคิดเห็น/แจ้งปัญหา */}
+                  <a
+                    href="https://forms.gle/EFAqAP1F3JUeN7wF6"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                      />
+                    </svg>
+                    <span className="transition-colors">แจ้งปัญหาการใช้งาน</span>
+                  </a>
+
+                  <hr className="my-2 border-gray-100" />
+
                   {/* ออกจากระบบ (Danger) */}
                   <button
                     onClick={handleLogout}
@@ -829,6 +854,27 @@ export default function NavbarIntern({
                 </svg>
                 <span>FAQs</span>
               </Link>
+              <a
+                href="https://forms.gle/EFAqAP1F3JUeN7wF6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                  />
+                </svg>
+                <span>แจ้งปัญหาการใช้งาน</span>
+              </a>
             </nav>
           </div>
         </div>
@@ -1016,6 +1062,29 @@ export default function NavbarIntern({
               </svg>
               <span className="text-lg">ติดตามสถานะการสมัคร</span>
             </Link>
+
+            {/* ฟอร์มแสดงความคิดเห็น/แจ้งปัญหา */}
+            <a
+              href="https://forms.gle/EFAqAP1F3JUeN7wF6"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-4 py-4 px-8 -mx-8 text-gray-600 hover:bg-primary-50 hover:text-primary-600 active:bg-primary-50 active:text-primary-600 transition-colors w-[calc(100%+4rem)]"
+            >
+              <svg
+                className="w-6 h-6 text-gray-500 group-hover:text-primary-600 group-active:text-primary-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
+              </svg>
+              <span className="text-lg">แจ้งปัญหาการใช้งาน</span>
+            </a>
 
             {/* ออกจากระบบ */}
             <button
