@@ -8,6 +8,9 @@ import {
   attendanceLogs,
   leaveRequests,
   studentProfiles,
+  staffProfiles,
+  internshipPositionMentors,
+  applicationStatuses,
   users,
 } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
@@ -248,13 +251,151 @@ export class LeaveService {
     });
 
     const records = historyData.map((record) => {
+      const isSick = record.leaveRequestType === "SICK";
       return {
         id: record.id,
-        leaveDate: new Date(record.leaveDatetime!).toISOString(),
+        leaveDate: record.leaveDatetime,
         leaveType: record.leaveRequestType,
         status: record.status,
         reason: record.reason,
         attachmentUrl: record.file,
+      };
+    });
+
+    return {
+      period: { year: targetYear, month: targetMonth },
+      summary,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalRecords: totalFilteredRecords,
+      },
+      records,
+    };
+  }
+
+  async getMentorLeaveRequests(mentorUserId: string, query: model.GetLeaveHistoryQueryType) {
+    await this.assertUserExists(mentorUserId);
+
+    const mentorProfile = await db.query.staffProfiles.findFirst({
+        where: eq(staffProfiles.userId, mentorUserId)
+    });
+    
+    if (!mentorProfile) throw new ForbiddenError("คุณไม่ใช่เจ้าหน้าที่ดูแลนักศึกษา (Mentor)");
+
+    const positions = await db.query.internshipPositionMentors.findMany({
+        where: eq(internshipPositionMentors.mentorStaffId, mentorProfile.id)
+    });
+    const positionIds = positions.map((p) => p.positionId);
+
+    if (positionIds.length === 0) {
+        return {
+            period: { year: query.year || new Date().getFullYear(), month: query.month || new Date().getMonth() + 1 },
+            summary: { total: 0, absence: 0, sick: 0 },
+            pagination: { page: query.page || 1, limit: query.limit || 10, totalPages: 0, totalRecords: 0 },
+            records: []
+        };
+    }
+
+    const applications = await db.query.applicationStatuses.findMany({
+        where: and(
+            inArray(applicationStatuses.positionId, positionIds),
+            eq(applicationStatuses.applicationStatus, "ACTIVE")
+        )
+    });
+    const studentUserIds = applications.map((a) => a.userId);
+
+    if (studentUserIds.length === 0) {
+        return {
+            period: { year: query.year || new Date().getFullYear(), month: query.month || new Date().getMonth() + 1 },
+            summary: { total: 0, absence: 0, sick: 0 },
+            pagination: { page: query.page || 1, limit: query.limit || 10, totalPages: 0, totalRecords: 0 },
+            records: []
+        };
+    }
+
+    const { page = 1, limit = 10, type } = query;
+    const now = new Date();
+    const targetYear = query.year || now.getFullYear();
+    const targetMonth = query.month || now.getMonth() + 1;
+
+    const startOfMonth = new Date(targetYear, targetMonth - 1, 1).toISOString();
+    const endOfMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59).toISOString();
+
+    const baseCondition = and(
+      inArray(leaveRequests.userId, studentUserIds),
+      gte(leaveRequests.leaveDatetime, startOfMonth),
+      lte(leaveRequests.leaveDatetime, endOfMonth)
+    );
+
+    const allRecordsForSummary = await db.query.leaveRequests.findMany({
+      where: baseCondition,
+      columns: { leaveRequestType: true, status: true },
+    });
+
+    let totalAbsence = 0;
+    let totalSick = 0;
+
+    allRecordsForSummary.forEach((log) => {
+      if (log.leaveRequestType === "ABSENCE") totalAbsence++;
+      else if (log.leaveRequestType === "SICK") totalSick++;
+    });
+
+    const summary = {
+      total: totalAbsence + totalSick,
+      absence: totalAbsence,
+      sick: totalSick,
+    };
+
+    const listFilters = [baseCondition];
+
+    if (type) {
+      listFilters.push(eq(leaveRequests.leaveRequestType, type));
+    }
+
+    const finalCondition = and(...listFilters);
+
+    const [totalCountResult] = await db
+      .select({ count: count() })
+      .from(leaveRequests)
+      .where(finalCondition);
+
+    const totalFilteredRecords = Number(totalCountResult.count);
+    const totalPages = Math.ceil(totalFilteredRecords / limit);
+    const offset = (page - 1) * limit;
+
+    const historyData = await db
+      .select({
+        id: leaveRequests.id,
+        leaveDatetime: leaveRequests.leaveDatetime,
+        leaveRequestType: leaveRequests.leaveRequestType,
+        status: leaveRequests.status,
+        reason: leaveRequests.reason,
+        file: leaveRequests.file,
+        fname: users.fname,
+        lname: users.lname,
+        image: studentProfiles.image
+      })
+      .from(leaveRequests)
+      .innerJoin(users, eq(users.id, leaveRequests.userId))
+      .innerJoin(studentProfiles, eq(studentProfiles.userId, leaveRequests.userId))
+      .where(finalCondition)
+      .orderBy(desc(leaveRequests.leaveDatetime))
+      .limit(limit)
+      .offset(offset);
+
+    const records = historyData.map((record) => {
+      const isSick = record.leaveRequestType === "SICK";
+      return {
+        id: record.id,
+        leaveDate: record.leaveDatetime,
+        leaveType: record.leaveRequestType,
+        status: record.status,
+        reason: record.reason,
+        attachmentUrl: record.file,
+        studentName: `${record.fname || ""} ${record.lname || ""}`.trim() || "นักศึกษา (ไม่ระบุชื่อ)",
+        profileImg: record.image || "/images/default-profile.png"
       };
     });
 
