@@ -7,6 +7,7 @@ import ImageWithAuth from '@/components/ImageWithAuth';
 
 // ---- Types ----
 interface LeaveRequest {
+    id: number;
     ids: number[];
     studentName: string;
     type: string;
@@ -83,6 +84,25 @@ const timeEditRequests = [
         profileImg: '/assets/images/profile-2.jpeg',
         hasFile: false,
     },
+    {
+        id: 3,
+        studentName: 'สมหมาย สายเสมอ (นาย)',
+        type: 'ขาด',
+        typeBg: 'bg-[#FFF1EF]',
+        typeText: 'text-gray-600',
+        typeBorder: 'border-[#FF8980]',
+        typeIcon: 'close',
+        typeCircleBg: 'bg-[#D92D20]',
+        submittedDate: '15 มกราคม 2569',
+        date: '14 มกราคม 2569',
+        originalTime: '10:00 - 16:30',
+        requestedTime: '08:30 - 16:30',
+        workHours: 2,
+        reason: 'ระบบขัดข้องทำให้ลงเวลาไม่ได้',
+        profileImg: '/assets/images/profile-2.jpeg',
+        hasFile: false,
+    },
+    
 ];
 
 // ---- Reject Modal ----
@@ -370,6 +390,31 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
 );
 
 
+// ---- Helper Methods ----
+
+export const handleViewFile = async (attachmentUrl: string) => {
+    try {
+        const key = attachmentUrl.split('/').pop();
+        if (!key) return;
+        
+        const response = await axiosInstance.get(`/files/${key}`, {
+            responseType: 'blob'
+        });
+        
+        const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] }));
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.click();
+        
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch (error) {
+        console.error('Error fetching file:', error);
+        alert('ไม่สามารถเปิดไฟล์ได้ในขณะนี้');
+    }
+};
+
 // ---- Leave Request Card ----
 
 const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; onReject: () => void; onApprove: () => void }) => (
@@ -391,7 +436,10 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
             <span className="text-gray-400">ไฟล์แนบ :</span>
             {request.hasFile ? (
-                <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+                <div 
+                    onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
+                    className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+                >
                     {request.fileIcon === 'image' ? (
                         <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -401,13 +449,9 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                     )}
-                    {request.attachmentUrl ? (
-                        <a href={request.attachmentUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-gray-600 dark:text-white-light hover:underline hover:text-blue-500">
-                            {request.fileName}
-                        </a>
-                    ) : (
-                        <span className="text-xs font-medium text-gray-600 dark:text-white-light">{request.fileName}</span>
-                    )}
+                    <span className="text-xs font-medium text-gray-600 dark:text-white-light hover:underline hover:text-blue-500">
+                        {request.fileName}
+                    </span>
                 </div>
             ) : (
                 <span className="text-xs text-gray-400">- ไม่ได้แนบไฟล์ -</span>
@@ -421,7 +465,7 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
 // ---- Time Edit Request Card ----
 
 
-const TimeEditCard = ({ request, onReject, onApprove }: { request: typeof timeEditRequests[0]; onReject: () => void; onApprove: () => void }) => (
+const TimeEditCard = ({ request, onReject, onApprove }: { request: typeof timeEditRequests[0] & { attachmentUrl?: string }; onReject: () => void; onApprove: () => void }) => (
     <div className="bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-white-dark/10 rounded-2xl p-5 shadow-sm">
         <StudentHeader {...request} />
 
@@ -464,8 +508,11 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: typeof timeEd
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
             <span className="text-gray-400">ไฟล์แนบ :</span>
             {request.hasFile ? (
-                <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
-                    <span className="text-xs font-medium text-gray-600 dark:text-white-light">ดูไฟล์</span>
+                <div 
+                    onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
+                    className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+                >
+                    <span className="text-xs font-medium text-gray-600 dark:text-white-light hover:underline hover:text-blue-500">ดูไฟล์</span>
                 </div>
             ) : (
                 <span className="text-xs text-gray-400">- ไม่มีไฟล์แนบ -</span>
@@ -489,7 +536,7 @@ const ApprovalRequestPage = () => {
     const [approveSuccessOpen, setApproveSuccessOpen] = useState(false);
     const [rejectSuccessOpen, setRejectSuccessOpen] = useState(false);
 
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 5;
     const [meta, setMeta] = useState({ totalPages: 1, totalRecords: 0 });
     const [page, setPage] = useState(1);
 
@@ -564,6 +611,15 @@ const ApprovalRequestPage = () => {
                             ? getThaiDate(startObj)
                             : `${getDay(startObj)} - ${getThaiDate(endObj)}`;
 
+                        const hasFile = !!item.attachmentUrl;
+                        let fileName = '';
+                        let fileIcon = 'image';
+                        if (hasFile) {
+                            fileName = item.attachmentUrl.split('/').pop() || 'เอกสารแนบ';
+                            const ext = fileName.split('.').pop()?.toLowerCase();
+                            fileIcon = ['jpg', 'jpeg', 'png', 'gif'].includes(ext || '') ? 'image' : 'pdf';
+                        }
+
                         return {
                             ids: item.ids,
                             id: item.ids[0], // fallback
@@ -618,12 +674,12 @@ const ApprovalRequestPage = () => {
         if (!selectedId) return;
         setSubmitting(true);
         try {
-            console.log('Rejected with reason:', reason);
-            // TODO: Call API once the reject endpoint is implemented in the backend
-            // await axiosInstance.post(`/leave/${selectedId}/reject`, { reason });
+            if (activeTab === 'leave') {
+                 await axiosInstance.post(`/leave/bulk-reject`, { ids: selectedId, reason });
+            } else {
+                 // TODO: timeedit bulk reject logic
+            }
             
-            // Mocking API delay
-            await new Promise(resolve => setTimeout(resolve, 800));
             setRejectModal({ open: false, title: '' });
             setRejectSuccessOpen(true);
             setTimeout(() => {
