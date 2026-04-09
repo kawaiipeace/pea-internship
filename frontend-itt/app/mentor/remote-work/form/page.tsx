@@ -1,16 +1,22 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
+import Swal from 'sweetalert2';
 
 interface Student {
     id: string;
-    fname: string;
-    lname: string;
+    fname?: string;
+    lname?: string;
+    name?: string;
+    displayUsername?: string;
 }
 
 const RemoteWorkFormPage = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const taskId = searchParams.get('id');
+    const isEditMode = !!taskId;
     
     // Form State
     const [workDate, setWorkDate] = useState('');
@@ -31,22 +37,61 @@ const RemoteWorkFormPage = () => {
             try {
                 // 1. Fetch mentor profile to get departmentId
                 const profileResponse = await axiosInstance.get('/user/profile');
-                const departmentId = profileResponse.data.departmentId;
+                const profileData = profileResponse.data;
+                // Check both root and nested profile for departmentId
+                const deptId = profileData.departmentId || profileData.profile?.departmentId;
 
                 // 2. Fetch students in the same department
                 const studentsResponse = await axiosInstance.get('/user/student', {
-                    params: { departmentId }
+                    params: { departmentId: deptId }
                 });
-                setAvailableStudents(studentsResponse.data);
+                
+                // Handle potential response structure differences
+                const studentList = Array.isArray(studentsResponse.data) 
+                    ? studentsResponse.data 
+                    : studentsResponse.data?.data || [];
+                
+                setAvailableStudents(studentList);
+
+                // 3. If Edit Mode, fetch task details
+                if (isEditMode) {
+                    const taskResponse = await axiosInstance.get(`/offsite-tasks/${taskId}`);
+                    const task = taskResponse.data;
+                    
+                    // Format Date for HTML5 input (YYYY-MM-DD)
+                    if (task.workDate) {
+                        setWorkDate(new Date(task.workDate).toISOString().split('T')[0]);
+                    }
+                    
+                    setLocationName(task.locationName);
+                    setTaskDetail(task.taskDetail);
+                    setNote(task.note || '');
+                    
+                    const taskStudentIds = task.students.map((s: any) => s.id);
+                    setStudentIds(taskStudentIds);
+
+                    // Ensure task students are in availableStudents for name display
+                    setAvailableStudents(prev => {
+                        const existingIds = new Set(prev.map(s => s.id));
+                        const newOnes = task.students
+                            .filter((s: any) => !existingIds.has(s.id))
+                            .map((s: any) => ({
+                                id: s.id,
+                                name: s.name,
+                                image: s.image
+                            }));
+                        return [...prev, ...newOnes];
+                    });
+                }
             } catch (error) {
                 console.error('Error loading initial data:', error);
-                alert('ไม่สามารถดึงข้อมูลรายชื่อนักศึกษาได้');
+                Swal.fire('Error', 'ไม่สามารถดึงข้อมูลได้', 'error');
             } finally {
                 setIsLoading(false);
             }
         };
         loadInitialData();
-    }, []);
+    }, [isEditMode, taskId]);
 
     const handleAddStudent = (studentId: string) => {
         if (!studentId) return;
@@ -61,24 +106,41 @@ const RemoteWorkFormPage = () => {
 
     const handleSubmit = async () => {
         if (!workDate || !locationName || !taskDetail || studentIds.length === 0) {
-            alert('กรุณากรอกข้อมูลให้ครบถ้วนและเลือกนักศึกษาอย่างน้อย 1 คน');
+            Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วนและเลือกนักศึกษาอย่างน้อย 1 คน', 'warning');
             return;
         }
 
         setIsSubmitting(true);
         try {
-            await axiosInstance.post('/offsite-tasks', {
+            const payload = {
                 workDate,
                 locationName,
                 taskDetail,
                 note: note || undefined,
                 studentIds
-            });
-            alert('มอบหมายงานนอกสถานที่สำเร็จ');
+            };
+
+            if (isEditMode) {
+                await axiosInstance.patch(`/offsite-tasks/${taskId}`, payload);
+                await Swal.fire({
+                    title: 'แก้ไขสำเร็จ!',
+                    text: 'แก้ไขรายการมอบหมายงานนอกสถานที่เรียบร้อยแล้ว',
+                    icon: 'success',
+                    confirmButtonColor: '#A80689',
+                });
+            } else {
+                await axiosInstance.post('/offsite-tasks', payload);
+                await Swal.fire({
+                    title: 'มอบหมายสำเร็จ!',
+                    text: 'มอบหมายงานนอกสถานที่ให้เพื่อนนักศึกษาเรียบร้อยแล้ว',
+                    icon: 'success',
+                    confirmButtonColor: '#A80689',
+                });
+            }
             router.push('/mentor/remote-work');
         } catch (error) {
             console.error('Error submitting form:', error);
-            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            Swal.fire('Error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -94,10 +156,10 @@ const RemoteWorkFormPage = () => {
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-[24px] font-bold text-black dark:text-white mb-1">
-                        ปฏิบัติงานนอกสถานที่
+                        {isEditMode ? 'แก้ไขงานนอกสถานที่' : 'มอบหมายงานนอกสถานที่'}
                     </h1>
                     <p className="text-[16px] text-[#61646C] dark:text-gray-400">
-                        กำหนดการวันที่นักศึกษาต้องไปปฏิบัติงานนอกสถานที่
+                        {isEditMode ? 'แก้ไขรายละเอียดกำหนดการปฏิบัติงานนอกสถานที่' : 'กำหนดการวันที่นักศึกษาต้องไปปฏิบัติงานนอกสถานที่'}
                     </p>
                 </div>
 
@@ -205,7 +267,7 @@ const RemoteWorkFormPage = () => {
                                     .filter(s => !studentIds.includes(s.id))
                                     .map(student => (
                                         <option key={student.id} value={student.id}>
-                                            {student.fname} {student.lname}
+                                            {student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id}
                                         </option>
                                     ))
                                 }
@@ -221,7 +283,9 @@ const RemoteWorkFormPage = () => {
                                     return (
                                         <div key={id} className="bg-[#FDF2FE] border border-[#F9E1F9] rounded-full px-4 py-1.5 flex items-center gap-2">
                                             <span className="text-[14px] text-[#A80689] font-medium">
-                                                {student ? `${student.fname} ${student.lname}` : 'กำลังโหลด...'}
+                                                {student 
+                                                    ? (student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id)
+                                                    : 'กำลังโหลด...'}
                                             </span>
                                             <button 
                                                 onClick={() => handleRemoveStudent(id)}
@@ -250,14 +314,13 @@ const RemoteWorkFormPage = () => {
                         disabled={isSubmitting}
                         className={`flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px] font-bold hover:bg-[#8e0574] transition-colors shadow-md flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
+                        {isEditMode ? 'บันทึกการแก้ไข' : 'เพิ่มนักศึกษาปฏิบัติงานนอกสถานที่'}
                         {isSubmitting ? (
                             <>
-                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin ml-2"></span>
                                 กำลังบันทึก...
                             </>
-                        ) : (
-                            'เพิ่มนักศึกษาปฏิบัติงานนอกสถานที่'
-                        )}
+                        ) : null}
                     </button>
                 </div>
             </div>
