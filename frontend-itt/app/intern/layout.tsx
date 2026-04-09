@@ -14,7 +14,7 @@ export default function DefaultLayout({ children }: { children: React.ReactNode 
 
     return (
         <>
-            {user && !user?.profile?.image && (
+            {user && (!user.profile || (!Array.isArray(user.profile) && !user.profile.image)) && (
                 <SetProfile />
             )}
             {/* BEGIN MAIN CONTAINER */}
