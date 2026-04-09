@@ -1,8 +1,32 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import MonthPicker from "@/components/history/month-picker";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import axiosInstance from "@/api/axios";
+
+interface Student {
+    id: string;
+    name: string;
+    image: string | null;
+}
+
+interface OffsiteTask {
+    id: number;
+    workDate: string;
+    createdAt: string;
+    locationName: string;
+    assignedBy: string;
+    isOwner: boolean;
+    students: Student[];
+}
+
+interface MetaData {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
 
 const RemoteWorkPage = () => {
     const router = useRouter();
@@ -15,9 +39,15 @@ const RemoteWorkPage = () => {
     const [assignedDateSortOrder, setAssignedDateSortOrder] = useState<'desc' | 'asc'>('desc');
     const [activeSortField, setActiveSortField] = useState<'workDate' | 'assignedDate'>('workDate');
 
+    // Real Data State
+    const [tasks, setTasks] = useState<OffsiteTask[]>([]);
+    const [meta, setMeta] = useState<MetaData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
     const handleMonthSelect = (month: number, year: number) => {
         setCurrentMonth(month);
         setCurrentYear(year);
+        setCurrentPage(1);
     };
 
     const handlePrevMonth = () => {
@@ -27,6 +57,7 @@ const RemoteWorkPage = () => {
         } else {
             setCurrentMonth(currentMonth - 1);
         }
+        setCurrentPage(1);
     };
 
     const handleNextMonth = () => {
@@ -36,111 +67,104 @@ const RemoteWorkPage = () => {
         } else {
             setCurrentMonth(currentMonth + 1);
         }
+        setCurrentPage(1);
     };
 
-    // Dummy Data for the list
-    // Dummy Data     // Dummy Data for the list
-    const remoteWorkData = [
+    // Dummy Data for fallback
+    const mockData: OffsiteTask[] = [
         {
-            id: 1,
-            workDate: "15 เม.ย. 2569",
-            isoDate: "2026-04-15",
-            location: "สำนักงานตำรวจแห่งชาติ",
-            assigner: "มั่นคง ทรงดี",
-            assignerId: "<รหัสพนักงาน>",
-            assignedDate: "7 เมษายน 2569",
-            isoAssignedDate: "2026-04-07",
+            id: -1,
+            workDate: "2026-04-15",
+            createdAt: "2026-04-07T10:00:00Z",
+            locationName: "สำนักงานตำรวจแห่งชาติ",
+            assignedBy: "มั่นคง ทรงดี",
+            isOwner: true,
             students: [
-                { id: 1, avatar: "https://i.pravatar.cc/150?u=1" },
-                { id: 2, avatar: "https://i.pravatar.cc/150?u=2" },
-                { id: 3, avatar: "https://i.pravatar.cc/150?u=3" },
-                { id: 4, avatar: "https://i.pravatar.cc/150?u=4" },
+                { id: "s1", name: "สมชาย สายน้ำ", image: "https://i.pravatar.cc/150?u=1" },
+                { id: "s2", name: "สมหญิง รักเรียน", image: "https://i.pravatar.cc/150?u=2" },
+                { id: "s3", name: "กมล คนดี", image: "https://i.pravatar.cc/150?u=3" },
+                { id: "s4", name: "มานะ มากมี", image: "https://i.pravatar.cc/150?u=4" },
+                { id: "s5", name: "ชูใจ ใฝ่ดี", image: "https://i.pravatar.cc/150?u=5" },
             ]
         },
         {
-            id: 2,
-            workDate: "14 เม.ย. 2569",
-            isoDate: "2026-04-14",
-            location: "สำนักงานตำรวจแห่งชาติ",
-            assigner: "มั่นคง ทรงดี",
-            assignerId: "<รหัสพนักงาน>",
-            assignedDate: "7 เมษายน 2569",
-            isoAssignedDate: "2026-04-07",
+            id: -2,
+            workDate: "2026-04-14",
+            createdAt: "2026-04-07T09:00:00Z",
+            locationName: "สำนักงานตำรวจแห่งชาติ",
+            assignedBy: "มั่นคง ทรงดี",
+            isOwner: true,
             students: [
-                { id: 1, avatar: "https://i.pravatar.cc/150?u=1" },
-                { id: 2, avatar: "https://i.pravatar.cc/150?u=2" },
-                { id: 3, avatar: "https://i.pravatar.cc/150?u=3" },
-                { id: 4, avatar: "https://i.pravatar.cc/150?u=4" },
-            ]
-        },
-        {
-            id: 3,
-            workDate: "13 เม.ย. 2569",
-            isoDate: "2026-04-13",
-            location: "สำนักงานตำรวจแห่งชาติ",
-            assigner: "มั่นคง ทรงดี",
-            assignerId: "<รหัสพนักงาน>",
-            assignedDate: "7 เมษายน 2569",
-            isoAssignedDate: "2026-04-07",
-            students: [
-                { id: 1, avatar: "https://i.pravatar.cc/150?u=1" },
-                { id: 2, avatar: "https://i.pravatar.cc/150?u=2" },
-                { id: 3, avatar: "https://i.pravatar.cc/150?u=3" },
-                { id: 4, avatar: "https://i.pravatar.cc/150?u=4" },
-            ]
-        },
-        {
-            id: 4,
-            workDate: "12 เม.ย. 2569",
-            isoDate: "2026-04-12",
-            location: "สำนักงานตำรวจแห่งชาติ",
-            assigner: "มั่นคง ทรงดี",
-            assignerId: "<รหัสพนักงาน>",
-            assignedDate: "7 เมษายน 2569",
-            isoAssignedDate: "2026-04-07",
-            students: [
-                { id: 1, avatar: "https://i.pravatar.cc/150?u=1" },
-                { id: 2, avatar: "https://i.pravatar.cc/150?u=2" },
-                { id: 3, avatar: "https://i.pravatar.cc/150?u=3" },
-                { id: 4, avatar: "https://i.pravatar.cc/150?u=4" },
-            ]
-        },
-        {
-            id: 5,
-            workDate: "9 เม.ย. 2569",
-            isoDate: "2026-04-09",
-            location: "สำนักงานตำรวจแห่งชาติ",
-            assigner: "มั่นคง ทรงดี",
-            assignerId: "<รหัสพนักงาน>",
-            assignedDate: "7 เมษายน 2569",
-            isoAssignedDate: "2026-04-07",
-            students: [
-                { id: 1, avatar: "https://i.pravatar.cc/150?u=1" },
-                { id: 2, avatar: "https://i.pravatar.cc/150?u=2" },
-                { id: 3, avatar: "https://i.pravatar.cc/150?u=3" },
-                { id: 4, avatar: "https://i.pravatar.cc/150?u=4" },
+                { id: "s1", name: "สมชาย สายน้ำ", image: "https://i.pravatar.cc/150?u=1" },
+                { id: "s2", name: "สมหญิง รักเรียน", image: "https://i.pravatar.cc/150?u=2" },
             ]
         }
     ];
 
-    const filteredAndSortedData = remoteWorkData
-        .filter((item) => {
-            const date = new Date(item.isoDate);
-            const monthMatches = date.getMonth() === currentMonth;
-            const yearMatches = (date.getFullYear() + 543) === currentYear;
-            return monthMatches && yearMatches;
-        })
-        .sort((a, b) => {
-            if (activeSortField === 'workDate') {
-                const dateA = new Date(a.isoDate).getTime();
-                const dateB = new Date(b.isoDate).getTime();
-                return dateSortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-            } else {
-                const dateA = new Date(a.isoAssignedDate).getTime();
-                const dateB = new Date(b.isoAssignedDate).getTime();
-                return assignedDateSortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    const fetchTasks = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const params = {
+                month: currentMonth + 1,
+                year: currentYear - 543, // Convert Buddhist year to AD
+                page: currentPage,
+                limit: 10,
+                sortBy: activeSortField === 'assignedDate' ? 'createdAt' : 'workDate',
+                sortOrder: activeSortField === 'assignedDate' ? assignedDateSortOrder : dateSortOrder,
+                viewMode: assignerFilter === "ที่ฉันสร้าง" ? "mine" : "all"
+            };
+
+            const response = await axiosInstance.get('/offsite-tasks/mentor', { params });
+            const apiData = response.data?.data || [];
+            
+            // Combine with Mock data if in April 2569
+            let combinedData = [...apiData];
+            if (currentMonth === 3 && currentYear === 2569) {
+                combinedData = [...combinedData, ...mockData];
             }
-        });
+
+            // Perform frontend sorting to ensure consistency for all displayed items
+            combinedData.sort((a, b) => {
+                const dateA = new Date(activeSortField === 'assignedDate' ? a.createdAt : a.workDate).getTime();
+                const dateB = new Date(activeSortField === 'assignedDate' ? b.createdAt : b.workDate).getTime();
+                
+                const order = activeSortField === 'assignedDate' ? assignedDateSortOrder : dateSortOrder;
+                return order === 'desc' ? dateB - dateA : dateA - dateB;
+            });
+
+            setTasks(combinedData);
+            setMeta(response.data?.meta || null);
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+            // alert('ไม่สามารถดึงข้อมูลรายการได้');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentMonth, currentYear, currentPage, activeSortField, assignedDateSortOrder, dateSortOrder, assignerFilter]);
+
+    useEffect(() => {
+        fetchTasks();
+    }, [fetchTasks]);
+
+    const formatThaiDate = (dateStr: string) => {
+        if (!dateStr) return "";
+        const date = new Date(dateStr);
+        const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear() + 543;
+        return `${day} ${month} ${year}`;
+    };
+
+    const formatFullThaiDate = (dateStr: string) => {
+        if (!dateStr) return "";
+        const date = new Date(dateStr);
+        const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear() + 543;
+        return `${day} ${month} ${year}`;
+    };
 
     return (
         <div className="min-h-screen bg-white dark:bg-black p-6 -m-6 pb-20">
@@ -261,44 +285,65 @@ const RemoteWorkPage = () => {
 
                 {/* Assignment Cards List */}
                 <div className="flex flex-col gap-4 mt-2">
-                    {filteredAndSortedData.length > 0 ? (
-                        filteredAndSortedData.map((item) => (
-                            <div key={item.id} className="w-[892px] h-[120px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-[15px] p-4 flex gap-4 items-center shadow-sm hover:shadow-md transition-shadow relative">
+                    {isLoading ? (
+                        <div className="flex flex-col gap-4">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="w-full h-[120px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-[15px] p-4 flex gap-4 items-center animate-pulse">
+                                    <div className="w-[80px] h-[80px] bg-gray-100 dark:bg-gray-800 rounded-xl shrink-0"></div>
+                                    <div className="flex-1 space-y-3">
+                                        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-1/4"></div>
+                                        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-3/4"></div>
+                                        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-1/2"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (tasks || []).length > 0 ? (
+                        (tasks || []).map((item) => (
+                            <div key={item.id} className="w-full h-[120px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-[15px] p-4 flex gap-4 items-center shadow-sm hover:shadow-md transition-shadow relative">
                                 {/* Date Badge */}
                                 <div className="w-[80px] h-[80px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-xl flex flex-col items-center justify-center shrink-0">
                                     <span className="text-[16px] font-bold text-black dark:text-white leading-tight text-center px-2">
-                                        {item.workDate.split(' ')[0]} {item.workDate.split(' ')[1]}
+                                        {formatThaiDate(item.workDate).split(' ')[0]} {formatThaiDate(item.workDate).split(' ')[1]}
                                     </span>
                                     <span className="text-[16px] font-bold text-black dark:text-white leading-tight">
-                                        {item.workDate.split(' ')[2]}
+                                        {formatThaiDate(item.workDate).split(' ')[2]}
                                     </span>
                                 </div>
 
                                 {/* Card Content */}
                                 <div className="flex-1 flex flex-col justify-between py-1">
                                     {/* Assign Date (Desktop Position) */}
-                                    <div className="absolute top-3 right-5 text-[12px] text-[#344054] ">
-                                        วันที่ทำการมอบหมาย : {item.assignedDate}
+                                    <div className="absolute top-3 right-5 text-[12px] text-[#344054] dark:text-gray-400">
+                                        วันที่ทำการมอบหมาย : {formatFullThaiDate(item.createdAt)}
                                     </div>
 
                                     <div className="space-y-1 mt-1">
                                         <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
-                                            <span className="font-bold mr-1">สถานที่ :</span> {item.location}
+                                            <span className="font-bold mr-1">สถานที่ :</span> {item.locationName}
                                         </h3>
                                         <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
-                                            <span className="font-bold mr-1">ผู้มอบหมาย :</span> {item.assigner} {item.assignerId}
+                                            <span className="font-bold mr-1">ผู้มอบหมาย :</span> {item.assignedBy}
                                         </h3>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-[16px] font-bold text-[#344054] dark:text-gray-100">นักศึกษาที่ได้รับมอบหมาย :</span>
                                             <div className="flex -space-x-2">
-                                                {item.students.map((student, idx) => (
-                                                    <div key={idx} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800">
-                                                        <img src={student.avatar} alt="avatar" className="w-full h-full object-cover" />
+                                                {(item.students || []).slice(0, 4).map((student: Student, idx: number) => (
+                                                    <div key={idx} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800 bg-gray-200">
+                                                        {student.image ? (
+                                                            <img src={student.image} alt={student.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-[8px] text-gray-400 bg-gray-100 dark:bg-gray-800">
+                                                                {student.name.charAt(0)}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
-                                                <div className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 bg-[#FDF2FE] flex items-center justify-center text-[10px] font-bold text-[#A80689] ring-1 ring-gray-100 dark:ring-gray-800">
-                                                    +1
-                                                </div>
+                                                {(item.students || []).length > 4 && (
+                                                    <div className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 bg-[#FDF2FE] flex items-center justify-center text-[10px] font-bold text-[#A80689] ring-1 ring-gray-100 dark:ring-gray-800">
+                                                        +{item.students.length - 4}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -306,12 +351,16 @@ const RemoteWorkPage = () => {
 
                                 {/* Actions Right Side */}
                                 <div className="flex items-center gap-0 ml-4">
-                                    <button className="p-1 text-gray-500 hover:text-primary transition-colors">
-                                        <span className="material-symbols-rounded !text-[20px]">edit_square</span>
-                                    </button>
-                                    <button className="p-1 text-gray-500 hover:text-red-500 transition-colors">
-                                        <span className="material-symbols-rounded !text-[20px]">delete</span>
-                                    </button>
+                                    {item.isOwner && (
+                                        <>
+                                            <button className="p-1 text-gray-500 hover:text-primary transition-colors">
+                                                <span className="material-symbols-rounded !text-[20px]">edit_square</span>
+                                            </button>
+                                            <button className="p-1 text-gray-500 hover:text-red-500 transition-colors">
+                                                <span className="material-symbols-rounded !text-[20px]">delete</span>
+                                            </button>
+                                        </>
+                                    )}
                                     <button className="ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-4 py-2 rounded-[5px] text-[12px]  hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                                         ดูรายละเอียด
                                     </button>
@@ -365,7 +414,7 @@ const RemoteWorkPage = () => {
 
                             <div className="text-center space-y-5">
                                 <h3 className="text-[24px]  text-[#61646C] dark:text-white">
-                                    ไม่พบกำหนดการปฏิบัติงานนอกสถานที่
+                                    ไม่พบกำหนดการปฏิบัติงานนอกสถานที่ 13
                                 </h3>
                                 <div className="text-[16px] sm:text-[16px] text-[#61646C] dark:text-gray-400 space-y-1">
                                     <p>ยังไม่พบกำหนดการปฏิบัติงานนอกสถานที่ในขณะนี้</p>
@@ -377,21 +426,32 @@ const RemoteWorkPage = () => {
                 </div>
 
                 {/* Pagination */}
-                {filteredAndSortedData.length > 0 && (
+                {meta && meta.totalPages > 1 && (
                     <div className="flex justify-end items-center mt-6 mb-10">
                         <div className="flex bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[14px] overflow-hidden shadow-sm">
-                            <button className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700 transition-colors">
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={meta.page === 1}
+                                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700 transition-colors disabled:opacity-50"
+                            >
                                 <span className="material-symbols-rounded !text-[20px]">chevron_left</span>
                             </button>
-                            {[1, 2, "...", 9, 10].map((page, idx) => (
+                            
+                            {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map((page) => (
                                 <button 
-                                    key={idx}
-                                    className={`w-10 h-10 flex items-center justify-center text-[14px] font-bold border-r border-gray-200 dark:border-gray-700 transition-colors ${page === 1 ? 'bg-[#E4E7EC] dark:bg-gray-700 text-[#344054] dark:text-white' : 'text-[#344054] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`w-10 h-10 flex items-center justify-center text-[14px] font-bold border-r border-gray-200 dark:border-gray-700 transition-colors ${meta.page === page ? 'bg-[#E4E7EC] dark:bg-gray-700 text-[#344054] dark:text-white' : 'text-[#344054] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                                 >
                                     {page}
                                 </button>
                             ))}
-                            <button className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.min(meta.totalPages, prev + 1))}
+                                disabled={meta.page === meta.totalPages}
+                                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                            >
                                 <span className="material-symbols-rounded !text-[20px]">chevron_right</span>
                             </button>
                         </div>

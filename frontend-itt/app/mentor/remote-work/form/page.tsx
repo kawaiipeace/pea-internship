@@ -1,9 +1,88 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import axiosInstance from '@/api/axios';
+
+interface Student {
+    id: string;
+    fname: string;
+    lname: string;
+}
 
 const RemoteWorkFormPage = () => {
     const router = useRouter();
+    
+    // Form State
+    const [workDate, setWorkDate] = useState('');
+    const [locationName, setLocationName] = useState('');
+    const [taskDetail, setTaskDetail] = useState('');
+    const [note, setNote] = useState('');
+    const [studentIds, setStudentIds] = useState<string[]>([]);
+    
+    // Data State
+    const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Fetch initial data on mount
+    useEffect(() => {
+        const loadInitialData = async () => {
+            setIsLoading(true);
+            try {
+                // 1. Fetch mentor profile to get departmentId
+                const profileResponse = await axiosInstance.get('/user/profile');
+                const departmentId = profileResponse.data.departmentId;
+
+                // 2. Fetch students in the same department
+                const studentsResponse = await axiosInstance.get('/user/student', {
+                    params: { departmentId }
+                });
+                setAvailableStudents(studentsResponse.data);
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                alert('ไม่สามารถดึงข้อมูลรายชื่อนักศึกษาได้');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadInitialData();
+    }, []);
+
+    const handleAddStudent = (studentId: string) => {
+        if (!studentId) return;
+        if (!studentIds.includes(studentId)) {
+            setStudentIds([...studentIds, studentId]);
+        }
+    };
+
+    const handleRemoveStudent = (studentId: string) => {
+        setStudentIds(studentIds.filter(id => id !== studentId));
+    };
+
+    const handleSubmit = async () => {
+        if (!workDate || !locationName || !taskDetail || studentIds.length === 0) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วนและเลือกนักศึกษาอย่างน้อย 1 คน');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await axiosInstance.post('/offsite-tasks', {
+                workDate,
+                locationName,
+                taskDetail,
+                note: note || undefined,
+                studentIds
+            });
+            alert('มอบหมายงานนอกสถานที่สำเร็จ');
+            router.push('/mentor/remote-work');
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-black py-10 px-4">
@@ -38,8 +117,9 @@ const RemoteWorkFormPage = () => {
                         </div>
                         <div className="relative">
                             <input 
-                                type="text" 
-                                placeholder="วว/ดด/ปป - วว/ดด/ปป" 
+                                type="date" 
+                                value={workDate}
+                                onChange={(e) => setWorkDate(e.target.value)}
                                 className="w-full h-[54px] px-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors"
                             />
                         </div>
@@ -59,6 +139,8 @@ const RemoteWorkFormPage = () => {
                         <input 
                             type="text" 
                             placeholder="กรอกชื่อสถานที่ เช่น การท่องเที่ยวแห่งประเทศไทย" 
+                            value={locationName}
+                            onChange={(e) => setLocationName(e.target.value)}
                             className="w-full h-[54px] px-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors"
                         />
                     </div>
@@ -76,6 +158,8 @@ const RemoteWorkFormPage = () => {
                         </div>
                         <textarea 
                             placeholder="รายละเอียดการปฏิบัติงาน เช่น ลักษณะงาน, สถานที่, รายชื่อพี่เลี้ยงที่ร่วมปฏิบัติงาน" 
+                            value={taskDetail}
+                            onChange={(e) => setTaskDetail(e.target.value)}
                             className="w-full h-[120px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
                         ></textarea>
                     </div>
@@ -93,6 +177,8 @@ const RemoteWorkFormPage = () => {
                         </div>
                         <textarea 
                             placeholder="รายละเอียดของงานเพิ่มเติม" 
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
                             className="w-full h-[120px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[16px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
                         ></textarea>
                     </div>
@@ -112,19 +198,44 @@ const RemoteWorkFormPage = () => {
                             <select 
                                 className="w-full h-[54px] px-4 bg-white dark:bg-gray-900 border border-[#CECFD2] dark:border-gray-700 rounded-[8px] text-[16px] text-gray-500 appearance-none focus:outline-none focus:border-[#A80689] transition-colors"
                                 defaultValue=""
+                                onChange={(e) => handleAddStudent(e.target.value)}
                             >
-                                <option value="" disabled>ชื่อนักศึกษา</option>
+                                <option value="" disabled>{isLoading ? 'กำลังโหลด...' : 'เลือกรายชื่อนักศึกษา'}</option>
+                                {availableStudents
+                                    .filter(s => !studentIds.includes(s.id))
+                                    .map(student => (
+                                        <option key={student.id} value={student.id}>
+                                            {student.fname} {student.lname}
+                                        </option>
+                                    ))
+                                }
                             </select>
                             <span className="material-symbols-rounded absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">expand_more</span>
                         </div>
                         
-                        {/* Add Student dashed button */}
-                        <button className="w-full h-[54px] border-2 border-dashed border-[#CECFD2] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 text-gray-400 hover:text-[#A80689] hover:border-[#A80689] transition-all group">
-                            <span className="material-symbols-rounded !text-[24px]">add</span>
-                            <span className="text-[16px] font-medium">เพิ่มนักศึกษา</span>
-                        </button>
+                        {/* Selected Students List */}
+                        {studentIds.length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                {studentIds.map(id => {
+                                    const student = availableStudents.find(s => s.id === id);
+                                    return (
+                                        <div key={id} className="bg-[#FDF2FE] border border-[#F9E1F9] rounded-full px-4 py-1.5 flex items-center gap-2">
+                                            <span className="text-[14px] text-[#A80689] font-medium">
+                                                {student ? `${student.fname} ${student.lname}` : 'กำลังโหลด...'}
+                                            </span>
+                                            <button 
+                                                onClick={() => handleRemoveStudent(id)}
+                                                className="text-[#A80689] hover:text-red-500"
+                                            >
+                                                <span className="material-symbols-rounded text-[18px]">close</span>
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        </div>
                     </div>
-                </div>
 
                 {/* Footer Buttons */}
                 <div className="mt-8 flex gap-4">
@@ -135,9 +246,18 @@ const RemoteWorkFormPage = () => {
                         ยกเลิก
                     </button>
                     <button 
-                        className="flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px] font-bold hover:bg-[#8e0574] transition-colors shadow-md"
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                        className={`flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px] font-bold hover:bg-[#8e0574] transition-colors shadow-md flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                        เพิ่มนักศึกษาปฏิบัติงานนอกสถานที่
+                        {isSubmitting ? (
+                            <>
+                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                กำลังบันทึก...
+                            </>
+                        ) : (
+                            'เพิ่มนักศึกษาปฏิบัติงานนอกสถานที่'
+                        )}
                     </button>
                 </div>
             </div>
