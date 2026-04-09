@@ -24,21 +24,28 @@ const RemoteWorkFormPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Fetch students on mount
+    // Fetch initial data on mount
     useEffect(() => {
-        const fetchStudents = async () => {
+        const loadInitialData = async () => {
             setIsLoading(true);
             try {
-                const response = await axiosInstance.get('/user/student');
-                setAvailableStudents(response.data);
+                // 1. Fetch mentor profile to get departmentId
+                const profileResponse = await axiosInstance.get('/user/profile');
+                const departmentId = profileResponse.data.departmentId;
+
+                // 2. Fetch students in the same department
+                const studentsResponse = await axiosInstance.get('/user/student', {
+                    params: { departmentId }
+                });
+                setAvailableStudents(studentsResponse.data);
             } catch (error) {
-                console.error('Error fetching students:', error);
+                console.error('Error loading initial data:', error);
                 alert('ไม่สามารถดึงข้อมูลรายชื่อนักศึกษาได้');
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchStudents();
+        loadInitialData();
     }, []);
 
     const handleAddStudent = (studentId: string) => {

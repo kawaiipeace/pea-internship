@@ -414,7 +414,7 @@ const RemoteWorkPage = () => {
 
                             <div className="text-center space-y-5">
                                 <h3 className="text-[24px]  text-[#61646C] dark:text-white">
-                                    ไม่พบกำหนดการปฏิบัติงานนอกสถานที่
+                                    ไม่พบกำหนดการปฏิบัติงานนอกสถานที่ 13
                                 </h3>
                                 <div className="text-[16px] sm:text-[16px] text-[#61646C] dark:text-gray-400 space-y-1">
                                     <p>ยังไม่พบกำหนดการปฏิบัติงานนอกสถานที่ในขณะนี้</p>
