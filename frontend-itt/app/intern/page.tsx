@@ -352,28 +352,38 @@ const CheckInPage = () => {
                 {/* Content Container */}
                 <div className="relative z-10 flex flex-col justify-center w-full h-full flex-1 gap-[16px] max-w-[764px] mx-auto my-auto">
 
-                    {/* Top Panel - Progress Bar (Figma Specs: W764, H72, Radius 15, Drop Shadow, Glass, Inside Stroke Gradient) */}
-                    <div className="relative rounded-[15px] w-full h-[72px] px-6 py-[13px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] bg-white/60 backdrop-blur-[4px] backdrop-saturate-[150%] flex flex-col justify-between">
+                    {/* Top Panel - Progress Bar (Figma Specs: W764, H-fit, Radius 15, Drop Shadow, Glass, Inside Stroke Gradient) */}
+                    <div className="relative mt-6 rounded-[15px] w-full min-h-[110px] h-fit px-12 pt-[22px] pb-10 shadow-[0_4px_15px_rgba(0,0,0,0.1)] bg-white/60 backdrop-blur-[4px] backdrop-saturate-[150%] flex flex-col justify-start gap-4 overflow-visible">
                         {/* Stroke Gradient Ring (Border Only) */}
                         <div className="absolute inset-0 rounded-[15px] pointer-events-none p-[1px] bg-gradient-to-tl from-white/20 from-0% to-white to-100% [mask-image:linear-gradient(#fff,#fff),linear-gradient(#fff,#fff)] [mask-clip:content-box,border-box] [mask-composite:exclude] [-webkit-mask-composite:xor]"></div>
 
                         <div className="text-[14px] font-bold text-[#333741] tracking-wide leading-none z-10">
                             ความคืบหน้าในการฝึกงาน
                         </div>
-                        <div className="flex items-center w-full gap-[10px] h-[22px] z-10">
-                            {/* Track Container (Shadow Inner) */}
-                            <div className="flex-1 h-[18px] rounded-full overflow-hidden bg-gradient-to-b from-[#e4e4e4] to-[#f8f8f8] dark:from-[#1b2e4b] dark:to-[#0f1928] shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.1)] relative flex items-center min-w-0">
-                                {/* Thumb */}
-                                <div
-                                    className="text-white text-[11px] h-[18px] flex justify-end pr-4 items-center font-medium rounded-full bg-[#A80689] shadow-[inset_0px_-4px_6px_rgba(0,0,0,0.4),inset_0px_2px_3px_rgba(255,255,255,0.4)] whitespace-nowrap"
-                                    style={{ width: `${progressData?.percentage || 0}%`, minWidth: '75px' }}
+                        <div className="flex items-center w-full gap-[12px] h-fit z-10 relative">
+                            {/* Track Container (Shadow Inner) + Current Hours Label */}
+                            <div className="flex-1 flex flex-col relative min-w-0">
+                                <div className="h-[18px] rounded-full overflow-hidden bg-gradient-to-b from-[#e4e4e4] to-[#f8f8f8] dark:from-[#1b2e4b] dark:to-[#0f1928] shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.1)] relative flex items-center min-w-0">
+                                    {/* Thumb */}
+                                    <div
+                                        className="h-[18px] rounded-full bg-[#A80689] shadow-[inset_0px_-4px_6px_rgba(0,0,0,0.4),inset_0px_2px_3px_rgba(255,255,255,0.4)] transition-all duration-300"
+                                        style={{ width: `${progressData?.percentage || 0}%` }}
+                                    ></div>
+                                </div>
+                                {/* Current Hours Label - Below the bar, Black Color, moving with percentage */}
+                                <div 
+                                    className="absolute top-[30px] text-black text-[12px] font-bold whitespace-nowrap transition-all duration-300 z-20"
+                                    style={{ 
+                                        left: `${progressData?.percentage || 0}%`,
+                                        transform: `translateX(-${progressData?.percentage || 0}%)`
+                                    }}
                                 >
                                     {progressData?.accumulatedHours || 0} ชั่วโมง
                                 </div>
                             </div>
                             {/* Badge at the End */}
                             <div
-                                className="shrink-0 text-white text-[11px] px-3 min-w-[70px] h-[22px] rounded-full font-medium flex items-center justify-center bg-[#A80689] shadow-[inset_0px_-5px_7px_rgba(0,0,0,0.4),inset_0px_2px_4px_rgba(255,255,255,0.4)] whitespace-nowrap z-20"
+                                className="shrink-0 text-white text-[11px] px-3 min-w-[70px] h-[22px] rounded-full font-medium flex items-center justify-center bg-[#A80689] shadow-[inset_0px_-5px_7px_rgba(0,0,0,0.4),inset_0px_2px_4px_rgba(255,255,255,0.4)] whitespace-nowrap z-20 self-start"
                             >
                                 {progressData?.totalHoursGoal || 560} ชั่วโมง
                             </div>
@@ -381,7 +391,7 @@ const CheckInPage = () => {
                     </div>
 
                     {/* Main Panel - Content (Figma Specs: W764, H524, Radius 20, Drop Shadow, Glass, Inside Stroke Gradient) */}
-                    <div className="relative rounded-[20px] w-full min-h-[524px] h-fit flex-none p-10 shadow-[0_4px_15px_rgba(0,0,0,0.1)] bg-white/60 backdrop-blur-[4px] backdrop-saturate-[150%] flex flex-col items-center justify-center overflow-hidden">
+                    <div className="relative rounded-[20px] w-full min-h-[450px] h-fit flex-none p-10 shadow-[0_4px_15px_rgba(0,0,0,0.1)] bg-white/60 backdrop-blur-[4px] backdrop-saturate-[150%] flex flex-col items-center justify-center overflow-hidden">
                         {/* Stroke Gradient Ring (Border Only) */}
                         <div className="absolute inset-0 rounded-[20px] pointer-events-none p-[1px] bg-gradient-to-tl from-white/20 from-0% to-white to-100% [mask-image:linear-gradient(#fff,#fff),linear-gradient(#fff,#fff)] [mask-clip:content-box,border-box] [mask-composite:exclude] [-webkit-mask-composite:xor]"></div>
 
