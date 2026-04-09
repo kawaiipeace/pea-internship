@@ -1,9 +1,43 @@
-import React from 'react'
+import ContentAnimation from '@/components/layouts/content-animation';
+import Header from '@/components/layouts/header-admin';
+import MainContainer from '@/components/layouts/main-container';
+import Overlay from '@/components/layouts/overlay';
+import Setting from '@/components/layouts/setting';
+import Sidebar from '@/components/layouts/sidebar-admin';
+import Portals from '@/components/portals';
 
-const layout = () => {
-  return (
-    <div>layout admin</div>
-  )
+export default function DefaultLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <>
+            {/* BEGIN MAIN CONTAINER */}
+            <div className="relative">
+                <Overlay />
+                {/* <ScrollToTop /> */}
+
+                {/* BEGIN APP SETTING LAUNCHER */}
+                <Setting />
+                {/* END APP SETTING LAUNCHER */}
+
+                <MainContainer>
+                    {/* BEGIN SIDEBAR */}
+                    <Sidebar />
+                    {/* END SIDEBAR */}
+                    <div className="main-content flex min-h-screen flex-col">
+                        {/* BEGIN TOP NAVBAR */}
+                        <Header />
+                        {/* END TOP NAVBAR */}
+
+                        {/* BEGIN CONTENT AREA */}
+                        <ContentAnimation>{children}</ContentAnimation>
+                        {/* END CONTENT AREA */}
+
+                        {/* BEGIN FOOTER */}
+                        {/* <Footer /> */}
+                        {/* END FOOTER */}
+                        <Portals />
+                    </div>
+                </MainContainer>
+            </div>
+        </>
+    );
 }
-
-export default layout

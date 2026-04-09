@@ -5,7 +5,9 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { authApi, authStorage } from "@/services/api";
-import NotificationStatusIcon, { detectNotificationTone } from "@/components/ui/NotificationStatusIcon";
+import NotificationStatusIcon, {
+  detectNotificationTone,
+} from "@/components/ui/NotificationStatusIcon";
 
 // Helper: navigate browser directly to Keycloak SSO (must be browser navigation, not AJAX)
 const handleKeycloakRedirect = () => {
@@ -55,7 +57,6 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
       console.error("Logout API error:", error);
     } finally {
       authStorage.clearAuth();
-      localStorage.removeItem('current_user');
       router.replace("/");
     }
   };
@@ -71,7 +72,7 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
               alt="PEA Internship Logo"
               width={195}
               height={112}
-              style={{ width: 'auto', height: '3rem' }}
+              style={{ width: "auto", height: "3rem" }}
               priority
             />
           </Link>
@@ -84,28 +85,31 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                 <div className="hidden lg:flex items-center gap-8 mr-4">
                   <Link
                     href="/"
-                    className={`font-medium transition-colors ${pathname === "/"
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
-                      }`}
+                    className={`font-medium transition-colors ${
+                      pathname === "/"
+                        ? "text-primary-600 hover:text-primary-700"
+                        : "text-gray-600 hover:text-primary-600"
+                    }`}
                   >
                     ตำแหน่งฝึกงาน
                   </Link>
                   <Link
                     href="/pea-info"
-                    className={`font-medium transition-colors ${pathname === "/pea-info"
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
-                      }`}
+                    className={`font-medium transition-colors ${
+                      pathname === "/pea-info"
+                        ? "text-primary-600 hover:text-primary-700"
+                        : "text-gray-600 hover:text-primary-600"
+                    }`}
                   >
                     ข้อมูลกฟภ.
                   </Link>
                   <Link
                     href="/favorites"
-                    className={`font-medium transition-colors ${pathname === "/favorites"
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
-                      }`}
+                    className={`font-medium transition-colors ${
+                      pathname === "/favorites"
+                        ? "text-primary-600 hover:text-primary-700"
+                        : "text-gray-600 hover:text-primary-600"
+                    }`}
                   >
                     รายการโปรด
                   </Link>
@@ -167,7 +171,10 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                         <div className="px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors">
                           <div className="flex items-start gap-2">
                             <NotificationStatusIcon
-                              tone={detectNotificationTone("มีการอัปเดตสถานะการสมัครของคุณ", "2 ชั่วโมงที่แล้ว")}
+                              tone={detectNotificationTone(
+                                "มีการอัปเดตสถานะการสมัครของคุณ",
+                                "2 ชั่วโมงที่แล้ว",
+                              )}
                               className="mt-0.5 shrink-0"
                             />
                             <div>
@@ -183,7 +190,10 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                         <div className="px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors">
                           <div className="flex items-start gap-2">
                             <NotificationStatusIcon
-                              tone={detectNotificationTone("ตำแหน่งใหม่ที่คุณอาจจะสนใจ", "1 วันที่แล้ว")}
+                              tone={detectNotificationTone(
+                                "ตำแหน่งใหม่ที่คุณอาจจะสนใจ",
+                                "1 วันที่แล้ว",
+                              )}
                               className="mt-0.5 shrink-0"
                             />
                             <div>
@@ -315,41 +325,44 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                 <div className="hidden lg:flex items-center gap-8 mr-4">
                   <Link
                     href="/"
-                    className={`font-medium transition-colors ${pathname === "/"
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
-                      }`}
+                    className={`font-medium transition-colors ${
+                      pathname === "/"
+                        ? "text-primary-600 hover:text-primary-700"
+                        : "text-gray-600 hover:text-primary-600"
+                    }`}
                   >
                     ตำแหน่งฝึกงาน
                   </Link>
                   <Link
                     href="/pea-info"
-                    className={`font-medium transition-colors ${pathname === "/pea-info"
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
-                      }`}
+                    className={`font-medium transition-colors ${
+                      pathname === "/pea-info"
+                        ? "text-primary-600 hover:text-primary-700"
+                        : "text-gray-600 hover:text-primary-600"
+                    }`}
                   >
                     ข้อมูลกฟภ.
                   </Link>
                   <Link
                     href="/faqs"
-                    className={`font-medium transition-colors ${pathname === "/faqs"
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
-                      }`}
+                    className={`font-medium transition-colors ${
+                      pathname === "/faqs"
+                        ? "text-primary-600 hover:text-primary-700"
+                        : "text-gray-600 hover:text-primary-600"
+                    }`}
                   >
                     FAQs
                   </Link>
                   <Link
-                href="/credits"
-                className={`font-medium transition-colors ${
-                  pathname === "/credits"
-                    ? "text-primary-600 hover:text-primary-700"
-                    : "text-gray-600 hover:text-primary-600"
-                }`}
-              >
-                ผู้จัดทำ
-              </Link>
+                    href="/credits"
+                    className={`font-medium transition-colors ${
+                      pathname === "/credits"
+                        ? "text-primary-600 hover:text-primary-700"
+                        : "text-gray-600 hover:text-primary-600"
+                    }`}
+                  >
+                    ผู้จัดทำ
+                  </Link>
                 </div>
                 <Link
                   href="/login/intern"
@@ -408,7 +421,7 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                   alt="PEA Internship Logo"
                   width={195}
                   height={112}
-                  style={{ width: 'auto', height: '2.25rem' }}
+                  style={{ width: "auto", height: "2.25rem" }}
                 />
               </Link>
               <button
@@ -437,8 +450,11 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
               <Link
                 href="/"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/" ? "text-primary-600 font-medium bg-primary-50" : ""
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -458,8 +474,11 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
               <Link
                 href="/pea-info"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/pea-info" ? "text-primary-600 font-medium bg-primary-50" : ""
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/pea-info"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -479,8 +498,11 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
               <Link
                 href="/faqs"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/faqs" ? "text-primary-600 font-medium bg-primary-50" : ""
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/faqs"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -500,8 +522,11 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
               <Link
                 href="/credits"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/credits" ? "text-primary-600 font-medium bg-primary-50" : ""
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/credits"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -521,8 +546,11 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
               <Link
                 href="/login/intern"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${pathname === "/login/intern" ? "text-primary-600 font-medium bg-primary-50" : ""
-                  }`}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname === "/login/intern"
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
               >
                 <svg
                   className="w-5 h-5"
@@ -540,7 +568,10 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                 เข้าสู่ระบบผู้สมัคร
               </Link>
               <button
-                onClick={() => { setIsMobileMenuOpen(false); handleKeycloakRedirect(); }}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleKeycloakRedirect();
+                }}
                 className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors w-full text-left`}
               >
                 <svg

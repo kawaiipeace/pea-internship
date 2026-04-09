@@ -2,13 +2,13 @@
 
 import { useState, useEffect, use, useRef, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import { JobAnnouncement } from "@/types/announcement";
-import { formatDateThai } from "../../../data/mockAnnouncements";
-import { mockApplications, Application } from "../../../data/mockApplications";
-import OwnerSearchSection from "@/components/ui/OwnerSearchSection";
+import {
+  type Application,
+  fetchAllApplications,
+} from "../../dashboard/utils/applicationMapper";
 import { positionApi, positionToAnnouncement, userApi } from "@/services/api";
 import {
   highSchools,
@@ -21,12 +21,42 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+const thaiMonths = [
+  "ม.ค.",
+  "ก.พ.",
+  "มี.ค.",
+  "เม.ย.",
+  "พ.ค.",
+  "มิ.ย.",
+  "ก.ค.",
+  "ส.ค.",
+  "ก.ย.",
+  "ต.ค.",
+  "พ.ย.",
+  "ธ.ค.",
+];
+
+const formatDateThai = (dateString: string): string => {
+  if (!dateString) return "";
+  const dateOnly = dateString.trim().split("T")[0].split(" ")[0];
+  const parts = dateOnly.split("-");
+  if (parts.length !== 3) return dateString;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]) - 1;
+  const day = Number(parts[2]);
+  if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+    return dateString;
+  }
+  if (month < 0 || month >= thaiMonths.length) return dateString;
+  return `${day} ${thaiMonths[month]} ${year}`;
+};
+
 export default function AnnouncementDetailPage({ params }: PageProps) {
   const { id } = use(params);
-  const router = useRouter();
   const [announcement, setAnnouncement] = useState<JobAnnouncement | null>(
     null,
   );
+  const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Search and filter states
@@ -121,42 +151,36 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
     );
   };
 
-  // Load status changes from localStorage
-  const [cancelledAppsData, setCancelledAppsData] = useState<
-    { id: string; reason: string; cancelledBy: string; cancelledDate: string }[]
-  >([]);
-  const [rejectedAppIds, setRejectedAppIds] = useState<string[]>([]);
-  const [approvedAppIds, setApprovedAppIds] = useState<string[]>([]);
-  const [interviewedAppIds, setInterviewedAppIds] = useState<string[]>([]);
-  const [docUploadedAppIds, setDocUploadedAppIds] = useState<string[]>([]);
-  const [docApprovedAppIds, setDocApprovedAppIds] = useState<string[]>([]);
-  const [docRejectedAppIds, setDocRejectedAppIds] = useState<string[]>([]);
+  const filteredApplications = useMemo(() => {
+    let result = applications;
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("pea_cancelled_apps");
-      if (stored) setCancelledAppsData(JSON.parse(stored));
-    } catch {}
-    // Load all status keys from localStorage
-    const loadArr = (key: string): string[] => {
-      try {
-        const s = localStorage.getItem(key);
-        return s ? JSON.parse(s) : [];
-      } catch {
-        return [];
-      }
-    };
-    setRejectedAppIds(loadArr("pea_rejected_apps"));
-    setApprovedAppIds(loadArr("pea_approved_apps"));
-    setInterviewedAppIds(loadArr("pea_interviewed_apps"));
-    setDocUploadedAppIds(loadArr("pea_doc_uploaded_apps"));
-    setDocApprovedAppIds(loadArr("pea_doc_approved_apps"));
-    setDocRejectedAppIds(loadArr("pea_doc_rejected_apps"));
-  }, []);
-  const cancelledAppIds = useMemo(
-    () => cancelledAppsData.map((c) => c.id),
-    [cancelledAppsData],
-  );
+    const keyword = searchKeyword.trim().toLowerCase();
+    if (keyword) {
+      result = result.filter((app) => {
+        const fullName = `${app.firstName} ${app.lastName}`.toLowerCase();
+        return (
+          fullName.includes(keyword) ||
+          (app.institution || "").toLowerCase().includes(keyword) ||
+          (app.major || "").toLowerCase().includes(keyword) ||
+          (app.position || "").toLowerCase().includes(keyword)
+        );
+      });
+    }
+
+    if (selectedInstitutions.length > 0) {
+      result = result.filter((app) =>
+        selectedInstitutions.includes(app.education),
+      );
+    }
+
+    if (selectedSchools.length > 0) {
+      result = result.filter((app) =>
+        selectedSchools.includes(app.institution),
+      );
+    }
+
+    return result;
+  }, [applications, searchKeyword, selectedInstitutions, selectedSchools]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -166,19 +190,32 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
         const positionId = parseInt(id);
         if (isNaN(positionId)) {
           console.error("Invalid position ID");
+          setApplications([]);
           setIsLoading(false);
           return;
         }
 
-        const position = await positionApi.getPositionById(positionId);
+        const [position, userProfile, announcementApplications] =
+          await Promise.all([
+            positionApi.getPositionById(positionId),
+            userApi.getUserProfile(),
+            fetchAllApplications(positionId),
+          ]);
+
+        setApplications(announcementApplications);
+
         if (position) {
-          // ดึง profile ของ user ที่ login อยู่เพื่อใช้เป็นข้อมูลผู้ประกาศ
-          const userProfile = await userApi.getUserProfile();
-          const announcementData = positionToAnnouncement(position, userProfile);
+          const announcementData = positionToAnnouncement(
+            position,
+            userProfile,
+          );
           setAnnouncement(announcementData);
+        } else {
+          setAnnouncement(null);
         }
       } catch (error) {
         console.error("Error loading announcement:", error);
+        setApplications([]);
       } finally {
         setIsLoading(false);
       }
@@ -218,13 +255,7 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
     return labels[education] || education;
   };
 
-  // Derive effective status considering localStorage changes
   const getEffectiveStatus = (app: Application): string => {
-    if (cancelledAppIds.includes(app.id)) return "cancelled";
-    if (rejectedAppIds.includes(app.id)) return "rejected";
-    if (approvedAppIds.includes(app.id)) return "accepted";
-    if (interviewedAppIds.includes(app.id) && app.status === "interview")
-      return "reviewing";
     return app.status;
   };
 
@@ -266,45 +297,12 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
 
   const getAppDocumentStatusBadge = (app: Application) => {
     const effectiveStatus = getEffectiveStatus(app);
-    // If cancelled via localStorage, show "-"
     if (effectiveStatus === "cancelled") {
       return <span className="text-gray-500">-</span>;
     }
     // Not accepted yet (pending, interview, reviewing, rejected) → show "-"
     if (effectiveStatus !== "accepted") {
       return <span className="text-gray-500">-</span>;
-    }
-    // Check doc status from localStorage
-    if (docApprovedAppIds.includes(app.id)) {
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-[#085D3A] border border-green-200">
-          เอกสารผ่าน
-        </span>
-      );
-    }
-    if (docRejectedAppIds.includes(app.id)) {
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-[#912018] border border-red-200">
-          เอกสารไม่ผ่าน
-        </span>
-      );
-    }
-    if (docUploadedAppIds.includes(app.id)) {
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-50 text-[#7A2E0E] border border-yellow-200">
-          รอการตรวจสอบ
-        </span>
-      );
-    }
-    if (
-      approvedAppIds.includes(app.id) &&
-      !docUploadedAppIds.includes(app.id)
-    ) {
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-50 text-[#7A2E0E] border border-yellow-200">
-          รอเอกสารขอความอนุเคราะห์
-        </span>
-      );
     }
     // Accepted: show document status based on detailedStatus
     // Step 4: waiting for analysis doc
@@ -1219,7 +1217,7 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-800">
-                  ผู้สมัครฝึกงาน ({mockApplications.length} คน)
+                  ผู้สมัครฝึกงาน ({filteredApplications.length} คน)
                 </h2>
                 <Link
                   href="/owner/dashboard/applications"
@@ -1266,7 +1264,7 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {mockApplications.length === 0 ? (
+                    {filteredApplications.length === 0 ? (
                       <tr>
                         <td
                           colSpan={6}
@@ -1276,7 +1274,7 @@ export default function AnnouncementDetailPage({ params }: PageProps) {
                         </td>
                       </tr>
                     ) : (
-                      mockApplications.map((app) => (
+                      filteredApplications.map((app) => (
                         <tr key={app.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
                             <p className="text-sm text-gray-800 whitespace-nowrap">

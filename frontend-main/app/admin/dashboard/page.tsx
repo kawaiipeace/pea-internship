@@ -356,11 +356,15 @@ export default function AdminDashboardPage() {
   }, [filteredByYear]);
 
   const institutionTypeStats = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, Set<string>>();
 
     filteredByYear.forEach((item) => {
       const key = normalizeInstitutionType(item.institutionType);
-      map.set(key, (map.get(key) ?? 0) + 1);
+      const applicantKey = getApplicantKey(item);
+      if (!map.has(key)) {
+        map.set(key, new Set<string>());
+      }
+      map.get(key)!.add(applicantKey);
     });
 
     const labelMap: Record<string, string> = {
@@ -371,9 +375,9 @@ export default function AdminDashboardPage() {
     };
 
     return topN(
-      Array.from(map.entries()).map(([key, value]) => [
+      Array.from(map.entries()).map(([key, applicants]) => [
         labelMap[key] ?? key,
-        value,
+        applicants.size,
       ]),
       5,
     );
