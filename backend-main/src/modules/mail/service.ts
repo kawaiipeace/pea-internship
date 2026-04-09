@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 
-const APP_URL = "https://pea-internship-main.vercel.app/";
+const rawAppUrl = process.env.APP_URL;
+
+if (!rawAppUrl) {
+  throw new Error("APP_URL is not set in environment variables");
+}
+
+const APP_URL = rawAppUrl.replace(/\/+$/, "") + "/";
 
 const ACCEPT_TEMPLATE = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -139,12 +145,12 @@ a[x-apple-data-detectors],
                       <td align="center" bgcolor="#fffafe" style="padding:15px 0 20px;Margin:0"><p style="Margin:0;mso-line-height-rule:exactly;font-family:Inter, Arial, sans-serif;line-height:24px;letter-spacing:0;color:#a80689;font-size:16px"><span style="background:#fffafe"><strong style="font-weight:700 !important">หลังจากนี้ กรุณาอัพโหลดเอกสารขอความอนุเคราะห์บน PEA Internship เพื่อยืนยันการเข้าฝึกงาน ภายใน 30 วัน</strong></span></p></td>
                      </tr>
                      <tr>
-                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://pea-internship-main.vercel.app/" target="_blank" hidden>
-	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://pea-internship-main.vercel.app/" style="height:54px; v-text-anchor:middle; width:365px" arcsize="15%" stroke="f"  fillcolor="#a80689">
+                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://internship.pea.co.th/" target="_blank" hidden>
+	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://internship.pea.co.th/" style="height:54px; v-text-anchor:middle; width:365px" arcsize="15%" stroke="f"  fillcolor="#a80689">
 		<w:anchorlock></w:anchorlock>
 		<center style='color:#ffffff; font-family:Inter, Arial, sans-serif; font-size:20px; font-weight:400; line-height:20px;  mso-text-raise:1px'>อัพโหลดเอกสารขอความอนุเคราะห์</center>
 	</v:roundrect></a>
-<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto;mso-hide:all"><a href="https://pea-internship-main.vercel.app/" target="_blank" class="v" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">อัพโหลดเอกสารขอความอนุเคราะห์</a></span><!--<![endif]--></td>
+<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto;mso-hide:all"><a href="https://internship.pea.co.th/" target="_blank" class="v" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">อัพโหลดเอกสารขอความอนุเคราะห์</a></span><!--<![endif]--></td>
                      </tr>
                    </table></td>
                  </tr>
@@ -367,12 +373,12 @@ a[x-apple-data-detectors],
                      <tr>
                      </tr>
                      <tr>
-                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://pea-internship-main.vercel.app/" target="_blank" hidden>
-	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://pea-internship-main.vercel.app/" style="height:54px; v-text-anchor:middle; width:365px" arcsize="15%" stroke="f"  fillcolor="#a80689">
+                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://internship.pea.co.th/" target="_blank" hidden>
+	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://internship.pea.co.th/" style="height:54px; v-text-anchor:middle; width:365px" arcsize="15%" stroke="f"  fillcolor="#a80689">
 		<w:anchorlock></w:anchorlock>
 		<center style='color:#ffffff; font-family:Inter, Arial, sans-serif; font-size:20px; font-weight:400; line-height:20px;  mso-text-raise:1px'>อัพโหลดเอกสารขอความอนุเคราะห์</center>
 	</v:roundrect></a>
-<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="mso-hide:all;border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto"><a href="https://pea-internship-main.vercel.app/" target="_blank" class="v" style="mso-line-height-rule:exactly;text-decoration:none !important;mso-style-priority:100 !important;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">ดูงานอื่นที่เปิดรับ</a></span><!--<![endif]--></td>
+<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="mso-hide:all;border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto"><a href="https://internship.pea.co.th/" target="_blank" class="v" style="mso-line-height-rule:exactly;text-decoration:none !important;mso-style-priority:100 !important;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">ดูงานอื่นที่เปิดรับ</a></span><!--<![endif]--></td>
                      </tr>
                    </table></td>
                  </tr>
@@ -545,12 +551,12 @@ a[x-apple-data-detectors],
                       <td align="center" style="padding:0 0 15px;Margin:0"><p style="Margin:0;mso-line-height-rule:exactly;font-family:Inter, Arial, sans-serif;line-height:24px;letter-spacing:0;color:#333333;font-size:16px">เอกสารขอความอนุเคราะห์ของคุณ &lt;Firstname&gt; &lt;Lastname&gt; ได้ถูกแอดมิน ของ PEA Internship ตีกลับ&nbsp;</p><p style="Margin:0;mso-line-height-rule:exactly;font-family:Inter, Arial, sans-serif;line-height:24px;letter-spacing:0;color:#333333;font-size:16px">​</p><p style="Margin:0;mso-line-height-rule:exactly;font-family:Inter, Arial, sans-serif;line-height:24px;letter-spacing:0;color:#333333;font-size:16px"><strong style="font-weight:700 !important">กรุณาแก้ไขตามความคิดเห็นของแอดมินและอัพโหลดใหม่บน PEA Internship</strong> <strong style="font-weight:700 !important;color:#cc0000">ภายใน 15 วัน</strong></p></td>
                      </tr>
                      <tr>
-                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://pea-internship-main.vercel.app/" target="_blank" hidden>
-	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://pea-internship-main.vercel.app/" style="height:54px; v-text-anchor:middle; width:330px" arcsize="15%" stroke="f"  fillcolor="#a80689">
+                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://internship.pea.co.th/" target="_blank" hidden>
+	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://internship.pea.co.th/" style="height:54px; v-text-anchor:middle; width:330px" arcsize="15%" stroke="f"  fillcolor="#a80689">
 		<w:anchorlock></w:anchorlock>
 		<center style='color:#ffffff; font-family:Inter, Arial, sans-serif; font-size:20px; font-weight:400; line-height:20px;  mso-text-raise:1px'>ดูเหตุผลที่แอดมินตีกลับเอกสาร</center>
 	</v:roundrect></a>
-<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto;mso-hide:all"><a href="https://pea-internship-main.vercel.app/" target="_blank" class="v" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">ดูเหตุผลที่แอดมินตีกลับเอกสาร</a></span><!--<![endif]--></td>
+<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto;mso-hide:all"><a href="https://internship.pea.co.th/" target="_blank" class="v" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">ดูเหตุผลที่แอดมินตีกลับเอกสาร</a></span><!--<![endif]--></td>
                      </tr>
                    </table></td>
                  </tr>
@@ -747,7 +753,7 @@ a[x-apple-data-detectors],
                        </table></td>
                      </tr>
                      <tr>
-                      <td align="center"><span class="es-button-border" style="background:#a80689;border-radius:8px;border-color:#ffffff"><a href="https://pea-internship-main.vercel.app/" target="_blank" class="es-button" style="background:#a80689;mso-border-alt:10px solid #a80689;padding:10px;color:#ffffff;font-weight:bold;font-size:24px;font-style:normal;font-family:helvetica, 'helvetica neue', arial, verdana, sans-serif;border-radius:8px">ดูเอกสารที่ต้องเตรียมมา</a></span></td>
+                      <td align="center"><span class="es-button-border" style="background:#a80689;border-radius:8px;border-color:#ffffff"><a href="https://internship.pea.co.th/" target="_blank" class="es-button" style="background:#a80689;mso-border-alt:10px solid #a80689;padding:10px;color:#ffffff;font-weight:bold;font-size:24px;font-style:normal;font-family:helvetica, 'helvetica neue', arial, verdana, sans-serif;border-radius:8px">ดูเอกสารที่ต้องเตรียมมา</a></span></td>
                      </tr>
                    </table></td>
                  </tr>
@@ -923,12 +929,12 @@ a[x-apple-data-detectors],
                       <td align="center" style="padding:0 0 15px;Margin:0"><p style="Margin:0;mso-line-height-rule:exactly;font-family:Inter, Arial, sans-serif;line-height:24px;letter-spacing:0;color:#333333;font-size:16px">การสมัครฝึกงานของคุณ &lt;Firstname&gt; &lt;Lastname&gt; ในตำแหน่ง &lt;ชื่อตำแหน่ง&gt; ของ &lt;หน่วยงาน&gt; การไฟฟ้าส่วนภูมิภาค ได้ถูกยกเลิกจากหน่วยงาน</p></td>
                      </tr>
                      <tr>
-                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://pea-internship-main.vercel.app/" target="_blank" hidden>
-	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://pea-internship-main.vercel.app/" style="height:54px; v-text-anchor:middle; width:278px" arcsize="15%" stroke="f"  fillcolor="#a80689">
+                      <td align="center" style="padding:30px 0 0;Margin:0"><!--[if mso]><a href="https://internship.pea.co.th/" target="_blank" hidden>
+	<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" esdevVmlButton href="https://internship.pea.co.th/" style="height:54px; v-text-anchor:middle; width:278px" arcsize="15%" stroke="f"  fillcolor="#a80689">
 		<w:anchorlock></w:anchorlock>
 		<center style='color:#ffffff; font-family:Inter, Arial, sans-serif; font-size:20px; font-weight:400; line-height:20px;  mso-text-raise:1px'>อ่านเหตุผลยกเลิกฝึกงาน</center>
 	</v:roundrect></a>
-<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto;mso-hide:all"><a href="https://pea-internship-main.vercel.app/" target="_blank" class="v" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">อ่านเหตุผลยกเลิกฝึกงาน</a></span><!--<![endif]--></td>
+<![endif]--><!--[if !mso]><!-- --><span class="z msohide" style="border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto;mso-hide:all"><a href="https://internship.pea.co.th/" target="_blank" class="v" style="mso-style-priority:100 !important;text-decoration:none !important;mso-line-height-rule:exactly;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0;mso-padding-alt:0;mso-border-alt:10px solid #a80689">อ่านเหตุผลยกเลิกฝึกงาน</a></span><!--<![endif]--></td>
                      </tr>
                    </table></td>
                  </tr>
@@ -1096,7 +1102,7 @@ a[x-apple-data-detectors],
                      <tr>
                       <td align="center" style="padding:30px 0 0;Margin:0">
                         <span class="z msohide" style="mso-hide:all;border-style:solid;border-color:#2CB543;background:#a80689;border-width:0px;display:inline-block;border-radius:8px;width:auto">
-                          <a href=""https://pea-internship-main.vercel.app/"" target="_blank" class="v" style="text-decoration:none !important;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0">ดูตำแหน่งอื่นที่เปิดรับ</a>
+                          <a href=""https://internship.pea.co.th/"" target="_blank" class="v" style="text-decoration:none !important;color:#FFFFFF;font-size:20px;padding:15px 30px;display:inline-block;background:#a80689;border-radius:8px;font-family:Inter, Arial, sans-serif;font-weight:normal;font-style:normal;line-height:24px;width:auto;text-align:center;letter-spacing:0">ดูตำแหน่งอื่นที่เปิดรับ</a>
                         </span>
                       </td>
                      </tr>
@@ -1147,6 +1153,11 @@ function escapeHtml(text?: string | null) {
     .replace(/>/g, "&gt;");
 }
 
+function replaceAppUrl(html: string) {
+  return html
+    .replace(/https:\/\/internship\.pea\.co\.th\/?/g, APP_URL);
+}
+
 export class MailService {
   private transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -1159,7 +1170,9 @@ export class MailService {
   });
 
   async sendEmail(to: string, subject: string, html: string) {
-    if (!to) throw new Error("Email recipient is required");
+    if (!to) {
+      throw new Error("Email recipient is required");
+    }
 
     await this.transporter.sendMail({
       from: process.env.MAIL_FROM ?? process.env.SMTP_USER,
@@ -1181,8 +1194,9 @@ export class MailService {
       .replace(/&lt;Firstname&gt;/g, escapeHtml(params.firstname))
       .replace(/&lt;Lastname&gt;/g, escapeHtml(params.lastname))
       .replace(/&lt;ตำแหน่งงาน&gt;/g, escapeHtml(params.positionName))
-      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName))
-      .replace(/https:\/\/internship\.pea\.co\.th/g, APP_URL);
+      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName));
+
+    html = replaceAppUrl(html);
 
     return {
       subject: "โปรดอัปโหลดเอกสารขอความอนุเคราะห์",
@@ -1202,8 +1216,9 @@ export class MailService {
       .replace(/&lt;Firstname&gt;/g, escapeHtml(params.firstname))
       .replace(/&lt;Lastname&gt;/g, escapeHtml(params.lastname))
       .replace(/&lt;ตำแหน่งงาน&gt;/g, escapeHtml(params.positionName))
-      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName))
-      .replace(/https:\/\/internship\.pea\.co\.th/g, APP_URL);
+      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName));
+
+    html = replaceAppUrl(html);
 
     return {
       subject: "คุณผ่านเข้าฝึกงานแล้ว",
@@ -1211,13 +1226,17 @@ export class MailService {
     };
   }
 
-  buildDocumentRejectedEmail(params: { firstname: string; lastname: string }) {
+  buildDocumentRejectedEmail(params: {
+    firstname: string;
+    lastname: string;
+  }) {
     let html = REJECT_DOC_TEMPLATE;
 
     html = html
       .replace(/&lt;Firstname&gt;/g, escapeHtml(params.firstname))
-      .replace(/&lt;Lastname&gt;/g, escapeHtml(params.lastname))
-      .replace(/https:\/\/internship\.pea\.co\.th/g, APP_URL);
+      .replace(/&lt;Lastname&gt;/g, escapeHtml(params.lastname));
+
+    html = replaceAppUrl(html);
 
     return {
       subject: "เอกสารถูกตีกลับ",
@@ -1237,8 +1256,9 @@ export class MailService {
       .replace(/&lt;Firstname&gt;/g, escapeHtml(params.firstname))
       .replace(/&lt;Lastname&gt;/g, escapeHtml(params.lastname))
       .replace(/&lt;ตำแหน่งงาน&gt;/g, escapeHtml(params.positionName))
-      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName))
-      .replace(/https:\/\/internship\.pea\.co\.th/g, APP_URL);
+      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName));
+
+    html = replaceAppUrl(html);
 
     return {
       subject: "ผลการสมัครฝึกงาน",
@@ -1258,8 +1278,9 @@ export class MailService {
       .replace(/&lt;Firstname&gt;/g, escapeHtml(params.firstname))
       .replace(/&lt;Lastname&gt;/g, escapeHtml(params.lastname))
       .replace(/&lt;ชื่อตำแหน่ง&gt;/g, escapeHtml(params.positionName))
-      .replace(/&lt;หน่วยงาน&gt;/g, escapeHtml(params.departmentName))
-      .replace(/https:\/\/internship\.pea\.co\.th/g, APP_URL);
+      .replace(/&lt;หน่วยงาน&gt;/g, escapeHtml(params.departmentName));
+
+    html = replaceAppUrl(html);
 
     return {
       subject: "การฝึกงานถูกยกเลิก",
@@ -1279,8 +1300,9 @@ export class MailService {
       .replace(/&lt;Firstname&gt;/g, escapeHtml(params.firstname))
       .replace(/&lt;Lastname&gt;/g, escapeHtml(params.lastname))
       .replace(/&lt;ตำแหน่งงาน&gt;/g, escapeHtml(params.positionName))
-      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName))
-      .replace(/https:\/\/internship\.pea\.co\.th/g, APP_URL);
+      .replace(/&lt;ชื่อหน่วยงาน&gt;/g, escapeHtml(params.departmentName));
+
+    html = replaceAppUrl(html);
 
     return {
       subject: "การสมัครถูกยกเลิกเนื่องจากตำแหน่งเต็ม",
