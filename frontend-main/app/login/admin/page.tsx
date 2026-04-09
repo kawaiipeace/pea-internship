@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/ui/Navbar";
-import { validateLoginByEmployeeId, setCurrentUser } from "../../data/mockUsers";
+import { authApi } from "@/services/api";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [employeeId, setEmployeeId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -38,32 +36,8 @@ export default function AdminLoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ employeeId: true, password: true });
-
-    if (validateForm()) {
-      // ตรวจสอบข้อมูล login จาก mock data
-      const user = validateLoginByEmployeeId(employeeId, password, "admin");
-
-      if (!user) {
-        setErrors({
-          general: "รหัสพนักงานหรือรหัสผ่าน ไม่ถูกต้อง กรุณากรอกใหม่",
-        });
-        return;
-      }
-
-      // Login สำเร็จ
-      console.log("Login สำเร็จ:", user);
-      
-      // บันทึก user ลง localStorage
-      setCurrentUser(user);
-      
-      // Set auth cookie สำหรับ middleware
-      document.cookie = `auth_token=${user.id}; path=/; max-age=86400`;
-      document.cookie = `user_role=${user.role}; path=/; max-age=86400`;
-      
-      // Redirect to admin applications page
-      router.push("/admin/applications");
-    }
+    setErrors({});
+    window.location.href = authApi.signInKeycloak();
   };
 
   const handleBlur = (field: "employeeId" | "password") => {
@@ -95,8 +69,9 @@ export default function AdminLoginPage() {
             <div>
               <label
                 htmlFor="employeeId"
-                className={`block text-sm font-medium mb-2 ${hasEmployeeIdError ? "text-red-500" : "text-gray-700"
-                  }`}
+                className={`block text-sm font-medium mb-2 ${
+                  hasEmployeeIdError ? "text-red-500" : "text-gray-700"
+                }`}
               >
                 รหัสพนักงาน
               </label>
@@ -107,10 +82,11 @@ export default function AdminLoginPage() {
                 onChange={(e) => setEmployeeId(e.target.value)}
                 onBlur={() => handleBlur("employeeId")}
                 placeholder="รหัสพนักงาน"
-                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${hasEmployeeIdError
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${
+                  hasEmployeeIdError
                     ? "border-red-500 focus:border-red-500"
                     : "border-gray-200 focus:border-primary-600"
-                  }`}
+                }`}
               />
               {touched.employeeId && errors.employeeId && (
                 <div className="mt-2 flex items-center gap-2">
@@ -137,8 +113,9 @@ export default function AdminLoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className={`block text-sm font-medium mb-2 ${hasPasswordError ? "text-red-500" : "text-gray-700"
-                  }`}
+                className={`block text-sm font-medium mb-2 ${
+                  hasPasswordError ? "text-red-500" : "text-gray-700"
+                }`}
               >
                 รหัสผ่าน
               </label>
@@ -150,10 +127,11 @@ export default function AdminLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onBlur={() => handleBlur("password")}
                   placeholder="รหัสผ่าน"
-                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${hasPasswordError
+                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none transition-colors ${
+                    hasPasswordError
                       ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-primary-600"
-                    }`}
+                  }`}
                 />
                 <button
                   type="button"

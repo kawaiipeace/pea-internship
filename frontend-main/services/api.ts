@@ -377,48 +377,39 @@ const BETTER_AUTH_COOKIES = [
   "user_role",
 ];
 
-// สำหรับจัดการ token และ user ใน localStorage และ cookie
+let currentUserCache: ApiUser | null = null;
+
+// สำหรับจัดการ token และ user ใน cookie/in-memory
 export const authStorage = {
   setToken: (token: string): void => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("auth_token", token);
-      // เก็บใน cookie ด้วยสำหรับ middleware
       setCookie("auth_token", token, 7);
     }
   },
 
   getToken: (): string | null => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("auth_token") || getCookie("auth_token");
+      return getCookie("auth_token");
     }
     return null;
   },
 
   removeToken: (): void => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("auth_token");
       deleteCookie("auth_token");
     }
   },
 
   setUser: (user: ApiUser): void => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("current_user", JSON.stringify(user));
-    }
+    currentUserCache = user;
   },
 
   getUser: (): ApiUser | null => {
-    if (typeof window !== "undefined") {
-      const data = localStorage.getItem("current_user");
-      return data ? JSON.parse(data) : null;
-    }
-    return null;
+    return currentUserCache;
   },
 
   removeUser: (): void => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("current_user");
-    }
+    currentUserCache = null;
   },
 
   // ลบ Better Auth cookies
@@ -439,7 +430,7 @@ export const authStorage = {
 
   // ตรวจสอบว่า login อยู่หรือไม่
   isAuthenticated: (): boolean => {
-    // ตรวจสอบทั้ง auth_token, Better Auth session, และ user ใน localStorage
+    // ตรวจสอบทั้ง auth_token, Better Auth session, และ user ใน memory
     const hasToken = !!authStorage.getToken();
     const hasBetterAuthSession = !!getCookie("better-auth.session_token");
     const hasUser = !!authStorage.getUser();
@@ -449,39 +440,24 @@ export const authStorage = {
 
 // ==================== Position/Internship API ====================
 
-// Mentor cache storage key
-const MENTOR_CACHE_KEY = "mentor_data_cache";
+const mentorCacheStore: Record<string, { name: string; email: string; phone: string }> = {};
 
-// Helper functions for mentor data cache
+// Helper functions for mentor data cache (in-memory)
 export const mentorCache = {
-  // บันทึกข้อมูล mentor สำหรับ position
   save: (positionId: number | string, mentorData: { name: string; email: string; phone: string }) => {
-    if (typeof window === "undefined") return;
-    const cache = mentorCache.getAll();
-    cache[positionId.toString()] = mentorData;
-    localStorage.setItem(MENTOR_CACHE_KEY, JSON.stringify(cache));
+    mentorCacheStore[positionId.toString()] = mentorData;
   },
 
-  // ดึงข้อมูล mentor สำหรับ position
   get: (positionId: number | string): { name: string; email: string; phone: string } | null => {
-    if (typeof window === "undefined") return null;
-    const cache = mentorCache.getAll();
-    return cache[positionId.toString()] || null;
+    return mentorCacheStore[positionId.toString()] || null;
   },
 
-  // ดึงข้อมูล cache ทั้งหมด
   getAll: (): Record<string, { name: string; email: string; phone: string }> => {
-    if (typeof window === "undefined") return {};
-    const data = localStorage.getItem(MENTOR_CACHE_KEY);
-    return data ? JSON.parse(data) : {};
+    return { ...mentorCacheStore };
   },
 
-  // ลบข้อมูล mentor สำหรับ position
   remove: (positionId: number | string) => {
-    if (typeof window === "undefined") return;
-    const cache = mentorCache.getAll();
-    delete cache[positionId.toString()];
-    localStorage.setItem(MENTOR_CACHE_KEY, JSON.stringify(cache));
+    delete mentorCacheStore[positionId.toString()];
   },
 };
 

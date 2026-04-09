@@ -7,7 +7,7 @@ import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import ThaiDateInput from "@/components/ui/ThaiDateInput";
 import { AnnouncementFormErrors } from "@/types/announcement";
-import { relatedFieldOptions } from "../../../data/mockAnnouncements";
+import { relatedFieldOptions } from "../../../data/relatedFieldOptions";
 import {
   positionApi,
   CreatePositionData,

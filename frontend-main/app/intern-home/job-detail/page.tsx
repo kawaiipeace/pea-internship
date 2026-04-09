@@ -2,19 +2,36 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { NavbarIntern } from "@/components";
 import Toast from "@/components/ui/Toast";
 import VideoLoading from "@/components/ui/VideoLoading";
-import { applicationApi, favoriteApi, jobIdToPositionId } from "@/services/api";
+import {
+  applicationApi,
+  favoriteApi,
+  jobIdToPositionId,
+  positionApi,
+  positionToJobWithStaff,
+  StaffUser,
+} from "@/services/api";
 
 // Helper function to format date to Thai format
 const formatDateToThai = (dateString: string): string => {
   if (!dateString) return "-";
   const date = new Date(dateString);
   const thaiMonths = [
-    "ม.ค", "ก.พ", "มี.ค", "เม.ย", "พ.ค", "มิ.ย",
-    "ก.ค", "ส.ค", "ก.ย", "ต.ค", "พ.ย", "ธ.ค"
+    "ม.ค",
+    "ก.พ",
+    "มี.ค",
+    "เม.ย",
+    "พ.ค",
+    "มิ.ย",
+    "ก.ค",
+    "ส.ค",
+    "ก.ย",
+    "ต.ค",
+    "พ.ย",
+    "ธ.ค",
   ];
   const day = date.getDate();
   const month = thaiMonths[date.getMonth()];
@@ -74,102 +91,116 @@ interface JobDetail {
 
 export default function InternJobDetailPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isFavorite, setIsFavorite] = useState(false);
   const [jobDetail, setJobDetail] = useState<JobDetail>(defaultJobDetail);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">(
+    "success",
+  );
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load job from localStorage on mount
+  // Load job detail by query param and API
   useEffect(() => {
-    const loadJobDetail = () => {
+    const loadJobDetail = async () => {
       setIsLoading(true);
 
-      // Load from selectedJobDetail (when clicking "go to" button)
-      const savedJob = localStorage.getItem("selectedJobDetail");
-
-      if (savedJob) {
-        const parsedJob = JSON.parse(savedJob);
-
-        // Use data directly from localStorage (already parsed from API in intern-home page)
-        setJobDetail({
-          ...defaultJobDetail,
-          id: parsedJob.id || defaultJobDetail.id,
-          title: parsedJob.title || defaultJobDetail.title,
-          location: parsedJob.location || defaultJobDetail.location,
-          department: parsedJob.department || defaultJobDetail.department,
-          tags: parsedJob.tags || defaultJobDetail.tags,
-          applicationPeriod: parsedJob.applicationPeriod ||
-            (parsedJob.startDate && parsedJob.endDate
-              ? `${parsedJob.startDate} - ${parsedJob.endDate}`
-              : defaultJobDetail.applicationPeriod),
-          positions: parsedJob.positions || ((parsedJob.maxApplicants || 0) === 0 ? "ไม่จำกัดจำนวน" : `${parsedJob.currentApplicants ?? 0}/${parsedJob.maxApplicants || 1} ตำแหน่ง`),
-          maxApplicants: parsedJob.maxApplicants ?? 0,
-          currentApplicants: parsedJob.currentApplicants ?? 0,
-          responsibilities: parsedJob.responsibilities || defaultJobDetail.responsibilities,
-          qualifications: parsedJob.qualifications || defaultJobDetail.qualifications,
-          benefits: parsedJob.benefits || defaultJobDetail.benefits,
-          recruitStartDate: parsedJob.recruitStartDate,
-          recruitEndDate: parsedJob.recruitEndDate,
-          requiredDocuments: parsedJob.requiredDocuments,
-          supervisorName: parsedJob.supervisorName,
-          supervisorEmail: parsedJob.supervisorEmail,
-          supervisorPhone: parsedJob.supervisorPhone,
-          mentorName: parsedJob.mentorName,
-          mentorEmail: parsedJob.mentorEmail,
-          mentorPhone: parsedJob.mentorPhone,
-        });
-
-        // Check favorites
-        const savedFavorites = localStorage.getItem("favorites");
-        if (savedFavorites) {
-          const favorites: string[] = JSON.parse(savedFavorites);
-          setIsFavorite(favorites.includes(parsedJob.id));
-        }
+      const jobId = searchParams.get("jobId");
+      if (!jobId) {
+        setIsLoading(false);
+        return;
       }
 
-      setIsLoading(false);
+      try {
+        const positionId = jobIdToPositionId(jobId);
+        if (positionId) {
+          const position = await positionApi.getPositionById(positionId);
+          if (position) {
+            const staffList: StaffUser[] = [];
+            const parsedJob = positionToJobWithStaff(position, staffList);
+            setJobDetail({
+              ...defaultJobDetail,
+              id: parsedJob.id || defaultJobDetail.id,
+              title: parsedJob.title || defaultJobDetail.title,
+              location: parsedJob.location || defaultJobDetail.location,
+              department: parsedJob.department || defaultJobDetail.department,
+              tags: parsedJob.tags || defaultJobDetail.tags,
+              applicationPeriod:
+                parsedJob.applicationPeriod ||
+                (parsedJob.startDate && parsedJob.endDate
+                  ? `${parsedJob.startDate} - ${parsedJob.endDate}`
+                  : defaultJobDetail.applicationPeriod),
+              positions:
+                parsedJob.positions ||
+                ((parsedJob.maxApplicants || 0) === 0
+                  ? "ไม่จำกัดจำนวน"
+                  : `${parsedJob.currentApplicants ?? 0}/${parsedJob.maxApplicants || 1} ตำแหน่ง`),
+              maxApplicants: parsedJob.maxApplicants ?? 0,
+              currentApplicants: parsedJob.currentApplicants ?? 0,
+              responsibilities:
+                parsedJob.responsibilities || defaultJobDetail.responsibilities,
+              qualifications:
+                parsedJob.qualifications || defaultJobDetail.qualifications,
+              benefits: parsedJob.benefits || defaultJobDetail.benefits,
+              recruitStartDate: parsedJob.recruitStartDate,
+              recruitEndDate: parsedJob.recruitEndDate,
+              requiredDocuments: parsedJob.requiredDocuments,
+              supervisorName: parsedJob.supervisorName,
+              supervisorEmail: parsedJob.supervisorEmail,
+              supervisorPhone: parsedJob.supervisorPhone,
+              mentorName: parsedJob.mentorName,
+              mentorEmail: parsedJob.mentorEmail,
+              mentorPhone: parsedJob.mentorPhone,
+            });
+          }
+        }
+
+        const favoritesResponse = await favoriteApi.getFavorites();
+        const favoritePositionIds = favoritesResponse.data.map(
+          (item) => item.favorite.positionId,
+        );
+        setIsFavorite(
+          positionId ? favoritePositionIds.includes(positionId) : false,
+        );
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadJobDetail();
-  }, []);
+  }, [searchParams]);
 
   const handleToggleFavorite = async () => {
     const positionId = jobIdToPositionId(jobDetail.id);
+    if (!positionId) return;
     let message: string;
     let type: "success" | "error";
 
     if (isFavorite) {
       // Remove favorite via API
-      if (positionId) {
-        await favoriteApi.removeFavorite(positionId);
-      }
-      // Update localStorage
-      const savedFavorites = localStorage.getItem("favorites");
-      let favorites: string[] = savedFavorites ? JSON.parse(savedFavorites) : [];
-      favorites = favorites.filter((id) => id !== jobDetail.id);
-      localStorage.setItem("favorites", JSON.stringify(favorites));
+      await favoriteApi.removeFavorite(positionId);
       message = "ลบตำแหน่งงานออกจากรายการโปรดแล้ว";
       type = "error";
     } else {
       // Add favorite via API
-      if (positionId) {
-        await favoriteApi.addFavorite(positionId);
-      }
-      // Update localStorage
-      const savedFavorites = localStorage.getItem("favorites");
-      let favorites: string[] = savedFavorites ? JSON.parse(savedFavorites) : [];
-      favorites = [...favorites, jobDetail.id];
-      localStorage.setItem("favorites", JSON.stringify(favorites));
+      await favoriteApi.addFavorite(positionId);
       message = "บันทึกตำแหน่งงานของคุณเรียบร้อยแล้ว";
       type = "success";
     }
 
-    setIsFavorite(!isFavorite);
-
-    // Dispatch event to update Navbar favorites count
-    window.dispatchEvent(new Event("favoritesUpdated"));
+    const nextFavoriteState = !isFavorite;
+    setIsFavorite(nextFavoriteState);
+    try {
+      const favoritesResponse = await favoriteApi.getFavorites();
+      window.dispatchEvent(
+        new CustomEvent("favoritesUpdated", {
+          detail: { count: favoritesResponse.data.length },
+        }),
+      );
+    } catch {
+      window.dispatchEvent(new Event("favoritesUpdated"));
+    }
 
     // Show toast notification
     setToastMessage(message);
@@ -179,7 +210,10 @@ export default function InternJobDetailPage() {
 
   const handleApply = async () => {
     // ตรวจสอบว่าตำแหน่งเต็มหรือไม่
-    if ((jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0)) {
+    if (
+      (jobDetail.maxApplicants ?? 0) > 0 &&
+      (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0)
+    ) {
       setToastMessage("ตำแหน่งนี้รับสมัครเต็มแล้ว");
       setToastType("error");
       setShowToast(true);
@@ -187,22 +221,26 @@ export default function InternJobDetailPage() {
     }
     // Call API to validate application (backend checks internshipStatus + position status)
     const positionId = jobIdToPositionId(jobDetail.id);
-    if (positionId) {
-      try {
-        await applicationApi.createApplication(positionId);
-        // Store positionId for use in intern-info page
-        localStorage.setItem("currentPositionId", String(positionId));
-      } catch (err: unknown) {
-        const error = err as { response?: { data?: { message?: string } } };
-        const msg = error?.response?.data?.message || "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง";
-        setToastMessage(msg);
-        setToastType("error");
-        setShowToast(true);
-        return;
-      }
+    if (!positionId) {
+      setToastMessage("ไม่พบข้อมูลตำแหน่งที่สมัคร กรุณาลองใหม่อีกครั้ง");
+      setToastType("error");
+      setShowToast(true);
+      return;
+    }
+    try {
+      await applicationApi.createApplication(positionId);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      const msg =
+        error?.response?.data?.message ||
+        "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง";
+      setToastMessage(msg);
+      setToastType("error");
+      setShowToast(true);
+      return;
     }
 
-    router.push("/intern-info");
+    router.push(`/intern-info?positionId=${positionId}`);
   };
 
   return (
@@ -226,11 +264,15 @@ export default function InternJobDetailPage() {
                 ตำแหน่งฝึกงาน
               </Link>
               <span className="text-gray-400">&gt;</span>
-              <span className="text-primary-600 font-medium">รายละเอียดงาน</span>
+              <span className="text-primary-600 font-medium">
+                รายละเอียดงาน
+              </span>
             </div>
 
             {/* Page Title - Mobile: Job title in purple, Desktop: Section title */}
-            <h1 className="text-xl lg:text-2xl font-bold text-black lg:text-gray-800 mb-4 lg:mb-6">{jobDetail.title}</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-black lg:text-gray-800 mb-4 lg:mb-6">
+              {jobDetail.title}
+            </h1>
 
             {/* Job Summary Card - Card styling only on desktop */}
             <div className="lg:bg-white lg:rounded-2xl lg:shadow-sm lg:p-6 mb-6">
@@ -322,11 +364,29 @@ export default function InternJobDetailPage() {
 
                     {/* Application Period */}
                     <div className="flex items-center gap-3">
-                      <svg width="20" height="20" viewBox="0 0 11 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8.24167 1.75833C8.08055 1.59722 8 1.4 8 1.16667C8 0.933333 8.08055 0.736111 8.24167 0.575C8.40278 0.413889 8.6 0.333333 8.83333 0.333333C9.06667 0.333333 9.26389 0.413889 9.425 0.575C9.58611 0.736111 9.66667 0.933333 9.66667 1.16667C9.66667 1.4 9.58611 1.59722 9.425 1.75833C9.26389 1.91944 9.06667 2 8.83333 2C8.6 2 8.40278 1.91944 8.24167 1.75833ZM8.24167 12.7583C8.08055 12.5972 8 12.4 8 12.1667C8 11.9333 8.08055 11.7361 8.24167 11.575C8.40278 11.4139 8.6 11.3333 8.83333 11.3333C9.06667 11.3333 9.26389 11.4139 9.425 11.575C9.58611 11.7361 9.66667 11.9333 9.66667 12.1667C9.66667 12.4 9.58611 12.5972 9.425 12.7583C9.26389 12.9194 9.06667 13 8.83333 13C8.6 13 8.40278 12.9194 8.24167 12.7583ZM10.9083 4.09167C10.7472 3.93056 10.6667 3.73333 10.6667 3.5C10.6667 3.26667 10.7472 3.06944 10.9083 2.90833C11.0694 2.74722 11.2667 2.66667 11.5 2.66667C11.7333 2.66667 11.9306 2.74722 12.0917 2.90833C12.2528 3.06944 12.3333 3.26667 12.3333 3.5C12.3333 3.73333 12.2528 3.93056 12.0917 4.09167C11.9306 4.25278 11.7333 4.33333 11.5 4.33333C11.2667 4.33333 11.0694 4.25278 10.9083 4.09167ZM10.9083 10.425C10.7472 10.2639 10.6667 10.0667 10.6667 9.83333C10.6667 9.6 10.7472 9.40278 10.9083 9.24167C11.0694 9.08055 11.2667 9 11.5 9C11.7333 9 11.9306 9.08055 12.0917 9.24167C12.2528 9.40278 12.3333 9.6 12.3333 9.83333C12.3333 10.0667 12.2528 10.2639 12.0917 10.425C11.9306 10.5861 11.7333 10.6667 11.5 10.6667C11.2667 10.6667 11.0694 10.5861 10.9083 10.425ZM11.9083 7.25833C11.7472 7.09722 11.6667 6.9 11.6667 6.66667C11.6667 6.43333 11.7472 6.23611 11.9083 6.075C12.0694 5.91389 12.2667 5.83333 12.5 5.83333C12.7333 5.83333 12.9306 5.91389 13.0917 6.075C13.2528 6.23611 13.3333 6.43333 13.3333 6.66667C13.3333 6.9 13.2528 7.09722 13.0917 7.25833C12.9306 7.41944 12.7333 7.5 12.5 7.5C12.2667 7.5 12.0694 7.41944 11.9083 7.25833ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0V1.33333C5.17778 1.33333 3.91667 1.85 2.88333 2.88333C1.85 3.91667 1.33333 5.17778 1.33333 6.66667C1.33333 8.15555 1.85 9.41667 2.88333 10.45C3.91667 11.4833 5.17778 12 6.66667 12V13.3333ZM8.86667 9.8L6 6.93333V3.33333H7.33333V6.4L9.8 8.86667L8.86667 9.8Z" fill="#A80689" />
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 11 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M8.24167 1.75833C8.08055 1.59722 8 1.4 8 1.16667C8 0.933333 8.08055 0.736111 8.24167 0.575C8.40278 0.413889 8.6 0.333333 8.83333 0.333333C9.06667 0.333333 9.26389 0.413889 9.425 0.575C9.58611 0.736111 9.66667 0.933333 9.66667 1.16667C9.66667 1.4 9.58611 1.59722 9.425 1.75833C9.26389 1.91944 9.06667 2 8.83333 2C8.6 2 8.40278 1.91944 8.24167 1.75833ZM8.24167 12.7583C8.08055 12.5972 8 12.4 8 12.1667C8 11.9333 8.08055 11.7361 8.24167 11.575C8.40278 11.4139 8.6 11.3333 8.83333 11.3333C9.06667 11.3333 9.26389 11.4139 9.425 11.575C9.58611 11.7361 9.66667 11.9333 9.66667 12.1667C9.66667 12.4 9.58611 12.5972 9.425 12.7583C9.26389 12.9194 9.06667 13 8.83333 13C8.6 13 8.40278 12.9194 8.24167 12.7583ZM10.9083 4.09167C10.7472 3.93056 10.6667 3.73333 10.6667 3.5C10.6667 3.26667 10.7472 3.06944 10.9083 2.90833C11.0694 2.74722 11.2667 2.66667 11.5 2.66667C11.7333 2.66667 11.9306 2.74722 12.0917 2.90833C12.2528 3.06944 12.3333 3.26667 12.3333 3.5C12.3333 3.73333 12.2528 3.93056 12.0917 4.09167C11.9306 4.25278 11.7333 4.33333 11.5 4.33333C11.2667 4.33333 11.0694 4.25278 10.9083 4.09167ZM10.9083 10.425C10.7472 10.2639 10.6667 10.0667 10.6667 9.83333C10.6667 9.6 10.7472 9.40278 10.9083 9.24167C11.0694 9.08055 11.2667 9 11.5 9C11.7333 9 11.9306 9.08055 12.0917 9.24167C12.2528 9.40278 12.3333 9.6 12.3333 9.83333C12.3333 10.0667 12.2528 10.2639 12.0917 10.425C11.9306 10.5861 11.7333 10.6667 11.5 10.6667C11.2667 10.6667 11.0694 10.5861 10.9083 10.425ZM11.9083 7.25833C11.7472 7.09722 11.6667 6.9 11.6667 6.66667C11.6667 6.43333 11.7472 6.23611 11.9083 6.075C12.0694 5.91389 12.2667 5.83333 12.5 5.83333C12.7333 5.83333 12.9306 5.91389 13.0917 6.075C13.2528 6.23611 13.3333 6.43333 13.3333 6.66667C13.3333 6.9 13.2528 7.09722 13.0917 7.25833C12.9306 7.41944 12.7333 7.5 12.5 7.5C12.2667 7.5 12.0694 7.41944 11.9083 7.25833ZM6.66667 13.3333C5.74444 13.3333 4.87778 13.1583 4.06667 12.8083C3.25556 12.4583 2.55 11.9833 1.95 11.3833C1.35 10.7833 0.875 10.0778 0.525 9.26667C0.175 8.45555 0 7.58889 0 6.66667C0 5.74444 0.175 4.87778 0.525 4.06667C0.875 3.25556 1.35 2.55 1.95 1.95C2.55 1.35 3.25556 0.875 4.06667 0.525C4.87778 0.175 5.74444 0 6.66667 0V1.33333C5.17778 1.33333 3.91667 1.85 2.88333 2.88333C1.85 3.91667 1.33333 5.17778 1.33333 6.66667C1.33333 8.15555 1.85 9.41667 2.88333 10.45C3.91667 11.4833 5.17778 12 6.66667 12V13.3333ZM8.86667 9.8L6 6.93333V3.33333H7.33333V6.4L9.8 8.86667L8.86667 9.8Z"
+                          fill="#A80689"
+                        />
                       </svg>
                       <span>
-                        ระยะเวลาที่เปิดรับสมัคร: {jobDetail.recruitStartDate && jobDetail.recruitEndDate && jobDetail.recruitStartDate !== "-" && jobDetail.recruitEndDate !== "-" ? `${jobDetail.recruitStartDate} - ${jobDetail.recruitEndDate}` : (jobDetail.applicationPeriod && jobDetail.applicationPeriod !== "- - -" ? jobDetail.applicationPeriod : "ไม่กำหนดระยะเวลา")}
+                        ระยะเวลาที่เปิดรับสมัคร:{" "}
+                        {jobDetail.recruitStartDate &&
+                        jobDetail.recruitEndDate &&
+                        jobDetail.recruitStartDate !== "-" &&
+                        jobDetail.recruitEndDate !== "-"
+                          ? `${jobDetail.recruitStartDate} - ${jobDetail.recruitEndDate}`
+                          : jobDetail.applicationPeriod &&
+                              jobDetail.applicationPeriod !== "- - -"
+                            ? jobDetail.applicationPeriod
+                            : "ไม่กำหนดระยะเวลา"}
                       </span>
                     </div>
                   </div>
@@ -356,12 +416,25 @@ export default function InternJobDetailPage() {
                     {/* Apply Button */}
                     <button
                       onClick={handleApply}
-                      disabled={(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0)}
-                      className={`px-8 py-2 border-2 rounded-lg font-medium transition-colors active:scale-95 ${(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0)
+                      disabled={
+                        (jobDetail.maxApplicants ?? 0) > 0 &&
+                        (jobDetail.currentApplicants ?? 0) >=
+                          (jobDetail.maxApplicants ?? 0)
+                      }
+                      className={`px-8 py-2 border-2 rounded-lg font-medium transition-colors active:scale-95 ${
+                        (jobDetail.maxApplicants ?? 0) > 0 &&
+                        (jobDetail.currentApplicants ?? 0) >=
+                          (jobDetail.maxApplicants ?? 0)
                           ? "bg-gray-300 border-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-primary-600 border-primary-600 text-white hover:bg-white hover:text-primary-600"
-                        }`}
-                      title={(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0) ? "ตำแหน่งนี้รับสมัครเต็มแล้ว" : undefined}
+                      }`}
+                      title={
+                        (jobDetail.maxApplicants ?? 0) > 0 &&
+                        (jobDetail.currentApplicants ?? 0) >=
+                          (jobDetail.maxApplicants ?? 0)
+                          ? "ตำแหน่งนี้รับสมัครเต็มแล้ว"
+                          : undefined
+                      }
                     >
                       สมัคร
                     </button>
@@ -436,8 +509,14 @@ export default function InternJobDetailPage() {
               <div className="mb-6">
                 <h4 className="font-bold text-gray-700 mb-4">สวัสดิการ</h4>
                 <div className="space-y-2">
-                  {(jobDetail.benefits ? jobDetail.benefits.split(/\r?\n/).filter(b => b.trim()) : ["ไม่มีค่าตอบแทน"]).map((item, index) => (
-                    <div key={index} className="flex items-start gap-3 text-gray-600">
+                  {(jobDetail.benefits
+                    ? jobDetail.benefits.split(/\r?\n/).filter((b) => b.trim())
+                    : ["ไม่มีค่าตอบแทน"]
+                  ).map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 text-gray-600"
+                    >
                       <svg
                         width="24"
                         height="24"
@@ -459,65 +538,151 @@ export default function InternJobDetailPage() {
 
               {/* Required Documents */}
               <div className="mb-6">
-                <h4 className="font-bold text-gray-700 mb-4">เอกสารที่ต้องใช้</h4>
+                <h4 className="font-bold text-gray-700 mb-4">
+                  เอกสารที่ต้องใช้
+                </h4>
                 <div className="space-y-2">
-                  {(jobDetail.requiredDocuments || ["Transcript"]).map((doc, idx) => (
-                    <div key={idx} className="flex items-start gap-3 text-gray-600">
-                      <svg width="24" height="24" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.66667 10.3333V11.6667C9.66667 11.7556 9.7 11.8333 9.76667 11.9C9.83333 11.9667 9.91111 12 10 12C10.0889 12 10.1667 11.9667 10.2333 11.9C10.3 11.8333 10.3333 11.7556 10.3333 11.6667V10.3333H11.6667C11.7556 10.3333 11.8333 10.3 11.9 10.2333C11.9667 10.1667 12 10.0889 12 10C12 9.91111 11.9667 9.83333 11.9 9.76667C11.8333 9.7 11.7556 9.66667 11.6667 9.66667H10.3333V8.33333C10.3333 8.24444 10.3 8.16667 10.2333 8.1C10.1667 8.03333 10.0889 8 10 8C9.91111 8 9.83333 8.03333 9.76667 8.1C9.7 8.16667 9.66667 8.24444 9.66667 8.33333V9.66667H8.33333C8.24444 9.66667 8.16667 9.7 8.1 9.76667C8.03333 9.83333 8 9.91111 8 10C8 10.0889 8.03333 10.1667 8.1 10.2333C8.16667 10.3 8.24444 10.3333 8.33333 10.3333H9.66667ZM1.33333 12C0.966667 12 0.652778 11.8694 0.391667 11.6083C0.130556 11.3472 0 11.0333 0 10.6667V1.33333C0 0.966667 0.130556 0.652778 0.391667 0.391667C0.652778 0.130556 0.966667 0 1.33333 0H10.6667C11.0333 0 11.3472 0.130556 11.6083 0.391667C11.8694 0.652778 12 0.966667 12 1.33333V4.66667C12 4.85556 11.9361 5.01389 11.8083 5.14167C11.6806 5.26944 11.5222 5.33333 11.3333 5.33333C11.1444 5.33333 10.9861 5.26944 10.8583 5.14167C10.7306 5.01389 10.6667 4.85556 10.6667 4.66667V1.33333H1.33333V10.6667H4.66667C4.85556 10.6667 5.01389 10.7306 5.14167 10.8583C5.26944 10.9861 5.33333 11.1444 5.33333 11.3333C5.33333 11.5222 5.26944 11.6806 5.14167 11.8083C5.01389 11.9361 4.85556 12 4.66667 12H1.33333ZM1.33333 10.6667V1.33333V5.38333V5.33333V10.6667ZM2.66667 8.66667C2.66667 8.85555 2.73056 9.01389 2.85833 9.14167C2.98611 9.26944 3.14444 9.33333 3.33333 9.33333H4.71667C4.90556 9.33333 5.06389 9.26944 5.19167 9.14167C5.31944 9.01389 5.38333 8.85555 5.38333 8.66667C5.38333 8.47778 5.31944 8.31944 5.19167 8.19167C5.06389 8.06389 4.90556 8 4.71667 8H3.33333C3.14444 8 2.98611 8.06389 2.85833 8.19167C2.73056 8.31944 2.66667 8.47778 2.66667 8.66667ZM2.66667 6C2.66667 6.18889 2.73056 6.34722 2.85833 6.475C2.98611 6.60278 3.14444 6.66667 3.33333 6.66667H6.66667C6.85556 6.66667 7.01389 6.60278 7.14167 6.475C7.26944 6.34722 7.33333 6.18889 7.33333 6C7.33333 5.81111 7.26944 5.65278 7.14167 5.525C7.01389 5.39722 6.85556 5.33333 6.66667 5.33333H3.33333C3.14444 5.33333 2.98611 5.39722 2.85833 5.525C2.73056 5.65278 2.66667 5.81111 2.66667 6ZM2.66667 3.33333C2.66667 3.52222 2.73056 3.68056 2.85833 3.80833C2.98611 3.93611 3.14444 4 3.33333 4H8.66667C8.85555 4 9.01389 3.93611 9.14167 3.80833C9.26944 3.68056 9.33333 3.52222 9.33333 3.33333C9.33333 3.14444 9.26944 2.98611 9.14167 2.85833C9.01389 2.73056 8.85555 2.66667 8.66667 2.66667H3.33333C3.14444 2.66667 2.98611 2.73056 2.85833 2.85833C2.73056 2.98611 2.66667 3.14444 2.66667 3.33333ZM10 13.3333C9.07778 13.3333 8.29167 13.0083 7.64167 12.3583C6.99167 11.7083 6.66667 10.9222 6.66667 10C6.66667 9.07778 6.99167 8.29167 7.64167 7.64167C8.29167 6.99167 9.07778 6.66667 10 6.66667C10.9222 6.66667 11.7083 6.99167 12.3583 7.64167C13.0083 8.29167 13.3333 9.07778 13.3333 10C13.3333 10.9222 13.0083 11.7083 12.3583 12.3583C11.7083 13.0083 10.9222 13.3333 10 13.3333Z" fill="#A80689" />
-                      </svg>
-                      <span>{doc}</span>
-                    </div>
-                  ))}
+                  {(jobDetail.requiredDocuments || ["Transcript"]).map(
+                    (doc, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 text-gray-600"
+                      >
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M9.66667 10.3333V11.6667C9.66667 11.7556 9.7 11.8333 9.76667 11.9C9.83333 11.9667 9.91111 12 10 12C10.0889 12 10.1667 11.9667 10.2333 11.9C10.3 11.8333 10.3333 11.7556 10.3333 11.6667V10.3333H11.6667C11.7556 10.3333 11.8333 10.3 11.9 10.2333C11.9667 10.1667 12 10.0889 12 10C12 9.91111 11.9667 9.83333 11.9 9.76667C11.8333 9.7 11.7556 9.66667 11.6667 9.66667H10.3333V8.33333C10.3333 8.24444 10.3 8.16667 10.2333 8.1C10.1667 8.03333 10.0889 8 10 8C9.91111 8 9.83333 8.03333 9.76667 8.1C9.7 8.16667 9.66667 8.24444 9.66667 8.33333V9.66667H8.33333C8.24444 9.66667 8.16667 9.7 8.1 9.76667C8.03333 9.83333 8 9.91111 8 10C8 10.0889 8.03333 10.1667 8.1 10.2333C8.16667 10.3 8.24444 10.3333 8.33333 10.3333H9.66667ZM1.33333 12C0.966667 12 0.652778 11.8694 0.391667 11.6083C0.130556 11.3472 0 11.0333 0 10.6667V1.33333C0 0.966667 0.130556 0.652778 0.391667 0.391667C0.652778 0.130556 0.966667 0 1.33333 0H10.6667C11.0333 0 11.3472 0.130556 11.6083 0.391667C11.8694 0.652778 12 0.966667 12 1.33333V4.66667C12 4.85556 11.9361 5.01389 11.8083 5.14167C11.6806 5.26944 11.5222 5.33333 11.3333 5.33333C11.1444 5.33333 10.9861 5.26944 10.8583 5.14167C10.7306 5.01389 10.6667 4.85556 10.6667 4.66667V1.33333H1.33333V10.6667H4.66667C4.85556 10.6667 5.01389 10.7306 5.14167 10.8583C5.26944 10.9861 5.33333 11.1444 5.33333 11.3333C5.33333 11.5222 5.26944 11.6806 5.14167 11.8083C5.01389 11.9361 4.85556 12 4.66667 12H1.33333ZM1.33333 10.6667V1.33333V5.38333V5.33333V10.6667ZM2.66667 8.66667C2.66667 8.85555 2.73056 9.01389 2.85833 9.14167C2.98611 9.26944 3.14444 9.33333 3.33333 9.33333H4.71667C4.90556 9.33333 5.06389 9.26944 5.19167 9.14167C5.31944 9.01389 5.38333 8.85555 5.38333 8.66667C5.38333 8.47778 5.31944 8.31944 5.19167 8.19167C5.06389 8.06389 4.90556 8 4.71667 8H3.33333C3.14444 8 2.98611 8.06389 2.85833 8.19167C2.73056 8.31944 2.66667 8.47778 2.66667 8.66667ZM2.66667 6C2.66667 6.18889 2.73056 6.34722 2.85833 6.475C2.98611 6.60278 3.14444 6.66667 3.33333 6.66667H6.66667C6.85556 6.66667 7.01389 6.60278 7.14167 6.475C7.26944 6.34722 7.33333 6.18889 7.33333 6C7.33333 5.81111 7.26944 5.65278 7.14167 5.525C7.01389 5.39722 6.85556 5.33333 6.66667 5.33333H3.33333C3.14444 5.33333 2.98611 5.39722 2.85833 5.525C2.73056 5.65278 2.66667 5.81111 2.66667 6ZM2.66667 3.33333C2.66667 3.52222 2.73056 3.68056 2.85833 3.80833C2.98611 3.93611 3.14444 4 3.33333 4H8.66667C8.85555 4 9.01389 3.93611 9.14167 3.80833C9.26944 3.68056 9.33333 3.52222 9.33333 3.33333C9.33333 3.14444 9.26944 2.98611 9.14167 2.85833C9.01389 2.73056 8.85555 2.66667 8.66667 2.66667H3.33333C3.14444 2.66667 2.98611 2.73056 2.85833 2.85833C2.73056 2.98611 2.66667 3.14444 2.66667 3.33333ZM10 13.3333C9.07778 13.3333 8.29167 13.0083 7.64167 12.3583C6.99167 11.7083 6.66667 10.9222 6.66667 10C6.66667 9.07778 6.99167 8.29167 7.64167 7.64167C8.29167 6.99167 9.07778 6.66667 10 6.66667C10.9222 6.66667 11.7083 6.99167 12.3583 7.64167C13.0083 8.29167 13.3333 9.07778 13.3333 10C13.3333 10.9222 13.0083 11.7083 12.3583 12.3583C11.7083 13.0083 10.9222 13.3333 10 13.3333Z"
+                            fill="#A80689"
+                          />
+                        </svg>
+                        <span>{doc}</span>
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
 
               {/* Supervisor Info */}
               <div className="mb-6">
-                <h4 className="font-bold text-gray-700 mb-4">รายละเอียดผู้ประกาศรับสมัคร</h4>
+                <h4 className="font-bold text-gray-700 mb-4">
+                  รายละเอียดผู้ประกาศรับสมัคร
+                </h4>
                 <div className="space-y-2">
                   <div className="flex items-start gap-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 12C10.9 12 9.95833 11.6083 9.175 10.825C8.39167 10.0417 8 9.1 8 8C8 6.9 8.39167 5.95833 9.175 5.175C9.95833 4.39167 10.9 4 12 4C13.1 4 14.0417 4.39167 14.825 5.175C15.6083 5.95833 16 6.9 16 8C16 9.1 15.6083 10.0417 14.825 10.825C14.0417 11.6083 13.1 12 12 12ZM4 18V17.2C4 16.6333 4.14583 16.1125 4.4375 15.6375C4.72917 15.1625 5.11667 14.8 5.6 14.55C6.63333 14.0333 7.68333 13.6458 8.75 13.3875C9.81667 13.1292 10.9 13 12 13C13.1 13 14.1833 13.1292 15.25 13.3875C16.3167 13.6458 17.3667 14.0333 18.4 14.55C18.8833 14.8 19.2708 15.1625 19.5625 15.6375C19.8542 16.1125 20 16.6333 20 17.2V18C20 18.55 19.8042 19.0208 19.4125 19.4125C19.0208 19.8042 18.55 20 18 20H6C5.45 20 4.97917 19.8042 4.5875 19.4125C4.19583 19.0208 4 18.55 4 18ZM6 18H18V17.2C18 17.0167 17.9542 16.85 17.8625 16.7C17.7708 16.55 17.65 16.4333 17.5 16.35C16.6 15.9 15.6917 15.5625 14.775 15.3375C13.8583 15.1125 12.9333 15 12 15C11.0667 15 10.1417 15.1125 9.225 15.3375C8.30833 15.5625 7.4 15.9 6.5 16.35C6.35 16.4333 6.22917 16.55 6.1375 16.7C6.04583 16.85 6 17.0167 6 17.2V18ZM12 10C12.55 10 13.0208 9.80417 13.4125 9.4125C13.8042 9.02083 14 8.55 14 8C14 7.45 13.8042 6.97917 13.4125 6.5875C13.0208 6.19583 12.55 6 12 6C11.45 6 10.9792 6.19583 10.5875 6.5875C10.1958 6.97917 10 7.45 10 8C10 8.55 10.1958 9.02083 10.5875 9.4125C10.9792 9.80417 11.45 10 12 10Z" fill="#A80689" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 12C10.9 12 9.95833 11.6083 9.175 10.825C8.39167 10.0417 8 9.1 8 8C8 6.9 8.39167 5.95833 9.175 5.175C9.95833 4.39167 10.9 4 12 4C13.1 4 14.0417 4.39167 14.825 5.175C15.6083 5.95833 16 6.9 16 8C16 9.1 15.6083 10.0417 14.825 10.825C14.0417 11.6083 13.1 12 12 12ZM4 18V17.2C4 16.6333 4.14583 16.1125 4.4375 15.6375C4.72917 15.1625 5.11667 14.8 5.6 14.55C6.63333 14.0333 7.68333 13.6458 8.75 13.3875C9.81667 13.1292 10.9 13 12 13C13.1 13 14.1833 13.1292 15.25 13.3875C16.3167 13.6458 17.3667 14.0333 18.4 14.55C18.8833 14.8 19.2708 15.1625 19.5625 15.6375C19.8542 16.1125 20 16.6333 20 17.2V18C20 18.55 19.8042 19.0208 19.4125 19.4125C19.0208 19.8042 18.55 20 18 20H6C5.45 20 4.97917 19.8042 4.5875 19.4125C4.19583 19.0208 4 18.55 4 18ZM6 18H18V17.2C18 17.0167 17.9542 16.85 17.8625 16.7C17.7708 16.55 17.65 16.4333 17.5 16.35C16.6 15.9 15.6917 15.5625 14.775 15.3375C13.8583 15.1125 12.9333 15 12 15C11.0667 15 10.1417 15.1125 9.225 15.3375C8.30833 15.5625 7.4 15.9 6.5 16.35C6.35 16.4333 6.22917 16.55 6.1375 16.7C6.04583 16.85 6 17.0167 6 17.2V18ZM12 10C12.55 10 13.0208 9.80417 13.4125 9.4125C13.8042 9.02083 14 8.55 14 8C14 7.45 13.8042 6.97917 13.4125 6.5875C13.0208 6.19583 12.55 6 12 6C11.45 6 10.9792 6.19583 10.5875 6.5875C10.1958 6.97917 10 7.45 10 8C10 8.55 10.1958 9.02083 10.5875 9.4125C10.9792 9.80417 11.45 10 12 10Z"
+                        fill="#A80689"
+                      />
                     </svg>
-                    <span className="text-gray-600">{jobDetail.supervisorName || "ยังไม่ระบุ"}</span>
+                    <span className="text-gray-600">
+                      {jobDetail.supervisorName || "ยังไม่ระบุ"}
+                    </span>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4ZM12 13L4 8V18H20V8L12 13ZM12 11L20 6H4L12 11ZM4 8V6V18V8Z" fill="#A80689" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4ZM12 13L4 8V18H20V8L12 13ZM12 11L20 6H4L12 11ZM4 8V6V18V8Z"
+                        fill="#A80689"
+                      />
                     </svg>
-                    <span className="text-gray-600">{jobDetail.supervisorEmail || "ยังไม่ระบุ"}</span>
+                    <span className="text-gray-600">
+                      {jobDetail.supervisorEmail || "ยังไม่ระบุ"}
+                    </span>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M19.95 21C17.8667 21 15.8083 20.5458 13.775 19.6375C11.7417 18.7292 9.89167 17.4417 8.225 15.775C6.55833 14.1083 5.27083 12.2583 4.3625 10.225C3.45417 8.19167 3 6.13333 3 4.05C3 3.75 3.1 3.5 3.3 3.3C3.5 3.1 3.75 3 4.05 3H8.1C8.33333 3 8.54167 3.07917 8.725 3.2375C8.90833 3.39583 9.01667 3.58333 9.05 3.8L9.7 7.3C9.73333 7.56667 9.725 7.79167 9.675 7.975C9.625 8.15833 9.53333 8.31667 9.4 8.45L6.975 10.9C7.30833 11.5167 7.70417 12.1125 8.1625 12.6875C8.62083 13.2625 9.125 13.8167 9.675 14.35C10.1917 14.8667 10.7333 15.3458 11.3 15.7875C11.8667 16.2292 12.4667 16.6333 13.1 17L15.45 14.65C15.6 14.5 15.7958 14.3875 16.0375 14.3125C16.2792 14.2375 16.5167 14.2167 16.75 14.25L20.2 14.95C20.4333 15.0167 20.625 15.1375 20.775 15.3125C20.925 15.4875 21 15.6833 21 15.9V19.95C21 20.25 20.9 20.5 20.7 20.7C20.5 20.9 20.25 21 19.95 21ZM6.025 9L7.675 7.35L7.25 5H5.025C5.10833 5.68333 5.225 6.35833 5.375 7.025C5.525 7.69167 5.74167 8.35 6.025 9ZM14.975 17.95C15.625 18.2333 16.2875 18.4583 16.9625 18.625C17.6375 18.7917 18.3167 18.9 19 18.95V16.75L16.65 16.275L14.975 17.95Z" fill="#A80689" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M19.95 21C17.8667 21 15.8083 20.5458 13.775 19.6375C11.7417 18.7292 9.89167 17.4417 8.225 15.775C6.55833 14.1083 5.27083 12.2583 4.3625 10.225C3.45417 8.19167 3 6.13333 3 4.05C3 3.75 3.1 3.5 3.3 3.3C3.5 3.1 3.75 3 4.05 3H8.1C8.33333 3 8.54167 3.07917 8.725 3.2375C8.90833 3.39583 9.01667 3.58333 9.05 3.8L9.7 7.3C9.73333 7.56667 9.725 7.79167 9.675 7.975C9.625 8.15833 9.53333 8.31667 9.4 8.45L6.975 10.9C7.30833 11.5167 7.70417 12.1125 8.1625 12.6875C8.62083 13.2625 9.125 13.8167 9.675 14.35C10.1917 14.8667 10.7333 15.3458 11.3 15.7875C11.8667 16.2292 12.4667 16.6333 13.1 17L15.45 14.65C15.6 14.5 15.7958 14.3875 16.0375 14.3125C16.2792 14.2375 16.5167 14.2167 16.75 14.25L20.2 14.95C20.4333 15.0167 20.625 15.1375 20.775 15.3125C20.925 15.4875 21 15.6833 21 15.9V19.95C21 20.25 20.9 20.5 20.7 20.7C20.5 20.9 20.25 21 19.95 21ZM6.025 9L7.675 7.35L7.25 5H5.025C5.10833 5.68333 5.225 6.35833 5.375 7.025C5.525 7.69167 5.74167 8.35 6.025 9ZM14.975 17.95C15.625 18.2333 16.2875 18.4583 16.9625 18.625C17.6375 18.7917 18.3167 18.9 19 18.95V16.75L16.65 16.275L14.975 17.95Z"
+                        fill="#A80689"
+                      />
                     </svg>
-                    <span className="text-gray-600">{jobDetail.supervisorPhone || "ยังไม่ระบุ"}</span>
+                    <span className="text-gray-600">
+                      {jobDetail.supervisorPhone || "ยังไม่ระบุ"}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Mentor Info */}
               <div className="mb-6">
-                <h4 className="font-bold text-gray-700 mb-4">รายละเอียดพี่เลี้ยง</h4>
+                <h4 className="font-bold text-gray-700 mb-4">
+                  รายละเอียดพี่เลี้ยง
+                </h4>
                 <div className="space-y-2">
                   <div className="flex items-start gap-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 12C10.9 12 9.95833 11.6083 9.175 10.825C8.39167 10.0417 8 9.1 8 8C8 6.9 8.39167 5.95833 9.175 5.175C9.95833 4.39167 10.9 4 12 4C13.1 4 14.0417 4.39167 14.825 5.175C15.6083 5.95833 16 6.9 16 8C16 9.1 15.6083 10.0417 14.825 10.825C14.0417 11.6083 13.1 12 12 12ZM4 18V17.2C4 16.6333 4.14583 16.1125 4.4375 15.6375C4.72917 15.1625 5.11667 14.8 5.6 14.55C6.63333 14.0333 7.68333 13.6458 8.75 13.3875C9.81667 13.1292 10.9 13 12 13C13.1 13 14.1833 13.1292 15.25 13.3875C16.3167 13.6458 17.3667 14.0333 18.4 14.55C18.8833 14.8 19.2708 15.1625 19.5625 15.6375C19.8542 16.1125 20 16.6333 20 17.2V18C20 18.55 19.8042 19.0208 19.4125 19.4125C19.0208 19.8042 18.55 20 18 20H6C5.45 20 4.97917 19.8042 4.5875 19.4125C4.19583 19.0208 4 18.55 4 18ZM6 18H18V17.2C18 17.0167 17.9542 16.85 17.8625 16.7C17.7708 16.55 17.65 16.4333 17.5 16.35C16.6 15.9 15.6917 15.5625 14.775 15.3375C13.8583 15.1125 12.9333 15 12 15C11.0667 15 10.1417 15.1125 9.225 15.3375C8.30833 15.5625 7.4 15.9 6.5 16.35C6.35 16.4333 6.22917 16.55 6.1375 16.7C6.04583 16.85 6 17.0167 6 17.2V18ZM12 10C12.55 10 13.0208 9.80417 13.4125 9.4125C13.8042 9.02083 14 8.55 14 8C14 7.45 13.8042 6.97917 13.4125 6.5875C13.0208 6.19583 12.55 6 12 6C11.45 6 10.9792 6.19583 10.5875 6.5875C10.1958 6.97917 10 7.45 10 8C10 8.55 10.1958 9.02083 10.5875 9.4125C10.9792 9.80417 11.45 10 12 10Z" fill="#A80689" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 12C10.9 12 9.95833 11.6083 9.175 10.825C8.39167 10.0417 8 9.1 8 8C8 6.9 8.39167 5.95833 9.175 5.175C9.95833 4.39167 10.9 4 12 4C13.1 4 14.0417 4.39167 14.825 5.175C15.6083 5.95833 16 6.9 16 8C16 9.1 15.6083 10.0417 14.825 10.825C14.0417 11.6083 13.1 12 12 12ZM4 18V17.2C4 16.6333 4.14583 16.1125 4.4375 15.6375C4.72917 15.1625 5.11667 14.8 5.6 14.55C6.63333 14.0333 7.68333 13.6458 8.75 13.3875C9.81667 13.1292 10.9 13 12 13C13.1 13 14.1833 13.1292 15.25 13.3875C16.3167 13.6458 17.3667 14.0333 18.4 14.55C18.8833 14.8 19.2708 15.1625 19.5625 15.6375C19.8542 16.1125 20 16.6333 20 17.2V18C20 18.55 19.8042 19.0208 19.4125 19.4125C19.0208 19.8042 18.55 20 18 20H6C5.45 20 4.97917 19.8042 4.5875 19.4125C4.19583 19.0208 4 18.55 4 18ZM6 18H18V17.2C18 17.0167 17.9542 16.85 17.8625 16.7C17.7708 16.55 17.65 16.4333 17.5 16.35C16.6 15.9 15.6917 15.5625 14.775 15.3375C13.8583 15.1125 12.9333 15 12 15C11.0667 15 10.1417 15.1125 9.225 15.3375C8.30833 15.5625 7.4 15.9 6.5 16.35C6.35 16.4333 6.22917 16.55 6.1375 16.7C6.04583 16.85 6 17.0167 6 17.2V18ZM12 10C12.55 10 13.0208 9.80417 13.4125 9.4125C13.8042 9.02083 14 8.55 14 8C14 7.45 13.8042 6.97917 13.4125 6.5875C13.0208 6.19583 12.55 6 12 6C11.45 6 10.9792 6.19583 10.5875 6.5875C10.1958 6.97917 10 7.45 10 8C10 8.55 10.1958 9.02083 10.5875 9.4125C10.9792 9.80417 11.45 10 12 10Z"
+                        fill="#A80689"
+                      />
                     </svg>
-                    <span className="text-gray-600">{jobDetail.mentorName || "ยังไม่ระบุ"}</span>
+                    <span className="text-gray-600">
+                      {jobDetail.mentorName || "ยังไม่ระบุ"}
+                    </span>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4ZM12 13L4 8V18H20V8L12 13ZM12 11L20 6H4L12 11ZM4 8V6V18V8Z" fill="#A80689" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 20C3.45 20 2.97917 19.8042 2.5875 19.4125C2.19583 19.0208 2 18.55 2 18V6C2 5.45 2.19583 4.97917 2.5875 4.5875C2.97917 4.19583 3.45 4 4 4H20C20.55 4 21.0208 4.19583 21.4125 4.5875C21.8042 4.97917 22 5.45 22 6V18C22 18.55 21.8042 19.0208 21.4125 19.4125C21.0208 19.8042 20.55 20 20 20H4ZM12 13L4 8V18H20V8L12 13ZM12 11L20 6H4L12 11ZM4 8V6V18V8Z"
+                        fill="#A80689"
+                      />
                     </svg>
-                    <span className="text-gray-600">{jobDetail.mentorEmail || "ยังไม่ระบุ"}</span>
+                    <span className="text-gray-600">
+                      {jobDetail.mentorEmail || "ยังไม่ระบุ"}
+                    </span>
                   </div>
                   <div className="flex items-start gap-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M19.95 21C17.8667 21 15.8083 20.5458 13.775 19.6375C11.7417 18.7292 9.89167 17.4417 8.225 15.775C6.55833 14.1083 5.27083 12.2583 4.3625 10.225C3.45417 8.19167 3 6.13333 3 4.05C3 3.75 3.1 3.5 3.3 3.3C3.5 3.1 3.75 3 4.05 3H8.1C8.33333 3 8.54167 3.07917 8.725 3.2375C8.90833 3.39583 9.01667 3.58333 9.05 3.8L9.7 7.3C9.73333 7.56667 9.725 7.79167 9.675 7.975C9.625 8.15833 9.53333 8.31667 9.4 8.45L6.975 10.9C7.30833 11.5167 7.70417 12.1125 8.1625 12.6875C8.62083 13.2625 9.125 13.8167 9.675 14.35C10.1917 14.8667 10.7333 15.3458 11.3 15.7875C11.8667 16.2292 12.4667 16.6333 13.1 17L15.45 14.65C15.6 14.5 15.7958 14.3875 16.0375 14.3125C16.2792 14.2375 16.5167 14.2167 16.75 14.25L20.2 14.95C20.4333 15.0167 20.625 15.1375 20.775 15.3125C20.925 15.4875 21 15.6833 21 15.9V19.95C21 20.25 20.9 20.5 20.7 20.7C20.5 20.9 20.25 21 19.95 21ZM6.025 9L7.675 7.35L7.25 5H5.025C5.10833 5.68333 5.225 6.35833 5.375 7.025C5.525 7.69167 5.74167 8.35 6.025 9ZM14.975 17.95C15.625 18.2333 16.2875 18.4583 16.9625 18.625C17.6375 18.7917 18.3167 18.9 19 18.95V16.75L16.65 16.275L14.975 17.95Z" fill="#A80689" />
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M19.95 21C17.8667 21 15.8083 20.5458 13.775 19.6375C11.7417 18.7292 9.89167 17.4417 8.225 15.775C6.55833 14.1083 5.27083 12.2583 4.3625 10.225C3.45417 8.19167 3 6.13333 3 4.05C3 3.75 3.1 3.5 3.3 3.3C3.5 3.1 3.75 3 4.05 3H8.1C8.33333 3 8.54167 3.07917 8.725 3.2375C8.90833 3.39583 9.01667 3.58333 9.05 3.8L9.7 7.3C9.73333 7.56667 9.725 7.79167 9.675 7.975C9.625 8.15833 9.53333 8.31667 9.4 8.45L6.975 10.9C7.30833 11.5167 7.70417 12.1125 8.1625 12.6875C8.62083 13.2625 9.125 13.8167 9.675 14.35C10.1917 14.8667 10.7333 15.3458 11.3 15.7875C11.8667 16.2292 12.4667 16.6333 13.1 17L15.45 14.65C15.6 14.5 15.7958 14.3875 16.0375 14.3125C16.2792 14.2375 16.5167 14.2167 16.75 14.25L20.2 14.95C20.4333 15.0167 20.625 15.1375 20.775 15.3125C20.925 15.4875 21 15.6833 21 15.9V19.95C21 20.25 20.9 20.5 20.7 20.7C20.5 20.9 20.25 21 19.95 21ZM6.025 9L7.675 7.35L7.25 5H5.025C5.10833 5.68333 5.225 6.35833 5.375 7.025C5.525 7.69167 5.74167 8.35 6.025 9ZM14.975 17.95C15.625 18.2333 16.2875 18.4583 16.9625 18.625C17.6375 18.7917 18.3167 18.9 19 18.95V16.75L16.65 16.275L14.975 17.95Z"
+                        fill="#A80689"
+                      />
                     </svg>
-                    <span className="text-gray-600">{jobDetail.mentorPhone || "ยังไม่ระบุ"}</span>
+                    <span className="text-gray-600">
+                      {jobDetail.mentorPhone || "ยังไม่ระบุ"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -529,11 +694,18 @@ export default function InternJobDetailPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleApply}
-                disabled={(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0)}
-                className={`flex-1 py-3 rounded-xl font-medium transition-colors text-lg active:scale-95 ${(jobDetail.maxApplicants ?? 0) > 0 && (jobDetail.currentApplicants ?? 0) >= (jobDetail.maxApplicants ?? 0)
+                disabled={
+                  (jobDetail.maxApplicants ?? 0) > 0 &&
+                  (jobDetail.currentApplicants ?? 0) >=
+                    (jobDetail.maxApplicants ?? 0)
+                }
+                className={`flex-1 py-3 rounded-xl font-medium transition-colors text-lg active:scale-95 ${
+                  (jobDetail.maxApplicants ?? 0) > 0 &&
+                  (jobDetail.currentApplicants ?? 0) >=
+                    (jobDetail.maxApplicants ?? 0)
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-700"
-                  }`}
+                }`}
               >
                 สมัคร
               </button>

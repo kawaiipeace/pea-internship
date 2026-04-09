@@ -98,6 +98,17 @@ const toISODate = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const getApplicantUniqueKey = (app: AllStudentsHistoryItem): string => {
+  if (app.studentUserId) return `uid:${app.studentUserId}`;
+  if (app.email) return `email:${app.email.toLowerCase()}`;
+  if (app.phoneNumber) return `phone:${app.phoneNumber}`;
+
+  const fullName = `${app.fname || ""}|${app.lname || ""}`.toLowerCase();
+  if (fullName !== "|") return `name:${fullName}`;
+
+  return `app:${app.applicationId}`;
+};
+
 type InternTableStatus =
   | "awaiting"
   | "active"
@@ -146,15 +157,15 @@ const INSTITUTION_TYPE_COLORS: Record<string, string> = {
 type StatusChartKey = AppStatusEnum | "INTERNSHIP_CANCELLED";
 
 const STATUS_MAP: Record<StatusChartKey, { label: string; color: string }> = {
-  PENDING_DOCUMENT: { label: "รอรับเอกสาร", color: "#F7AF1D" },
-  PENDING_INTERVIEW: { label: "รอสัมภาษณ์", color: "#ECD17E" },
-  PENDING_CONFIRMATION: { label: "รอการยืนยัน", color: "#F28C00" },
+  PENDING_DOCUMENT: { label: "รอรับเอกสาร", color: "#F6AF1F" },
+  PENDING_INTERVIEW: { label: "รอสัมภาษณ์", color: "#EDD381" },
+  PENDING_CONFIRMATION: { label: "รอการยืนยัน", color: "#F08A00" },
   PENDING_REQUEST: { label: "รอเอกสารขอความอนุเคราะห์", color: "#8B5CF6" },
   PENDING_REVIEW: { label: "รอตรวจเอกสาร", color: "#14B8A6" },
   COMPLETE: { label: "รับเข้าฝึกงาน", color: "#0E9F58" },
-  CANCEL: { label: "ยกเลิกฝึกงาน", color: "#C02116" },
+  CANCEL: { label: "ยกเลิกฝึกงาน", color: "#FF2D2D" },
   ABORT: { label: "ยกเลิกการสมัคร", color: "#9CA3AF" },
-  REJECTED: { label: "ไม่ผ่าน", color: "#FF2D2D" },
+  REJECTED: { label: "ไม่ผ่าน", color: "#B42318" },
   INTERNSHIP_CANCELLED: { label: "ยกเลิกฝึกงาน", color: "#FF2D2D" },
 };
 
@@ -310,8 +321,12 @@ export default function OwnerDashboard() {
   // Year-filtered applicant count for stats card
   const yearFilteredApplicantsCount = useMemo(() => {
     const ce = selectedYear - 543;
-    return allApps.filter((app) => new Date(app.createdAt).getFullYear() === ce)
-      .length;
+    const applicants = new Set<string>();
+    allApps.forEach((app) => {
+      if (new Date(app.createdAt).getFullYear() !== ce) return;
+      applicants.add(getApplicantUniqueKey(app));
+    });
+    return applicants.size;
   }, [allApps, selectedYear]);
 
   // Year-filtered intern count for stats card
@@ -327,17 +342,20 @@ export default function OwnerDashboard() {
   // Monthly data: all applicants
   const monthlyApplicantsData = useMemo(() => {
     const selectedCE = selectedYear - 543;
-    const counts = Array(12).fill(0);
+    const monthlyApplicants = Array.from(
+      { length: 12 },
+      () => new Set<string>(),
+    );
     allApps.forEach((app) => {
       const d = new Date(app.createdAt);
       if (d.getFullYear() === selectedCE) {
-        counts[d.getMonth()]++;
+        monthlyApplicants[d.getMonth()].add(getApplicantUniqueKey(app));
       }
     });
     return Array.from({ length: 12 }, (_, i) => ({
       month: thaiMonthsShort[i],
       monthFull: thaiMonthsFull[i],
-      count: counts[i],
+      count: monthlyApplicants[i].size,
     }));
   }, [allApps, selectedYear]);
 
@@ -388,6 +406,12 @@ export default function OwnerDashboard() {
         return;
       }
 
+      // Keep REJECTED as its own bucket before any cancellation mapping.
+      if (app.applicationStatus === "REJECTED") {
+        counts.REJECTED = (counts.REJECTED || 0) + 1;
+        return;
+      }
+
       const isInternshipCancelled =
         app.studentInternshipStatus === "CANCEL" ||
         (app.applicationStatus === "CANCEL" && app.isActive === false);
@@ -425,17 +449,27 @@ export default function OwnerDashboard() {
 
   // Education level distribution (from real data)
   const educationData = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const applicantsByType: Record<string, Set<string>> = {};
     allApps.forEach((app) => {
       const instType = app.institutionType || "OTHERS";
-      counts[instType] = (counts[instType] || 0) + 1;
+      const applicantKey =
+        app.studentUserId ||
+        app.email ||
+        app.phoneNumber ||
+        `${app.fname || ""}-${app.lname || ""}` ||
+        `app-${app.applicationId}`;
+
+      if (!applicantsByType[instType]) {
+        applicantsByType[instType] = new Set<string>();
+      }
+      applicantsByType[instType].add(applicantKey);
     });
     const order = ["UNIVERSITY", "VOCATIONAL", "SCHOOL", "OTHERS"];
     return order
-      .filter((key) => counts[key] > 0)
+      .filter((key) => (applicantsByType[key]?.size || 0) > 0)
       .map((key) => ({
         label: INSTITUTION_TYPE_LABELS[key] || key,
-        value: counts[key],
+        value: applicantsByType[key]?.size || 0,
         color: INSTITUTION_TYPE_COLORS[key] || "#6B7280",
       }));
   }, [allApps]);
@@ -584,16 +618,10 @@ export default function OwnerDashboard() {
       };
     };
 
-    const latestNonCancelledByUser = new Map<
+    const latestByUser = new Map<
       string,
       { row: InternTableRow; createdAt: number }
     >();
-    const cancelledEntries: Array<{
-      userKey: string;
-      row: InternTableRow;
-      createdAt: number;
-    }> = [];
-    const usersWithCancelled = new Set<string>();
 
     allApps.forEach((app) => {
       const row = buildInternRow(app);
@@ -607,30 +635,19 @@ export default function OwnerDashboard() {
         `app-${app.applicationId}`;
       const createdAt = new Date(app.createdAt).getTime() || 0;
 
-      if (row.statusType === "cancelled") {
-        // Keep every cancelled internship row (do not dedupe).
-        cancelledEntries.push({ userKey, row, createdAt });
-        usersWithCancelled.add(userKey);
-        return;
-      }
-
-      const existing = latestNonCancelledByUser.get(userKey);
+      const existing = latestByUser.get(userKey);
       if (!existing) {
-        latestNonCancelledByUser.set(userKey, { row, createdAt });
+        latestByUser.set(userKey, { row, createdAt });
         return;
       }
 
-      // Keep the latest non-cancelled row for each user.
+      // Show one row per student by keeping only the latest internship entry.
       if (createdAt > existing.createdAt) {
-        latestNonCancelledByUser.set(userKey, { row, createdAt });
+        latestByUser.set(userKey, { row, createdAt });
       }
     });
 
-    const nonCancelledEntries = Array.from(latestNonCancelledByUser.entries())
-      .filter(([userKey]) => !usersWithCancelled.has(userKey))
-      .map(([, entry]) => entry);
-
-    return [...cancelledEntries, ...nonCancelledEntries]
+    return Array.from(latestByUser.values())
       .sort((a, b) => b.createdAt - a.createdAt)
       .map((entry) => entry.row);
   }, [allApps]);
