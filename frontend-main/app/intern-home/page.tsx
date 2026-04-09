@@ -77,7 +77,7 @@ export default function InternHomePage() {
           })
           .map((p) => positionToJobWithStaff(p, staffList));
 
-        // Combine API jobs with mock jobs (API jobs first)
+        // Use API jobs as the source of truth
         const combinedJobs = [...apiJobs];
         const majors = Array.from(
           new Set(
@@ -94,7 +94,7 @@ export default function InternHomePage() {
           majors.map((major) => ({ value: major, label: major })),
         );
       } catch {
-        // Fallback to mock jobs if API fails
+        // If API is unavailable, show empty state
         setAllJobs([]);
         setFilteredJobs([]);
         setMajorOptions([]);
@@ -123,12 +123,12 @@ export default function InternHomePage() {
     checkCongratsModal();
   }, []);
 
-const handleCloseCongratsModal = async () => {
-  try {
-    await applicationApi.acknowledgeApplicationCompleteModal();
-  } catch {}
-  setShowCongratsModal(false);
-};
+  const handleCloseCongratsModal = async () => {
+    try {
+      await applicationApi.acknowledgeApplicationCompleteModal();
+    } catch {}
+    setShowCongratsModal(false);
+  };
 
   // Detect mobile screen
   useEffect(() => {
@@ -179,14 +179,13 @@ const handleCloseCongratsModal = async () => {
           positionIdToJobId(item.favorite.positionId),
         );
         setFavorites(favoriteJobIds);
-        localStorage.setItem("favorites", JSON.stringify(favoriteJobIds));
-        window.dispatchEvent(new Event("favoritesUpdated"));
+        window.dispatchEvent(
+          new CustomEvent("favoritesUpdated", {
+            detail: { count: favoriteJobIds.length },
+          }),
+        );
       } catch {
-        // Fallback to localStorage
-        const savedFavorites = localStorage.getItem("favorites");
-        if (savedFavorites) {
-          setFavorites(JSON.parse(savedFavorites));
-        }
+        setFavorites([]);
       }
     };
     loadFavorites();
@@ -261,24 +260,26 @@ const handleCloseCongratsModal = async () => {
       }
       // Call API to validate application (backend checks internshipStatus + position status)
       const positionId = jobIdToPositionId(selectedJob.id);
-      if (positionId) {
-        try {
-          await applicationApi.createApplication(positionId);
-          // Store positionId for use in intern-info page
-          localStorage.setItem("currentPositionId", String(positionId));
-        } catch (err: unknown) {
-          const error = err as { response?: { data?: { message?: string } } };
-          const msg =
-            error?.response?.data?.message ||
-            "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง";
-          setToastMessage(msg);
-          setToastType("error");
-          setShowToast(true);
-          return;
-        }
+      if (!positionId) {
+        setToastMessage("ไม่พบข้อมูลตำแหน่งที่สมัคร กรุณาลองใหม่อีกครั้ง");
+        setToastType("error");
+        setShowToast(true);
+        return;
+      }
+      try {
+        await applicationApi.createApplication(positionId);
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        const msg =
+          error?.response?.data?.message ||
+          "ไม่สามารถสมัครได้ กรุณาลองใหม่อีกครั้ง";
+        setToastMessage(msg);
+        setToastType("error");
+        setShowToast(true);
+        return;
       }
 
-      router.push("/intern-info");
+      router.push(`/intern-info?positionId=${positionId}`);
     }
   };
 
@@ -306,9 +307,11 @@ const handleCloseCongratsModal = async () => {
         }
       }
       setFavorites(newFavorites);
-      localStorage.setItem("favorites", JSON.stringify(newFavorites));
-      // Dispatch event to update Navbar favorites count
-      window.dispatchEvent(new Event("favoritesUpdated"));
+      window.dispatchEvent(
+        new CustomEvent("favoritesUpdated", {
+          detail: { count: newFavorites.length },
+        }),
+      );
       setToastMessage(message);
       setToastType(type);
       setShowToast(true);
@@ -437,13 +440,10 @@ const handleCloseCongratsModal = async () => {
                   }
                   onBookmarkClick={handleBookmarkClick}
                   onViewDetailClick={() => {
-                    if (selectedJob) {
-                      localStorage.setItem(
-                        "selectedJobDetail",
-                        JSON.stringify(selectedJob),
-                      );
-                    }
-                    router.push("/intern-home/job-detail");
+                    if (!selectedJob) return;
+                    router.push(
+                      `/intern-home/job-detail?jobId=${encodeURIComponent(selectedJob.id)}`,
+                    );
                   }}
                   isApplyDisabled={
                     selectedJob

@@ -51,7 +51,7 @@ const formatDateThai = (dateString: string): string => {
   return `${day} ${thaiMonths[month]} ${year}`;
 };
 
-// LocalStorage keys (same as applications/page.tsx)
+// Legacy status keys (same as applications/page.tsx)
 const STORAGE_KEYS = {
   INTERVIEWED_APPS: "pea_interviewed_apps",
   APPROVED_APPS: "pea_approved_apps",
@@ -221,7 +221,7 @@ function ApplicationDetailContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // State with localStorage persistence
+  // State for status overlays.
   const [interviewedApps, setInterviewedApps] = useState<string[]>([]);
   const [approvedApps, setApprovedApps] = useState<string[]>([]);
   const [rejectedApps, setRejectedApps] = useState<string[]>([]);
@@ -242,7 +242,7 @@ function ApplicationDetailContent() {
   const [cancelReason, setCancelReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Initialize ephemeral state without localStorage.
+  // Initialize ephemeral state.
   useEffect(() => {
     setInterviewedApps(getFromStorage(STORAGE_KEYS.INTERVIEWED_APPS));
     setApprovedApps(getFromStorage(STORAGE_KEYS.APPROVED_APPS));
@@ -632,7 +632,7 @@ function ApplicationDetailContent() {
     );
   }
 
-  // Helper function to get effective step based on localStorage state
+  // Helper function to get effective step based on current state
   const getEffectiveStep = () => {
     // If doc approved/passed, move to step 6
     if (
@@ -671,7 +671,7 @@ function ApplicationDetailContent() {
     };
   };
 
-  // Get effective status badge based on localStorage state
+  // Get effective status badge based on current state
   const getStatusBadge = (): {
     text: string;
     bgColor: string;
@@ -684,7 +684,7 @@ function ApplicationDetailContent() {
       borderColor: string;
     };
   } => {
-    // Check for cancelled status first (including localStorage cancellation)
+    // Check for cancelled status first
     if (application.status === "cancelled" || isCancelledViaStorage) {
       return application.stepDescription === "ยกเลิกการสมัคร"
         ? {

@@ -7,15 +7,116 @@ import {
   AppStatusEnum,
   applicationApi,
 } from "@/services/api";
-import type {
-  Application,
-  ApplicationStatus,
-  DetailedStatus,
-  Mentor,
-} from "../../../data/mockApplications";
 
-// Re-export for convenience
-export type { Application, ApplicationStatus, DetailedStatus, Mentor };
+export type ApplicationStatus =
+  | "pending"
+  | "reviewing"
+  | "interview"
+  | "accepted"
+  | "rejected"
+  | "cancelled";
+
+export type DetailedStatus =
+  | "waiting_document"
+  | "waiting_interview"
+  | "waiting_confirm"
+  | "rejected"
+  | "waiting_analysis_doc"
+  | "waiting_send_doc"
+  | "doc_rejected"
+  | "doc_sent"
+  | "doc_passed"
+  | "completed"
+  | "cancelled";
+
+export type FilterTab =
+  | "all"
+  | "waiting_document"
+  | "waiting_interview"
+  | "waiting_confirm"
+  | "accepted"
+  | "rejected"
+  | "cancelled"
+  | "abort";
+
+export interface Application {
+  id: string;
+  internId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  education: string;
+  institution: string;
+  major: string;
+  startDate: string;
+  endDate: string;
+  trainingHours: number;
+  department: string;
+  position: string;
+  status: ApplicationStatus;
+  detailedStatus?: DetailedStatus;
+  appliedDate: string;
+  gender: "male" | "female";
+  expectation: string;
+  documents: {
+    name: string;
+    type: string;
+    docFile?: string;
+  }[];
+  analysisDocuments?: {
+    name: string;
+    type: string;
+    status: "pending" | "approved" | "rejected";
+    docFile?: string;
+  }[];
+  step: number;
+  stepDescription: string;
+  isNearStart?: boolean;
+  daysUntilStart?: number;
+  interviewCompleted?: boolean;
+  rejectionReason?: string;
+  cancellationReason?: string;
+  cancelledBy?: string;
+  cancelledDate?: string;
+  faculty?: string;
+  studentNote?: string;
+  mentors?: {
+    fname: string | null;
+    lname: string | null;
+    email: string | null;
+    phone: string | null;
+  }[];
+  skill?: string;
+  actionDate?: string;
+  studentInternshipStatus?: string | null;
+  isActive?: boolean;
+}
+
+export interface Mentor {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export function getDetailedStatusLabel(detailedStatus?: DetailedStatus): string {
+  if (!detailedStatus) return "";
+  const labels: Record<DetailedStatus, string> = {
+    waiting_document: "รอยื่นเอกสาร",
+    waiting_interview: "รอสัมภาษณ์",
+    waiting_confirm: "รอการยืนยัน",
+    rejected: "ไม่ผ่าน",
+    waiting_analysis_doc: "รอเอกสารขอความอนุเคราะห์",
+    waiting_send_doc: "รอการตรวจสอบ",
+    doc_rejected: "เอกสารไม่ผ่าน",
+    doc_sent: "ส่งเอกสารแล้ว",
+    doc_passed: "เอกสารผ่าน",
+    completed: "เรียบร้อย",
+    cancelled: "ยกเลิกฝึกงาน",
+  };
+  return labels[detailedStatus];
+}
 
 export function getEducationDisplayText(app: {
   education: string;

@@ -5,7 +5,17 @@ import { useRouter } from "next/navigation";
 import { NavbarIntern } from "@/components";
 import VideoLoading from "@/components/ui/VideoLoading";
 import { Job } from "@/components/ui/JobCard";
-import { favoriteApi, positionIdToJobId, jobIdToPositionId, FavoriteItem, positionToJob, positionApi, applicationApi, canApplyForNewJob, MyApplicationData } from "@/services/api";
+import {
+  favoriteApi,
+  positionIdToJobId,
+  jobIdToPositionId,
+  FavoriteItem,
+  positionToJob,
+  positionApi,
+  applicationApi,
+  canApplyForNewJob,
+  MyApplicationData,
+} from "@/services/api";
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -38,13 +48,13 @@ export default function FavoritesPage() {
         ]);
         // Build map: positionId → full Position data (with department, owner, mentors)
         const fullPositionMap = new Map(
-          (allPositionsResponse.data || []).map(p => [p.id, p])
+          (allPositionsResponse.data || []).map((p) => [p.id, p]),
         );
         const now = new Date();
         // Helper: normalize PostgreSQL timestamp → Date
         const safeDate = (d: string | null | undefined): Date | null => {
           if (!d) return null;
-          const parsed = new Date(d.includes('T') ? d : d.replace(' ', 'T'));
+          const parsed = new Date(d.includes("T") ? d : d.replace(" ", "T"));
           return isNaN(parsed.getTime()) ? null : parsed;
         };
         // Filter out expired/closed positions (same logic as intern-home)
@@ -63,14 +73,16 @@ export default function FavoritesPage() {
         });
         const jobs: Job[] = activeItems.map((item: FavoriteItem) => {
           // Use full position data (with department/owner/mentors) if available
-          const fullPosition = fullPositionMap.get(item.position.id) || item.position;
+          const fullPosition =
+            fullPositionMap.get(item.position.id) || item.position;
           return positionToJob(fullPosition);
         });
         setFavoriteJobs(jobs);
-        // Sync localStorage
-        const favoriteJobIds = jobs.map(j => j.id);
-        localStorage.setItem("favorites", JSON.stringify(favoriteJobIds));
-        window.dispatchEvent(new Event("favoritesUpdated"));
+        window.dispatchEvent(
+          new CustomEvent("favoritesUpdated", {
+            detail: { count: jobs.length },
+          }),
+        );
       } catch {
         setFavoriteJobs([]);
       } finally {
@@ -87,10 +99,11 @@ export default function FavoritesPage() {
     }
     const newJobs = favoriteJobs.filter((job) => job.id !== jobId);
     setFavoriteJobs(newJobs);
-    // Sync localStorage
-    const favoriteJobIds = newJobs.map(j => j.id);
-    localStorage.setItem("favorites", JSON.stringify(favoriteJobIds));
-    window.dispatchEvent(new Event("favoritesUpdated"));
+    window.dispatchEvent(
+      new CustomEvent("favoritesUpdated", {
+        detail: { count: newJobs.length },
+      }),
+    );
   };
 
   return (
@@ -143,9 +156,9 @@ export default function FavoritesPage() {
                 key={job.id}
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Save job data to localStorage before navigating
-                  localStorage.setItem("selectedJobDetail", JSON.stringify(job));
-                  router.push("/intern-home/job-detail");
+                  router.push(
+                    `/intern-home/job-detail?jobId=${encodeURIComponent(job.id)}`,
+                  );
                 }}
                 className="bg-white rounded-lg border-2 border-gray-100 p-4 hover:shadow-md hover:border-primary-600 transition-all cursor-pointer"
               >
@@ -179,18 +192,29 @@ export default function FavoritesPage() {
                     </button>
                     {/* Apply Button */}
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        if (!hasActiveApplication) {
-                          router.push("/intern-info");
+                        if (hasActiveApplication) return;
+                        const positionId = jobIdToPositionId(job.id);
+                        if (!positionId) return;
+                        try {
+                          await applicationApi.createApplication(positionId);
+                          router.push(`/intern-info?positionId=${positionId}`);
+                        } catch {
+                          router.push("/intern-home");
                         }
                       }}
                       disabled={hasActiveApplication}
-                      className={`cursor-pointer px-4 py-1.5 border-2 rounded-lg text-sm font-medium transition-colors ${hasActiveApplication
+                      className={`cursor-pointer px-4 py-1.5 border-2 rounded-lg text-sm font-medium transition-colors ${
+                        hasActiveApplication
                           ? "bg-gray-300 border-gray-300 text-gray-500 cursor-not-allowed"
                           : "bg-primary-600 border-primary-600 text-white hover:bg-white hover:text-primary-600"
-                        }`}
-                      title={hasActiveApplication ? "คุณมีการสมัครที่กำลังดำเนินการอยู่" : ""}
+                      }`}
+                      title={
+                        hasActiveApplication
+                          ? "คุณมีการสมัครที่กำลังดำเนินการอยู่"
+                          : ""
+                      }
                     >
                       สมัคร
                     </button>
@@ -247,7 +271,9 @@ export default function FavoritesPage() {
                     />
                   </svg>
                   <span>
-                    {job.maxApplicants === 0 ? "ไม่จำกัดจำนวน" : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
+                    {job.maxApplicants === 0
+                      ? "ไม่จำกัดจำนวน"
+                      : `${job.currentApplicants}/${job.maxApplicants} ตำแหน่ง`}
                   </span>
                 </div>
 
@@ -290,7 +316,10 @@ export default function FavoritesPage() {
                     />
                   </svg>
                   <span>
-                    รอบที่เปิดรับสมัคร: {job.startDate === "-" && job.endDate === "-" ? "ไม่กำหนดรอบ" : `${job.startDate} - ${job.endDate}`}
+                    รอบที่เปิดรับสมัคร:{" "}
+                    {job.startDate === "-" && job.endDate === "-"
+                      ? "ไม่กำหนดรอบ"
+                      : `${job.startDate} - ${job.endDate}`}
                   </span>
                 </div>
               </div>
