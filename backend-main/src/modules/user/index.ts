@@ -153,10 +153,15 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
   )
 
   .get(
-    "/student/itt/profile/img",
+    "/student/itt/profile",
     async ({ set, user, query }) => {
       const targetUserId = query.userId || user.id;
       const fileData = await userService.getProfileImage(targetUserId);
+
+      if (!fileData) {
+        set.status = 204;
+        return;
+      }
 
       set.headers["Content-Type"] = fileData.contentType;
       return fileData.buffer;
