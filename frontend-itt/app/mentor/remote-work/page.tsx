@@ -4,6 +4,8 @@ import MonthPicker from "@/components/history/month-picker";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axiosInstance from "@/api/axios";
+import Swal from 'sweetalert2';
+import ImageWithAuth from "@/components/ImageWithAuth";
 
 interface Student {
     id: string;
@@ -70,36 +72,7 @@ const RemoteWorkPage = () => {
         setCurrentPage(1);
     };
 
-    // Dummy Data for fallback
-    const mockData: OffsiteTask[] = [
-        {
-            id: -1,
-            workDate: "2026-04-15",
-            createdAt: "2026-04-07T10:00:00Z",
-            locationName: "สำนักงานตำรวจแห่งชาติ",
-            assignedBy: "มั่นคง ทรงดี",
-            isOwner: true,
-            students: [
-                { id: "s1", name: "สมชาย สายน้ำ", image: "https://i.pravatar.cc/150?u=1" },
-                { id: "s2", name: "สมหญิง รักเรียน", image: "https://i.pravatar.cc/150?u=2" },
-                { id: "s3", name: "กมล คนดี", image: "https://i.pravatar.cc/150?u=3" },
-                { id: "s4", name: "มานะ มากมี", image: "https://i.pravatar.cc/150?u=4" },
-                { id: "s5", name: "ชูใจ ใฝ่ดี", image: "https://i.pravatar.cc/150?u=5" },
-            ]
-        },
-        {
-            id: -2,
-            workDate: "2026-04-14",
-            createdAt: "2026-04-07T09:00:00Z",
-            locationName: "สำนักงานตำรวจแห่งชาติ",
-            assignedBy: "มั่นคง ทรงดี",
-            isOwner: true,
-            students: [
-                { id: "s1", name: "สมชาย สายน้ำ", image: "https://i.pravatar.cc/150?u=1" },
-                { id: "s2", name: "สมหญิง รักเรียน", image: "https://i.pravatar.cc/150?u=2" },
-            ]
-        }
-    ];
+
 
     const fetchTasks = useCallback(async () => {
         setIsLoading(true);
@@ -115,32 +88,47 @@ const RemoteWorkPage = () => {
             };
 
             const response = await axiosInstance.get('/offsite-tasks/mentor', { params });
-            const apiData = response.data?.data || [];
-            
-            // Combine with Mock data if in April 2569
-            let combinedData = [...apiData];
-            if (currentMonth === 3 && currentYear === 2569) {
-                combinedData = [...combinedData, ...mockData];
-            }
-
-            // Perform frontend sorting to ensure consistency for all displayed items
-            combinedData.sort((a, b) => {
-                const dateA = new Date(activeSortField === 'assignedDate' ? a.createdAt : a.workDate).getTime();
-                const dateB = new Date(activeSortField === 'assignedDate' ? b.createdAt : b.workDate).getTime();
-                
-                const order = activeSortField === 'assignedDate' ? assignedDateSortOrder : dateSortOrder;
-                return order === 'desc' ? dateB - dateA : dateA - dateB;
-            });
-
-            setTasks(combinedData);
+            setTasks(response.data?.data || []);
             setMeta(response.data?.meta || null);
         } catch (error) {
             console.error('Error fetching tasks:', error);
-            // alert('ไม่สามารถดึงข้อมูลรายการได้');
         } finally {
             setIsLoading(false);
         }
     }, [currentMonth, currentYear, currentPage, activeSortField, assignedDateSortOrder, dateSortOrder, assignerFilter]);
+
+    const handleDeleteTask = async (id: number) => {
+        const result = await Swal.fire({
+            title: 'ยืนยันการลบ?',
+            text: "คุณต้องการลบรายการมอบหมายงานนอกสถานที่นี้ใช่หรือไม่?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#A80689',
+            cancelButtonColor: '#61646C',
+            confirmButtonText: 'ใช่, ลบเลย',
+            cancelButtonText: 'ยกเลิก'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await axiosInstance.delete(`/offsite-tasks/${id}`);
+                Swal.fire({
+                    title: 'ลบสำเร็จ!',
+                    text: 'ลบรายการมอบหมายงานเรียบร้อยแล้ว',
+                    icon: 'success',
+                    confirmButtonColor: '#A80689',
+                });
+                fetchTasks();
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                Swal.fire(
+                    'เกิดข้อผิดพลาด!',
+                    'ไม่สามารถลบรายการได้ กรุณาลองใหม่อีกครั้ง',
+                    'error'
+                );
+            }
+        }
+    };
 
     useEffect(() => {
         fetchTasks();
@@ -329,14 +317,12 @@ const RemoteWorkPage = () => {
                                             <span className="text-[16px] font-bold text-[#344054] dark:text-gray-100">นักศึกษาที่ได้รับมอบหมาย :</span>
                                             <div className="flex -space-x-2">
                                                 {(item.students || []).slice(0, 4).map((student: Student, idx: number) => (
-                                                    <div key={idx} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800 bg-gray-200">
-                                                        {student.image ? (
-                                                            <img src={student.image} alt={student.name} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-[8px] text-gray-400 bg-gray-100 dark:bg-gray-800">
-                                                                {student.name.charAt(0)}
-                                                            </div>
-                                                        )}
+                                                    <div key={idx} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800 bg-gray-200" title={student.name}>
+                                                        <ImageWithAuth 
+                                                            userId={student.id} 
+                                                            className="w-full h-full object-cover" 
+                                                            fallbackSrc="/assets/images/user-profile.jpeg"
+                                                        />
                                                     </div>
                                                 ))}
                                                 {(item.students || []).length > 4 && (
@@ -353,15 +339,24 @@ const RemoteWorkPage = () => {
                                 <div className="flex items-center gap-0 ml-4">
                                     {item.isOwner && (
                                         <>
-                                            <button className="p-1 text-gray-500 hover:text-primary transition-colors">
+                                            <button 
+                                                onClick={() => router.push(`/mentor/remote-work/form?id=${item.id}`)}
+                                                className="p-1 text-gray-500 hover:text-[#A80689] transition-colors"
+                                            >
                                                 <span className="material-symbols-rounded !text-[20px]">edit_square</span>
                                             </button>
-                                            <button className="p-1 text-gray-500 hover:text-red-500 transition-colors">
+                                            <button 
+                                                onClick={() => handleDeleteTask(item.id)}
+                                                className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                                            >
                                                 <span className="material-symbols-rounded !text-[20px]">delete</span>
                                             </button>
                                         </>
                                     )}
-                                    <button className="ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-4 py-2 rounded-[5px] text-[12px]  hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                    <button 
+                                        onClick={() => router.push(`/mentor/remote-work/${item.id}`)}
+                                        className="ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-4 py-2 rounded-[5px] text-[12px]  hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                    >
                                         ดูรายละเอียด
                                     </button>
                                 </div>
@@ -414,7 +409,7 @@ const RemoteWorkPage = () => {
 
                             <div className="text-center space-y-5">
                                 <h3 className="text-[24px]  text-[#61646C] dark:text-white">
-                                    ไม่พบกำหนดการปฏิบัติงานนอกสถานที่ 13
+                                    ไม่พบกำหนดการปฏิบัติงานนอกสถานที่
                                 </h3>
                                 <div className="text-[16px] sm:text-[16px] text-[#61646C] dark:text-gray-400 space-y-1">
                                     <p>ยังไม่พบกำหนดการปฏิบัติงานนอกสถานที่ในขณะนี้</p>

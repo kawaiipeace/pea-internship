@@ -154,16 +154,24 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
 
   .get(
     "/student/itt/profile/img",
-    async ({ set, user }) => {
-      const fileData = await userService.getProfileImage(user.id);
+    async ({ set, user, query }) => {
+      const targetUserId = query.userId || user.id;
+      const fileData = await userService.getProfileImage(targetUserId);
+
       set.headers["Content-Type"] = fileData.contentType;
       return fileData.buffer;
     },
     {
       auth: true,
+      query: t.Object({
+        userId: t.Optional(
+          t.String({ description: "ID ของผู้ใช้ที่ต้องการดึงรูปโปรไฟล์" })
+        ),
+      }),
       detail: {
         summary: "ดึงรูปโปรไฟล์นักศึกษา",
-        description: "ดึงไฟล์รูปภาพโปรไฟล์จาก Storage เพื่อนำไปแสดงผล",
+        description:
+          "ดึงไฟล์รูปภาพโปรไฟล์จาก Storage เพื่อนำไปแสดงผล โดยระบุ userId ของนักศึกษาที่ต้องการ",
       },
     }
   );
