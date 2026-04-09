@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import axiosInstance from '@/api/axios';
 
@@ -90,11 +90,13 @@ const RejectModal = ({
     onClose,
     onConfirm,
     title,
+    isLoading,
 }: {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: (reason: string) => void;
     title: string;
+    isLoading?: boolean;
 }) => {
     const [reason, setReason] = useState('');
 
@@ -102,13 +104,13 @@ const RejectModal = ({
 
     const handleConfirm = () => {
         onConfirm(reason);
-        setReason('');
-        onClose();
     };
 
     const handleClose = () => {
-        setReason('');
-        onClose();
+        if (!isLoading) {
+            setReason('');
+            onClose();
+        }
     };
 
     return createPortal(
@@ -136,7 +138,8 @@ const RejectModal = ({
                     </div>
                     <button
                         onClick={handleClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-400 hover:text-gray-700"
+                        disabled={isLoading}
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>close</span>
                     </button>
@@ -165,17 +168,22 @@ const RejectModal = ({
                 <div className="flex justify-end gap-3 px-6 pb-5">
                     <button
                         onClick={handleClose}
-                        className="w-[120px] py-2.5 rounded-xl border border-gray-300 dark:border-white-dark/30 text-gray-700 dark:text-white-light text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
+                        disabled={isLoading}
+                        className="w-[120px] py-2.5 rounded-xl border border-gray-300 dark:border-white-dark/30 text-gray-700 dark:text-white-light text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         ยกเลิก
                     </button>
                     <button
                         onClick={handleConfirm}
-                        disabled={!reason.trim()}
-                        className={`w-[120px] py-2.5 rounded-xl text-white text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed
+                        disabled={!reason.trim() || isLoading}
+                        className={`w-[120px] py-2.5 rounded-xl text-white text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center gap-2
                             ${reason.trim() ? 'bg-red-500 hover:bg-red-600 shadow-sm' : 'bg-red-200'}`}
                     >
-                        ไม่อนุมัติ
+                        {isLoading ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            'ไม่อนุมัติ'
+                        )}
                     </button>
                 </div>
             </div>
@@ -190,10 +198,12 @@ const ApproveConfirmModal = ({
     isOpen,
     onClose,
     onConfirm,
+    isLoading,
 }: {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: () => void;
+    isLoading?: boolean;
 }) => {
     if (!isOpen) return null;
 
@@ -232,9 +242,14 @@ const ApproveConfirmModal = ({
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="flex-1 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-colors"
+                        disabled={isLoading}
+                        className="flex-1 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-colors disabled:bg-green-300 disabled:cursor-not-allowed flex items-center justify-center"
                     >
-                        ยืนยัน
+                        {isLoading ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                            'ยืนยัน'
+                        )}
                     </button>
                 </div>
             </div>
@@ -266,6 +281,36 @@ const ApproveSuccessModal = ({ isOpen }: { isOpen: boolean }) => {
                 </div>
                 <h2 className="text-[18px] font-bold text-gray-800 dark:text-white-light">
                     อนุมัติคำขอสำเร็จ
+                </h2>
+            </div>
+        </div>,
+        document.body
+    );
+};
+
+// ---- Reject Success Modal ----
+
+const RejectSuccessModal = ({ isOpen }: { isOpen: boolean }) => {
+    if (!isOpen) return null;
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+        >
+            <div className="bg-white dark:bg-[#0e1726] rounded-2xl shadow-2xl w-full max-w-[380px] mx-4 px-8 py-8 flex flex-col items-center text-center">
+                <div className="w-[76px] h-[76px] rounded-full bg-red-50 flex items-center justify-center mb-5">
+                    <div className="w-[56px] h-[56px] rounded-full bg-red-500 flex items-center justify-center shadow-sm">
+                        <span
+                            className="material-symbols-outlined text-white"
+                            style={{ fontSize: '36px', fontVariationSettings: "'wght' 700" }}
+                        >
+                            check
+                        </span>
+                    </div>
+                </div>
+                <h2 className="text-[18px] font-bold text-gray-800 dark:text-white-light">
+                    ไม่อนุมัติคำขอสำเร็จ
                 </h2>
             </div>
         </div>,
@@ -430,103 +475,161 @@ const ApprovalRequestPage = () => {
     const [activeTab, setActiveTab] = useState<'leave' | 'time-edit'>('leave');
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
     const [rejectModal, setRejectModal] = useState<{ open: boolean; title: string }>({ open: false, title: '' });
     const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
     const [approveSuccessOpen, setApproveSuccessOpen] = useState(false);
+    const [rejectSuccessOpen, setRejectSuccessOpen] = useState(false);
+
+    const PAGE_SIZE = 10;
+    const [page, setPage] = useState(1);
+
+    const records = useMemo(() => {
+        const sourceData = activeTab === 'leave' ? leaveRequests : timeEditRequests;
+        const from = (page - 1) * PAGE_SIZE;
+        const to = from + PAGE_SIZE;
+        return sourceData.slice(from, to);
+    }, [page, activeTab, leaveRequests]);
+
+    const totalPages = useMemo(() => {
+        const sourceData = activeTab === 'leave' ? leaveRequests : timeEditRequests;
+        return Math.max(1, Math.ceil(sourceData.length / PAGE_SIZE));
+    }, [activeTab, leaveRequests]);
 
     useEffect(() => {
-        const fetchLeaveRequests = async () => {
-            try {
-                setLoading(true);
-                // Connect API using the GET method based on leave-requests model
-                const response = await axiosInstance.get('/leave/history', {
-                    params: {
-                        page: 1,
-                        limit: 100, // fetch multiple items assuming page/limit logic
-                    }
-                });
+        setPage(1);
+    }, [activeTab]);
 
-                if (response.data && response.data.records) {
-                    const mappedData = response.data.records
-                        .filter((item: any) => item.status === 'PENDING') // Only show pending requests
-                        .map((item: any) => {
-                            const isSick = item.leaveType === 'SICK';
-                            
-                            let typeText = 'ลากิจ';
-                            let typeBg = 'bg-[#EEEFFF]';
-                            let typeTextColor = 'text-[#61646C]';
-                            let typeBorder = 'border-[#1A3CFF]';
-                            let typeIcon = 'business_center';
-                            let typeCircleBg = 'bg-[#1A3CFF]';
-                            
-                            if (isSick) {
-                                typeText = 'ลาป่วย';
-                                typeBg = 'bg-[#FFEFF3]';
-                                typeTextColor = 'text-pink-500';
-                                typeBorder = 'border-[#FF1A7D]';
-                                typeIcon = 'health_cross';
-                                typeCircleBg = 'bg-[#FF1A7D]';
-                            }
+    const fetchLeaveRequests = async () => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get('/leave/mentor/requests', {
+                params: { page: 1, limit: 100 }
+            });
 
-                            const leaveDateObj = new Date(item.leaveDate);
-                            const thaileaveDateStr = leaveDateObj.toLocaleDateString('th-TH', { 
-                                year: 'numeric', month: 'long', day: 'numeric' 
-                            });
+            if (response.data && response.data.records) {
+                const mappedData = response.data.records
+                    .filter((item: any) => item.status === 'PENDING')
+                    .map((item: any) => {
+                        const isSick = item.leaveType === 'SICK';
+                        
+                        let typeText = 'ลากิจ';
+                        let typeBg = 'bg-[#EEEFFF]';
+                        let typeTextColor = 'text-[#61646C]';
+                        let typeBorder = 'border-[#1A3CFF]';
+                        let typeIcon = 'business_center';
+                        let typeCircleBg = 'bg-[#1A3CFF]';
+                        
+                        if (isSick) {
+                            typeText = 'ลาป่วย';
+                            typeBg = 'bg-[#FFEFF3]';
+                            typeTextColor = 'text-pink-500';
+                            typeBorder = 'border-[#FF1A7D]';
+                            typeIcon = 'health_cross';
+                            typeCircleBg = 'bg-[#FF1A7D]';
+                        }
 
-                            const hasFile = !!item.attachmentUrl;
-                            const fileName = hasFile ? item.attachmentUrl.split('/').pop() : 'ไม่มีไฟล์แนบ';
-                            const fileIcon = hasFile && item.attachmentUrl.toLowerCase().endsWith('.pdf') ? 'picture_as_pdf' : 'image';
-
-                            return {
-                                id: item.id,
-                                studentName: item.studentName || 'นักศึกษา (ไม่ระบุชื่อ)',
-                                type: typeText,
-                                typeBg,
-                                typeText: typeTextColor,
-                                typeBorder,
-                                typeIcon,
-                                typeCircleBg,
-                                submittedDate: thaileaveDateStr, 
-                                leaveDate: thaileaveDateStr,
-                                reason: item.reason || '-',
-                                profileImg: item.profileImg || '/assets/images/profile-1.jpeg',
-                                fileName,
-                                fileIcon,
-                                hasFile,
-                                attachmentUrl: item.attachmentUrl
-                            };
+                        const leaveDateObj = new Date(item.leaveDate);
+                        const thaileaveDateStr = leaveDateObj.toLocaleDateString('th-TH', { 
+                            year: 'numeric', month: 'long', day: 'numeric' 
                         });
-                    setLeaveRequests(mappedData);
-                }
-            } catch (error) {
-                console.error('Error fetching leave requests API:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
 
+                        const hasFile = !!item.attachmentUrl;
+                        const fileName = hasFile ? item.attachmentUrl.split('/').pop() : 'ไม่มีไฟล์แนบ';
+                        const fileIcon = hasFile && item.attachmentUrl.toLowerCase().endsWith('.pdf') ? 'picture_as_pdf' : 'image';
+
+                        return {
+                            id: item.id,
+                            studentName: item.studentName || 'นักศึกษา (ไม่ระบุชื่อ)',
+                            type: typeText,
+                            typeBg,
+                            typeText: typeTextColor,
+                            typeBorder,
+                            typeIcon,
+                            typeCircleBg,
+                            submittedDate: thaileaveDateStr, 
+                            leaveDate: thaileaveDateStr,
+                            reason: item.reason || '-',
+                            profileImg: item.profileImg || '/assets/images/profile-1.jpeg',
+                            fileName,
+                            fileIcon,
+                            hasFile,
+                            attachmentUrl: item.attachmentUrl
+                        };
+                    });
+                setLeaveRequests(mappedData);
+            }
+        } catch (error) {
+            console.error('Error fetching leave requests API:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchLeaveRequests();
     }, []);
 
-    const openRejectModal = (tabType: 'leave' | 'time-edit') => {
+    const openRejectModal = (tabType: 'leave' | 'time-edit', id: number) => {
         const title = tabType === 'leave' ? 'ไม่อนุมัติการลา' : 'ไม่อนุมัติการแก้ไขเวลา';
+        setSelectedId(id);
         setRejectModal({ open: true, title });
     };
 
-    const closeRejectModal = () => setRejectModal({ open: false, title: '' });
-
-    const handleRejectConfirm = (reason: string) => {
-        console.log('Rejected with reason:', reason);
-        // TODO: call API
+    const closeRejectModal = () => {
+        setRejectModal({ open: false, title: '' });
+        setSelectedId(null);
     };
 
-    const openApproveConfirm = () => setApproveConfirmOpen(true);
+    const handleRejectConfirm = async (reason: string) => {
+        if (!selectedId) return;
+        setSubmitting(true);
+        try {
+            console.log('Rejected with reason:', reason);
+            // TODO: Call API once the reject endpoint is implemented in the backend
+            // await axiosInstance.post(`/leave/${selectedId}/reject`, { reason });
+            
+            // Mocking API delay
+            await new Promise(resolve => setTimeout(resolve, 800));
+            setRejectModal({ open: false, title: '' });
+            setRejectSuccessOpen(true);
+            setTimeout(() => {
+                setRejectSuccessOpen(false);
+                setSelectedId(null);
+                fetchLeaveRequests(); // refresh data
+            }, 2000);
+        } catch (error) {
+            console.error('Failed to reject:', error);
+            setRejectModal({ open: false, title: '' });
+            setSelectedId(null);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-    const handleApproveConfirm = () => {
-        setApproveConfirmOpen(false);
-        setApproveSuccessOpen(true);
-        setTimeout(() => setApproveSuccessOpen(false), 2000);
-        // TODO: call API
+    const openApproveConfirm = (id: number) => {
+        setSelectedId(id);
+        setApproveConfirmOpen(true);
+    };
+
+    const handleApproveConfirm = async () => {
+        if (!selectedId) return;
+        setSubmitting(true);
+        try {
+            await axiosInstance.post(`/leave/${selectedId}/approve`);
+            setApproveConfirmOpen(false);
+            setApproveSuccessOpen(true);
+            setTimeout(() => {
+                setApproveSuccessOpen(false);
+                setSelectedId(null);
+                fetchLeaveRequests(); // refresh data
+            }, 2000);
+        } catch (error) {
+            console.error('Failed to approve leave request:', error);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const summaryCards = [
@@ -598,16 +701,54 @@ const ApprovalRequestPage = () => {
                 {activeTab === 'leave'
                     ? loading ? (
                         <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
-                    ) : leaveRequests.length === 0 ? (
+                    ) : records.length === 0 ? (
                         <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอลาในขณะนี้</p>
-                    ) : leaveRequests.map((r) => (
-                        <LeaveCard key={r.id} request={r} onReject={() => openRejectModal('leave')} onApprove={openApproveConfirm} />
+                    ) : records.map((r) => (
+                        <LeaveCard key={r.id} request={r as LeaveRequest} onReject={() => openRejectModal('leave', r.id)} onApprove={() => openApproveConfirm(r.id)} />
                     ))
-                    : timeEditRequests.map((r) => (
-                        <TimeEditCard key={r.id} request={r} onReject={() => openRejectModal('time-edit')} onApprove={openApproveConfirm} />
+                    : records.length === 0 ? (
+                        <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอแก้ไขเวลาในขณะนี้</p>
+                    ) : records.map((r) => (
+                        <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', r.id)} onApprove={() => openApproveConfirm(r.id)} />
                     ))
                 }
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex flex-col-reverse sm:flex-row items-center justify-end mt-8 pb-10 gap-6 px-2">
+                    <div className="flex items-center border border-[#CECFD2] rounded-full overflow-hidden bg-white shadow-sm">
+                        <button
+                            onClick={() => setPage(Math.max(1, page - 1))}
+                            disabled={page === 1}
+                            className="w-11 h-10 flex items-center justify-center text-[#000000] border-r border-[#CECFD2] disabled:opacity-30 disabled:bg-gray-50/50"
+                        >
+                            <span className="material-symbols-outlined text-[22px]">chevron_left</span>
+                        </button>
+                        
+                        {Array.from({ length: totalPages }).map((_, index) => {
+                            const pageNum = index + 1;
+                            return (
+                                <button 
+                                    key={pageNum}
+                                    onClick={() => setPage(pageNum)} 
+                                    className={`w-11 h-10 flex items-center justify-center text-[14px] font-medium transition-all border-r border-[#CECFD2] ${page === pageNum ? 'bg-[#E4E7EC] text-[#1F2937]' : 'text-[#6B7280] hover:bg-gray-50'}`}
+                                >
+                                    {pageNum}
+                                </button>
+                            );
+                        })}
+
+                        <button
+                            onClick={() => setPage(Math.min(totalPages, page + 1))}
+                            disabled={page >= totalPages}
+                            className="w-11 h-10 flex items-center justify-center text-[#000] font-bold hover:bg-gray-50 transition-colors disabled:opacity-30"
+                        >
+                            <span className="material-symbols-outlined text-[24px]">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Reject Modal */}
             <RejectModal
@@ -615,6 +756,7 @@ const ApprovalRequestPage = () => {
                 onClose={closeRejectModal}
                 onConfirm={handleRejectConfirm}
                 title={rejectModal.title}
+                isLoading={submitting}
             />
 
             {/* Approve Confirm Modal */}
@@ -622,10 +764,14 @@ const ApprovalRequestPage = () => {
                 isOpen={approveConfirmOpen}
                 onClose={() => setApproveConfirmOpen(false)}
                 onConfirm={handleApproveConfirm}
+                isLoading={submitting}
             />
 
             {/* Approve Success Modal */}
             <ApproveSuccessModal isOpen={approveSuccessOpen} />
+            
+            {/* Reject Success Modal */}
+            <RejectSuccessModal isOpen={rejectSuccessOpen} />
         </div>
     );
 };
