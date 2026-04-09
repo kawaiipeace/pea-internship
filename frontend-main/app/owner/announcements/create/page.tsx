@@ -469,8 +469,8 @@ export default function CreateAnnouncementPage() {
     }
     if (!formData.contactPhone.trim()) {
       newErrors.contactPhone = "ระบุเบอร์โทรผู้ประกาศรับสมัคร";
-    } else if (formData.contactPhone.replace(/\D/g, "").length !== 10) {
-      newErrors.contactPhone = "เบอร์โทรต้องมี 10 หลัก";
+    } else if (formData.contactPhone.replace(/\D/g, "").length < 9 || formData.contactPhone.replace(/\D/g, "").length > 10) {
+      newErrors.contactPhone = "เบอร์โทรต้องมี 9-10 หลัก";
     }
     if (!formData.contactEmail.trim()) {
       newErrors.contactEmail = "ระบุอีเมลผู้ประกาศรับสมัคร";
@@ -480,14 +480,14 @@ export default function CreateAnnouncementPage() {
     if (!hasAtLeastOneMentor) {
       newErrors.mentorName = "กรุณาเลือกพี่เลี้ยงอย่างน้อย 1 คน";
     }
-    // Validate mentor phones (10 digits)
+    // Validate mentor phones (9-10 digits)
     mentors.forEach((m, i) => {
       if (
         m.staffProfileId !== null &&
-        m.phone.replace(/\D/g, "").length !== 10
+        (m.phone.replace(/\D/g, "").length < 9 || m.phone.replace(/\D/g, "").length > 10)
       ) {
         newErrors[`mentorPhone_${i}` as keyof AnnouncementFormErrors] =
-          "เบอร์โทรพี่เลี้ยงต้องมี 10 หลัก";
+          "เบอร์โทรพี่เลี้ยงต้องมี 9-10 หลัก";
       }
     });
 
@@ -1741,21 +1741,9 @@ export default function CreateAnnouncementPage() {
                     <input
                       type="email"
                       value={mentor.email}
-                      onChange={(e) => {
-                        const newMentors = [...mentors];
-                        newMentors[index] = {
-                          ...newMentors[index],
-                          email: e.target.value,
-                        };
-                        setMentors(newMentors);
-                      }}
-                      disabled={
-                        mentor.staffProfileId != null &&
-                        currentUser?.staffProfileId != null &&
-                        mentor.staffProfileId === currentUser.staffProfileId
-                      }
+                      readOnly
                       placeholder="อีเมลพี่เลี้ยง"
-                      className={`w-full px-4 py-3 rounded-lg border ${mentor.staffProfileId != null && currentUser?.staffProfileId != null && mentor.staffProfileId === currentUser.staffProfileId ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed" : "border-gray-200 focus:ring-primary-600 focus:outline-none focus:ring-2 text-gray-700"}`}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
                     />
                   </div>
                   <div>

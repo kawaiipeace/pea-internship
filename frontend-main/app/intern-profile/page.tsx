@@ -4,7 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { NavbarIntern } from "@/components";
 import VideoLoading from "@/components/ui/VideoLoading";
-import { userApi, authApi, studentProfileApi, institutionApi, applicationApi, positionApi, Position, extractStudentProfile } from "@/services/api";
+import {
+  userApi,
+  authApi,
+  studentProfileApi,
+  institutionApi,
+  applicationApi,
+  positionApi,
+  Position,
+  extractStudentProfile,
+} from "@/services/api";
 
 // ข้อมูล default หากไม่มี user login
 const defaultInternData = {
@@ -275,7 +284,8 @@ export default function InternProfilePage() {
   const [educationType, setEducationType] = useState("university"); // raw education value
   const [isLoading, setIsLoading] = useState(true);
   const [hasApplication, setHasApplication] = useState(false);
-  const [applicationPosition, setApplicationPosition] = useState<Position | null>(null);
+  const [applicationPosition, setApplicationPosition] =
+    useState<Position | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -302,7 +312,9 @@ export default function InternProfilePage() {
             // ดึงข้อมูล institution จาก API ตาม institutionId
             if (studentProfile?.institutionId) {
               try {
-                const inst = await institutionApi.getInstitutionById(studentProfile.institutionId);
+                const inst = await institutionApi.getInstitutionById(
+                  studentProfile.institutionId,
+                );
                 if (inst) {
                   institutionName = inst.name;
                   // แปลง institutionsType เป็น education label
@@ -312,7 +324,8 @@ export default function InternProfilePage() {
                     SCHOOL: "high_school",
                     OTHERS: "other",
                   };
-                  const eduKey = typeToEducation[inst.institutionsType] || "other";
+                  const eduKey =
+                    typeToEducation[inst.institutionsType] || "other";
                   setEducationType(eduKey);
                   educationLabel = getEducationLabel(eduKey);
                   // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
@@ -327,7 +340,9 @@ export default function InternProfilePage() {
             }
 
             setInternData({
-              fullName: `${profileData.fname || ""} ${profileData.lname || ""}`.trim() || "-",
+              fullName:
+                `${profileData.fname || ""} ${profileData.lname || ""}`.trim() ||
+                "-",
               email: profileData.email || "-",
               phone: formatPhone(profileData.phoneNumber || ""),
               gender: getGenderLabel(profileData.gender || ""),
@@ -335,10 +350,12 @@ export default function InternProfilePage() {
               institution: institutionName,
               faculty: facultyName,
               major: isHighSchool
-                ? (studentProfile?.studentNote || "-")
-                : (studentProfile?.major || "-"),
+                ? studentProfile?.studentNote || "-"
+                : studentProfile?.major || "-",
               internshipPeriod: internshipPeriod,
-              totalHours: studentProfile?.hours ? `${parseFloat(studentProfile.hours)} ชั่วโมง` : "-",
+              totalHours: studentProfile?.hours
+                ? `${parseFloat(studentProfile.hours)} ชั่วโมง`
+                : "-",
               department: defaultInternData.department,
               supervisor: defaultInternData.supervisor,
               supervisorEmail: defaultInternData.supervisorEmail,
@@ -352,12 +369,18 @@ export default function InternProfilePage() {
             // Fetch latest application to determine hasApplication and get position data
             try {
               const latestApp = await applicationApi.getMyLatestApplication();
-              if (latestApp && latestApp.applicationStatus !== "CANCEL" && latestApp.applicationStatus !== "ABORT") {
+              if (
+                latestApp &&
+                latestApp.applicationStatus !== "CANCEL" &&
+                latestApp.applicationStatus !== "ABORT"
+              ) {
                 setHasApplication(true);
                 // Fetch position data for owner/mentor info
                 if (latestApp.positionId) {
                   try {
-                    const pos = await positionApi.getPositionById(latestApp.positionId);
+                    const pos = await positionApi.getPositionById(
+                      latestApp.positionId,
+                    );
                     if (pos) {
                       setApplicationPosition(pos);
                     }
@@ -373,9 +396,10 @@ export default function InternProfilePage() {
             // Status logic based on internshipStatus
             if (studentProfile?.internshipStatus) {
               const statusMap: { [key: string]: string } = {
-                "ACTIVE": "อยู่ระหว่างฝึกงาน",
-                "COMPLETE": "ฝึกงานเสร็จสิ้น",
-                "CANCEL": "ยกเลิกฝึกงาน",
+                AWAITING: "รอเริ่มฝึกงาน",
+                ACTIVE: "อยู่ระหว่างฝึกงาน",
+                COMPLETE: "ฝึกงานเสร็จสิ้น",
+                CANCEL: "ยกเลิกฝึกงาน",
               };
               const mappedStatus = statusMap[studentProfile.internshipStatus];
               if (mappedStatus) {
@@ -387,14 +411,17 @@ export default function InternProfilePage() {
             return; // สำเร็จแล้ว ไม่ต้อง fallback
           }
         } catch (profileError) {
-          console.log("User profile API not available, falling back to old API");
+          console.log(
+            "User profile API not available, falling back to old API",
+          );
         }
 
         // Fallback: ลองใช้ API เก่า /users/me/profile
         try {
           const profileData = await userApi.getMyProfile();
           if (profileData && profileData.user) {
-            const { user, studentProfile, mentor, supervisor, department } = profileData;
+            const { user, studentProfile, mentor, supervisor, department } =
+              profileData;
 
             // Format internship period
             let internshipPeriod = "-";
@@ -413,7 +440,9 @@ export default function InternProfilePage() {
             // ดึงข้อมูล institution จาก API ตาม institutionId
             if (studentProfile?.institutionId) {
               try {
-                const inst = await institutionApi.getInstitutionById(studentProfile.institutionId);
+                const inst = await institutionApi.getInstitutionById(
+                  studentProfile.institutionId,
+                );
                 if (inst) {
                   fallbackInstitutionName = inst.name;
                   const typeToEducation: { [key: string]: string } = {
@@ -422,7 +451,8 @@ export default function InternProfilePage() {
                     SCHOOL: "high_school",
                     OTHERS: "other",
                   };
-                  const eduKey = typeToEducation[inst.institutionsType] || "other";
+                  const eduKey =
+                    typeToEducation[inst.institutionsType] || "other";
                   setEducationType(eduKey);
                   fallbackEducationLabel = getEducationLabel(eduKey);
                   // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
@@ -445,14 +475,18 @@ export default function InternProfilePage() {
               institution: fallbackInstitutionName,
               faculty: fallbackFacultyName,
               major: fallbackIsHighSchool
-                ? (studentProfile?.studentNote || "-")
-                : (studentProfile?.major || "-"),
+                ? studentProfile?.studentNote || "-"
+                : studentProfile?.major || "-",
               internshipPeriod: internshipPeriod,
-              totalHours: studentProfile?.hours ? `${Number(studentProfile.hours)} ชั่วโมง` : "-",
+              totalHours: studentProfile?.hours
+                ? `${Number(studentProfile.hours)} ชั่วโมง`
+                : "-",
               department: department?.name || defaultInternData.department,
               supervisor: supervisor?.name || defaultInternData.supervisor,
-              supervisorEmail: supervisor?.email || defaultInternData.supervisorEmail,
-              supervisorPhone: supervisor?.phone || defaultInternData.supervisorPhone,
+              supervisorEmail:
+                supervisor?.email || defaultInternData.supervisorEmail,
+              supervisorPhone:
+                supervisor?.phone || defaultInternData.supervisorPhone,
               mentorName: mentor?.name || defaultInternData.mentorName,
               mentorEmail: mentor?.email || defaultInternData.mentorEmail,
               mentorPhone: mentor?.phone || defaultInternData.mentorPhone,
@@ -461,9 +495,10 @@ export default function InternProfilePage() {
 
             if (studentProfile?.internshipStatus) {
               const statusMap: { [key: string]: string } = {
-                "ACTIVE": "อยู่ระหว่างฝึกงาน",
-                "COMPLETE": "ฝึกงานเสร็จสิ้น",
-                "CANCEL": "ยกเลิกฝึกงาน",
+                AWAITING: "รอเริ่มฝึกงาน",
+                ACTIVE: "อยู่ระหว่างฝึกงาน",
+                COMPLETE: "ฝึกงานเสร็จสิ้น",
+                CANCEL: "ยกเลิกฝึกงาน",
               };
               const mappedStatus = statusMap[studentProfile.internshipStatus];
               if (mappedStatus) {
@@ -473,7 +508,9 @@ export default function InternProfilePage() {
             return; // สำเร็จแล้ว ไม่ต้อง fallback
           }
         } catch (profileError) {
-          console.log("Profile API not available, falling back to session data");
+          console.log(
+            "Profile API not available, falling back to session data",
+          );
         }
 
         // Fallback: ใช้ข้อมูลจาก Better Auth session + student profile API แยก
@@ -517,7 +554,9 @@ export default function InternProfilePage() {
                 SCHOOL: "high_school",
                 OTHERS: "other",
               };
-              const eduKey = typeToEducation[studentData.institution.institutionsType] || "other";
+              const eduKey =
+                typeToEducation[studentData.institution.institutionsType] ||
+                "other";
               setEducationType(eduKey);
               sessionEducationLabel = getEducationLabel(eduKey);
               // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
@@ -527,7 +566,9 @@ export default function InternProfilePage() {
               sessionIsHighSchool = eduKey === "high_school";
             }
 
-            major = sessionIsHighSchool ? (sp.studentNote || "-") : (sp.major || "-");
+            major = sessionIsHighSchool
+              ? sp.studentNote || "-"
+              : sp.major || "-";
           }
           // ถ้าไม่มีจาก API ลองใช้จาก session.user.studentProfile
           else if (user.studentProfile) {
@@ -542,7 +583,9 @@ export default function InternProfilePage() {
             let sessionIsHighSchool2 = false;
             if (sp.institutionId) {
               try {
-                const inst = await institutionApi.getInstitutionById(sp.institutionId);
+                const inst = await institutionApi.getInstitutionById(
+                  sp.institutionId,
+                );
                 if (inst) {
                   institution = inst.name;
                   const typeToEducation: { [key: string]: string } = {
@@ -551,7 +594,8 @@ export default function InternProfilePage() {
                     SCHOOL: "high_school",
                     OTHERS: "other",
                   };
-                  const eduKey = typeToEducation[inst.institutionsType] || "other";
+                  const eduKey =
+                    typeToEducation[inst.institutionsType] || "other";
                   setEducationType(eduKey);
                   sessionEducationLabel = getEducationLabel(eduKey);
                   // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
@@ -565,11 +609,16 @@ export default function InternProfilePage() {
               }
             }
 
-            major = sessionIsHighSchool2 ? (sp.studentNote || "-") : (sp.major || "-");
+            major = sessionIsHighSchool2
+              ? sp.studentNote || "-"
+              : sp.major || "-";
           }
 
           setInternData({
-            fullName: `${user.fname || ""} ${user.lname || ""}`.trim() || user.name || "-",
+            fullName:
+              `${user.fname || ""} ${user.lname || ""}`.trim() ||
+              user.name ||
+              "-",
             email: user.email || "-",
             phone: formatPhone(user.phoneNumber || ""),
             gender: getGenderLabel(user.gender || ""),
@@ -671,21 +720,42 @@ export default function InternProfilePage() {
             {/* Mobile: Status badge - only show if status exists */}
             {currentStatus && (
               <div className="flex items-center gap-2 mt-2 sm:hidden">
-                <span className={`inline-flex items-center gap-2 px-2 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#FEF0C7] border border-[#FEDF89]" :
-                    currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#FEE4E2] border border-[#FECDCA]" :
-                      currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#DCFAE6] border border-[#A9EFC5]" :
-                        "bg-yellow-100 border border-yellow-300"
-                  }`}>
-                  <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#B54708]" :
-                      currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#912018]" :
-                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#085D3A]" :
-                          "bg-yellow-500"
-                    }`}></span>
-                  <span className={`text-xs font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-[#B54708]" :
-                      currentStatus === "ยกเลิกฝึกงาน" ? "text-[#912018]" :
-                        currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-[#085D3A]" :
-                          "text-yellow-700"
-                    }`}>
+                <span
+                  className={`inline-flex items-center gap-2 px-2 py-1 rounded-full ${
+                    currentStatus === "อยู่ระหว่างฝึกงาน" ||
+                    currentStatus === "รอเริ่มฝึกงาน"
+                      ? "bg-[#FEF0C7] border border-[#FEDF89]"
+                      : currentStatus === "ยกเลิกฝึกงาน"
+                        ? "bg-[#FEE4E2] border border-[#FECDCA]"
+                        : currentStatus === "ฝึกงานเสร็จสิ้น"
+                          ? "bg-[#DCFAE6] border border-[#A9EFC5]"
+                          : "bg-yellow-100 border border-yellow-300"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      currentStatus === "อยู่ระหว่างฝึกงาน" ||
+                      currentStatus === "รอเริ่มฝึกงาน"
+                        ? "bg-[#B54708]"
+                        : currentStatus === "ยกเลิกฝึกงาน"
+                          ? "bg-[#912018]"
+                          : currentStatus === "ฝึกงานเสร็จสิ้น"
+                            ? "bg-[#085D3A]"
+                            : "bg-yellow-500"
+                    }`}
+                  ></span>
+                  <span
+                    className={`text-xs font-medium ${
+                      currentStatus === "อยู่ระหว่างฝึกงาน" ||
+                      currentStatus === "รอเริ่มฝึกงาน"
+                        ? "text-[#B54708]"
+                        : currentStatus === "ยกเลิกฝึกงาน"
+                          ? "text-[#912018]"
+                          : currentStatus === "ฝึกงานเสร็จสิ้น"
+                            ? "text-[#085D3A]"
+                            : "text-yellow-700"
+                    }`}
+                  >
                     {currentStatus}
                   </span>
                 </span>
@@ -700,21 +770,42 @@ export default function InternProfilePage() {
                 </h1>
                 {currentStatus && (
                   <div className="flex items-center gap-2 mt-3">
-                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#FEF0C7] border border-[#FEDF89]" :
-                        currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#FEE4E2] border border-[#FECDCA]" :
-                          currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#DCFAE6] border border-[#A9EFC5]" :
-                            "bg-yellow-100 border border-yellow-300"
-                      }`}>
-                      <span className={`w-2 h-2 rounded-full ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "bg-[#B54708]" :
-                          currentStatus === "ยกเลิกฝึกงาน" ? "bg-[#912018]" :
-                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "bg-[#085D3A]" :
-                              "bg-yellow-500"
-                        }`}></span>
-                      <span className={`text-sm font-medium ${currentStatus === "อยู่ระหว่างฝึกงาน" ? "text-[#B54708]" :
-                          currentStatus === "ยกเลิกฝึกงาน" ? "text-[#912018]" :
-                            currentStatus === "ฝึกงานเสร็จสิ้น" ? "text-[#085D3A]" :
-                              "text-yellow-700"
-                        }`}>
+                    <span
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${
+                        currentStatus === "อยู่ระหว่างฝึกงาน" ||
+                        currentStatus === "รอเริ่มฝึกงาน"
+                          ? "bg-[#FEF0C7] border border-[#FEDF89]"
+                          : currentStatus === "ยกเลิกฝึกงาน"
+                            ? "bg-[#FEE4E2] border border-[#FECDCA]"
+                            : currentStatus === "ฝึกงานเสร็จสิ้น"
+                              ? "bg-[#DCFAE6] border border-[#A9EFC5]"
+                              : "bg-yellow-100 border border-yellow-300"
+                      }`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          currentStatus === "อยู่ระหว่างฝึกงาน" ||
+                          currentStatus === "รอเริ่มฝึกงาน"
+                            ? "bg-[#B54708]"
+                            : currentStatus === "ยกเลิกฝึกงาน"
+                              ? "bg-[#912018]"
+                              : currentStatus === "ฝึกงานเสร็จสิ้น"
+                                ? "bg-[#085D3A]"
+                                : "bg-yellow-500"
+                        }`}
+                      ></span>
+                      <span
+                        className={`text-sm font-medium ${
+                          currentStatus === "อยู่ระหว่างฝึกงาน" ||
+                          currentStatus === "รอเริ่มฝึกงาน"
+                            ? "text-[#B54708]"
+                            : currentStatus === "ยกเลิกฝึกงาน"
+                              ? "text-[#912018]"
+                              : currentStatus === "ฝึกงานเสร็จสิ้น"
+                                ? "text-[#085D3A]"
+                                : "text-yellow-700"
+                        }`}
+                      >
                         {currentStatus}
                       </span>
                     </span>
@@ -766,7 +857,11 @@ export default function InternProfilePage() {
               ข้อมูลส่วนตัว
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
-              <FieldCard icon={IconMail} label="อีเมล" value={internData.email} />
+              <FieldCard
+                icon={IconMail}
+                label="อีเมล"
+                value={internData.email}
+              />
               <FieldCard
                 icon={IconPhone}
                 label="เบอร์โทร"
@@ -795,7 +890,8 @@ export default function InternProfilePage() {
                 value={internData.institution}
               />
               {/* Show faculty only for university and other */}
-              {(educationType === "university" || educationType === "other") && (
+              {(educationType === "university" ||
+                educationType === "other") && (
                 <FieldCard
                   icon={IconSchool}
                   label="คณะ"
@@ -812,7 +908,8 @@ export default function InternProfilePage() {
             </div>
 
             {/* Internship - show if student has period/hours data */}
-            {(internData.internshipPeriod !== "-" || internData.totalHours !== "-") && (
+            {(internData.internshipPeriod !== "-" ||
+              internData.totalHours !== "-") && (
               <>
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-6 sm:mt-8 mb-3 sm:mb-4">
                   ข้อมูลการฝึกงาน
@@ -842,21 +939,38 @@ export default function InternProfilePage() {
                   <FieldCard
                     icon={IconWork}
                     label="ชื่อกองงาน"
-                    value={applicationPosition.department?.deptFull || applicationPosition.department?.deptShort || "-"}
+                    value={
+                      applicationPosition.department?.deptFull ||
+                      applicationPosition.department?.deptShort ||
+                      "-"
+                    }
                   />
                   <FieldCard
                     icon={IconUser}
                     label="ชื่อผู้ติดต่อ"
                     value={(() => {
-                      const ownerData = applicationPosition.owner || (applicationPosition.owners && applicationPosition.owners.length > 0 ? applicationPosition.owners[0] : null);
-                      return ownerData ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim() || "-" : "-";
+                      const ownerData =
+                        applicationPosition.owner ||
+                        (applicationPosition.owners &&
+                        applicationPosition.owners.length > 0
+                          ? applicationPosition.owners[0]
+                          : null);
+                      return ownerData
+                        ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim() ||
+                            "-"
+                        : "-";
                     })()}
                   />
                   <FieldCard
                     icon={IconMail}
                     label="อีเมลผู้ติดต่อ"
                     value={(() => {
-                      const ownerData = applicationPosition.owner || (applicationPosition.owners && applicationPosition.owners.length > 0 ? applicationPosition.owners[0] : null);
+                      const ownerData =
+                        applicationPosition.owner ||
+                        (applicationPosition.owners &&
+                        applicationPosition.owners.length > 0
+                          ? applicationPosition.owners[0]
+                          : null);
                       return ownerData?.email || "-";
                     })()}
                   />
@@ -864,7 +978,12 @@ export default function InternProfilePage() {
                     icon={IconPhone}
                     label="เบอร์โทรกองงาน"
                     value={(() => {
-                      const ownerData = applicationPosition.owner || (applicationPosition.owners && applicationPosition.owners.length > 0 ? applicationPosition.owners[0] : null);
+                      const ownerData =
+                        applicationPosition.owner ||
+                        (applicationPosition.owners &&
+                        applicationPosition.owners.length > 0
+                          ? applicationPosition.owners[0]
+                          : null);
                       return ownerData?.phoneNumber || "-";
                     })()}
                   />
@@ -873,30 +992,33 @@ export default function InternProfilePage() {
             )}
 
             {/* Mentor Info - only show if has application and mentors exist */}
-            {hasApplication && applicationPosition && applicationPosition.mentors && applicationPosition.mentors.length > 0 && (
-              <>
-                <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-6 sm:mt-8 mb-3 sm:mb-4">
-                  ข้อมูลพี่เลี้ยง
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
-                  <FieldCard
-                    icon={IconUser}
-                    label="ชื่อพี่เลี้ยง"
-                    value={applicationPosition.mentors[0].name || "-"}
-                  />
-                  <FieldCard
-                    icon={IconMail}
-                    label="อีเมลพี่เลี้ยง"
-                    value={applicationPosition.mentors[0].email || "-"}
-                  />
-                  <FieldCard
-                    icon={IconPhone}
-                    label="เบอร์โทรติดต่อพี่เลี้ยง"
-                    value={applicationPosition.mentors[0].phoneNumber || "-"}
-                  />
-                </div>
-              </>
-            )}
+            {hasApplication &&
+              applicationPosition &&
+              applicationPosition.mentors &&
+              applicationPosition.mentors.length > 0 && (
+                <>
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900 mt-6 sm:mt-8 mb-3 sm:mb-4">
+                    ข้อมูลพี่เลี้ยง
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
+                    <FieldCard
+                      icon={IconUser}
+                      label="ชื่อพี่เลี้ยง"
+                      value={applicationPosition.mentors[0].name || "-"}
+                    />
+                    <FieldCard
+                      icon={IconMail}
+                      label="อีเมลพี่เลี้ยง"
+                      value={applicationPosition.mentors[0].email || "-"}
+                    />
+                    <FieldCard
+                      icon={IconPhone}
+                      label="เบอร์โทรติดต่อพี่เลี้ยง"
+                      value={applicationPosition.mentors[0].phoneNumber || "-"}
+                    />
+                  </div>
+                </>
+              )}
           </div>
         </>
       </main>

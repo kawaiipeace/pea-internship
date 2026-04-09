@@ -36,7 +36,7 @@ function getHomeByRole(role: string | undefined): string {
     case "owner":
       return "/owner/announcements";
     case "admin":
-      return "/admin";
+      return "/admin/applications";
     case "intern":
     default:
       return "/intern-home";
@@ -126,11 +126,11 @@ export function proxy(request: NextRequest) {
     }
     // Admin พยายามเข้า intern routes → redirect ไป admin
     if (userRole === "admin" && isInternRoute) {
-      return NextResponse.redirect(new URL("/admin", request.url));
+      return NextResponse.redirect(new URL("/admin/applications", request.url));
     }
     // Admin พยายามเข้า owner routes → redirect ไป admin
     if (userRole === "admin" && isOwnerRoute) {
-      return NextResponse.redirect(new URL("/admin", request.url));
+      return NextResponse.redirect(new URL("/admin/applications", request.url));
     }
   }
 
