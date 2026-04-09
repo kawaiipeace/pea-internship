@@ -270,12 +270,12 @@ const AttendanceHistoryPage = () => {
           const inTimeDisplay = formatTimeDisplay(log.checkInTime);
           const outTimeDisplay = formatTimeDisplay(log.checkOutTime);
 
-          const date = new Date(log.workDate);
-          const day = date.getDate().toString();
-          const monthIndex = date.getMonth();
-          const year = date.getFullYear() + 543;
+          const startDate = new Date(log.startDate);
+          const endDate = new Date(log.endDate);
+          const day = startDate.getDate().toString();
+          const monthIndex = startDate.getMonth();
+          const year = startDate.getFullYear() + 543;
 
-          const thaiMonthsShort = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
           const thaiMonthsFull = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
           let statusType = "default";
@@ -310,14 +310,19 @@ const AttendanceHistoryPage = () => {
             if (approvalStatus === 'rejected') approvalStatus = 'denied';
           }
 
+          const isRange = log.startDate !== log.endDate;
+          const displayDateLabel = isRange
+            ? `${startDate.getDate()} - ${endDate.getDate()} ${thaiMonthsFull[endDate.getMonth()]} ${endDate.getFullYear() + 543}`
+            : `${day} ${thaiMonthsFull[monthIndex]} ${year}`;
+
           return {
             id: log.id,
-            workDate: log.workDate, // Store workDate for filtering
+            workDate: log.workDate, 
             date: day,
             month: thaiMonthsFull[monthIndex],
             monthFull: thaiMonthsFull[monthIndex],
             year: year,
-            labelMobile: `${day} ${thaiMonthsFull[monthIndex]} ${year}`,
+            labelMobile: displayDateLabel,
             time: log.displayStatus === 'ABSENT' ? 'ขาดงาน' : log.displayStatus === 'LEAVE' ? 'ลางาน' : `${inTimeDisplay} - ${outTimeDisplay}`,
             status: statusLabel,
             statusType: statusType,
@@ -327,6 +332,9 @@ const AttendanceHistoryPage = () => {
             workingHours: log.workingHours,
             approvalStatus: approvalStatus,
             isLeave: log.displayStatus === 'LEAVE',
+            startDate: log.startDate,
+            endDate: log.endDate,
+            ids: log.ids,
             isEdited: log.isEdited,
             correctionId: log.correctionId,
             leaveType: log.leaveType,
@@ -681,12 +689,20 @@ const AttendanceHistoryPage = () => {
                 >
                   {/* Desktop Date Badge (Balanced Style) - Only visible on sm screens and above */}
                   <div className="hidden sm:flex flex-col items-center justify-center bg-[#E4E7EC] dark:bg-gray-800 rounded-xl w-[70px] h-[70px] shrink-0 border border-[#CECFD2] dark:border-gray-700 px-1 text-center">
-                    <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200 leading-tight mb-1">
-                      {item.date} {item.month}
-                    </span>
-                    <span className="text-[14px] text-gray-800 dark:text-gray-300 font-bold leading-tight">
-                      {item.year}
-                    </span>
+                    {item.startDate !== item.endDate ? (
+                      <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200 leading-tight">
+                        {new Date(item.startDate).getDate()} - {new Date(item.endDate).getDate()} {thaiMonthsShort[new Date(item.endDate).getMonth()]}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200 leading-tight mb-1">
+                          {item.date} {thaiMonthsShort[new Date(item.startDate).getMonth()]}
+                        </span>
+                        <span className="text-[14px] text-gray-800 dark:text-gray-300 font-bold leading-tight">
+                          {item.year}
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   {/* Unified Responsive Content Area */}
@@ -1091,7 +1107,10 @@ const AttendanceHistoryPage = () => {
                                     <div className="w-full h-auto flex flex-col pt-1 touch-none">
                                       <div className="flex items-center justify-between mt-1 mb-2">
                                         <div className="text-[16px]  text-gray-800 dark:text-gray-200">
-                                          {selectedHistoryItem.date} {selectedHistoryItem.month} {selectedHistoryItem.year}
+                                          {selectedHistoryItem.startDate !== selectedHistoryItem.endDate 
+                                            ? `${new Date(selectedHistoryItem.startDate).getDate()} - ${new Date(selectedHistoryItem.endDate).getDate()} ${thaiMonthsFull[new Date(selectedHistoryItem.endDate).getMonth()]} ${new Date(selectedHistoryItem.endDate).getFullYear() + 543}`
+                                            : `${selectedHistoryItem.date} ${selectedHistoryItem.month} ${selectedHistoryItem.year}`
+                                          }
                                         </div>
                                         <div className="flex items-center gap-2">
                                           {/* Note: Status badge and Delete button removed/omitted as requested for log view */}

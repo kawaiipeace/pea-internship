@@ -419,6 +419,76 @@ export class CheckTimeService {
     });
   }
 
+  private groupAttendanceRecords(records: any[]) {
+    if (records.length === 0) return [];
+
+    // 1. Sort by workDate ascending to detect consecutive days
+    const sorted = [...records].sort(
+      (a, b) =>
+        new Date(a.workDate).getTime() - new Date(b.workDate).getTime()
+    );
+
+    const grouped: any[] = [];
+    let currentGroup: any = null;
+
+    for (const record of sorted) {
+      // We only group records with status 'LEAVE'
+      const isLeave = record.displayStatus === "LEAVE";
+
+      if (!isLeave) {
+        // Close current group if any
+        currentGroup = null;
+        grouped.push({
+          ...record,
+          startDate: record.workDate,
+          endDate: record.workDate,
+          ids: [record.id],
+        });
+        continue;
+      }
+
+      if (!currentGroup || currentGroup.displayStatus !== "LEAVE") {
+        currentGroup = {
+          ...record,
+          ids: [record.id],
+          startDate: record.workDate,
+          endDate: record.workDate,
+        };
+        grouped.push(currentGroup);
+      } else {
+        const prevDate = new Date(currentGroup.endDate);
+        const currDate = new Date(record.workDate);
+        const diffDays = Math.round(
+          (currDate.getTime() - prevDate.getTime()) / (1000 * 3600 * 24)
+        );
+
+        // Check if consecutive and shared attributes match
+        if (
+          diffDays === 1 &&
+          record.leaveType === currentGroup.leaveType &&
+          record.leaveReason === currentGroup.leaveReason
+        ) {
+          currentGroup.endDate = record.workDate;
+          currentGroup.ids.push(record.id);
+        } else {
+          currentGroup = {
+            ...record,
+            ids: [record.id],
+            startDate: record.workDate,
+            endDate: record.workDate,
+          };
+          grouped.push(currentGroup);
+        }
+      }
+    }
+
+    // 2. Sort descending by startDate for presentation
+    return grouped.sort(
+      (a, b) =>
+        new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+  }
+
   async history(
     userId: string,
     year?: number,
@@ -535,8 +605,6 @@ export class CheckTimeService {
     const historyData = await db.query.attendanceLogs.findMany({
       where: listCondition,
       orderBy: [desc(attendanceLogs.workDate)],
-      limit: limit,
-      offset: offset,
       with: {
         checkIn: { columns: { time: true, location: true } },
         checkOut: { columns: { time: true, location: true } },
@@ -626,16 +694,23 @@ export class CheckTimeService {
       };
     });
 
+    const allGroupedRecords = this.groupAttendanceRecords(records);
+    const totalFilteredRecordsAfterGrouping = allGroupedRecords.length;
+    const totalPagesAfterGrouping = Math.ceil(
+      totalFilteredRecordsAfterGrouping / limit
+    );
+    const pagedRecords = allGroupedRecords.slice(offset, offset + limit);
+
     return {
       period: { year: targetYear, month: targetMonth },
       summary: summary,
       pagination: {
         page: page,
         limit: limit,
-        totalPages: totalPages,
-        totalRecords: totalFilteredRecords,
+        totalPages: totalPagesAfterGrouping,
+        totalRecords: totalFilteredRecordsAfterGrouping,
       },
-      records: records,
+      records: pagedRecords,
     };
   }
 
