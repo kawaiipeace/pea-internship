@@ -240,14 +240,8 @@ export class LeaveService {
             approvedLeaveHours: "7.00",
             totalWorkHours: "0.00",
             isVerified: true,
-          studentProfileId: student.id,
-          workDate: leaveDateStr,
-          dailyStatus: "LEAVE",
-          approvedLeaveHours: "7.00",
-          actualHoursWorked: "0.00",
-          isVerified: true,
-        });
-      }
+          });
+        }
 
       return {
         success: true,
@@ -388,6 +382,8 @@ export class LeaveService {
     if (status) {
       leaveConditions.push(eq(leaveRequests.status, status));
     }
+
+    const finalCondition = and(...leaveConditions);
 
     const historyData = await db
       .select({
