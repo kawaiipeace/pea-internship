@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { NavbarIntern } from "@/components";
@@ -56,6 +56,14 @@ const formatDateThai = (dateString: string): string => {
 };
 
 export default function InternInfoPage() {
+  return (
+    <Suspense>
+      <InternInfoContent />
+    </Suspense>
+  );
+}
+
+function InternInfoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [skills, setSkills] = useState("");

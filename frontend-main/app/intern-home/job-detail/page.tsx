@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { NavbarIntern } from "@/components";
@@ -90,6 +90,14 @@ interface JobDetail {
 }
 
 export default function InternJobDetailPage() {
+  return (
+    <Suspense>
+      <InternJobDetailContent />
+    </Suspense>
+  );
+}
+
+function InternJobDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -127,12 +135,10 @@ export default function InternJobDetailPage() {
               department: parsedJob.department || defaultJobDetail.department,
               tags: parsedJob.tags || defaultJobDetail.tags,
               applicationPeriod:
-                parsedJob.applicationPeriod ||
                 (parsedJob.startDate && parsedJob.endDate
                   ? `${parsedJob.startDate} - ${parsedJob.endDate}`
                   : defaultJobDetail.applicationPeriod),
               positions:
-                parsedJob.positions ||
                 ((parsedJob.maxApplicants || 0) === 0
                   ? "ไม่จำกัดจำนวน"
                   : `${parsedJob.currentApplicants ?? 0}/${parsedJob.maxApplicants || 1} ตำแหน่ง`),
