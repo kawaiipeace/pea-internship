@@ -43,7 +43,29 @@ export const leave = new Elysia({
       params: model.params,
       detail: {
         summary: "อนุมัติคำขอลา (Approve Leave Request)",
-        description: "ยืนยันการอนุมัติคำขอลา และแจกเวลาทำงานให้ 7 ชั่วโมงอัตโนมัติ",
+        description:
+          "ยืนยันการอนุมัติคำขอลา และแจกเวลาทำงานให้ 7 ชั่วโมงอัตโนมัติ",
+      },
+    }
+  )
+
+  .post(
+    "/bulk-approve",
+    async ({ body, set, user }) => {
+      const response = await leaveService.bulkApproveLeaveRequests(
+        user.id,
+        body.ids
+      );
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+      body: model.BulkApproveBody,
+      detail: {
+        summary: "อนุมัติคำขอลาแบบกลุ่ม (Bulk Approve Leave Requests)",
+        description: "อนุมัติรายการลาของนักศึกษาหลายรายการพร้อมกัน",
       },
     }
   )
@@ -63,6 +85,26 @@ export const leave = new Elysia({
         summary: "ยกเลิกคำขอลา (Cancel/Delete Leave Request)",
         description:
           "ลบรายการลาที่ส่งไปแล้ว (ลบได้เฉพาะสถานะ PENDING และต้องเป็นเจ้าของเท่านั้น)",
+      },
+    }
+  )
+  .post(
+    "/bulk-delete",
+    async ({ body, set, user }) => {
+      const response = await leaveService.bulkDeleteLeaveRequests(
+        user.id,
+        body.ids
+      );
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [3],
+      body: model.BulkDeleteBody,
+      detail: {
+        summary: "ยกเลิกคำขอลาเแบบกลุ่ม (Bulk Cancel Leave Requests)",
+        description: "ลบกลุ่มรายการลาที่ส่งไปแล้ว",
       },
     }
   )
@@ -86,27 +128,6 @@ export const leave = new Elysia({
     }
   )
 
-  .get(
-    "/mentor/requests",
-    async ({ query, set, user }) => {
-      const response = await leaveService.getMentorLeaveRequests(
-        user.id,
-        query
-      );
-
-      set.status = 200;
-      return response;
-    },
-    {
-      role: [1, 2],
-      query: model.GetLeaveHistoryQuery,
-      detail: {
-        summary: "ประวัติคำขอลาสำหรับ Mentor (Mentor Leave Requests)",
-        description:
-          "ดึงประวัติและรายการคำขอลาของนักศึกษาในความดูแลของ Mentor พร้อมข้อมูลสรุปและการแบ่งหน้า",
-      },
-    }
-  )
   .post(
     "/:id/reject",
     async ({ params: { id }, body, set, user }) => {
@@ -130,6 +151,28 @@ export const leave = new Elysia({
     }
   )
 
+  .post(
+    "/bulk-reject",
+    async ({ body, set, user }) => {
+      const response = await leaveService.bulkRejectLeaveRequests(
+        user.id,
+        body.ids,
+        body.reason
+      );
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+      body: model.BulkRejectBody,
+      detail: {
+        summary: "ไม่อนุมัติคำขอลาแบบกลุ่ม (Bulk Reject Leave Requests)",
+        description: "ไม่อนุมัติรายการลาของนักศึกษาหลายรายการพร้อมกัน",
+      },
+    }
+  )
+
   .get(
     "/mentor/requests",
     async ({ query, set, user }) => {
@@ -143,7 +186,7 @@ export const leave = new Elysia({
     },
     {
       role: [1, 2],
-      query: model.GetMentorLeaveRequestsQuery, // <-- เปลี่ยนตรงนี้
+      query: model.GetMentorLeaveRequestsQuery,
       detail: {
         summary: "รายการคำขอลาสำหรับ Mentor (Mentor Leave Requests)",
         description:

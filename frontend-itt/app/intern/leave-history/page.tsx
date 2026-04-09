@@ -92,26 +92,38 @@ const LeaveHistoryPage = () => {
 
             const data = response.data;
             setHistoryData(data.records.map((r: any) => {
-                const dateObj = new Date(r.leaveDate);
+                const startObj = new Date(r.startDate);
+                const endObj = new Date(r.endDate);
                 
-                // ใช้ Intl.DateTimeFormat เพื่อดึงวันที่ใน timezone ของไทยให้ถูกต้อง (ป้องกันปัญหา timezone shift)
-                const bangkokDate = new Intl.DateTimeFormat('en-CA', {
-                    timeZone: 'Asia/Bangkok',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit'
-                }).format(dateObj);
-                
-                const [year, month, day] = bangkokDate.split('-').map(Number);
-                const localDate = new Date(year, month - 1, day);
+                const getParts = (date: Date) => {
+                    const formatted = new Intl.DateTimeFormat('en-CA', {
+                        timeZone: 'Asia/Bangkok',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    }).format(date);
+                    const [y, m, d] = formatted.split('-').map(Number);
+                    return { year: y, month: m, day: d };
+                };
+
+                const start = getParts(startObj);
+                const end = getParts(endObj);
+
+                const isRange = r.startDate !== r.endDate;
+                const dateDisplay = isRange 
+                    ? `${start.day} - ${end.day}`
+                    : start.day.toString();
 
                 return {
-                    id: r.id,
-                    date: day.toString(),
-                    month: thaiMonthsFull[month - 1],
-                    monthShort: thaiMonthsShort[month - 1],
-                    year: (year + 543).toString(),
-                    labelMobile: `${day} ${thaiMonthsFull[month - 1]} ${(year + 543).toString()}`,
+                    ids: r.ids,
+                    id: r.ids[0], // fallback for parts expecting single id
+                    date: dateDisplay,
+                    month: thaiMonthsFull[start.month - 1],
+                    monthShort: thaiMonthsShort[start.month - 1],
+                    year: (start.year + 543).toString(),
+                    labelMobile: isRange 
+                        ? `${start.day}-${end.day} ${thaiMonthsFull[start.month - 1]} ${(start.year + 543).toString()}`
+                        : `${start.day} ${thaiMonthsFull[start.month - 1]} ${(start.year + 543).toString()}`,
                     time: 'ลางานเต็มวัน',
                     status: mapStatusToText(r.status),
                     statusType: mapStatusToType(r.status),
@@ -121,7 +133,10 @@ const LeaveHistoryPage = () => {
                     leaveType: r.leaveType === 'ABSENCE' || r.leaveType === 'ลากิจ' ? 'ลากิจ' : 'ลาป่วย',
                     evidence: r.attachmentUrl ? r.attachmentUrl.split('/').pop() : '',
                     evidenceUrl: r.attachmentUrl,
-                    leaveReason: r.reason || 'ไม่ระบุเหตุผล'
+                    leaveReason: r.reason || 'ไม่ระบุเหตุผล',
+                    isRange,
+                    startDateStr: r.startDate,
+                    endDateStr: r.endDate
                 };
             }));
             setSummary(data.summary);
@@ -204,7 +219,7 @@ const LeaveHistoryPage = () => {
         }
     };
 
-    const handleDeleteLeaveRequest = async (id: string) => {
+    const handleDeleteLeaveRequest = async (ids: number[]) => {
         try {
             Swal.fire({
                 title: 'กำลังยกเลิกคำขอ...',
@@ -214,9 +229,10 @@ const LeaveHistoryPage = () => {
                 }
             });
 
-            await axiosInstance.delete(`/leave/${id}`);
+            await axiosInstance.post(`/leave/bulk-delete`, { ids });
 
-            setHistoryData(prev => prev.filter(h => h.id !== id));
+            const firstId = ids[0];
+            setHistoryData(prev => prev.filter(h => !ids.includes(h.id)));
             setIsDetailModalOpen(false);
 
             Swal.fire({
@@ -425,7 +441,7 @@ const LeaveHistoryPage = () => {
                                                                 }
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
-                                                                    handleDeleteLeaveRequest(item.id);
+                                                                    handleDeleteLeaveRequest(item.ids);
                                                                 }
                                                             });
                                                         }}
@@ -672,7 +688,7 @@ const LeaveHistoryPage = () => {
                                                                                         }
                                                                                     }).then((result) => {
                                                                                         if (result.isConfirmed) {
-                                                                                            handleDeleteLeaveRequest(selectedHistoryItem.id);
+                                                                                            handleDeleteLeaveRequest(selectedHistoryItem.ids);
                                                                                         }
                                                                                     });
                                                                                 }}
