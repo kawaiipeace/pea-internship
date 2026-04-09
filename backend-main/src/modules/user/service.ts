@@ -128,11 +128,17 @@ export class UserService {
     });
   }
 
-  async getStudent() {
-    return db.query.users.findMany({
-      where: eq(users.roleId, ROLE_INTERN),
-    });
+  async getStudent(departmentId?: number) {
+  const conditions = [eq(users.roleId, ROLE_INTERN)];
+
+  if (departmentId) {
+    conditions.push(eq(users.departmentId, departmentId));
   }
+
+  return db.query.users.findMany({
+    where: and(...conditions),
+  });
+}
 
   async updateUser(
     userId: string,

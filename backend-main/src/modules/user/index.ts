@@ -40,14 +40,19 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
   )
   .get(
     "/student",
-    async ({ set }) => {
-      const response = await userService.getStudent();
+    async ({ set, query }) => {
+      const response = await userService.getStudent(query.departmentId);
 
       set.status = 200;
       return response;
     },
     {
       role: [1, 2],
+      query: t.Object({
+        departmentId: t.Optional(
+          t.Numeric({ description: "ID ของแผนกที่ต้องการกรองดูนักศึกษา" })
+        ),
+      }),
     }
   )
   .put(
