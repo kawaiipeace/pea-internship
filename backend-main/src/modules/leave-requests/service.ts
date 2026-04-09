@@ -234,19 +234,12 @@ export class LeaveService {
           await tx.insert(attendanceLogs).values({
             studentProfileId: student.id,
             workDate: leaveDateStr,
-            checkInTime: null,
-            checkOutTime: null,
             dailyStatus: "LEAVE",
             approvedLeaveHours: "7.00",
-            totalWorkHours: "0.00",
+            actualHoursWorked: "0.00",
             isVerified: true,
-          studentProfileId: student.id,
-          workDate: leaveDateStr,
-          dailyStatus: "LEAVE",
-          approvedLeaveHours: "7.00",
-          actualHoursWorked: "0.00",
-          isVerified: true,
-        });
+          });
+        }
       }
 
       return {
@@ -401,7 +394,6 @@ export class LeaveService {
         fname: users.fname,
         lname: users.lname,
         image: studentProfiles.image,
-        userId: leaveRequests.userId,
       })
       .from(leaveRequests)
       .innerJoin(users, eq(users.id, leaveRequests.userId))
@@ -409,7 +401,7 @@ export class LeaveService {
         studentProfiles,
         eq(studentProfiles.userId, leaveRequests.userId)
       )
-      .where(finalCondition)
+      .where(and(...leaveConditions))
       .orderBy(desc(leaveRequests.leaveDatetime));
 
     const rawRecords = historyData.map((record) => {
@@ -425,7 +417,6 @@ export class LeaveService {
           `${record.fname || ""} ${record.lname || ""}`.trim() ||
           "นักศึกษา (ไม่ระบุชื่อ)",
         profileImg: record.image || null,
-        userId: record.userId,
       };
     });
 
@@ -451,16 +442,27 @@ export class LeaveService {
     leaveRequestId: number,
     reason: string
   ) {
+    return await this.bulkRejectLeaveRequests(approverUserId, [leaveRequestId], reason);
+  }
+
+  async bulkRejectLeaveRequests(
+    approverUserId: string,
+    ids: number[],
+    reason: string
+  ) {
     await this.assertUserExists(approverUserId);
 
     return await db.transaction(async (tx) => {
-      const request = await tx.query.leaveRequests.findFirst({
-        where: eq(leaveRequests.id, leaveRequestId),
+      const requests = await tx.query.leaveRequests.findMany({
+        where: inArray(leaveRequests.id, ids),
       });
 
-      if (!request) throw new NotFoundError("ไม่พบคำขอลา");
-      if (request.status !== "PENDING") {
-        throw new ConflictError("คำขอลานี้ถูกดำเนินการไปแล้ว");
+      if (requests.length === 0) throw new NotFoundError("ไม่พบคำขอลา");
+
+      const pendingIds = requests.filter((r) => r.status === "PENDING").map((r) => r.id);
+
+      if (pendingIds.length === 0) {
+        throw new ConflictError("คำขอลาเหล่านี้ถูกดำเนินการไปแล้ว");
       }
 
       await tx
@@ -471,11 +473,11 @@ export class LeaveService {
           approverNote: reason,
           approvedAt: new Date().toISOString(),
         })
-        .where(eq(leaveRequests.id, leaveRequestId));
+        .where(inArray(leaveRequests.id, pendingIds));
 
       return {
         success: true,
-        message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว",
+        message: pendingIds.length === 1 ? "ปฏิเสธคำขอลาเรียบร้อยแล้ว" : `ปฏิเสธคำขอลาจำนวน ${pendingIds.length} รายการเรียบร้อยแล้ว`,
       };
     });
   }
