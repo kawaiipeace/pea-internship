@@ -19,7 +19,7 @@ export default function ImageWithAuth({
   useEffect(() => {
     const fetchImage = async () => {
       try {
-        const response = await axios.get('/user/student/itt/profile/img', {
+        const response = await axios.get('/user/student/itt/profile', {
           params: { userId }, // ส่ง userId ไปที่ Backend
           responseType: 'blob',
         });
