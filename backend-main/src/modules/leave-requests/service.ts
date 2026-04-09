@@ -382,6 +382,8 @@ export class LeaveService {
       leaveConditions.push(eq(leaveRequests.status, status));
     }
 
+    const finalCondition = and(...leaveConditions);
+
     const historyData = await db
       .select({
         id: leaveRequests.id,
@@ -401,7 +403,7 @@ export class LeaveService {
         studentProfiles,
         eq(studentProfiles.userId, leaveRequests.userId)
       )
-      .where(and(...leaveConditions))
+      .where(finalCondition)
       .orderBy(desc(leaveRequests.leaveDatetime));
 
     const rawRecords = historyData.map((record) => {
