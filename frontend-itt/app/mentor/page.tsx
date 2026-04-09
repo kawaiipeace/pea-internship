@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import axiosInstance from '@/api/axios';
+import ImageWithAuth from '@/components/ImageWithAuth';
 
 // ---- Types ----
 interface LeaveRequest {
@@ -18,6 +19,7 @@ interface LeaveRequest {
     leaveDate: string;
     reason: string;
     profileImg: string;
+    userId: string;
     fileName: string;
     fileIcon: string;
     hasFile: boolean;
@@ -342,10 +344,15 @@ const ActionButtons = ({ onReject, onApprove }: { onReject: () => void; onApprov
     </>
 );
 
-const StudentHeader = ({ profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate }: any) => (
+const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate }: any) => (
     <div className="flex items-start gap-4 mb-4">
         <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-gray-100">
-            <img src={profileImg} alt="Student" className="w-full h-full object-cover" />
+            <ImageWithAuth 
+                userId={userId} 
+                imageKey={profileImg}
+                className="w-full h-full object-cover" 
+                fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=random`} 
+            />
         </div>
         <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-800 dark:text-white-light text-base leading-tight mb-1.5">{studentName}</p>
@@ -483,19 +490,22 @@ const ApprovalRequestPage = () => {
     const [rejectSuccessOpen, setRejectSuccessOpen] = useState(false);
 
     const PAGE_SIZE = 10;
+    const [meta, setMeta] = useState({ totalPages: 1, totalRecords: 0 });
     const [page, setPage] = useState(1);
 
     const records = useMemo(() => {
-        const sourceData = activeTab === 'leave' ? leaveRequests : timeEditRequests;
+        if (activeTab === 'leave') return leaveRequests;
+        const sourceData = timeEditRequests;
         const from = (page - 1) * PAGE_SIZE;
         const to = from + PAGE_SIZE;
         return sourceData.slice(from, to);
     }, [page, activeTab, leaveRequests]);
 
     const totalPages = useMemo(() => {
-        const sourceData = activeTab === 'leave' ? leaveRequests : timeEditRequests;
+        if (activeTab === 'leave') return meta.totalPages;
+        const sourceData = timeEditRequests;
         return Math.max(1, Math.ceil(sourceData.length / PAGE_SIZE));
-    }, [activeTab, leaveRequests]);
+    }, [activeTab, leaveRequests, meta.totalPages]);
 
     useEffect(() => {
         setPage(1);
@@ -505,12 +515,16 @@ const ApprovalRequestPage = () => {
         try {
             setLoading(true);
             const response = await axiosInstance.get('/leave/mentor/requests', {
-                params: { page: 1, limit: 100 }
+                params: { 
+                    page, 
+                    limit: PAGE_SIZE,
+                    status: 'PENDING',
+                    viewType: 'MINE'
+                }
             });
 
-            if (response.data && response.data.records) {
-                const mappedData = response.data.records
-                    .filter((item: any) => item.status === 'PENDING')
+            if (response.data && response.data.data) {
+                const mappedData = response.data.data
                     .map((item: any) => {
                         const isSick = item.leaveType === 'SICK';
                         
@@ -552,6 +566,7 @@ const ApprovalRequestPage = () => {
                             leaveDate: thaileaveDateStr,
                             reason: item.reason || '-',
                             profileImg: item.profileImg || '/assets/images/profile-1.jpeg',
+                            userId: item.userId,
                             fileName,
                             fileIcon,
                             hasFile,
@@ -559,6 +574,9 @@ const ApprovalRequestPage = () => {
                         };
                     });
                 setLeaveRequests(mappedData);
+                if (response.data.meta) {
+                    setMeta(response.data.meta);
+                }
             }
         } catch (error) {
             console.error('Error fetching leave requests API:', error);
@@ -568,8 +586,10 @@ const ApprovalRequestPage = () => {
     };
 
     useEffect(() => {
-        fetchLeaveRequests();
-    }, []);
+        if (activeTab === 'leave') {
+            fetchLeaveRequests();
+        }
+    }, [page, activeTab]);
 
     const openRejectModal = (tabType: 'leave' | 'time-edit', id: number) => {
         const title = tabType === 'leave' ? 'ไม่อนุมัติการลา' : 'ไม่อนุมัติการแก้ไขเวลา';
@@ -586,12 +606,8 @@ const ApprovalRequestPage = () => {
         if (!selectedId) return;
         setSubmitting(true);
         try {
-            console.log('Rejected with reason:', reason);
-            // TODO: Call API once the reject endpoint is implemented in the backend
-            // await axiosInstance.post(`/leave/${selectedId}/reject`, { reason });
+            await axiosInstance.post(`/leave/${selectedId}/reject`, { reason });
             
-            // Mocking API delay
-            await new Promise(resolve => setTimeout(resolve, 800));
             setRejectModal({ open: false, title: '' });
             setRejectSuccessOpen(true);
             setTimeout(() => {
@@ -636,7 +652,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'leave' as const,
             title: 'คำขอลา',
-            count: `${leaveRequests.length} รายการ`,
+            count: activeTab === 'leave' ? `${meta.totalRecords} รายการ` : `${leaveRequests.length} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#1AB3FF]">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '22px' }}>lab_profile</span>

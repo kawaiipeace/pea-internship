@@ -86,27 +86,7 @@ export const leave = new Elysia({
     }
   )
 
-  .get(
-    "/mentor/requests",
-    async ({ query, set, user }) => {
-      const response = await leaveService.getMentorLeaveRequests(
-        user.id,
-        query
-      );
 
-      set.status = 200;
-      return response;
-    },
-    {
-      role: [1, 2],
-      query: model.GetLeaveHistoryQuery,
-      detail: {
-        summary: "ประวัติคำขอลาสำหรับ Mentor (Mentor Leave Requests)",
-        description:
-          "ดึงประวัติและรายการคำขอลาของนักศึกษาในความดูแลของ Mentor พร้อมข้อมูลสรุปและการแบ่งหน้า",
-      },
-    }
-  )
   .post(
     "/:id/reject",
     async ({ params: { id }, body, set, user }) => {

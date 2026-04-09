@@ -339,6 +339,7 @@ export class LeaveService {
         fname: users.fname,
         lname: users.lname,
         image: studentProfiles.image,
+        userId: leaveRequests.userId,
       })
       .from(leaveRequests)
       .innerJoin(users, eq(users.id, leaveRequests.userId))
@@ -363,6 +364,7 @@ export class LeaveService {
           `${record.fname || ""} ${record.lname || ""}`.trim() ||
           "นักศึกษา (ไม่ระบุชื่อ)",
         profileImg: record.image || null,
+        userId: record.userId,
       };
     });
 

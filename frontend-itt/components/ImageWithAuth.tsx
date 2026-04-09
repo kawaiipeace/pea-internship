@@ -4,12 +4,14 @@ import axios from '@/api/axios';
 
 interface ImageProps {
   userId?: string; // เพิ่ม userId เพื่อให้ดึงรูปของใครก็ได้
+  imageKey?: string; // เพิ่ม imageKey สำหรับดึงตรงๆ จาก /check-time/file
   className?: string;
   fallbackSrc?: string;
 }
 
 export default function ImageWithAuth({ 
   userId,
+  imageKey,
   className = "w-10 h-10 rounded-full object-cover", 
   fallbackSrc = "/assets/images/user-profile.jpeg" 
 }: ImageProps) {
@@ -18,11 +20,25 @@ export default function ImageWithAuth({
 
   useEffect(() => {
     const fetchImage = async () => {
+      // ถ้าไม่มีส่ง userId และ imageKey มา ให้แสดงรูปรอและ return เลย
+      if (!userId && !imageKey) {
+          setImageUrl(fallbackSrc);
+          setLoading(false);
+          return;
+      }
       try {
-        const response = await axios.get('/user/student/itt/profile', {
-          params: { userId }, // ส่ง userId ไปที่ Backend
-          responseType: 'blob',
-        });
+        let response;
+        if (imageKey) {
+          response = await axios.get('/check-time/file', {
+            params: { key: imageKey },
+            responseType: 'blob',
+          });
+        } else {
+          response = await axios.get('/user/student/itt/profile', {
+            params: { userId },
+            responseType: 'blob',
+          });
+        }
         const objectUrl = URL.createObjectURL(response.data);
         setImageUrl(objectUrl);
       } catch (error) {
