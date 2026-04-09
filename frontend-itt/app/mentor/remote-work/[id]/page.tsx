@@ -153,23 +153,23 @@ const RemoteWorkDetailPage = () => {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="p-10 pt-2">
-                    <hr className="mb-6 border-[#CECFD2] h-[1px] dark:border-gray-800" />
+                <div className="p-10 pt-0">
+                    <hr className="mb-4 border-[#CECFD2] h-[1px] dark:border-gray-800" />
                     
                     {/* Date Badge */}
-                    <div className="inline-block px-4 py-1.5 bg-[#FFF5E2] dark:bg-[#2a1a10] rounded-lg mb-3">
+                    <div className="inline-block px-4 py-1.5 bg-[#FFF5E2] dark:bg-[#2a1a10] rounded-lg mb-2">
                         <span className="text-[14px] font-bold text-[#333] dark:text-[#ef6820]">
                             {formatFullThaiDate(task.workDate)}
                         </span>
                     </div>
 
                     {/* Location Title */}
-                    <h1 className="text-[24px] font-bold text-[#1F242F] dark:text-white mb-3 leading-tight ">
+                    <h1 className="text-[24px] font-bold text-[#1F242F] dark:text-white mb-2 leading-tight ">
                         สถานที่ : {task.locationName}
                     </h1>
 
                     {/* Task Details */}
-                    <div className="space-y-2 mb-10">
+                    <div className="space-y-2 mb-6">
                         <div className="flex text-[16px] leading-relaxed">
                             <span className="text-[#85888E] dark:text-gray-400 min-w-[170px]">รายละเอียดการปฏิบัติงาน :</span>
                             <span className="text-[#000000] dark:text-gray-100 font-medium">{task.taskDetail}</span>

@@ -93,13 +93,25 @@ const LeaveHistoryPage = () => {
             const data = response.data;
             setHistoryData(data.records.map((r: any) => {
                 const dateObj = new Date(r.leaveDate);
+                
+                // ใช้ Intl.DateTimeFormat เพื่อดึงวันที่ใน timezone ของไทยให้ถูกต้อง (ป้องกันปัญหา timezone shift)
+                const bangkokDate = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Asia/Bangkok',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).format(dateObj);
+                
+                const [year, month, day] = bangkokDate.split('-').map(Number);
+                const localDate = new Date(year, month - 1, day);
+
                 return {
                     id: r.id,
-                    date: dateObj.getDate().toString(),
-                    month: thaiMonthsFull[dateObj.getMonth()],
-                    monthShort: thaiMonthsShort[dateObj.getMonth()],
-                    year: (dateObj.getFullYear() + 543).toString(),
-                    labelMobile: `${dateObj.getDate()} ${thaiMonthsFull[dateObj.getMonth()]} ${(dateObj.getFullYear() + 543).toString()}`,
+                    date: day.toString(),
+                    month: thaiMonthsFull[month - 1],
+                    monthShort: thaiMonthsShort[month - 1],
+                    year: (year + 543).toString(),
+                    labelMobile: `${day} ${thaiMonthsFull[month - 1]} ${(year + 543).toString()}`,
                     time: 'ลางานเต็มวัน',
                     status: mapStatusToText(r.status),
                     statusType: mapStatusToType(r.status),

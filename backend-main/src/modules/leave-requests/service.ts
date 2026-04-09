@@ -69,7 +69,7 @@ export class LeaveService {
       const datesToLeave = this.getDatesInRange(data.startDate, data.endDate);
 
       const targetDatetimes = datesToLeave.map((date) =>
-        new Date(`${date}T00:00:00+07:00`).toISOString()
+        `${date}T00:00:00`
       );
 
       const existingLeaves = await tx.query.leaveRequests.findMany({
@@ -99,7 +99,7 @@ export class LeaveService {
         leaveRequestType: data.leaveType as "ABSENCE" | "SICK",
         leavePeriod: "FULL_DAY" as "FULL_DAY" | "MORNING" | "AFTERNOON",
         userId: userId,
-        leaveDatetime: new Date(`${date}T00:00:00+07:00`).toISOString(),
+        leaveDatetime: `${date}T00:00:00`,
         reason: data.reason,
         file: uploadedAttachmentUrl,
         status: "PENDING" as "PENDING" | "APPROVED" | "REJECTED",
