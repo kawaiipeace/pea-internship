@@ -41,7 +41,7 @@ function FAQItem({ question, children, defaultOpen = false }: FAQItemProps) {
       </button>
       <div
         className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+          isOpen ? "max-h-500 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="pb-4 text-gray-600 text-sm">{children}</div>
@@ -148,11 +148,25 @@ const documents = [
   },
 ];
 
+const ownerFaqs = [
+  {
+    question:
+      "เมื่อรับนักศึกษาและทำหนังสือตอบรับส่งไปยัง กพค.แล้ว ต้องดำเนินการอะไรต่อหรือไม่?",
+    answer:
+      "ไม่ต้องดำเนินการเพิ่มเติม ให้รอหนังสือส่งตัวจาก กพค. และนักศึกษามาเริ่มฝึกงานตามกำหนด",
+  },
+  {
+    question:
+      "เอกสารส่งตัว หนังสือยินยอม เอกสารข้อควรปฏิบัติ นักศึกษาต้องนำไปส่งที่ใด?",
+    answer:
+      "ให้นักศึกษานำเอกสารส่งตัวมอบให้กับหน่วยงานที่รับเข้าฝึกงานโดยตรง โดยหน่วยงานนั้นจะเป็นผู้เก็บเอกสารไว้",
+  },
+];
+
 export default function OwnerFAQsPage() {
   return (
     <div className="min-h-screen bg-white">
       <OwnerNavbar />
-      
 
       <main className="max-w-4xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
@@ -172,19 +186,18 @@ export default function OwnerFAQsPage() {
             <div className="bg-pink-50/80 px-4 md:px-6 py-3 md:py-4 flex items-center gap-3">
               <DocumentIcon />
               <h2 className="font-bold text-gray-900 text-lg md:text-xl">
-                ขั้นตอนการรับสมัครและแนวทางการเริ่มฝึกงาน
+                FAQ ผู้ประสานงาน
               </h2>
             </div>
 
             {/* Content */}
             <div className="px-4 md:px-6">
-              {/* ขั้นตอนการรับสมัคร */}
               <FAQItem question="ขั้นตอนการรับสมัคร">
                 <div className="space-y-3 mt-2">
                   {steps.map((step) => (
                     <div
                       key={step.number}
-                      className="bg-white border border-gray-200 rounded-xl p-4  "
+                      className="bg-white border border-gray-200 rounded-xl p-4"
                     >
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-bold shrink-0">
@@ -207,10 +220,8 @@ export default function OwnerFAQsPage() {
                 </div>
               </FAQItem>
 
-              {/* แนวทางการปฏิบัติในวันเริ่มฝึกงาน */}
               <FAQItem question="แนวทางการปฏิบัติในวันเริ่มฝึกงานของผู้สมัคร">
                 <div className="space-y-6 mt-2">
-                  {/* Instructions */}
                   <div className="space-y-2">
                     <p className="text-gray-900 text-sm">
                       <span className="text-primary-600 font-bold">* </span>
@@ -233,7 +244,6 @@ export default function OwnerFAQsPage() {
                     </p>
                   </div>
 
-                  {/* Document list */}
                   <div>
                     <h4 className="font-bold text-gray-900 text-sm mb-4">
                       <span className="text-primary-600">*</span>
@@ -273,6 +283,18 @@ export default function OwnerFAQsPage() {
                   </div>
                 </div>
               </FAQItem>
+
+              {ownerFaqs.map((faq, index) => (
+                <FAQItem
+                  key={faq.question}
+                  question={faq.question}
+                  defaultOpen={index === 0}
+                >
+                  <p className="text-gray-700 text-sm leading-6">
+                    {faq.answer}
+                  </p>
+                </FAQItem>
+              ))}
             </div>
           </div>
         </div>
