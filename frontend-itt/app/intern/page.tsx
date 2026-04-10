@@ -5,8 +5,8 @@ import Swal from 'sweetalert2';
 import axiosInstance from '@/api/axios';
 import IconMapPin from '@/components/icon/icon-map-pin';
 
-const OFFICE_LAT = 13.870732665554598;
-const OFFICE_LNG = 100.54618165477578;
+const OFFICE_LAT = 13.851119091153935;
+const OFFICE_LNG = 100.55810839569543;
 const MAX_DISTANCE_METERS = 300;
 
 const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -175,7 +175,7 @@ const CheckInPage = () => {
         const h = currentTime.getHours();
         const m = currentTime.getMinutes();
         // Allowed from 16:30 (4:30 PM) onwards
-        return h > 10 || (h === 10 && m >= 30);
+        return h > 16 || (h === 16 && m >= 30);
     };
 
     useEffect(() => {
