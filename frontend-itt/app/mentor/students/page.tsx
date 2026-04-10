@@ -308,7 +308,18 @@ const StudentsPage = () => {
                                 </tr>
                             ) : records.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-10 text-center text-gray-500">ไม่พบข้อมูลนักศึกษา</td>
+                                    <td colSpan={5} className="py-16 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <img src="/Notstudent.png" alt="ไม่มีนักศึกษา" className="w-[180px] h-auto opacity-80" />
+                                            <div className="flex flex-col items-center gap-1.5">
+                                                <h2 className="text-[20px] font-bold text-[#1F2937]">ยังไม่มีนักศึกษาในความดูแล</h2>
+                                                <p className="text-[14px] text-[#9CA3AF] leading-relaxed">
+                                                    คุณยังไม่มีรายชื่อนักศึกษาในความดูแลในขณะนี้<br />
+                                                    ข้อมูลจะปรากฏขึ้นเมื่อคุณเริ่มเป็นพี่เลี้ยงให้กับนักศึกษา
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             ) : records.map((student) => (
                                 <tr 
