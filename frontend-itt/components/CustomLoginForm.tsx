@@ -24,7 +24,7 @@ export default function CustomLoginForm() {
     };
 
     const handleEmployeeLogin = async () => {
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/sign-in/keycloak/itt`;
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/sign-in/keycloak/itt`;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {

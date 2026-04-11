@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Pagination } from '@mantine/core';
 import IconSearch from '@/components/icon/icon-search';
 import IconCaretDown from '@/components/icon/icon-caret-down';
@@ -21,7 +21,9 @@ const StudentsPage = () => {
     const [page, setPage] = useState(1);
     const PAGE_SIZES = [5, 10, 20, 50];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
-    const [dateRange, setDateRange] = useState<any>('');
+    const [dateRange, setDateRange] = useState<any>(''); // Actual filter state (Date[])
+    const [confirmedDateStr, setConfirmedDateStr] = useState(''); // Last confirmed formatted string
+    const flatpickrRef = useRef<any>(null);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [students, setStudents] = useState<any[]>([]);
@@ -30,46 +32,44 @@ const StudentsPage = () => {
     const fetchStudents = useCallback(async () => {
         setIsLoading(true);
         try {
-            // 1. Fetch mentor profile to get departmentId
-            const profileResponse = await axiosInstance.get('/user/profile');
-            const departmentId = profileResponse.data.departmentId;
-
-            // 2. Fetch students in the same department
-            const studentsResponse = await axiosInstance.get('/user/student', {
-                params: { departmentId }
+            const response = await axiosInstance.get('/mentor/students', {
+                params: { limit: 100, viewType: 'ALL' }
             });
             
-            // Map the API data to the UI format
-            const mappedStudents = (studentsResponse.data || []).map((s: any) => {
-                const profile = Array.isArray(s.studentProfiles) ? s.studentProfiles[0] : s.studentProfiles;
-                const stats = Array.isArray(s.studentAttendanceSummaries) ? s.studentAttendanceSummaries[0] : (s.attendanceSummary || {});
-                
-                // Calculate percentage
-                const current = Number(stats.totalAccumulatedHours || 0);
-                const total = Number(stats.totalHoursGoal || 560);
+            const rawStudents = response.data.data || [];
+            
+            // Fetch detail for each student to get internship period dates
+            const detailPromises = rawStudents.map((s: any) =>
+                axiosInstance.get(`/mentor/students/${s.id}`).catch(() => null)
+            );
+            const details = await Promise.all(detailPromises);
+
+            const mappedStudents = rawStudents.map((s: any, index: number) => {
+                const detail = details[index]?.data;
+                const current = Number(s.workHours?.accumulated || 0);
+                const total = Number(s.workHours?.goal || 560);
                 const percent = total > 0 ? (current / total) * 100 : 0;
 
                 return {
                     id: s.id,
-                    name: `${s.fname || ''} ${s.lname || ''}`,
-                    role: profile?.major || 'Intern',
-                    university: profile?.institution?.name || 'มหาวิทยาลัย',
-                    status: s.displayStatus || 'PRESENT', 
-                    avatar: s.avatar || `https://ui-avatars.com/api/?name=${s.fname}+${s.lname}&background=random`,
+                    name: s.fullName || 'ไม่ระบุชื่อ',
+                    role: 'นักศึกษาฝึกงาน',
+                    university: 'การไฟฟ้าส่วนภูมิภาค',
+                    status: s.todayStatus?.code || 'IDLE', 
+                    avatar: s.image,
                     attendance: { 
-                        present: stats.countPresentDays || 0, 
-                        late: stats.countLateDays || 0, 
-                        leave: stats.countLeaveDays || 0, 
-                        absent: stats.countAbsentDays || 0 
+                        present: s.statistics?.present || 0, 
+                        late: s.statistics?.late || 0, 
+                        leave: s.statistics?.leave || 0, 
+                        absent: s.statistics?.absent || 0 
                     },
-                    progress: { 
-                        current: current, 
-                        total: total, 
-                        percent: percent > 100 ? 100 : percent 
-                    },
-                    statusMessage: profile?.internshipStatus === 'COMPLETE' ? 'สิ้นสุดการฝึกงาน' : 'กำลังฝึกงาน',
-                    statusType: profile?.internshipStatus === 'COMPLETE' ? 'ended' : 'remaining',
-                    consideration: profile?.statusNote || '',
+                    progress: { current, total, percent: percent > 100 ? 100 : percent },
+                    statusMessage: 'กำลังฝึกงาน',
+                    statusType: 'remaining',
+                    consideration: '',
+                    // Period from detail API: profile.period.startDate / endDate
+                    startDate: detail?.profile?.period?.startDate,
+                    endDate: detail?.profile?.period?.endDate,
                 };
             });
             
@@ -79,7 +79,7 @@ const StudentsPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, []); // No dependency on dateRange — fetch once, filter locally
 
     useEffect(() => {
         fetchStudents();
@@ -102,8 +102,27 @@ const StudentsPage = () => {
             );
         }
 
+        // Filter by internship period (date range from calendar)
+        if (Array.isArray(dateRange) && dateRange.length === 2) {
+            const [start, end] = dateRange;
+            if (start && end) {
+                const filterStart = new Date(start);
+                const filterEnd = new Date(end);
+                filterStart.setHours(0, 0, 0, 0);
+                filterEnd.setHours(23, 59, 59, 999);
+
+                result = result.filter((item) => {
+                    if (!item.startDate || !item.endDate) return false;
+                    const itemStart = new Date(item.startDate);
+                    const itemEnd = new Date(item.endDate);
+                    // Show if internship period overlaps with the selected range
+                    return itemStart <= filterEnd && itemEnd >= filterStart;
+                });
+            }
+        }
+
         return result;
-    }, [selectedSchools, searchTerm, students]);
+    }, [selectedSchools, searchTerm, students, dateRange]);
 
     const records = useMemo(() => {
         const from = (page - 1) * pageSize;
@@ -136,6 +155,7 @@ const StudentsPage = () => {
                 'flex:1;padding:12px;border-radius:24px;border:1px solid #E5E7EB;background:#fff;color:#4B5563;font-weight:600;font-size:18px;cursor:pointer;';
             clearBtn.addEventListener('click', () => {
                 instance.clear();
+                setConfirmedDateStr('');
                 setDateRange('');
             });
 
@@ -153,7 +173,21 @@ const StudentsPage = () => {
             btnContainer.appendChild(okBtn);
             calendarContainer.appendChild(btnContainer);
         },
-    }), []);
+        onClose: (selectedDates: Date[], dateStr: string, instance: any) => {
+            if (instance._okClicked) {
+                setDateRange(selectedDates);
+                setConfirmedDateStr(dateStr);
+                instance._okClicked = false;
+            } else {
+                // If they closed without clicking OK, revert the UI to the actual filter state
+                if (Array.isArray(dateRange) && dateRange.length > 0) {
+                    instance.setDate(dateRange, false);
+                } else {
+                    instance.clear();
+                }
+            }
+        }
+    }), [dateRange]);
 
     const renderStatusBadge = (status: string) => {
         switch (status) {
@@ -231,16 +265,22 @@ const StudentsPage = () => {
 
                 <div className="relative w-[348px] h-[36px]">
                     <Flatpickr
-                        value={dateRange}
+                        ref={flatpickrRef}
+                        value={confirmedDateStr}
                         options={flatpickrOptions}
                         className="w-full h-full px-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] placeholder:text-[#61646C]"
                         placeholder="เลือกช่วงเวลาที่ต้องการดู..."
-                        onChange={(date) => setDateRange(date)}
                     />
-                    {dateRange && (
+                    {confirmedDateStr && (
                         <button
                             type="button"
-                            onClick={() => setDateRange('')}
+                            onClick={() => {
+                                setDateRange('');
+                                setConfirmedDateStr('');
+                                if (flatpickrRef.current?.flatpickr) {
+                                    flatpickrRef.current.flatpickr.clear();
+                                }
+                            }}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-danger"
                         >
                             <IconXCircle className="w-4 h-4" />
@@ -268,7 +308,18 @@ const StudentsPage = () => {
                                 </tr>
                             ) : records.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-10 text-center text-gray-500">ไม่พบข้อมูลนักศึกษา</td>
+                                    <td colSpan={5} className="py-16 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <img src="/Notstudent.png" alt="ไม่มีนักศึกษา" className="w-[180px] h-auto opacity-80" />
+                                            <div className="flex flex-col items-center gap-1.5">
+                                                <h2 className="text-[20px] font-bold text-[#1F2937]">ยังไม่มีนักศึกษาในความดูแล</h2>
+                                                <p className="text-[14px] text-[#9CA3AF] leading-relaxed">
+                                                    คุณยังไม่มีรายชื่อนักศึกษาในความดูแลในขณะนี้<br />
+                                                    ข้อมูลจะปรากฏขึ้นเมื่อคุณเริ่มเป็นพี่เลี้ยงให้กับนักศึกษา
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             ) : records.map((student) => (
                                 <tr 
@@ -310,7 +361,7 @@ const StudentsPage = () => {
                                             </div>
                                             {/* ลา */}
                                             <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#1A3CFF] leading-none">{student.attendance.leave}</span>
+                                                <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
                                                 <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
                                             </div>
                                             {/* ขาด */}
