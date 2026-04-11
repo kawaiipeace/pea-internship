@@ -126,7 +126,7 @@ const Sidebar = () => {
 
                                                 <Link
                                                     href="/admin/mentor/approve"
-                                                    className={`${pathname === '/admin/mentor/approve' ? '!bg-[#FDF2FD] !text-[#9A0D8A]' : 'hover:!text-[#9A0D8A]'} flex items-center w-full h-10 px-9 transition-colors !rounded-none !before:content-none`}
+                                                    className={`${pathname === '/admin/mentor/approve' ? '!text-[#9A0D8A]' : 'hover:!text-[#9A0D8A]'} flex items-center w-full h-10 px-9 transition-colors !rounded-none !before:content-none`}
                                                 >
                                                     <div className={`w-2 h-[2px] mr-3 rounded-full ${pathname === '/admin/mentor/approve' ? 'bg-[#9A0D8A]' : 'bg-gray-300'}`}></div>
                                                     <span className={pathname === '/admin/mentor/approve' ? 'font-bold' : ''}>{t('อนุมัติการลาและแก้ไขเวลา')}</span>
@@ -134,7 +134,7 @@ const Sidebar = () => {
 
                                                 <Link
                                                     href="/admin/mentor/approve/history"
-                                                    className={`${pathname === '/admin/mentor/approve/history' ? '!bg-[#FDF2FD] !text-[#9A0D8A]' : 'hover:!text-[#9A0D8A]'} flex items-center w-full h-10 px-9 transition-colors !rounded-none !before:content-none`}
+                                                    className={`${pathname === '/admin/mentor/approve/history' ? '!text-[#9A0D8A]' : 'hover:!text-[#9A0D8A]'} flex items-center w-full h-10 px-9 transition-colors !rounded-none !before:content-none`}
                                                 >
                                                     <div className={`w-2 h-[2px] mr-3 rounded-full ${pathname === '/admin/mentor/approve/history' ? 'bg-[#9A0D8A]' : 'bg-gray-300'}`}></div>
                                                     <span className={pathname === '/admin/mentor/approve/history' ? 'font-bold' : ''}>{t('ประวัติการอนุมัติ')}</span>
