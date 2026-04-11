@@ -6,7 +6,7 @@ if (!rawAppUrl) {
   throw new Error("APP_URL is not set in environment variables");
 }
 
-const APP_URL = rawAppUrl.replace(/\/+$/, "") + "/";
+const APP_URL = `${rawAppUrl.replace(/\/+$/, "")}/`;
 
 const ACCEPT_TEMPLATE = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

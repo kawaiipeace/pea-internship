@@ -46,6 +46,28 @@ type StatusFilter =
   | "MISSING_OUT"
   | "";
 
+interface AttendanceRecord {
+  id: number;
+  workDate: string;
+  displayStatus: string;
+  checkInTime: string;
+  checkOutTime: string;
+  location: string;
+  workingHours: string;
+  isEdited: boolean;
+  correctionStatus: string | null;
+  correctionId: number | null;
+  leaveType: string | null;
+  leaveReason: string | null;
+  attachmentUrl: string | null;
+}
+
+interface GroupedAttendanceRecord extends AttendanceRecord {
+  ids: number[];
+  startDate: string;
+  endDate: string;
+}
+
 export class CheckTimeService {
   private getDistanceInMeters(
     lat1: number,
@@ -419,7 +441,7 @@ export class CheckTimeService {
     });
   }
 
-  private groupAttendanceRecords(records: any[]) {
+  private groupAttendanceRecords(records: AttendanceRecord[]) {
     if (records.length === 0) return [];
 
     // 1. Sort by workDate ascending to detect consecutive days
@@ -427,8 +449,8 @@ export class CheckTimeService {
       (a, b) => new Date(a.workDate).getTime() - new Date(b.workDate).getTime()
     );
 
-    const grouped: any[] = [];
-    let currentGroup: any = null;
+    const grouped: GroupedAttendanceRecord[] = [];
+    let currentGroup: GroupedAttendanceRecord | null = null;
 
     for (const record of sorted) {
       // We only group records with status 'LEAVE'
@@ -590,15 +612,6 @@ export class CheckTimeService {
 
     const listCondition = and(baseCondition, filterCondition);
 
-    let totalFilteredRecords = summary.total;
-    if (filterStatus === "PRESENT") totalFilteredRecords = summary.present;
-    else if (filterStatus === "LATE") totalFilteredRecords = summary.late;
-    else if (filterStatus === "LEAVE") totalFilteredRecords = summary.leave;
-    else if (filterStatus === "ABSENT") totalFilteredRecords = summary.absent;
-    else if (filterStatus === "MISSING_OUT")
-      totalFilteredRecords = summary.missingOut;
-
-    const totalPages = Math.ceil(totalFilteredRecords / limit);
     const offset = (page - 1) * limit;
 
     const historyData = await db.query.attendanceLogs.findMany({
