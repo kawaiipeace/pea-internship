@@ -3,6 +3,7 @@ import themeConfig from '@/theme.config';
 
 const initialState = {
     isDarkMode: false,
+    adminRole: 'admin', // admin | mentor
     sidebar: false,
     theme: themeConfig.theme,
     menu: themeConfig.menu,
@@ -96,9 +97,14 @@ const themeConfigSlice = createSlice({
         resetToggleSidebar(state) {
             state.sidebar = false;
         },
+        setAdminRole(state, { payload }) {
+            payload = payload || state.adminRole; // admin | mentor
+            localStorage.setItem('adminRole', payload);
+            state.adminRole = payload;
+        },
     },
 });
 
-export const { toggleTheme, toggleMenu, toggleLayout, toggleRTL, toggleAnimation, toggleNavbar, toggleSemidark, toggleSidebar, resetToggleSidebar } = themeConfigSlice.actions;
+export const { toggleTheme, toggleMenu, toggleLayout, toggleRTL, toggleAnimation, toggleNavbar, toggleSemidark, toggleSidebar, resetToggleSidebar, setAdminRole } = themeConfigSlice.actions;
 
 export default themeConfigSlice.reducer;

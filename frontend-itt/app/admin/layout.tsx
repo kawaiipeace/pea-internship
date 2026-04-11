@@ -5,6 +5,7 @@ import Overlay from '@/components/layouts/overlay';
 import Setting from '@/components/layouts/setting';
 import Sidebar from '@/components/layouts/sidebar-admin';
 import Portals from '@/components/portals';
+import RoleGuard from '@/components/layouts/RoleGuard';
 
 export default function DefaultLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -28,7 +29,9 @@ export default function DefaultLayout({ children }: { children: React.ReactNode 
                         {/* END TOP NAVBAR */}
 
                         {/* BEGIN CONTENT AREA */}
-                        <ContentAnimation>{children}</ContentAnimation>
+                        <RoleGuard>
+                            <ContentAnimation>{children}</ContentAnimation>
+                        </RoleGuard>
                         {/* END CONTENT AREA */}
 
                         {/* BEGIN FOOTER */}
