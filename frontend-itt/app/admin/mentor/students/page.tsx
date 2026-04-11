@@ -1,17 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Pagination } from '@mantine/core';
-import IconSearch from '@/components/icon/icon-search';
-import IconCaretDown from '@/components/icon/icon-caret-down';
-import IconCircleCheck from '@/components/icon/icon-circle-check';
-import IconFile from '@/components/icon/icon-file';
 import IconXCircle from '@/components/icon/icon-x-circle';
-import IconClock from '@/components/icon/icon-clock';
-import IconShare from '@/components/icon/icon-share';
-import IconExport from '@/components/icon/icon-export';
 import Flatpickr from 'react-flatpickr';
-import Dropdown from '@/components/dropdown';
-import IconMinus from '@/components/icon/icon-minus';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
@@ -33,7 +23,7 @@ const StudentsPage = () => {
         setIsLoading(true);
         try {
             const response = await axiosInstance.get('/mentor/students', {
-                params: { limit: 100, viewType: 'ALL' }
+                params: { limit: 100 }
             });
             
             const rawStudents = response.data.data || [];

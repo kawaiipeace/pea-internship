@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import Swal from 'sweetalert2';
@@ -18,15 +18,11 @@ const RemoteWorkFormPage = () => {
     const searchParams = useSearchParams();
     const taskId = searchParams.get('id');
     const isEditMode = !!taskId;
-    
-    // Form State
     const [workDate, setWorkDate] = useState('');
     const [locationName, setLocationName] = useState('');
     const [taskDetail, setTaskDetail] = useState('');
     const [note, setNote] = useState('');
     const [studentIds, setStudentIds] = useState<string[]>([]);
-    
-    // Data State
     const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +30,6 @@ const RemoteWorkFormPage = () => {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Handle click outside to close dropdown
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -62,28 +57,28 @@ const RemoteWorkFormPage = () => {
                 const studentsResponse = await axiosInstance.get('/user/student', {
                     params: { departmentId: deptId }
                 });
-                
+
                 // Handle potential response structure differences
-                const studentList = Array.isArray(studentsResponse.data) 
-                    ? studentsResponse.data 
+                const studentList = Array.isArray(studentsResponse.data)
+                    ? studentsResponse.data
                     : studentsResponse.data?.data || [];
-                
+
                 setAvailableStudents(studentList);
 
                 // 3. If Edit Mode, fetch task details
                 if (isEditMode) {
                     const taskResponse = await axiosInstance.get(`/offsite-tasks/${taskId}`);
                     const task = taskResponse.data;
-                    
+
                     // Format Date for HTML5 input (YYYY-MM-DD)
                     if (task.workDate) {
                         setWorkDate(new Date(task.workDate).toISOString().split('T')[0]);
                     }
-                    
+
                     setLocationName(task.locationName);
                     setTaskDetail(task.taskDetail);
                     setNote(task.note || '');
-                    
+
                     const taskStudentIds = task.students.map((s: any) => s.id);
                     setStudentIds(taskStudentIds);
 
@@ -173,9 +168,9 @@ const RemoteWorkFormPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-black py-4 px-4">
             {/* Main Form Container */}
-            <div 
+            <div
                 className="mx-auto w-[700px] bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-[15px] shadow-sm flex flex-col p-10 overflow-visible"
-                
+
             >
                 {/* Header */}
                 <div className="mb-8">
@@ -189,7 +184,7 @@ const RemoteWorkFormPage = () => {
 
                 {/* Form Sections */}
                 <div className="flex-1 flex flex-col gap-4 overflow-visible">
-                    
+
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
                             <div className="w-[50px] h-[50px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-full flex items-center justify-center shrink-0">
@@ -201,7 +196,7 @@ const RemoteWorkFormPage = () => {
                             </div>
                         </div>
                         <div className="w-[348px]">
-                            <CustomDatePicker 
+                            <CustomDatePicker
                                 value={workDate}
                                 onChange={(date) => {
                                     setWorkDate(date);
@@ -225,9 +220,9 @@ const RemoteWorkFormPage = () => {
                             </div>
                         </div>
                         <div>
-                            <input 
-                                type="text" 
-                                placeholder="กรอกชื่อสถานที่ เช่น การท่องเที่ยวแห่งประเทศไทย" 
+                            <input
+                                type="text"
+                                placeholder="กรอกชื่อสถานที่ เช่น การท่องเที่ยวแห่งประเทศไทย"
                                 value={locationName}
                                 onChange={(e) => {
                                     setLocationName(e.target.value);
@@ -251,8 +246,8 @@ const RemoteWorkFormPage = () => {
                             </div>
                         </div>
                         <div>
-                            <textarea 
-                                placeholder="รายละเอียดการปฏิบัติงาน เช่น ลักษณะงาน, สถานที่, รายชื่อพี่เลี้ยงที่ร่วมปฏิบัติงาน" 
+                            <textarea
+                                placeholder="รายละเอียดการปฏิบัติงาน เช่น ลักษณะงาน, สถานที่, รายชื่อพี่เลี้ยงที่ร่วมปฏิบัติงาน"
                                 value={taskDetail}
                                 onChange={(e) => {
                                     setTaskDetail(e.target.value);
@@ -275,8 +270,8 @@ const RemoteWorkFormPage = () => {
                                 <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">ระบุรายละเอียดของงานเพิ่มเติม</p>
                             </div>
                         </div>
-                        <textarea 
-                            placeholder="รายละเอียดของงานเพิ่มเติม" 
+                        <textarea
+                            placeholder="รายละเอียดของงานเพิ่มเติม"
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             className="w-[618px] h-[100px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
@@ -294,11 +289,11 @@ const RemoteWorkFormPage = () => {
                                 <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">เลือกรายชื่อนักศึกษาที่ทำงานนอกสถานที่</p>
                             </div>
                         </div>
-                        
+
                         {/* Custom Dropdown for Student Selection */}
                         <div className="relative" ref={dropdownRef}>
                             {/* Dropdown Toggle Box */}
-                            <div 
+                            <div
                                 className={`w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border-2 ${errors.studentIds ? 'border-[#D92D20]' : 'border-[#A80689]'} rounded-[8px] flex items-center justify-between cursor-pointer focus:outline-none`}
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                             >
@@ -318,8 +313,8 @@ const RemoteWorkFormPage = () => {
                                         availableStudents
                                             .filter(s => !studentIds.includes(s.id))
                                             .map(student => (
-                                                <div 
-                                                    key={student.id} 
+                                                <div
+                                                    key={student.id}
                                                     className="px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer transition-all duration-200"
                                                     onClick={() => {
                                                         handleAddStudent(student.id);
@@ -336,14 +331,14 @@ const RemoteWorkFormPage = () => {
                         </div>
 
                         {/* Dashed Add Student Box */}
-                        <div 
+                        <div
                             className="w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         >
                             <span className="material-symbols-rounded text-[#61646C]">add</span>
                             <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
                         </div>
-                        
+
                         {/* Selected Students List */}
                         {studentIds.length > 0 && (
                             <div className="flex flex-wrap gap-2 pt-2">
@@ -352,11 +347,11 @@ const RemoteWorkFormPage = () => {
                                     return (
                                         <div key={id} className="bg-[#FDF2FE] border border-[#F9E1F9] rounded-full px-4 py-1.5 flex items-center gap-2">
                                             <span className="text-[14px] text-[#A80689] font-medium">
-                                                {student 
+                                                {student
                                                     ? (student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id)
                                                     : 'กำลังโหลด...'}
                                             </span>
-                                            <button 
+                                            <button
                                                 onClick={() => handleRemoveStudent(id)}
                                                 className="text-[#A80689] hover:text-red-500"
                                             >
@@ -367,18 +362,18 @@ const RemoteWorkFormPage = () => {
                                 })}
                             </div>
                         )}
-                        </div>
                     </div>
+                </div>
 
                 {/* Footer Buttons */}
                 <div className="mt-8 flex gap-4">
-                    <button 
+                    <button
                         onClick={() => router.back()}
                         className="flex-1 h-[54px] border border-[#A80689] text-[#A80689] rounded-[8px] text-[16px] font-bold hover:bg-[#FDF2FE] transition-colors"
                     >
                         ยกเลิก
                     </button>
-                    <button 
+                    <button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
                         className={`flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px] font-bold hover:bg-[#8e0574] transition-colors shadow-md flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}

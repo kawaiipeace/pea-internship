@@ -1,8 +1,7 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MonthPicker from "@/components/history/month-picker";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import axiosInstance from "@/api/axios";
 import Swal from 'sweetalert2';
 import ImageWithAuth from "@/components/ImageWithAuth";
@@ -47,12 +46,7 @@ const RemoteWorkPage = () => {
     const [dateSortOrder, setDateSortOrder] = useState<'desc' | 'asc'>('desc');
     const [assignedDateSortOrder, setAssignedDateSortOrder] = useState<'desc' | 'asc'>('desc');
     const [activeSortField, setActiveSortField] = useState<'workDate' | 'assignedDate'>('workDate');
-
-    // Filter States
     const [staffList, setStaffList] = useState<Staff[]>([]);
-    const [currentUser, setCurrentUser] = useState<any>(null);
-
-    // Real Data State
     const [tasks, setTasks] = useState<OffsiteTask[]>([]);
     const [meta, setMeta] = useState<MetaData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -154,7 +148,6 @@ const RemoteWorkPage = () => {
                 // 1. Get current user profile to find departmentId
                 const profileRes = await axiosInstance.get('/user/profile');
                 const user = profileRes.data;
-                setCurrentUser(user);
 
                 // 2. Get staff in the same department
                 if (user.departmentId) {
@@ -165,9 +158,9 @@ const RemoteWorkPage = () => {
                     setStaffList(list);
 
                     // Set initial filter to current user
-                    setAssignerFilter({ 
-                        label: `${user.fname} ${user.lname}`, 
-                        value: user.id 
+                    setAssignerFilter({
+                        label: `${user.fname} ${user.lname}`,
+                        value: user.id
                     });
                 }
             } catch (error) {
@@ -206,7 +199,7 @@ const RemoteWorkPage = () => {
         <div className="min-h-screen bg-white dark:bg-black p-6 -m-6 pb-20">
             {/* Main Container */}
             <div className="mx-auto w-full max-w-[892px] flex flex-col gap-6">
-                
+
                 {/* Header Section */}
                 <div className="flex justify-between items-start pt-4">
                     <div>
@@ -239,8 +232,8 @@ const RemoteWorkPage = () => {
                     <h2 className="text-[16px] font-bold text-black dark:text-white">
                         รายการประวัติการลงเวลา
                     </h2>
-                    <button 
-                        onClick={() => router.push('/mentor/remote-work/form')}
+                    <button
+                        onClick={() => router.push('/admin/mentor/remote-work/form')}
                         style={{ width: '236px', height: '44px', borderRadius: '5px' }}
                         className="bg-[#A80689] hover:bg-[#8e0574] text-white  flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 shrink-0"
                     >
@@ -252,7 +245,7 @@ const RemoteWorkPage = () => {
                 {/* Filters Row */}
                 <div className="flex flex-wrap gap-3 items-center">
                     {/* Sort By Date */}
-                    <button 
+                    <button
                         onClick={() => {
                             setActiveSortField('workDate');
                             setDateSortOrder(dateSortOrder === 'desc' ? 'asc' : 'desc');
@@ -266,7 +259,7 @@ const RemoteWorkPage = () => {
                     </button>
 
                     {/* Filter By Assign Date */}
-                    <button 
+                    <button
                         onClick={() => {
                             setActiveSortField('assignedDate');
                             setAssignedDateSortOrder(assignedDateSortOrder === 'desc' ? 'asc' : 'desc');
@@ -281,7 +274,7 @@ const RemoteWorkPage = () => {
 
                     {/* Assigner Dropdown */}
                     <div className="relative">
-                        <button 
+                        <button
                             onClick={() => setIsAssignerDropdownOpen(!isAssignerDropdownOpen)}
                             className="flex items-center gap-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-[12px] font-medium text-[#333] shadow-sm min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
                         >
@@ -293,16 +286,16 @@ const RemoteWorkPage = () => {
                             <>
                                 {/* Backdrop to close dropdown */}
                                 <div className="fixed inset-0 z-[40]" onClick={() => setIsAssignerDropdownOpen(false)}></div>
-                                
+
                                 <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-[50] overflow-hidden py-1 max-h-[300px] overflow-y-auto">
                                     {/* Staff List Only */}
                                     {staffList.map((staff) => (
-                                        <button 
+                                        <button
                                             key={staff.id}
                                             onClick={() => {
-                                                setAssignerFilter({ 
-                                                    label: `${staff.fname} ${staff.lname}`, 
-                                                    value: staff.id 
+                                                setAssignerFilter({
+                                                    label: `${staff.fname} ${staff.lname}`,
+                                                    value: staff.id
                                                 });
                                                 setIsAssignerDropdownOpen(false);
                                                 setCurrentPage(1);
@@ -365,9 +358,9 @@ const RemoteWorkPage = () => {
                                             <div className="flex -space-x-2">
                                                 {(item.students || []).slice(0, 4).map((student: Student, idx: number) => (
                                                     <div key={idx} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800 bg-gray-200" title={student.name}>
-                                                        <ImageWithAuth 
-                                                            userId={student.id} 
-                                                            className="w-full h-full object-cover" 
+                                                        <ImageWithAuth
+                                                            userId={student.id}
+                                                            className="w-full h-full object-cover"
                                                             fallbackSrc="/assets/images/user-profile.jpeg"
                                                         />
                                                     </div>
@@ -386,13 +379,13 @@ const RemoteWorkPage = () => {
                                 <div className="flex items-center gap-0 ml-4">
                                     {item.isOwner && (
                                         <>
-                                            <button 
-                                                onClick={() => router.push(`/mentor/remote-work/form?id=${item.id}`)}
+                                            <button
+                                                onClick={() => router.push(`/admin/mentor/remote-work/form?id=${item.id}`)}
                                                 className="p-1 text-gray-500 hover:text-[#A80689] transition-colors"
                                             >
                                                 <span className="material-symbols-rounded !text-[20px]">edit_square</span>
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => handleDeleteTask(item.id)}
                                                 className="p-1 text-gray-500 hover:text-red-500 transition-colors"
                                             >
@@ -400,8 +393,8 @@ const RemoteWorkPage = () => {
                                             </button>
                                         </>
                                     )}
-                                    <button 
-                                        onClick={() => router.push(`/mentor/remote-work/${item.id}`)}
+                                    <button
+                                        onClick={() => router.push(`/admin/mentor/remote-work/${item.id}`)}
                                         className="ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-4 py-2 rounded-[5px] text-[12px]  hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                                     >
                                         ดูรายละเอียด
@@ -415,7 +408,7 @@ const RemoteWorkPage = () => {
                             <div className="relative w-[280px] h-[200px] mb-6 flex items-center justify-center">
                                 {/* Base Shadow */}
                                 <div className="absolute bottom-4 w-[120px] h-[30px] bg-[#F2F4F7] dark:bg-gray-800 rounded-[100%] blur-sm"></div>
-                                
+
                                 {/* Calendar Body */}
                                 <div className="relative w-[100px] h-[110px] bg-white dark:bg-gray-900 border-[6px] border-[#D0D5DD] dark:border-gray-700 rounded-[14px] shadow-sm flex flex-col overflow-hidden">
                                     <div className="h-4 bg-[#D0D5DD] dark:bg-gray-700 w-full"></div>
@@ -471,16 +464,16 @@ const RemoteWorkPage = () => {
                 {meta && meta.totalPages > 1 && (
                     <div className="flex justify-end items-center mt-6 mb-10">
                         <div className="flex bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[14px] overflow-hidden shadow-sm">
-                            <button 
+                            <button
                                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                 disabled={meta.page === 1}
                                 className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700 transition-colors disabled:opacity-50"
                             >
                                 <span className="material-symbols-rounded !text-[20px]">chevron_left</span>
                             </button>
-                            
+
                             {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map((page) => (
-                                <button 
+                                <button
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
                                     className={`w-10 h-10 flex items-center justify-center text-[14px] font-bold border-r border-gray-200 dark:border-gray-700 transition-colors ${meta.page === page ? 'bg-[#E4E7EC] dark:bg-gray-700 text-[#344054] dark:text-white' : 'text-[#344054] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
@@ -488,8 +481,8 @@ const RemoteWorkPage = () => {
                                     {page}
                                 </button>
                             ))}
-                            
-                            <button 
+
+                            <button
                                 onClick={() => setCurrentPage(prev => Math.min(meta.totalPages, prev + 1))}
                                 disabled={meta.page === meta.totalPages}
                                 className="w-10 h-10 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
