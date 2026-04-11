@@ -191,9 +191,9 @@ export class OffsiteTaskService {
         .select({ id: users.id })
         .from(users)
         .where(eq(users.departmentId, currentUser.departmentId));
-      
-      const mentorIds = deptMentors.map(m => m.id);
-      
+
+      const mentorIds = deptMentors.map((m) => m.id);
+
       if (mentorIds.length > 0) {
         conditions.push(sql`${offsiteTasks.assignedBy} IN ${mentorIds}`);
       } else {
@@ -306,7 +306,12 @@ export class OffsiteTaskService {
         students: {
           with: {
             student: {
-              columns: { id: true, fname: true, lname: true, displayUsername: true },
+              columns: {
+                id: true,
+                fname: true,
+                lname: true,
+                displayUsername: true,
+              },
               with: {
                 studentProfiles: {
                   columns: { image: true, faculty: true, major: true },
@@ -349,7 +354,8 @@ export class OffsiteTaskService {
       note: task.note,
       isOwner: task.assignedByUser.id === userId,
       assignedBy: `${task.assignedByUser.fname} ${task.assignedByUser.lname}`,
-      assignedByEmployeeId: task.assignedByUser.staffProfiles[0]?.employeeId || null,
+      assignedByEmployeeId:
+        task.assignedByUser.staffProfiles[0]?.employeeId || null,
       students: task.students.map((s) => ({
         id: s.student.id,
         name: `${s.student.fname} ${s.student.lname}`,

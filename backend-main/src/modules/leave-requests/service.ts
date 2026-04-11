@@ -28,8 +28,9 @@ export class LeaveService {
     if (records.length === 0) return [];
 
     // 1. Sort by date ascending to detect consecutive days
-    const sorted = [...records].sort((a, b) =>
-      new Date(a.leaveDate).getTime() - new Date(b.leaveDate).getTime()
+    const sorted = [...records].sort(
+      (a, b) =>
+        new Date(a.leaveDate).getTime() - new Date(b.leaveDate).getTime()
     );
 
     const grouped: any[] = [];
@@ -82,7 +83,8 @@ export class LeaveService {
 
     // 2. Sort descending by startDate for presentation
     return grouped.sort(
-      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      (a, b) =>
+        new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
     );
   }
 
@@ -130,9 +132,7 @@ export class LeaveService {
 
       const datesToLeave = this.getDatesInRange(data.startDate, data.endDate);
 
-      const targetDatetimes = datesToLeave.map((date) =>
-        `${date}T00:00:00`
-      );
+      const targetDatetimes = datesToLeave.map((date) => `${date}T00:00:00`);
 
       const existingLeaves = await tx.query.leaveRequests.findMany({
         where: and(
@@ -177,7 +177,9 @@ export class LeaveService {
   }
 
   async approveLeaveRequest(approverUserId: string, leaveRequestId: number) {
-    return await this.bulkApproveLeaveRequests(approverUserId, [leaveRequestId]);
+    return await this.bulkApproveLeaveRequests(approverUserId, [
+      leaveRequestId,
+    ]);
   }
 
   async bulkApproveLeaveRequests(approverUserId: string, ids: number[]) {
@@ -444,7 +446,11 @@ export class LeaveService {
     leaveRequestId: number,
     reason: string
   ) {
-    return await this.bulkRejectLeaveRequests(approverUserId, [leaveRequestId], reason);
+    return await this.bulkRejectLeaveRequests(
+      approverUserId,
+      [leaveRequestId],
+      reason
+    );
   }
 
   async bulkRejectLeaveRequests(
@@ -461,7 +467,9 @@ export class LeaveService {
 
       if (requests.length === 0) throw new NotFoundError("ไม่พบคำขอลา");
 
-      const pendingIds = requests.filter((r) => r.status === "PENDING").map((r) => r.id);
+      const pendingIds = requests
+        .filter((r) => r.status === "PENDING")
+        .map((r) => r.id);
 
       if (pendingIds.length === 0) {
         throw new ConflictError("คำขอลาเหล่านี้ถูกดำเนินการไปแล้ว");
@@ -479,7 +487,10 @@ export class LeaveService {
 
       return {
         success: true,
-        message: pendingIds.length === 1 ? "ปฏิเสธคำขอลาเรียบร้อยแล้ว" : `ปฏิเสธคำขอลาจำนวน ${pendingIds.length} รายการเรียบร้อยแล้ว`,
+        message:
+          pendingIds.length === 1
+            ? "ปฏิเสธคำขอลาเรียบร้อยแล้ว"
+            : `ปฏิเสธคำขอลาจำนวน ${pendingIds.length} รายการเรียบร้อยแล้ว`,
       };
     });
   }

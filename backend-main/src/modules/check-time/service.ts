@@ -424,8 +424,7 @@ export class CheckTimeService {
 
     // 1. Sort by workDate ascending to detect consecutive days
     const sorted = [...records].sort(
-      (a, b) =>
-        new Date(a.workDate).getTime() - new Date(b.workDate).getTime()
+      (a, b) => new Date(a.workDate).getTime() - new Date(b.workDate).getTime()
     );
 
     const grouped: any[] = [];

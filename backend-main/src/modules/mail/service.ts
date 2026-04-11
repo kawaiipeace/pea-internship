@@ -1154,8 +1154,7 @@ function escapeHtml(text?: string | null) {
 }
 
 function replaceAppUrl(html: string) {
-  return html
-    .replace(/https:\/\/internship\.pea\.co\.th\/?/g, APP_URL);
+  return html.replace(/https:\/\/internship\.pea\.co\.th\/?/g, APP_URL);
 }
 
 export class MailService {
@@ -1226,10 +1225,7 @@ export class MailService {
     };
   }
 
-  buildDocumentRejectedEmail(params: {
-    firstname: string;
-    lastname: string;
-  }) {
+  buildDocumentRejectedEmail(params: { firstname: string; lastname: string }) {
     let html = REJECT_DOC_TEMPLATE;
 
     html = html
