@@ -7,7 +7,7 @@ const getTokenFromCookie = () => {
 };
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 const axiosInstance: AxiosInstance = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: `${API_BASE_URL}/api`,
     timeout: 10000,
     withCredentials: true,
     headers: {

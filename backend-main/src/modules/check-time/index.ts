@@ -153,4 +153,64 @@ export const checkTime = new Elysia({
         description: "ดึงไฟล์ที่อัปโหลดไว้ใน MinIO เพื่อนำมาแสดงผลหรือดาวน์โหลด",
       },
     }
+  )
+  .get(
+    "/mentor/corrections",
+    async ({ query, set, user }) => {
+      const response = await checkTimeService.getMentorCorrections(
+        user.id,
+        query
+      );
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
+      query: checkSchema.GetMentorCorrectionsQuery,
+      detail: {
+        summary: "รายการคำขอแก้ไขเวลา (Mentor)",
+        description:
+          "ดึงรายการคำขอแก้ไขเวลาของนักศึกษา รองรับการกรองตามสถานะ (PENDING) และดูเฉพาะคนในแผนก (MINE)",
+      },
+    }
+  )
+  .post(
+    "/mentor/corrections/:id/approve",
+    async ({ params, set, user }) => {
+      const response = await checkTimeService.approveCorrection(
+        user.id,
+        params.id
+      );
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
+      params: t.Object({ id: t.Numeric() }),
+      detail: {
+        summary: "อนุมัติแก้ไขเวลา",
+        description: "พี่เลี้ยงกดยืนยันอนุมัติคำขอแก้ไขเวลา ระบบจะอัปเดตเวลาลงงานให้ใหม่",
+      },
+    }
+  )
+  .post(
+    "/mentor/corrections/:id/reject",
+    async ({ params, body, set, user }) => {
+      const response = await checkTimeService.rejectCorrection(
+        user.id,
+        params.id,
+        body.reason
+      );
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
+      params: t.Object({ id: t.Numeric() }),
+      body: checkSchema.RejectCorrectionBody,
+      detail: {
+        summary: "ไม่อนุมัติแก้ไขเวลา",
+        description: "พี่เลี้ยงกดปฏิเสธคำขอแก้ไขเวลา พร้อมระบุเหตุผลที่ไม่อนุมัติ",
+      },
+    }
   );

@@ -6,7 +6,7 @@ if (!rawAppUrl) {
   throw new Error("APP_URL is not set in environment variables");
 }
 
-const APP_URL = rawAppUrl.replace(/\/+$/, "") + "/";
+const APP_URL = `${rawAppUrl.replace(/\/+$/, "")}/`;
 
 const ACCEPT_TEMPLATE = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -1154,8 +1154,7 @@ function escapeHtml(text?: string | null) {
 }
 
 function replaceAppUrl(html: string) {
-  return html
-    .replace(/https:\/\/internship\.pea\.co\.th\/?/g, APP_URL);
+  return html.replace(/https:\/\/internship\.pea\.co\.th\/?/g, APP_URL);
 }
 
 export class MailService {
@@ -1226,10 +1225,7 @@ export class MailService {
     };
   }
 
-  buildDocumentRejectedEmail(params: {
-    firstname: string;
-    lastname: string;
-  }) {
+  buildDocumentRejectedEmail(params: { firstname: string; lastname: string }) {
     let html = REJECT_DOC_TEMPLATE;
 
     html = html

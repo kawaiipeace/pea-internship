@@ -26,7 +26,7 @@ const Setting = () => {
             >
                 <button
                     type="button"
-                    className="hidden absolute bottom-0 top-0 my-auto flex h-10 w-12 cursor-pointer items-center justify-center bg-primary text-white ltr:-left-12 ltr:rounded-bl-full ltr:rounded-tl-full rtl:-right-12 rtl:rounded-br-full rtl:rounded-tr-full"
+                    className="absolute bottom-0 top-0 my-auto flex h-10 w-12 cursor-pointer items-center justify-center bg-primary text-white ltr:-left-12 ltr:rounded-bl-full ltr:rounded-tl-full rtl:-right-12 rtl:rounded-br-full rtl:rounded-tr-full"
                     onClick={() => setShowCustomizer(!showCustomizer)}
                 >
                     <IconSettings className="h-5 w-5 animate-[spin_3s_linear_infinite]" />

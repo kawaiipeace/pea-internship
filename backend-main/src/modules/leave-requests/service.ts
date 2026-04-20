@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, count, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ConflictError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -14,6 +14,24 @@ import {
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import type * as model from "./model";
 
+interface LeaveRecord {
+  id: number;
+  userId: string;
+  leaveDate: string | null;
+  leaveType: string;
+  status: string;
+  reason: string | null;
+  attachmentUrl: string | null;
+  studentName?: string;
+  profileImg?: string | null;
+}
+
+interface GroupedLeaveRecord extends Omit<LeaveRecord, "id" | "leaveDate"> {
+  ids: number[];
+  startDate: string | null;
+  endDate: string | null;
+}
+
 export class LeaveService {
   private async assertUserExists(userId: string) {
     const [user] = await db
@@ -24,33 +42,33 @@ export class LeaveService {
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
   }
 
-  private groupLeaveRecords(records: any[]) {
+  private groupLeaveRecords(records: LeaveRecord[]) {
     if (records.length === 0) return [];
 
     // 1. Sort by date ascending to detect consecutive days
-    const sorted = [...records].sort((a, b) =>
-      new Date(a.leaveDate).getTime() - new Date(b.leaveDate).getTime()
+    const sorted = [...records].sort(
+      (a, b) =>
+        new Date(a.leaveDate!).getTime() - new Date(b.leaveDate!).getTime()
     );
 
-    const grouped: any[] = [];
-    let currentGroup: any = null;
+    const grouped: GroupedLeaveRecord[] = [];
+    let currentGroup: GroupedLeaveRecord | null = null;
 
     for (const record of sorted) {
       if (!currentGroup) {
+        const { id, leaveDate, ...rest } = record;
         currentGroup = {
-          ...record,
-          ids: [record.id],
-          startDate: record.leaveDate,
-          endDate: record.leaveDate,
+          ...rest,
+          ids: [id],
+          startDate: leaveDate,
+          endDate: leaveDate,
         };
-        delete currentGroup.id;
-        delete currentGroup.leaveDate;
         grouped.push(currentGroup);
         continue;
       }
 
-      const prevDate = new Date(currentGroup.endDate);
-      const currDate = new Date(record.leaveDate);
+      const prevDate = new Date(currentGroup.endDate!);
+      const currDate = new Date(record.leaveDate!);
 
       // Diff in days (rounded to handle potential floating point issues)
       const diffDays = Math.round(
@@ -68,21 +86,21 @@ export class LeaveService {
         currentGroup.endDate = record.leaveDate;
         currentGroup.ids.push(record.id);
       } else {
+        const { id, leaveDate, ...rest } = record;
         currentGroup = {
-          ...record,
-          ids: [record.id],
-          startDate: record.leaveDate,
-          endDate: record.leaveDate,
+          ...rest,
+          ids: [id],
+          startDate: leaveDate,
+          endDate: leaveDate,
         };
-        delete currentGroup.id;
-        delete currentGroup.leaveDate;
         grouped.push(currentGroup);
       }
     }
 
     // 2. Sort descending by startDate for presentation
     return grouped.sort(
-      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      (a, b) =>
+        new Date(b.startDate!).getTime() - new Date(a.startDate!).getTime()
     );
   }
 
@@ -130,9 +148,7 @@ export class LeaveService {
 
       const datesToLeave = this.getDatesInRange(data.startDate, data.endDate);
 
-      const targetDatetimes = datesToLeave.map((date) =>
-        `${date}T00:00:00`
-      );
+      const targetDatetimes = datesToLeave.map((date) => `${date}T00:00:00`);
 
       const existingLeaves = await tx.query.leaveRequests.findMany({
         where: and(
@@ -177,7 +193,9 @@ export class LeaveService {
   }
 
   async approveLeaveRequest(approverUserId: string, leaveRequestId: number) {
-    return await this.bulkApproveLeaveRequests(approverUserId, [leaveRequestId]);
+    return await this.bulkApproveLeaveRequests(approverUserId, [
+      leaveRequestId,
+    ]);
   }
 
   async bulkApproveLeaveRequests(approverUserId: string, ids: number[]) {
@@ -226,7 +244,7 @@ export class LeaveService {
             .update(attendanceLogs)
             .set({
               dailyStatus: "LEAVE",
-              approvedLeaveHours: "7.00",
+              // approvedLeaveHours: "7.00",
               isVerified: true,
             })
             .where(eq(attendanceLogs.id, existingLog.id));
@@ -235,8 +253,8 @@ export class LeaveService {
             studentProfileId: student.id,
             workDate: leaveDateStr,
             dailyStatus: "LEAVE",
-            approvedLeaveHours: "7.00",
-            actualHoursWorked: "0.00",
+            // approvedLeaveHours: "7.00",
+            // actualHoursWorked: "0.00",
             isVerified: true,
           });
         }
@@ -244,7 +262,7 @@ export class LeaveService {
 
       return {
         success: true,
-        message: "อนุมัติการลาและบันทึกเวลาทำงาน 7 ชั่วโมงเรียบร้อยแล้ว",
+        message: "อนุมัติการลา",
       };
     });
   }
@@ -444,7 +462,11 @@ export class LeaveService {
     leaveRequestId: number,
     reason: string
   ) {
-    return await this.bulkRejectLeaveRequests(approverUserId, [leaveRequestId], reason);
+    return await this.bulkRejectLeaveRequests(
+      approverUserId,
+      [leaveRequestId],
+      reason
+    );
   }
 
   async bulkRejectLeaveRequests(
@@ -461,7 +483,9 @@ export class LeaveService {
 
       if (requests.length === 0) throw new NotFoundError("ไม่พบคำขอลา");
 
-      const pendingIds = requests.filter((r) => r.status === "PENDING").map((r) => r.id);
+      const pendingIds = requests
+        .filter((r) => r.status === "PENDING")
+        .map((r) => r.id);
 
       if (pendingIds.length === 0) {
         throw new ConflictError("คำขอลาเหล่านี้ถูกดำเนินการไปแล้ว");
@@ -479,7 +503,10 @@ export class LeaveService {
 
       return {
         success: true,
-        message: pendingIds.length === 1 ? "ปฏิเสธคำขอลาเรียบร้อยแล้ว" : `ปฏิเสธคำขอลาจำนวน ${pendingIds.length} รายการเรียบร้อยแล้ว`,
+        message:
+          pendingIds.length === 1
+            ? "ปฏิเสธคำขอลาเรียบร้อยแล้ว"
+            : `ปฏิเสธคำขอลาจำนวน ${pendingIds.length} รายการเรียบร้อยแล้ว`,
       };
     });
   }

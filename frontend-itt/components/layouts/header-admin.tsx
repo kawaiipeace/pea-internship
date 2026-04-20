@@ -4,19 +4,16 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { IRootState } from '@/store';
-import { toggleTheme, toggleSidebar } from '@/store/themeConfigSlice';
+import { toggleSidebar, setAdminRole } from '@/store/themeConfigSlice';
 import Dropdown from '@/components/dropdown';
 import IconMenu from '@/components/icon/icon-menu';
 import IconXCircle from '@/components/icon/icon-x-circle';
-import IconSun from '@/components/icon/icon-sun';
-import IconMoon from '@/components/icon/icon-moon';
-import IconLaptop from '@/components/icon/icon-laptop';
 import IconInfoCircle from '@/components/icon/icon-info-circle';
-import IconBellBing from '@/components/icon/icon-bell-bing';
+import IconBell from '@/components/icon/icon-bell';
 import IconUser from '@/components/icon/icon-user';
 import IconLogout from '@/components/icon/icon-logout';
+import IconSettings from '@/components/icon/icon-settings';
 import { usePathname, useRouter } from 'next/navigation';
-import IconCaretDown from '@/components/icon/icon-caret-down';
 import Swal from 'sweetalert2';
 import useAuthStore from '@/store/authStore';
 import ImageWithAuth from '../ImageWithAuth';
@@ -127,6 +124,9 @@ const Header = () => {
     };
 
 
+    const adminRole = useSelector((state: IRootState) => state.themeConfig.adminRole);
+    const isAdmin = adminRole === 'admin';
+
     return (
         <header className={`z-40 ${themeConfig.semidark && themeConfig.menu === 'horizontal' ? 'dark' : ''}`}>
             <div className="shadow-sm">
@@ -144,85 +144,29 @@ const Header = () => {
                         </Link>
                     </div>
 
-                    <div className="flex items-center space-x-1.5 ltr:ml-auto rtl:mr-auto rtl:space-x-reverse dark:text-[#d0d2d6] lg:space-x-2">
+                    <div className="flex items-center justify-center space-x-1.5 ltr:ml-auto rtl:mr-auto rtl:space-x-reverse dark:text-[#d0d2d6] lg:space-x-4">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const nextRole = isAdmin ? 'mentor' : 'admin';
+                                dispatch(setAdminRole(nextRole));
+                                router.push(nextRole === 'mentor' ? '/admin/mentor/approve' : '/admin');
+                            }}
+                            className="flex w-28 items-center gap-2 rounded-xl border-2 border-[#9A0D8A] px-3 py-1.5 text-[#9A0D8A] hover:bg-[#9A0D8A]/5 transition-colors"
+                        >
+                            <div className="relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#9A0D8A"><path d="M287-527q-47-47-47-113t47-113q47-47 113-47t113 47q47 47 47 113t-47 113q-47 47-113 47t-113-47ZM80-160v-112q0-33 17-62t47-44q51-26 115-44t141-18h14q6 0 12 2-8 18-13.5 37.5T404-360h-4q-71 0-127.5 18T180-306q-9 5-14.5 14t-5.5 20v32h252q6 21 16 41.5t22 38.5H80Zm560 40-12-60q-12-5-22.5-10.5T584-204l-58 18-40-68 46-40q-2-14-2-26t2-26l-46-40 40-68 58 18q11-8 21.5-13.5T628-460l12-60h80l12 60q12 5 22.5 11t21.5 15l58-20 40 70-46 40q2 12 2 25t-2 25l46 40-40 68-58-18q-11 8-21.5 13.5T732-180l-12 60h-80Zm96.5-143.5Q760-287 760-320t-23.5-56.5Q713-400 680-400t-56.5 23.5Q600-353 600-320t23.5 56.5Q647-240 680-240t56.5-23.5Zm-280-320Q480-607 480-640t-23.5-56.5Q433-720 400-720t-56.5 23.5Q320-673 320-640t23.5 56.5Q367-560 400-560t56.5-23.5ZM400-640Zm12 400Z" /></svg>
+                            </div>
+                            <span className="text-base font-bold whitespace-nowrap">{isAdmin ? 'แอดมิน' : 'พี่เลี่ยง'}</span>
+                        </button>
                         <div className="dropdown shrink-0">
                             <Dropdown
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
-                                button={
-                                    <span className="flex items-center font-semibold px-2">
-                                        Hello
-                                        <IconCaretDown className="w-4 h-4 inline-block ltr:ml-1 rtl:mr-1" />
-                                    </span>
-                                }
-                            >
-                                <ul className="w-max min-w-[150px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
-                                    <li>
-                                        <button type="button" className="w-full text-left px-4 py-2.5 hover:bg-white-light/10 dark:hover:bg-dark-light/10">
-                                            เมนูที่ 1
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <button type="button" className="w-full text-left px-4 py-2.5 hover:bg-white-light/10 dark:hover:bg-dark-light/10">
-                                            เมนูที่ 2
-                                        </button>
-                                    </li>
-                                    <li className="border-t border-white-light dark:border-white-light/10">
-                                        <button type="button" className="w-full text-left px-4 py-2.5 text-danger hover:bg-white-light/10 dark:hover:bg-dark-light/10">
-                                            เมนูที่ 3
-                                        </button>
-                                    </li>
-                                </ul>
-                            </Dropdown>
-                        </div>
-                        <div>
-                            {themeConfig.theme === 'light' ? (
-                                <button
-                                    className={`${themeConfig.theme === 'light' &&
-                                        'flex items-center rounded-full bg-white-light/40 p-2 hover:bg-white-light/90 hover:text-primary dark:bg-dark/40 dark:hover:bg-dark/60'
-                                        }`}
-                                    onClick={() => dispatch(toggleTheme('dark'))}
-                                >
-                                    <IconSun />
-                                </button>
-                            ) : (
-                                ''
-                            )}
-                            {themeConfig.theme === 'dark' && (
-                                <button
-                                    className={`${themeConfig.theme === 'dark' &&
-                                        'flex items-center rounded-full bg-white-light/40 p-2 hover:bg-white-light/90 hover:text-primary dark:bg-dark/40 dark:hover:bg-dark/60'
-                                        }`}
-                                    onClick={() => dispatch(toggleTheme('system'))}
-                                >
-                                    <IconMoon />
-                                </button>
-                            )}
-                            {themeConfig.theme === 'system' && (
-                                <button
-                                    className={`${themeConfig.theme === 'system' &&
-                                        'flex items-center rounded-full bg-white-light/40 p-2 hover:bg-white-light/90 hover:text-primary dark:bg-dark/40 dark:hover:bg-dark/60'
-                                        }`}
-                                    onClick={() => dispatch(toggleTheme('light'))}
-                                >
-                                    <IconLaptop />
-                                </button>
-                            )}
-                        </div>
-
-                        <div className="dropdown shrink-0">
-                            <Dropdown
-                                offset={[0, 8]}
-                                placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
+                                btnClassName="relative block p-2 rounded-full hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
                                 button={
                                     <span>
-                                        <IconBellBing />
-                                        <span className="absolute top-0 flex h-3 w-3 ltr:right-0 rtl:left-0">
-                                            <span className="absolute -top-[3px] inline-flex h-full w-full animate-ping rounded-full bg-success/50 opacity-75 ltr:-left-[3px] rtl:-right-[3px]"></span>
-                                            <span className="relative inline-flex h-[6px] w-[6px] rounded-full bg-success"></span>
-                                        </span>
+                                        <img src="/admin-icon/notifications_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" alt="notification" className="h-8 w-8" />
                                     </span>
                                 }
                             >
@@ -289,21 +233,19 @@ const Header = () => {
                             <Dropdown
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative group block"
+                                btnClassName="relative group block p-2 rounded-full hover:bg-white-light/90 dark:hover:bg-dark/60"
                                 button={
-                                    // แทนที่รูปภาพด้วยชื่อตรงปุ่มกด
-                                    <span className="flex items-center font-semibold text-dark dark:text-white hover:text-primary">
-                                        {fullName}
+                                    <span className="flex items-center hover:text-primary">
+                                        <img src="/admin-icon/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" alt="profile" className="h-8 w-8" />
                                     </span>
                                 }
                             >
                                 <ul className="w-max min-w-[230px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
                                     <li>
-                                        {/* นำรูปออกไปเลย จัดกลุ่มชื่อและอีเมลใหม่ */}
                                         <div className="flex flex-col px-4 py-4">
                                             <h4 className="text-base whitespace-nowrap">
                                                 {fullName}
-                                                <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">Intern</span>
+                                                <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">แอดมิน</span>
                                             </h4>
                                             <button type="button" className="mt-1 text-left text-black/60 hover:text-primary dark:text-dark-light/60 dark:hover:text-white whitespace-nowrap">
                                                 {email}
@@ -311,7 +253,7 @@ const Header = () => {
                                         </div>
                                     </li>
                                     <li>
-                                        <Link href="/intern/users/profile" className="dark:hover:text-white">
+                                        <Link href="/admin/profile" className="dark:hover:text-white">
                                             <IconUser className="h-4.5 w-4.5 shrink-0 ltr:mr-2 rtl:ml-2" />
                                             Profile
                                         </Link>

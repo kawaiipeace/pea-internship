@@ -1,17 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Pagination } from '@mantine/core';
-import IconSearch from '@/components/icon/icon-search';
-import IconCaretDown from '@/components/icon/icon-caret-down';
-import IconCircleCheck from '@/components/icon/icon-circle-check';
-import IconFile from '@/components/icon/icon-file';
 import IconXCircle from '@/components/icon/icon-x-circle';
-import IconClock from '@/components/icon/icon-clock';
-import IconShare from '@/components/icon/icon-share';
-import IconExport from '@/components/icon/icon-export';
 import Flatpickr from 'react-flatpickr';
-import Dropdown from '@/components/dropdown';
-import IconMinus from '@/components/icon/icon-minus';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
@@ -33,11 +23,11 @@ const StudentsPage = () => {
         setIsLoading(true);
         try {
             const response = await axiosInstance.get('/mentor/students', {
-                params: { limit: 100, }
+                params: { limit: 100 }
             });
-
+            
             const rawStudents = response.data.data || [];
-
+            
             // Fetch detail for each student to get internship period dates
             const detailPromises = rawStudents.map((s: any) =>
                 axiosInstance.get(`/mentor/students/${s.id}`).catch(() => null)
@@ -50,53 +40,29 @@ const StudentsPage = () => {
                 const total = Number(s.workHours?.goal || 560);
                 const percent = total > 0 ? (current / total) * 100 : 0;
 
-                const endDateRaw = detail?.profile?.period?.endDate;
-                let statusMessage = 'กำลังฝึกงาน';
-                let statusType = 'remaining';
-
-                if (endDateRaw) {
-                    const endDate = new Date(endDateRaw);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    endDate.setHours(0, 0, 0, 0);
-
-                    const diffTime = endDate.getTime() - today.getTime();
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    if (diffDays > 0) {
-                        statusMessage = `เหลืออีก ${diffDays} วันก่อนสิ้นสุดฝึกงาน`;
-                    } else if (diffDays === 0) {
-                        statusMessage = 'ฝึกงานวันสุดท้าย';
-                        statusType = 'last-day';
-                    } else {
-                        statusMessage = 'สิ้นสุดการฝึกงาน';
-                        statusType = 'ended';
-                    }
-                }
-
                 return {
                     id: s.id,
                     name: s.fullName || 'ไม่ระบุชื่อ',
                     role: 'นักศึกษาฝึกงาน',
                     university: 'การไฟฟ้าส่วนภูมิภาค',
-                    status: s.todayStatus?.code || 'IDLE',
+                    status: s.todayStatus?.code || 'IDLE', 
                     avatar: s.image,
-                    attendance: {
-                        present: s.statistics?.present || 0,
-                        late: s.statistics?.late || 0,
-                        leave: s.statistics?.leave || 0,
-                        absent: s.statistics?.absent || 0
+                    attendance: { 
+                        present: s.statistics?.present || 0, 
+                        late: s.statistics?.late || 0, 
+                        leave: s.statistics?.leave || 0, 
+                        absent: s.statistics?.absent || 0 
                     },
                     progress: { current, total, percent: percent > 100 ? 100 : percent },
-                    statusMessage,
-                    statusType,
+                    statusMessage: 'กำลังฝึกงาน',
+                    statusType: 'remaining',
                     consideration: '',
                     // Period from detail API: profile.period.startDate / endDate
                     startDate: detail?.profile?.period?.startDate,
                     endDate: detail?.profile?.period?.endDate,
                 };
             });
-
+            
             setStudents(mappedStudents);
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -111,7 +77,7 @@ const StudentsPage = () => {
 
     const filteredItems = useMemo(() => {
         let result = [...students];
-
+        
         // Filter by school
         if (selectedSchools.length > 0) {
             result = result.filter((item) => selectedSchools.includes(item.university));
@@ -120,8 +86,8 @@ const StudentsPage = () => {
         // Filter by search term
         if (searchTerm) {
             const searchLower = searchTerm.toLowerCase();
-            result = result.filter((item) =>
-                item.name.toLowerCase().includes(searchLower) ||
+            result = result.filter((item) => 
+                item.name.toLowerCase().includes(searchLower) || 
                 item.role.toLowerCase().includes(searchLower)
             );
         }
@@ -230,7 +196,7 @@ const StudentsPage = () => {
                         <div className="w-8 h-8 flex items-center justify-center bg-[#1AB3FF] text-white rounded-full shrink-0 shadow-sm">
                             <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>lab_profile</span>
                         </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลากิจ</span>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลา</span>
                     </div>
                 );
             case 'MISSING_OUT':
@@ -244,9 +210,9 @@ const StudentsPage = () => {
                 );
             case 'ABSENT':
                 return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF1EF] border border-[#FF8980] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#D92D20] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>close</span>
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#fef2f2] border border-[#fee2e2] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#ef4444] text-white rounded-full shrink-0 shadow-sm">
+                            <IconXCircle className="w-5 h-5" />
                         </div>
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ขาด</span>
                     </div>
@@ -263,43 +229,6 @@ const StudentsPage = () => {
             default:
                 return null;
         }
-    };
-
-    const handleExportExcel = () => {
-        const BOM = '\uFEFF';
-        let csvContent = BOM + 'ลำดับ,ชื่อนักศึกษา,สถานะวันนี้,มา,สาย,ลา,ขาด,ชั่วโมงทำงาน(ปัจจุบัน),ชั่วโมงทำงาน(ทั้งหมด)\n';
-
-        filteredItems.forEach((student, index) => {
-            const statusLabel = 
-                student.status === 'PRESENT' ? 'เข้างานปกติ' :
-                student.status === 'LEAVE' ? 'ลากิจ' :
-                student.status === 'MISSING_OUT' ? 'ไม่ลงเวลาออก' :
-                student.status === 'ABSENT' ? 'ขาด' :
-                student.status === 'LATE' ? 'สาย' : '';
-            
-            const row = [
-                index + 1,
-                `"${student.name}"`,
-                `"${statusLabel}"`,
-                student.attendance.present,
-                student.attendance.late,
-                student.attendance.leave,
-                student.attendance.absent,
-                student.progress.current,
-                student.progress.total
-            ];
-            csvContent += row.join(',') + '\n';
-        });
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        const dateStr = new Date().toISOString().split('T')[0];
-        link.setAttribute('href', url);
-        link.setAttribute('download', `students_export_${dateStr}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     };
 
 
@@ -350,32 +279,22 @@ const StudentsPage = () => {
                 </div>
             </div>
 
-            {isLoading ? (
-                <div className=" flex items-center justify-center py-10 ]  ">
-                    <span className="text-gray-500">กำลังโหลดข้อมูล...</span>
-                </div>
-            ) : records.length === 0 ? (
-                <div className=" flex flex-col items-center justify-center py-16 gap-4  ">
-                    <img src="/Notstudent.png" alt="ไม่มีนักศึกษา" className="w-[180px] h-auto opacity-80" />
-                    <div className="flex flex-col items-center gap-1.5 text-center">
-                        <h2 className="text-[20px] font-bold text-[#1F2937]">ยังไม่มีนักศึกษาในความดูแล</h2>
-                        <p className="text-[14px] text-[#9CA3AF] leading-relaxed">
-                            คุณยังไม่มีรายชื่อนักศึกษาในความดูแลในขณะนี้<br />
-                            ข้อมูลจะปรากฏขึ้นเมื่อคุณเริ่มเป็นพี่เลี้ยงให้กับนักศึกษา
-                        </p>
-                    </div>
-                </div>
-            ) : (
-                <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl">
-                    <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <table className="w-full border-collapse table-auto min-w-[1100px]">
-                            <thead className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
+            <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl">
+                <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <table className="w-full border-collapse table-auto min-w-[1100px]">
+                        <thead className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
+                            <tr>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">นักศึกษา</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถานะวันนี้</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ชั่วโมงทำงาน</th>
+                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ผลการพิจารณา</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#F2F4F7]">
+                            {isLoading ? (
                                 <tr>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">นักศึกษา</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถานะวันนี้</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ชั่วโมงทำงาน</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ผลการพิจารณา</th>
+                                    <td colSpan={5} className="py-10 text-center text-gray-500">กำลังโหลดข้อมูล...</td>
                                 </tr>
                             ) : records.length === 0 ? (
                                 <tr>
@@ -393,16 +312,16 @@ const StudentsPage = () => {
                                     </td>
                                 </tr>
                             ) : records.map((student) => (
-                                <tr
-                                    key={student.id}
+                                <tr 
+                                    key={student.id} 
                                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                                     onClick={() => router.push(`/mentor/students/${student.id}`)}
                                 >
                                     <td className="py-4 px-6 text-left">
                                         <div className="flex items-center gap-4">
-                                            <ImageWithAuth
-                                                userId={student.id}
-                                                className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                                            <ImageWithAuth 
+                                                userId={student.id} 
+                                                className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
                                                 fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
                                             />
                                             <div className="flex flex-col">
@@ -451,21 +370,22 @@ const StudentsPage = () => {
                                                 </span>
                                             </div>
                                             <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
-                                                <div
+                                                <div 
                                                     className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
                                                     style={{ width: `${student.progress.percent}%` }}
                                                 />
                                             </div>
                                             <div className="flex items-center gap-2 px-1 mt-1">
-                                                <span
-                                                    className="material-symbols-outlined select-none"
+                                                <span 
+                                                    className="material-symbols-outlined select-none" 
                                                     style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
                                                 >
                                                     schedule
                                                 </span>
-                                                <span className={`text-[12px] font-normal ${student.statusType === 'ended' ? 'text-[#D92D20]' :
-                                                        student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
-                                                    }`}>
+                                                <span className={`text-[12px] font-normal ${
+                                                    student.statusType === 'ended' ? 'text-[#D92D20]' : 
+                                                    student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
+                                                }`}>
                                                     {student.statusMessage}
                                                 </span>
                                             </div>
@@ -473,8 +393,9 @@ const StudentsPage = () => {
                                     </td>
                                     <td className="py-4 px-6 text-center">
                                         <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
-                                            <span className={`font-semibold text-[14px] whitespace-nowrap ${student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
-                                                }`}>
+                                            <span className={`font-semibold text-[14px] whitespace-nowrap ${
+                                                student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
+                                            }`}>
                                                 {student.consideration}
                                             </span>
                                         </div>
@@ -485,13 +406,9 @@ const StudentsPage = () => {
                     </table>
                 </div>
             </div>
-            )}
 
             <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 pb-10 gap-6 px-2">
-                <button 
-                    onClick={handleExportExcel}
-                    className="flex items-center  text-[#A80689] font-bold text-[14px] "
-                >
+                <button className="flex items-center  text-[#A80689] font-bold text-[14px] ">
                     <div className="w-10 h-10 flex items-center justify-center rounded-lg text-[#A80689]">
                         <span className="material-symbols-outlined select-none text-[24px]">ios_share</span>
                     </div>
@@ -506,13 +423,13 @@ const StudentsPage = () => {
                     >
                         <span className="material-symbols-outlined text-[22px]">chevron_left</span>
                     </button>
-
+                    
                     {Array.from({ length: Math.ceil(filteredItems.length / pageSize) }).map((_, index) => {
                         const pageNum = index + 1;
                         return (
-                            <button
+                            <button 
                                 key={pageNum}
-                                onClick={() => setPage(pageNum)}
+                                onClick={() => setPage(pageNum)} 
                                 className={`w-11 h-10 flex items-center justify-center text-[14px] font-medium transition-all border-r border-[#CECFD2] ${page === pageNum ? 'bg-[#E4E7EC] text-[#1F2937]' : 'text-[#6B7280] hover:bg-gray-50'}`}
                             >
                                 {pageNum}

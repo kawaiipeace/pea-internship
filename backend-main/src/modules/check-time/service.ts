@@ -12,6 +12,7 @@ import {
   not,
   or,
   type SQL,
+  sql,
 } from "drizzle-orm";
 import {
   ConflictError,
@@ -28,6 +29,7 @@ import {
   offsiteTasks,
   studentProfiles,
   timeCorrectionRequests,
+  users,
 } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import type * as checkSchema from "./model";
@@ -45,6 +47,28 @@ type StatusFilter =
   | "ABSENT"
   | "MISSING_OUT"
   | "";
+
+interface AttendanceRecord {
+  id: number;
+  workDate: string;
+  displayStatus: string;
+  checkInTime: string;
+  checkOutTime: string;
+  location: string;
+  workingHours: string;
+  isEdited: boolean;
+  correctionStatus: string | null;
+  correctionId: number | null;
+  leaveType: string | null;
+  leaveReason: string | null;
+  attachmentUrl: string | null;
+}
+
+interface GroupedAttendanceRecord extends AttendanceRecord {
+  ids: number[];
+  startDate: string;
+  endDate: string;
+}
 
 export class CheckTimeService {
   private getDistanceInMeters(
@@ -419,17 +443,16 @@ export class CheckTimeService {
     });
   }
 
-  private groupAttendanceRecords(records: any[]) {
+  private groupAttendanceRecords(records: AttendanceRecord[]) {
     if (records.length === 0) return [];
 
     // 1. Sort by workDate ascending to detect consecutive days
     const sorted = [...records].sort(
-      (a, b) =>
-        new Date(a.workDate).getTime() - new Date(b.workDate).getTime()
+      (a, b) => new Date(a.workDate).getTime() - new Date(b.workDate).getTime()
     );
 
-    const grouped: any[] = [];
-    let currentGroup: any = null;
+    const grouped: GroupedAttendanceRecord[] = [];
+    let currentGroup: GroupedAttendanceRecord | null = null;
 
     for (const record of sorted) {
       // We only group records with status 'LEAVE'
@@ -591,15 +614,6 @@ export class CheckTimeService {
 
     const listCondition = and(baseCondition, filterCondition);
 
-    let totalFilteredRecords = summary.total;
-    if (filterStatus === "PRESENT") totalFilteredRecords = summary.present;
-    else if (filterStatus === "LATE") totalFilteredRecords = summary.late;
-    else if (filterStatus === "LEAVE") totalFilteredRecords = summary.leave;
-    else if (filterStatus === "ABSENT") totalFilteredRecords = summary.absent;
-    else if (filterStatus === "MISSING_OUT")
-      totalFilteredRecords = summary.missingOut;
-
-    const totalPages = Math.ceil(totalFilteredRecords / limit);
     const offset = (page - 1) * limit;
 
     const historyData = await db.query.attendanceLogs.findMany({
@@ -906,5 +920,257 @@ export class CheckTimeService {
       console.error("Error fetching file from MinIO:", error);
       throw new NotFoundError("ไม่พบไฟล์ที่ต้องการ หรือไฟล์ถูกลบไปแล้ว");
     }
+  }
+  async getMentorCorrections(
+    mentorUserId: string,
+    query: checkSchema.GetMentorCorrectionsQueryType
+  ) {
+    const { page = 1, limit = 10, status, viewType } = query;
+
+    const mentor = await db.query.users.findFirst({
+      where: eq(users.id, mentorUserId),
+      with: { staffProfiles: true },
+    });
+
+    if (!mentor || !mentor.staffProfiles) {
+      throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
+    }
+
+    const appConditions = [eq(applicationStatuses.isActive, true)];
+
+    if (viewType === "MINE" && mentor.departmentId) {
+      appConditions.push(
+        eq(applicationStatuses.departmentId, mentor.departmentId)
+      );
+    }
+
+    const applications = await db.query.applicationStatuses.findMany({
+      where: and(...appConditions),
+    });
+
+    const studentUserIds = applications.map((a) => a.userId);
+
+    if (studentUserIds.length === 0) {
+      return {
+        data: [],
+        meta: { page, limit, totalPages: 0, totalRecords: 0 },
+      };
+    }
+
+    const profiles = await db.query.studentProfiles.findMany({
+      where: inArray(studentProfiles.userId, studentUserIds),
+      columns: { id: true },
+    });
+    const profileIds = profiles.map((p) => p.id);
+
+    if (profileIds.length === 0) {
+      return {
+        data: [],
+        meta: { page, limit, totalPages: 0, totalRecords: 0 },
+      };
+    }
+
+    const correctionConditions = [
+      inArray(timeCorrectionRequests.studentProfileId, profileIds),
+    ];
+
+    if (status) {
+      correctionConditions.push(eq(timeCorrectionRequests.status, status));
+    }
+
+    const finalCondition = and(...correctionConditions);
+
+    const [totalCountResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(timeCorrectionRequests)
+      .where(finalCondition);
+
+    const totalFilteredRecords = Number(totalCountResult.count);
+    const totalPages = Math.ceil(totalFilteredRecords / limit);
+    const offset = (page - 1) * limit;
+
+    const requestsData = await db
+      .select({
+        id: timeCorrectionRequests.id,
+        createdAt: timeCorrectionRequests.createdAt,
+        originalCheckIn: timeCorrectionRequests.originalCheckIn,
+        originalCheckOut: timeCorrectionRequests.originalCheckOut,
+        requestedCheckIn: timeCorrectionRequests.requestedCheckIn,
+        requestedCheckOut: timeCorrectionRequests.requestedCheckOut,
+        calculatedHours: timeCorrectionRequests.calculatedHours,
+        reason: timeCorrectionRequests.reason,
+        attachmentUrl: timeCorrectionRequests.attachmentUrl,
+        status: timeCorrectionRequests.status,
+        workDate: attendanceLogs.workDate,
+        fname: users.fname,
+        lname: users.lname,
+        image: studentProfiles.image,
+      })
+      .from(timeCorrectionRequests)
+      .innerJoin(
+        attendanceLogs,
+        eq(attendanceLogs.id, timeCorrectionRequests.attendanceLogId)
+      )
+      .innerJoin(
+        studentProfiles,
+        eq(studentProfiles.id, timeCorrectionRequests.studentProfileId)
+      )
+      .innerJoin(users, eq(users.id, studentProfiles.userId))
+      .where(finalCondition)
+      .orderBy(desc(timeCorrectionRequests.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const formatTime = (timeStr: Date | string | null) => {
+      if (!timeStr) return "ไม่ลงเวลา";
+      return new Date(timeStr).toLocaleTimeString("en-GB", {
+        timeZone: "Asia/Bangkok",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const records = requestsData.map((record) => ({
+      id: record.id,
+      studentName: `${record.fname || ""} ${record.lname || ""}`.trim(),
+      profileImg: record.image || null,
+      createdAt: record.createdAt,
+      workDate: record.workDate,
+      originalTime: `${formatTime(record.originalCheckIn)} - ${formatTime(record.originalCheckOut)}`,
+      requestedTime: `${formatTime(record.requestedCheckIn)} - ${formatTime(record.requestedCheckOut)}`,
+      hoursWorked: record.calculatedHours,
+      reason: record.reason,
+      attachmentUrl: record.attachmentUrl,
+      status: record.status,
+    }));
+
+    return {
+      data: records,
+      meta: {
+        page,
+        limit,
+        totalPages,
+        totalRecords: totalFilteredRecords,
+      },
+    };
+  }
+
+  async approveCorrection(approverUserId: string, requestId: number) {
+    return await db.transaction(async (tx) => {
+      const request = await tx.query.timeCorrectionRequests.findFirst({
+        where: eq(timeCorrectionRequests.id, requestId),
+        with: { studentProfile: true },
+      });
+
+      if (!request) throw new NotFoundError("ไม่พบคำขอแก้ไขเวลานี้");
+      if (request.status !== "PENDING") {
+        throw new ConflictError("คำขอนี้ถูกดำเนินการไปแล้ว");
+      }
+
+      await tx
+        .update(timeCorrectionRequests)
+        .set({
+          status: "APPROVED",
+          approvedBy: approverUserId,
+          updatedAt: new Date(),
+        })
+        .where(eq(timeCorrectionRequests.id, requestId));
+
+      const [newCheckIn] = await tx
+        .insert(checkTimes)
+        .values({
+          userId: request.studentProfile.userId,
+          time: request.requestedCheckIn,
+          typeCheck: "IN",
+          isOnsite: true,
+          location: "แก้ไขเวลาโดยพี่เลี้ยง",
+          note: "System: แก้ไขเวลา",
+        })
+        .returning();
+
+      const [newCheckOut] = await tx
+        .insert(checkTimes)
+        .values({
+          userId: request.studentProfile.userId,
+          time: request.requestedCheckOut,
+          typeCheck: "OUT",
+          isOnsite: true,
+          location: "แก้ไขเวลาโดยพี่เลี้ยง",
+          note: "System: แก้ไขเวลา",
+        })
+        .returning();
+
+      const bkkTimeStr = new Date(request.requestedCheckIn).toLocaleString(
+        "en-US",
+        { timeZone: "Asia/Bangkok" }
+      );
+      const inTime = new Date(bkkTimeStr);
+
+      const workStartTime = new Date(bkkTimeStr);
+      workStartTime.setHours(8, 30, 0, 0);
+
+      const lateCutoffTime = new Date(bkkTimeStr);
+      lateCutoffTime.setHours(8, 45, 0, 0);
+
+      let statusToUpdate: "PRESENT" | "LATE" = "PRESENT";
+      let newLateMinutes = 0;
+
+      if (inTime > lateCutoffTime) {
+        statusToUpdate = "LATE";
+        const diffMs = inTime.getTime() - workStartTime.getTime();
+        newLateMinutes = Math.floor(diffMs / 60000);
+      }
+
+      await tx
+        .update(attendanceLogs)
+        .set({
+          checkInId: newCheckIn.id,
+          checkOutId: newCheckOut.id,
+          actualHoursWorked: request.calculatedHours,
+          dailyStatus: statusToUpdate,
+          lateMinutes: newLateMinutes,
+          isVerified: true,
+        })
+        .where(eq(attendanceLogs.id, request.attendanceLogId));
+
+      return {
+        success: true,
+        message: "อนุมัติคำขอแก้ไขเวลาเรียบร้อยแล้ว",
+        newStatus: statusToUpdate,
+        lateMinutes: newLateMinutes,
+      };
+    });
+  }
+
+  async rejectCorrection(
+    approverUserId: string,
+    requestId: number,
+    reason: string
+  ) {
+    return await db.transaction(async (tx) => {
+      const request = await tx.query.timeCorrectionRequests.findFirst({
+        where: eq(timeCorrectionRequests.id, requestId),
+      });
+
+      if (!request) throw new NotFoundError("ไม่พบคำขอแก้ไขเวลานี้");
+      if (request.status !== "PENDING") {
+        throw new ConflictError("คำขอนี้ถูกดำเนินการไปแล้ว");
+      }
+
+      await tx
+        .update(timeCorrectionRequests)
+        .set({
+          status: "REJECTED",
+          approvedBy: approverUserId,
+          approverNote: reason,
+          updatedAt: new Date(),
+        })
+        .where(eq(timeCorrectionRequests.id, requestId));
+
+      return {
+        success: true,
+        message: "ปฏิเสธคำขอแก้ไขเวลาเรียบร้อยแล้ว",
+      };
+    });
   }
 }

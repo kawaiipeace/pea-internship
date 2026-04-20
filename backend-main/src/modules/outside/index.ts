@@ -22,7 +22,7 @@ export const offsiteTasks = new Elysia({
       return result;
     },
     {
-      role: [ROLE_IDS.MENTOR],
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
       body: offsiteModel.CreateOffsiteTaskSchema,
       detail: {
         summary: "มอบหมายงานนอกสถานที่",
@@ -38,7 +38,7 @@ export const offsiteTasks = new Elysia({
       return await offsiteTaskService.updateTask(taskId, user.id, body);
     },
     {
-      role: [ROLE_IDS.MENTOR],
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
       params: t.Object({ id: t.Numeric() }),
       body: offsiteModel.UpdateOffsiteTaskSchema,
       detail: {
@@ -56,7 +56,7 @@ export const offsiteTasks = new Elysia({
       return await offsiteTaskService.deleteTask(taskId, user.id);
     },
     {
-      role: [ROLE_IDS.MENTOR],
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
       params: t.Object({ id: t.Numeric() }),
       detail: {
         summary: "ลบงานนอกสถานที่",
@@ -72,7 +72,7 @@ export const offsiteTasks = new Elysia({
       return await offsiteTaskService.getTasksForDept(user.id, query);
     },
     {
-      role: [ROLE_IDS.MENTOR],
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
       query: offsiteModel.GetOffsiteTasksQuerySchema,
       detail: {
         summary: "ดูประวัติการมอบหมายงาน (มุมมองของ Mentor/แผนก)",
@@ -90,7 +90,7 @@ export const offsiteTasks = new Elysia({
       return await offsiteTaskService.getTaskById(taskId, user.id, user.roleId);
     },
     {
-      role: [ROLE_IDS.MENTOR, ROLE_IDS.STUDENT],
+      role: [ROLE_IDS.ADMIN, ROLE_IDS.MENTOR, ROLE_IDS.STUDENT],
       params: t.Object({ id: t.Numeric() }),
       detail: {
         summary: "ดูรายละเอียดงานนอกสถานที่ (ราย ID)",
@@ -107,7 +107,7 @@ export const offsiteTasks = new Elysia({
       return await offsiteTaskService.getTasksForStudent(user.id);
     },
     {
-      role: [ROLE_IDS.STUDENT],
+      role: [ROLE_IDS.STUDENT, ROLE_IDS.ADMIN],
       detail: {
         summary: "ดูตารางงานนอกสถานที่ (มุมมอง Student)",
       },
