@@ -335,7 +335,7 @@ const RemoteWorkPage = () => {
                         </div>
                     ) : (tasks || []).length > 0 ? (
                         (tasks || []).map((item) => (
-                            <div key={item.id} className="w-full h-[120px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-[15px] p-4 flex gap-4 items-center shadow-sm hover:shadow-md transition-shadow relative">
+                            <div key={item.id} className="w-full min-h-[120px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-[15px] p-4 flex gap-4 items-center shadow-sm hover:shadow-md transition-shadow relative">
                                 {/* Date Badge */}
                                 <div className="w-[80px] h-[80px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-xl flex flex-col items-center justify-center shrink-0">
                                     <span className="text-[16px] font-bold text-black dark:text-white leading-tight text-center px-2">
@@ -348,10 +348,7 @@ const RemoteWorkPage = () => {
 
                                 {/* Card Content */}
                                 <div className="flex-1 flex flex-col justify-between py-1">
-                                    {/* Assign Date (Desktop Position) */}
-                                    <div className="absolute top-3 right-5 text-[12px] text-[#344054] dark:text-gray-400">
-                                        วันที่ทำการมอบหมาย : {formatFullThaiDate(item.createdAt)}
-                                    </div>
+                                    {/* Move date to below student section */}
 
                                     <div className="space-y-1 mt-1">
                                         <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
@@ -379,11 +376,14 @@ const RemoteWorkPage = () => {
                                                 )}
                                             </div>
                                         </div>
+                                        <div className="text-[12px] text-[#344054] dark:text-gray-400 mt-0.5">
+                                            วันที่ทำการมอบหมาย : {formatFullThaiDate(item.createdAt)}
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Actions Right Side */}
-                                <div className="flex items-center gap-0 ml-4">
+                                {/* Actions Right Side - Aligned with the first line (Location) */}
+                                <div className="flex items-center gap-0 ml-4 self-start mt-1">
                                     {item.isOwner && (
                                         <>
                                             <button 
@@ -402,7 +402,7 @@ const RemoteWorkPage = () => {
                                     )}
                                     <button 
                                         onClick={() => router.push(`/mentor/remote-work/${item.id}`)}
-                                        className="ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-4 py-2 rounded-[5px] text-[12px]  hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                        className="ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-4 py-2 rounded-[5px] text-[12px]  hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hover:text-[#A80689]"
                                     >
                                         ดูรายละเอียด
                                     </button>
