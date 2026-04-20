@@ -351,13 +351,24 @@ const StudentDetailPage = () => {
                                                 <button 
                                                     type="button"
                                                     onClick={() => handleViewFile(row.evidenceUrl)}
-                                                    className="inline-flex items-center gap-2 px-1.5 py-1.5 bg-[#F3F4F6] border border-[#D1D5DB] rounded-xl hover:bg-[#E5E7EB] transition-colors shadow-sm cursor-pointer"
+                                                    className="inline-flex items-center gap-2 px-1.5 py-1.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl hover:bg-[#E5E7EB] transition-colors cursor-pointer"
                                                 >
-                                                    <div className="w-8 h-8 rounded-lg bg-[#111827] flex items-center justify-center shrink-0">
-                                                        <span className="material-symbols-outlined text-white text-[18px]">
-                                                            {row.evidenceUrl.toLowerCase().endsWith('.pdf') ? 'picture_as_pdf' : 'image'}
-                                                        </span>
-                                                    </div>
+                                                    {row.evidenceUrl.toLowerCase().endsWith('.pdf') ? (
+                                                        <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                                                            <span className="material-symbols-outlined text-[#111827] text-[24px]">
+                                                                picture_as_pdf
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-lg bg-[#ffffff] flex items-center justify-center shrink-0">
+                                                            <span 
+                                                                className="material-symbols-outlined text-[#000000] text-[18px]"
+                                                                style={{ fontVariationSettings: "'FILL' 1" }}
+                                                            >
+                                                                image
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <span className="text-[15px] font-medium text-[#111827] pr-2">
                                                         หลักฐาน.{row.evidenceUrl.split('.').pop()?.substring(0, 4)}
                                                     </span>

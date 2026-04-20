@@ -50,6 +50,30 @@ const StudentsPage = () => {
                 const total = Number(s.workHours?.goal || 560);
                 const percent = total > 0 ? (current / total) * 100 : 0;
 
+                const endDateRaw = detail?.profile?.period?.endDate;
+                let statusMessage = 'กำลังฝึกงาน';
+                let statusType = 'remaining';
+
+                if (endDateRaw) {
+                    const endDate = new Date(endDateRaw);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    endDate.setHours(0, 0, 0, 0);
+
+                    const diffTime = endDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays > 0) {
+                        statusMessage = `เหลืออีก ${diffDays} วันก่อนสิ้นสุดฝึกงาน`;
+                    } else if (diffDays === 0) {
+                        statusMessage = 'ฝึกงานวันสุดท้าย';
+                        statusType = 'last-day';
+                    } else {
+                        statusMessage = 'สิ้นสุดการฝึกงาน';
+                        statusType = 'ended';
+                    }
+                }
+
                 return {
                     id: s.id,
                     name: s.fullName || 'ไม่ระบุชื่อ',
@@ -64,8 +88,8 @@ const StudentsPage = () => {
                         absent: s.statistics?.absent || 0 
                     },
                     progress: { current, total, percent: percent > 100 ? 100 : percent },
-                    statusMessage: 'กำลังฝึกงาน',
-                    statusType: 'remaining',
+                    statusMessage,
+                    statusType,
                     consideration: '',
                     // Period from detail API: profile.period.startDate / endDate
                     startDate: detail?.profile?.period?.startDate,
@@ -241,6 +265,43 @@ const StudentsPage = () => {
         }
     };
 
+    const handleExportExcel = () => {
+        const BOM = '\uFEFF';
+        let csvContent = BOM + 'ลำดับ,ชื่อนักศึกษา,สถานะวันนี้,มา,สาย,ลา,ขาด,ชั่วโมงทำงาน(ปัจจุบัน),ชั่วโมงทำงาน(ทั้งหมด)\n';
+
+        filteredItems.forEach((student, index) => {
+            const statusLabel = 
+                student.status === 'PRESENT' ? 'เข้างานปกติ' :
+                student.status === 'LEAVE' ? 'ลากิจ' :
+                student.status === 'MISSING_OUT' ? 'ไม่ลงเวลาออก' :
+                student.status === 'ABSENT' ? 'ขาด' :
+                student.status === 'LATE' ? 'สาย' : '';
+            
+            const row = [
+                index + 1,
+                `"${student.name}"`,
+                `"${statusLabel}"`,
+                student.attendance.present,
+                student.attendance.late,
+                student.attendance.leave,
+                student.attendance.absent,
+                student.progress.current,
+                student.progress.total
+            ];
+            csvContent += row.join(',') + '\n';
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.setAttribute('href', url);
+        link.setAttribute('download', `students_export_${dateStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
 
     return (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
@@ -289,39 +350,36 @@ const StudentsPage = () => {
                 </div>
             </div>
 
-            <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl">
-                <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <table className="w-full border-collapse table-auto min-w-[1100px]">
-                        <thead className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
-                            <tr>
-                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">นักศึกษา</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถานะวันนี้</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ชั่วโมงทำงาน</th>
-                                <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ผลการพิจารณา</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#F2F4F7]">
-                            {isLoading ? (
+            {isLoading ? (
+                <div className=" flex items-center justify-center py-10 ]  ">
+                    <span className="text-gray-500">กำลังโหลดข้อมูล...</span>
+                </div>
+            ) : records.length === 0 ? (
+                <div className=" flex flex-col items-center justify-center py-16 gap-4  ">
+                    <img src="/Notstudent.png" alt="ไม่มีนักศึกษา" className="w-[180px] h-auto opacity-80" />
+                    <div className="flex flex-col items-center gap-1.5 text-center">
+                        <h2 className="text-[20px] font-bold text-[#1F2937]">ยังไม่มีนักศึกษาในความดูแล</h2>
+                        <p className="text-[14px] text-[#9CA3AF] leading-relaxed">
+                            คุณยังไม่มีรายชื่อนักศึกษาในความดูแลในขณะนี้<br />
+                            ข้อมูลจะปรากฏขึ้นเมื่อคุณเริ่มเป็นพี่เลี้ยงให้กับนักศึกษา
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl">
+                    <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <table className="w-full border-collapse table-auto min-w-[1100px]">
+                            <thead className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
                                 <tr>
-                                    <td colSpan={5} className="py-10 text-center text-gray-500">กำลังโหลดข้อมูล...</td>
+                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">นักศึกษา</th>
+                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถานะวันนี้</th>
+                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
+                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ชั่วโมงทำงาน</th>
+                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ผลการพิจารณา</th>
                                 </tr>
-                            ) : records.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="py-16 text-center">
-                                        <div className="flex flex-col items-center justify-center gap-4">
-                                            <img src="/Notstudent.png" alt="ไม่มีนักศึกษา" className="w-[180px] h-auto opacity-80" />
-                                            <div className="flex flex-col items-center gap-1.5">
-                                                <h2 className="text-[20px] font-bold text-[#1F2937]">ยังไม่มีนักศึกษาในความดูแล</h2>
-                                                <p className="text-[14px] text-[#9CA3AF] leading-relaxed">
-                                                    คุณยังไม่มีรายชื่อนักศึกษาในความดูแลในขณะนี้<br />
-                                                    ข้อมูลจะปรากฏขึ้นเมื่อคุณเริ่มเป็นพี่เลี้ยงให้กับนักศึกษา
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : records.map((student) => (
+                            </thead>
+                            <tbody className="divide-y divide-[#F2F4F7]">
+                                {records.map((student) => (
                                 <tr 
                                     key={student.id} 
                                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
@@ -393,8 +451,7 @@ const StudentsPage = () => {
                                                     schedule
                                                 </span>
                                                 <span className={`text-[12px] font-normal ${
-                                                    student.statusType === 'ended' ? 'text-[#D92D20]' : 
-                                                    student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
+                                                    (student.statusType === 'ended' || student.statusType === 'last-day') ? 'text-[#D92D20]' : 'text-[#6b7280]'
                                                 }`}>
                                                     {student.statusMessage}
                                                 </span>
@@ -416,9 +473,13 @@ const StudentsPage = () => {
                     </table>
                 </div>
             </div>
+            )}
 
             <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 pb-10 gap-6 px-2">
-                <button className="flex items-center  text-[#A80689] font-bold text-[14px] ">
+                <button 
+                    onClick={handleExportExcel}
+                    className="flex items-center  text-[#A80689] font-bold text-[14px] "
+                >
                     <div className="w-10 h-10 flex items-center justify-center rounded-lg text-[#A80689]">
                         <span className="material-symbols-outlined select-none text-[24px]">ios_share</span>
                     </div>
