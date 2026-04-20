@@ -206,7 +206,7 @@ const StudentsPage = () => {
                         <div className="w-8 h-8 flex items-center justify-center bg-[#1AB3FF] text-white rounded-full shrink-0 shadow-sm">
                             <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>lab_profile</span>
                         </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลา</span>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลากิจ</span>
                     </div>
                 );
             case 'MISSING_OUT':

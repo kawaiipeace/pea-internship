@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
+import Swal from 'sweetalert2';
 
 const StudentDetailPage = () => {
     const router = useRouter();
@@ -23,14 +24,84 @@ const StudentDetailPage = () => {
             });
             const data = response.data;
             setStudentData(data);
-            setAttendanceRecords(data.attendanceTable.records || []);
+            
+            let finalRecords = data.attendanceTable.records || [];
+            
+            try {
+                const leaveRes = await axiosInstance.get('/leave/mentor/requests', {
+                    params: { viewType: 'ALL', limit: 100, status: 'APPROVED' }
+                });
+                if (leaveRes.data && leaveRes.data.data) {
+                    const leaveRequests = leaveRes.data.data.filter((req: any) => req.userId === data.profile.id);
+                    
+                    finalRecords = finalRecords.map((record: any) => {
+                        if (record.status === 'LEAVE') {
+                            const workDateObj = new Date(record.workDate);
+                            workDateObj.setHours(0,0,0,0);
+                            
+                            const matchingLeave = leaveRequests.find((lr: any) => {
+                                const start = new Date(lr.startDate);
+                                start.setHours(0,0,0,0);
+                                const end = new Date(lr.endDate);
+                                end.setHours(0,0,0,0);
+                                return workDateObj.getTime() >= start.getTime() && workDateObj.getTime() <= end.getTime();
+                            });
+
+                            if (matchingLeave) {
+                                return {
+                                    ...record,
+                                    leaveType: matchingLeave.leaveType,
+                                    evidenceUrl: matchingLeave.attachmentUrl || record.evidenceUrl
+                                };
+                            }
+                        }
+                        return record;
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch and merge leaves:", err);
+            }
+
+            setAttendanceRecords(finalRecords);
             setPagination(data.attendanceTable.pagination);
         } catch (error) {
             console.error('Error fetching student detail:', error);
+            setAttendanceRecords([]);
         } finally {
             setIsLoading(false);
         }
     }, [studentId, page]);
+
+    const handleViewFile = async (evidenceUrl: string) => {
+        if (!evidenceUrl) return;
+        
+        try {
+            Swal.fire({
+                title: 'กำลังโหลดไฟล์...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const key = evidenceUrl.startsWith('/') ? evidenceUrl.substring(1) : evidenceUrl;
+            
+            const response = await axiosInstance.get(`/files/${encodeURIComponent(key)}`, {
+                responseType: 'blob'
+            });
+
+            if (!response.data || response.data.size === 0) {
+                throw new Error('ไม่พบข้อมูลไฟล์');
+            }
+
+            const blobUrl = URL.createObjectURL(response.data);
+            window.open(blobUrl, '_blank');
+            Swal.close();
+            
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        } catch (error) {
+            console.error('Error fetching file:', error);
+            Swal.fire('Error', 'ไม่สามารถเปิดไฟล์ได้', 'error');
+        }
+    };
 
     useEffect(() => {
         if (studentId) {
@@ -38,7 +109,28 @@ const StudentDetailPage = () => {
         }
     }, [fetchDetail]);
 
-    const renderStatusBadge = (status: string) => {
+    const renderStatusBadge = (status: string, note: string = '', leaveType?: string) => {
+        if (status === 'LEAVE') {
+            if (leaveType === 'SICK' || note.includes('ป่วย') || note.includes('อาหารเป็นพิษ') || note.includes('แพทย์') || note.includes('โรงพยาบาล')) {
+                return (
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FDF2F8] border border-[#FBCFE8] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#EC4899] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>health_cross</span>
+                        </div>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลาป่วย</span>
+                    </div>
+                );
+            }
+            return (
+                <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EEEFFF] border border-[#1A3CFF]/50 w-max">
+                    <div className="w-8 h-8 flex items-center justify-center bg-[#1A3CFF] text-white rounded-full shrink-0 shadow-sm">
+                        <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>business_center</span>
+                    </div>
+                    <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลากิจ</span>
+                </div>
+            );
+        }
+
         switch (status) {
             case 'PRESENT':
                 return (
@@ -56,15 +148,6 @@ const StudentDetailPage = () => {
                             <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>schedule</span>
                         </div>
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">สาย</span>
-                    </div>
-                );
-            case 'LEAVE':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EEEFFF] border border-[#1A3CFF]/50 w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#1A3CFF] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>business_center</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลา</span>
                     </div>
                 );
             case 'MISSING_OUT':
@@ -238,29 +321,52 @@ const StudentDetailPage = () => {
 
             <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl">
                 <div className="w-full overflow-x-auto">
-                    <table className="w-full border-collapse table-auto min-w-[1000px]">
+                    <table className="w-full border-collapse table-auto min-w-[1100px]">
                         <thead className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
                             <tr className="text-[#111827] font-normal text-[14px]">
                                 <th className="py-4 px-6 text-center font-normal">วันที่</th>
                                 <th className="py-4 px-6 text-center font-normal">สถานะ</th>
                                 <th className="py-4 px-6 text-center font-normal">เวลาเข้า - ออกงาน</th>
                                 <th className="py-4 px-6 text-center font-normal">ชั่วโมงทำงาน</th>
+                                <th className="py-4 px-6 text-center font-normal">หลักฐาน</th>
                                 <th className="py-4 px-6 text-center font-normal">หมายเหตุ</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#F2F4F7]">
                             {attendanceRecords.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-10 text-center text-gray-500">ไม่พบประวัติการลงเวลา</td>
+                                    <td colSpan={6} className="py-10 text-center text-gray-500">ไม่พบประวัติการลงเวลา</td>
                                 </tr>
                             ) : attendanceRecords.map((row, i) => (
                                 <tr key={row.id || i}>
                                     <td className="py-4 px-6 text-center text-[16px] text-[#475467]">{formatDate(row.workDate)}</td>
-                                    <td className="py-4 px-6 flex justify-center">{renderStatusBadge(row.status)}</td>
+                                    <td className="py-4 px-6 flex justify-center">{renderStatusBadge(row.status, row.note, row.leaveType)}</td>
                                     <td className="py-4 px-6 text-center text-[16px] text-[#475467]">
                                         {row.status === 'ABSENT' || row.status === 'LEAVE' ? '-' : `${row.checkInTime} - ${row.checkOutTime}`}
                                     </td>
                                     <td className="py-4 px-6 text-center text-[16px] text-[#475467] font-bold">{row.hours} ชม.</td>
+                                    <td className="py-4 px-6">
+                                        <div className="flex justify-center">
+                                            {row.evidenceUrl ? (
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleViewFile(row.evidenceUrl)}
+                                                    className="inline-flex items-center gap-2 px-1.5 py-1.5 bg-[#F3F4F6] border border-[#D1D5DB] rounded-xl hover:bg-[#E5E7EB] transition-colors shadow-sm cursor-pointer"
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-[#111827] flex items-center justify-center shrink-0">
+                                                        <span className="material-symbols-outlined text-white text-[18px]">
+                                                            {row.evidenceUrl.toLowerCase().endsWith('.pdf') ? 'picture_as_pdf' : 'image'}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[15px] font-medium text-[#111827] pr-2">
+                                                        หลักฐาน.{row.evidenceUrl.split('.').pop()?.substring(0, 4)}
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <span className="text-[#98A2B3] text-[16px]">-</span>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="py-4 px-6 text-center">
                                         <span className="text-[16px] font-medium text-[#000000]">
                                             {row.note || '-'}
@@ -279,7 +385,7 @@ const StudentDetailPage = () => {
                     ส่งออกตาราง
                 </button>
 
-                {pagination && pagination.totalPages > 1 && (
+                {pagination && pagination.totalPages > 0 && (
                     <div className="flex items-center border border-[#CECFD2] rounded-full overflow-hidden bg-white shadow-sm">
                         <button
                             onClick={() => setPage(Math.max(1, page - 1))}
