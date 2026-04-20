@@ -33,7 +33,7 @@ function OwnerLoginContent() {
             </svg>
           </div>
           <h2 className="text-lg font-semibold text-gray-800 mb-2">เซสชันหมดอายุ</h2>
-          <p className="text-gray-500 mb-4">ไม่มีการใช้งานเป็นเวลานาน กำลังเปลี่ยนเส้นทางไปยังหน้าเข้าสู่ระบบ...</p>
+          <p className="text-gray-500 mb-4 whitespace-nowrap">เซสชันหมดอายุเนื่องจากไม่มีการใช้งาน กรุณาเข้าสู่ระบบอีกครั้ง</p>
         </div>
       </div>
     );
