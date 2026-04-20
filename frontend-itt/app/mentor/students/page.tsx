@@ -377,22 +377,9 @@ const StudentsPage = () => {
                                     <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ชั่วโมงทำงาน</th>
                                     <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ผลการพิจารณา</th>
                                 </tr>
-                            ) : records.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="py-16 text-center">
-                                        <div className="flex flex-col items-center justify-center gap-4">
-                                            <img src="/Notstudent.png" alt="ไม่มีนักศึกษา" className="w-[180px] h-auto opacity-80" />
-                                            <div className="flex flex-col items-center gap-1.5">
-                                                <h2 className="text-[20px] font-bold text-[#1F2937]">ยังไม่มีนักศึกษาในความดูแล</h2>
-                                                <p className="text-[14px] text-[#9CA3AF] leading-relaxed">
-                                                    คุณยังไม่มีรายชื่อนักศึกษาในความดูแลในขณะนี้<br />
-                                                    ข้อมูลจะปรากฏขึ้นเมื่อคุณเริ่มเป็นพี่เลี้ยงให้กับนักศึกษา
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : records.map((student) => (
+                            </thead>
+                            <tbody className="divide-y divide-[#F2F4F7]">
+                                {records.map((student) => (
                                 <tr
                                     key={student.id}
                                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
