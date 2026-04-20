@@ -5,7 +5,12 @@ import {
   NotFoundError,
 } from "@/common/exceptions";
 import { db } from "@/db";
-import { offsiteTaskStudents, offsiteTasks, users } from "@/db/schema";
+import {
+  applicationStatuses,
+  offsiteTaskStudents,
+  offsiteTasks,
+  users,
+} from "@/db/schema";
 import type * as offsiteModel from "./model";
 
 export class OffsiteTaskService {
@@ -59,6 +64,20 @@ export class OffsiteTaskService {
   }
 
   async getTasksForStudent(studentId: string) {
+    const studentApp = await db.query.applicationStatuses.findFirst({
+      where: and(
+        eq(applicationStatuses.userId, studentId),
+        eq(applicationStatuses.isActive, true)
+      ),
+      with: {
+        internshipPosition: {
+          columns: { name: true },
+        },
+      },
+    });
+
+    const positionName = studentApp?.internshipPosition?.name || "ไม่ระบุตำแหน่ง";
+
     const assignedTasks = await db.query.offsiteTaskStudents.findMany({
       where: eq(offsiteTaskStudents.studentId, studentId),
       with: {
@@ -79,6 +98,7 @@ export class OffsiteTaskService {
         locationName: st.task.locationName,
         taskDetail: st.task.taskDetail,
         note: st.task.note,
+        positionName: positionName,
         assignedBy: `${st.task.assignedByUser.fname} ${st.task.assignedByUser.lname}`,
       }))
       .sort(
@@ -86,6 +106,7 @@ export class OffsiteTaskService {
           new Date(b.workDate).getTime() - new Date(a.workDate).getTime()
       );
   }
+
   async updateTask(
     taskId: number,
     mentorId: string,
@@ -191,9 +212,9 @@ export class OffsiteTaskService {
         .select({ id: users.id })
         .from(users)
         .where(eq(users.departmentId, currentUser.departmentId));
-      
-      const mentorIds = deptMentors.map(m => m.id);
-      
+
+      const mentorIds = deptMentors.map((m) => m.id);
+
       if (mentorIds.length > 0) {
         conditions.push(sql`${offsiteTasks.assignedBy} IN ${mentorIds}`);
       } else {
@@ -306,10 +327,24 @@ export class OffsiteTaskService {
         students: {
           with: {
             student: {
-              columns: { id: true, fname: true, lname: true, displayUsername: true },
+              columns: {
+                id: true,
+                fname: true,
+                lname: true,
+                displayUsername: true,
+              },
               with: {
                 studentProfiles: {
                   columns: { image: true, faculty: true, major: true },
+                },
+                // ดึงข้อมูลการสมัครงานเพื่อเอาชื่อตำแหน่ง
+                applicationStatuses: {
+                  where: eq(applicationStatuses.isActive, true),
+                  with: {
+                    internshipPosition: {
+                      columns: { name: true },
+                    },
+                  },
                 },
               },
             },
@@ -323,9 +358,10 @@ export class OffsiteTaskService {
     }
 
     const isMentor = roleId === 2;
+    const isAdmin = roleId === 1;
     const isStudent = roleId === 3;
 
-    if (isMentor) {
+    if (isMentor || isAdmin) {
       if (task.assignedByUser.departmentId !== currentUser.departmentId) {
         throw new BadRequestError("คุณไม่มีสิทธิ์เข้าถึงงานของแผนกอื่น");
       }
@@ -349,15 +385,23 @@ export class OffsiteTaskService {
       note: task.note,
       isOwner: task.assignedByUser.id === userId,
       assignedBy: `${task.assignedByUser.fname} ${task.assignedByUser.lname}`,
-      assignedByEmployeeId: task.assignedByUser.staffProfiles[0]?.employeeId || null,
-      students: task.students.map((s) => ({
-        id: s.student.id,
-        name: `${s.student.fname} ${s.student.lname}`,
-        image: s.student.studentProfiles[0]?.image || null,
-        nickname: s.student.displayUsername || "",
-        faculty: s.student.studentProfiles[0]?.faculty || "",
-        major: s.student.studentProfiles[0]?.major || "",
-      })),
+      assignedByEmployeeId:
+        task.assignedByUser.staffProfiles[0]?.employeeId || null,
+      students: task.students.map((s) => {
+        const activeApp = s.student.applicationStatuses?.[0];
+        const positionName =
+          activeApp?.internshipPosition?.name || "ไม่ระบุตำแหน่ง";
+
+        return {
+          id: s.student.id,
+          name: `${s.student.fname} ${s.student.lname}`,
+          image: s.student.studentProfiles[0]?.image || null,
+          nickname: s.student.displayUsername || "",
+          faculty: s.student.studentProfiles[0]?.faculty || "",
+          major: s.student.studentProfiles[0]?.major || "",
+          positionName: positionName,
+        };
+      }),
     };
   }
 }

@@ -52,13 +52,11 @@ export class MentorService {
     const conditions: (SQL | undefined)[] = [
       eq(applicationStatuses.isActive, true),
     ];
-    if (viewType === "ALL") {
-    } else {
-      if (mentor.departmentId) {
-        conditions.push(
-          eq(applicationStatuses.departmentId, mentor.departmentId)
-        );
-      }
+
+    if (viewType !== "ALL" && mentor.departmentId) {
+      conditions.push(
+        eq(applicationStatuses.departmentId, mentor.departmentId)
+      );
     }
 
     if (search) {
@@ -77,6 +75,7 @@ export class MentorService {
         lastName: users.lname,
         image: studentProfiles.image,
         totalHoursGoal: applicationInformations.hours,
+        positionName: internshipPositions.name,
       })
       .from(applicationStatuses)
       .innerJoin(users, eq(users.id, applicationStatuses.userId))
@@ -84,6 +83,10 @@ export class MentorService {
       .leftJoin(
         applicationInformations,
         eq(applicationInformations.applicationStatusId, applicationStatuses.id)
+      )
+      .leftJoin(
+        internshipPositions,
+        eq(internshipPositions.id, applicationStatuses.positionId)
       )
       .where(and(...conditions));
 
@@ -111,6 +114,7 @@ export class MentorService {
     const todayStr = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Bangkok",
     }).format(new Date());
+
     const todayLogs = allLogs.filter((log) => {
       const logDate = log.workDate ? String(log.workDate).substring(0, 10) : "";
       return logDate === todayStr;
@@ -144,19 +148,14 @@ export class MentorService {
       let todayStatusCode = "IDLE";
 
       if (todayLog) {
-        if (todayLog.dailyStatus === "PRESENT") {
-          todayStatusText = "เข้างานปกติ";
-          todayStatusCode = "PRESENT";
-        } else if (todayLog.dailyStatus === "LATE") {
-          todayStatusText = "มาสาย";
-          todayStatusCode = "LATE";
-        } else if (todayLog.dailyStatus === "LEAVE") {
-          todayStatusText = "ลางาน";
-          todayStatusCode = "LEAVE";
-        } else if (todayLog.dailyStatus === "ABSENT") {
-          todayStatusText = "ขาดงาน";
-          todayStatusCode = "ABSENT";
-        }
+        const statusMap: Record<string, string> = {
+          PRESENT: "เข้างานปกติ",
+          LATE: "มาสาย",
+          LEAVE: "ลางาน",
+          ABSENT: "ขาดงาน",
+        };
+        todayStatusCode = todayLog.dailyStatus;
+        todayStatusText = statusMap[todayLog.dailyStatus] || "ยังไม่ลงเวลา";
       }
 
       return {
@@ -164,6 +163,7 @@ export class MentorService {
         profileId: student.studentProfileId,
         fullName: `${student.firstName} ${student.lastName}`,
         image: student.image,
+        positionName: student.positionName || "ไม่ระบุตำแหน่ง",
         todayStatus: {
           text: todayStatusText,
           code: todayStatusCode,

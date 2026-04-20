@@ -43,8 +43,7 @@ export const leave = new Elysia({
       params: model.params,
       detail: {
         summary: "อนุมัติคำขอลา (Approve Leave Request)",
-        description:
-          "ยืนยันการอนุมัติคำขอลา และแจกเวลาทำงานให้ 7 ชั่วโมงอัตโนมัติ",
+        description: "ยืนยันการอนุมัติคำขอลา และแจกเวลาทำงานให้ 7 ชั่วโมงอัตโนมัติ",
       },
     }
   )
@@ -128,7 +127,6 @@ export const leave = new Elysia({
     }
   )
 
-
   .post(
     "/:id/reject",
     async ({ params: { id }, body, set, user }) => {
@@ -151,7 +149,6 @@ export const leave = new Elysia({
       },
     }
   )
-  
 
   .post(
     "/bulk-reject",

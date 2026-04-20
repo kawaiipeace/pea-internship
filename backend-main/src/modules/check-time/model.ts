@@ -71,3 +71,30 @@ export const EditCheckTimeSchema = t.Object({
 });
 
 export type EditCheckTimeDto = Static<typeof EditCheckTimeSchema>;
+
+export const GetMentorCorrectionsQuery = t.Object({
+  page: t.Optional(t.Numeric({ default: 1 })),
+  limit: t.Optional(t.Numeric({ default: 10 })),
+  status: t.Optional(
+    t.Union(
+      [t.Literal("PENDING"), t.Literal("APPROVED"), t.Literal("REJECTED")],
+      {
+        description: "กรองตามสถานะ",
+      }
+    )
+  ),
+  viewType: t.Optional(
+    t.Union([t.Literal("MINE"), t.Literal("ALL")], {
+      default: "MINE",
+      description: "ดูเฉพาะเด็กในแผนก (MINE) หรือ ทั้งหมด (ALL)",
+    })
+  ),
+});
+
+export const RejectCorrectionBody = t.Object({
+  reason: t.String({ description: "เหตุผลที่ไม่อนุมัติคำขอแก้ไขเวลา" }),
+});
+
+export type GetMentorCorrectionsQueryType =
+  typeof GetMentorCorrectionsQuery.static;
+export type RejectCorrectionBodyType = typeof RejectCorrectionBody.static;

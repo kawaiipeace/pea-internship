@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import IdleTimeoutProvider from "@/components/IdleTimeoutProvider";
 
 export const metadata: Metadata = {
   title: "PEA Internship - ระบบฝึกงานการไฟฟ้าส่วนภูมิภาค",
@@ -27,7 +28,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        {children}
+        <IdleTimeoutProvider>
+          {children}
+        </IdleTimeoutProvider>
       </body>
     </html>
   );
