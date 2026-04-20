@@ -244,9 +244,9 @@ const StudentsPage = () => {
                 );
             case 'ABSENT':
                 return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#fef2f2] border border-[#fee2e2] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#ef4444] text-white rounded-full shrink-0 shadow-sm">
-                            <IconXCircle className="w-5 h-5" />
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF1EF] border border-[#FF8980] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#D92D20] text-white rounded-full shrink-0 shadow-sm">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>close</span>
                         </div>
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ขาด</span>
                     </div>

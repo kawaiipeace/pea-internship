@@ -51,7 +51,8 @@ const StudentDetailPage = () => {
                                 return {
                                     ...record,
                                     leaveType: matchingLeave.leaveType,
-                                    evidenceUrl: matchingLeave.attachmentUrl || record.evidenceUrl
+                                    evidenceUrl: matchingLeave.attachmentUrl || record.evidenceUrl,
+                                    note: matchingLeave.reason || matchingLeave.note || record.note
                                 };
                             }
                         }
@@ -191,6 +192,54 @@ const StudentDetailPage = () => {
 
     const { profile, progress, summary } = studentData;
     const progressPercent = progress.totalHoursGoal > 0 ? (progress.accumulatedHours / progress.totalHoursGoal) * 100 : 0;
+
+    const handleExportExcel = () => {
+        const BOM = '\uFEFF';
+        let csvContent = BOM + 'วันที่,สถานะ,เวลาเข้า - ออกงาน,ชั่วโมงทำงาน,หมายเหตุ\n';
+
+        attendanceRecords.forEach((row) => {
+            const dateStr = formatDate(row.workDate);
+            let statusLabel = '-';
+            if (row.status === 'LEAVE') {
+                if (row.leaveType === 'SICK' || (row.note && (row.note.includes('ป่วย') || row.note.includes('อาหารเป็นพิษ') || row.note.includes('แพทย์') || row.note.includes('โรงพยาบาล')))) {
+                    statusLabel = 'ลาป่วย';
+                } else {
+                    statusLabel = 'ลากิจ';
+                }
+            } else if (row.status === 'PRESENT') {
+                statusLabel = 'เข้างานปกติ';
+            } else if (row.status === 'LATE') {
+                statusLabel = 'สาย';
+            } else if (row.status === 'MISSING_OUT') {
+                statusLabel = 'ไม่ลงเวลาออก';
+            } else if (row.status === 'ABSENT') {
+                statusLabel = 'ขาด';
+            }
+
+            const timeStr = row.status === 'ABSENT' || row.status === 'LEAVE' ? '-' : `${row.checkInTime || '-'} - ${row.checkOutTime || '-'}`;
+            const noteStr = row.note ? `"${row.note.replace(/"/g, '""')}"` : '-';
+            const hoursStr = row.hours || '0';
+
+            const csvRow = [
+                `"${dateStr}"`,
+                `"${statusLabel}"`,
+                `"${timeStr}"`,
+                `"${hoursStr} ชม."`,
+                noteStr
+            ];
+            csvContent += csvRow.join(',') + '\n';
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.setAttribute('href', url);
+        link.setAttribute('download', `ประวัติการลงเวลา_${profile?.fullName || 'student'}_${dateStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div className="p-4 sm:p-6 space-y-6">
@@ -391,7 +440,10 @@ const StudentDetailPage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-2">
-                <button className="flex items-center gap-2.5 text-[#A80689] font-bold text-[16px] hover:opacity-80 transition-all">
+                <button 
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-2.5 text-[#A80689] font-bold text-[16px] hover:opacity-80 transition-all"
+                >
                     <span className="material-symbols-outlined">ios_share</span>
                     ส่งออกตาราง
                 </button>
