@@ -328,9 +328,10 @@ export class OffsiteTaskService {
     }
 
     const isMentor = roleId === 2;
+    const isAdmin = roleId === 1;
     const isStudent = roleId === 3;
 
-    if (isMentor) {
+    if (isMentor || isAdmin) {
       if (task.assignedByUser.departmentId !== currentUser.departmentId) {
         throw new BadRequestError("คุณไม่มีสิทธิ์เข้าถึงงานของแผนกอื่น");
       }

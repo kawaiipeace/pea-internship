@@ -1,17 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Pagination } from '@mantine/core';
-import IconSearch from '@/components/icon/icon-search';
-import IconCaretDown from '@/components/icon/icon-caret-down';
-import IconCircleCheck from '@/components/icon/icon-circle-check';
-import IconFile from '@/components/icon/icon-file';
 import IconXCircle from '@/components/icon/icon-x-circle';
-import IconClock from '@/components/icon/icon-clock';
-import IconShare from '@/components/icon/icon-share';
-import IconExport from '@/components/icon/icon-export';
 import Flatpickr from 'react-flatpickr';
-import Dropdown from '@/components/dropdown';
-import IconMinus from '@/components/icon/icon-minus';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
@@ -33,11 +23,11 @@ const StudentsPage = () => {
         setIsLoading(true);
         try {
             const response = await axiosInstance.get('/mentor/students', {
-                params: { limit: 100, }
+                params: { limit: 100 }
             });
-
+            
             const rawStudents = response.data.data || [];
-
+            
             // Fetch detail for each student to get internship period dates
             const detailPromises = rawStudents.map((s: any) =>
                 axiosInstance.get(`/mentor/students/${s.id}`).catch(() => null)
@@ -55,13 +45,13 @@ const StudentsPage = () => {
                     name: s.fullName || 'ไม่ระบุชื่อ',
                     role: 'นักศึกษาฝึกงาน',
                     university: 'การไฟฟ้าส่วนภูมิภาค',
-                    status: s.todayStatus?.code || 'IDLE',
+                    status: s.todayStatus?.code || 'IDLE', 
                     avatar: s.image,
-                    attendance: {
-                        present: s.statistics?.present || 0,
-                        late: s.statistics?.late || 0,
-                        leave: s.statistics?.leave || 0,
-                        absent: s.statistics?.absent || 0
+                    attendance: { 
+                        present: s.statistics?.present || 0, 
+                        late: s.statistics?.late || 0, 
+                        leave: s.statistics?.leave || 0, 
+                        absent: s.statistics?.absent || 0 
                     },
                     progress: { current, total, percent: percent > 100 ? 100 : percent },
                     statusMessage: 'กำลังฝึกงาน',
@@ -72,7 +62,7 @@ const StudentsPage = () => {
                     endDate: detail?.profile?.period?.endDate,
                 };
             });
-
+            
             setStudents(mappedStudents);
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -87,7 +77,7 @@ const StudentsPage = () => {
 
     const filteredItems = useMemo(() => {
         let result = [...students];
-
+        
         // Filter by school
         if (selectedSchools.length > 0) {
             result = result.filter((item) => selectedSchools.includes(item.university));
@@ -96,8 +86,8 @@ const StudentsPage = () => {
         // Filter by search term
         if (searchTerm) {
             const searchLower = searchTerm.toLowerCase();
-            result = result.filter((item) =>
-                item.name.toLowerCase().includes(searchLower) ||
+            result = result.filter((item) => 
+                item.name.toLowerCase().includes(searchLower) || 
                 item.role.toLowerCase().includes(searchLower)
             );
         }
@@ -322,16 +312,16 @@ const StudentsPage = () => {
                                     </td>
                                 </tr>
                             ) : records.map((student) => (
-                                <tr
-                                    key={student.id}
+                                <tr 
+                                    key={student.id} 
                                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                                     onClick={() => router.push(`/mentor/students/${student.id}`)}
                                 >
                                     <td className="py-4 px-6 text-left">
                                         <div className="flex items-center gap-4">
-                                            <ImageWithAuth
-                                                userId={student.id}
-                                                className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                                            <ImageWithAuth 
+                                                userId={student.id} 
+                                                className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
                                                 fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
                                             />
                                             <div className="flex flex-col">
@@ -380,21 +370,22 @@ const StudentsPage = () => {
                                                 </span>
                                             </div>
                                             <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
-                                                <div
+                                                <div 
                                                     className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
                                                     style={{ width: `${student.progress.percent}%` }}
                                                 />
                                             </div>
                                             <div className="flex items-center gap-2 px-1 mt-1">
-                                                <span
-                                                    className="material-symbols-outlined select-none"
+                                                <span 
+                                                    className="material-symbols-outlined select-none" 
                                                     style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
                                                 >
                                                     schedule
                                                 </span>
-                                                <span className={`text-[12px] font-normal ${student.statusType === 'ended' ? 'text-[#D92D20]' :
-                                                        student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
-                                                    }`}>
+                                                <span className={`text-[12px] font-normal ${
+                                                    student.statusType === 'ended' ? 'text-[#D92D20]' : 
+                                                    student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
+                                                }`}>
                                                     {student.statusMessage}
                                                 </span>
                                             </div>
@@ -402,8 +393,9 @@ const StudentsPage = () => {
                                     </td>
                                     <td className="py-4 px-6 text-center">
                                         <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
-                                            <span className={`font-semibold text-[14px] whitespace-nowrap ${student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
-                                                }`}>
+                                            <span className={`font-semibold text-[14px] whitespace-nowrap ${
+                                                student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
+                                            }`}>
                                                 {student.consideration}
                                             </span>
                                         </div>
@@ -431,13 +423,13 @@ const StudentsPage = () => {
                     >
                         <span className="material-symbols-outlined text-[22px]">chevron_left</span>
                     </button>
-
+                    
                     {Array.from({ length: Math.ceil(filteredItems.length / pageSize) }).map((_, index) => {
                         const pageNum = index + 1;
                         return (
-                            <button
+                            <button 
                                 key={pageNum}
-                                onClick={() => setPage(pageNum)}
+                                onClick={() => setPage(pageNum)} 
                                 className={`w-11 h-10 flex items-center justify-center text-[14px] font-medium transition-all border-r border-[#CECFD2] ${page === pageNum ? 'bg-[#E4E7EC] text-[#1F2937]' : 'text-[#6B7280] hover:bg-gray-50'}`}
                             >
                                 {pageNum}
