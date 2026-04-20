@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { authApi, authStorage } from "@/services/api";
 
 // ระยะเวลา idle timeout: 1 ชั่วโมง (ms)
- const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
+const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
 // สำหรับ Test: ใช้ค่าสั้นๆ แทน เช่น 5 วินาที
-//const IDLE_TIMEOUT_MS = 5 * 1000;
+// const IDLE_TIMEOUT_MS = 5 * 1000;
 
 // Events ที่ถือว่าผู้ใช้ยัง active อยู่ (user interaction เท่านั้น)
 const ACTIVITY_EVENTS: (keyof DocumentEventMap)[] = [
