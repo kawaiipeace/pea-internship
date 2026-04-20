@@ -244,7 +244,7 @@ export class LeaveService {
             .update(attendanceLogs)
             .set({
               dailyStatus: "LEAVE",
-              approvedLeaveHours: "7.00",
+              // approvedLeaveHours: "7.00",
               isVerified: true,
             })
             .where(eq(attendanceLogs.id, existingLog.id));
@@ -253,8 +253,8 @@ export class LeaveService {
             studentProfileId: student.id,
             workDate: leaveDateStr,
             dailyStatus: "LEAVE",
-            approvedLeaveHours: "7.00",
-            actualHoursWorked: "0.00",
+            // approvedLeaveHours: "7.00",
+            // actualHoursWorked: "0.00",
             isVerified: true,
           });
         }
@@ -262,7 +262,7 @@ export class LeaveService {
 
       return {
         success: true,
-        message: "อนุมัติการลาและบันทึกเวลาทำงาน 7 ชั่วโมงเรียบร้อยแล้ว",
+        message: "อนุมัติการลา",
       };
     });
   }
