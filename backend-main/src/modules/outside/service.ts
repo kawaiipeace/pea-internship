@@ -5,7 +5,7 @@ import {
   NotFoundError,
 } from "@/common/exceptions";
 import { db } from "@/db";
-import { offsiteTaskStudents, offsiteTasks, users } from "@/db/schema";
+import { offsiteTaskStudents, offsiteTasks, users, applicationStatuses } from "@/db/schema";
 import type * as offsiteModel from "./model";
 
 export class OffsiteTaskService {
@@ -59,6 +59,20 @@ export class OffsiteTaskService {
   }
 
   async getTasksForStudent(studentId: string) {
+    const studentApp = await db.query.applicationStatuses.findFirst({
+      where: and(
+        eq(applicationStatuses.userId, studentId),
+        eq(applicationStatuses.isActive, true)
+      ),
+      with: {
+        internshipPosition: {
+          columns: { name: true }
+        }
+      }
+    });
+
+    const positionName = studentApp?.internshipPosition?.name || "ไม่ระบุตำแหน่ง";
+
     const assignedTasks = await db.query.offsiteTaskStudents.findMany({
       where: eq(offsiteTaskStudents.studentId, studentId),
       with: {
@@ -79,6 +93,7 @@ export class OffsiteTaskService {
         locationName: st.task.locationName,
         taskDetail: st.task.taskDetail,
         note: st.task.note,
+        positionName: positionName,
         assignedBy: `${st.task.assignedByUser.fname} ${st.task.assignedByUser.lname}`,
       }))
       .sort(
@@ -86,6 +101,7 @@ export class OffsiteTaskService {
           new Date(b.workDate).getTime() - new Date(a.workDate).getTime()
       );
   }
+
   async updateTask(
     taskId: number,
     mentorId: string,
@@ -316,6 +332,15 @@ export class OffsiteTaskService {
                 studentProfiles: {
                   columns: { image: true, faculty: true, major: true },
                 },
+                // ดึงข้อมูลการสมัครงานเพื่อเอาชื่อตำแหน่ง
+                applicationStatuses: {
+                  where: eq(applicationStatuses.isActive, true),
+                  with: {
+                    internshipPosition: {
+                      columns: { name: true }
+                    }
+                  }
+                }
               },
             },
           },
@@ -357,14 +382,20 @@ export class OffsiteTaskService {
       assignedBy: `${task.assignedByUser.fname} ${task.assignedByUser.lname}`,
       assignedByEmployeeId:
         task.assignedByUser.staffProfiles[0]?.employeeId || null,
-      students: task.students.map((s) => ({
-        id: s.student.id,
-        name: `${s.student.fname} ${s.student.lname}`,
-        image: s.student.studentProfiles[0]?.image || null,
-        nickname: s.student.displayUsername || "",
-        faculty: s.student.studentProfiles[0]?.faculty || "",
-        major: s.student.studentProfiles[0]?.major || "",
-      })),
+      students: task.students.map((s) => {
+        const activeApp = s.student.applicationStatuses?.[0];
+        const positionName = activeApp?.internshipPosition?.name || "ไม่ระบุตำแหน่ง";
+
+        return {
+          id: s.student.id,
+          name: `${s.student.fname} ${s.student.lname}`,
+          image: s.student.studentProfiles[0]?.image || null,
+          nickname: s.student.displayUsername || "",
+          faculty: s.student.studentProfiles[0]?.faculty || "",
+          major: s.student.studentProfiles[0]?.major || "",
+          positionName: positionName,
+        };
+      }),
     };
   }
 }
