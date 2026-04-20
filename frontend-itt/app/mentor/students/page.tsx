@@ -77,8 +77,8 @@ const StudentsPage = () => {
                 return {
                     id: s.id,
                     name: s.fullName || 'ไม่ระบุชื่อ',
-                    role: 'นักศึกษาฝึกงาน',
-                    university: 'การไฟฟ้าส่วนภูมิภาค',
+                    role: detail?.profile?.position || 'นักศึกษาฝึกงาน',
+                    university: detail?.profile?.institution || 'การไฟฟ้าส่วนภูมิภาค',
                     status: s.todayStatus?.code || 'IDLE',
                     avatar: s.image,
                     attendance: {
@@ -310,8 +310,8 @@ const StudentsPage = () => {
                 <p className="text-[16px] font-normal text-[#61646C]">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษาในความดูแล</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="relative w-[328px] h-[36px]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
+                <div className="relative w-full sm:w-[328px] h-[36px] shrink-0">
                     <span className="absolute inset-y-0 left-[12px] flex items-center text-[#667085] pointer-events-none">
                         <span className="material-symbols-outlined select-none text-[20px]">search</span>
                     </span>
@@ -324,7 +324,7 @@ const StudentsPage = () => {
                     />
                 </div>
 
-                <div className="relative w-[348px] h-[36px]">
+                <div className="relative w-full sm:w-[348px] h-[36px] shrink-0">
                     <Flatpickr
                         ref={flatpickrRef}
                         value={confirmedDateStr}

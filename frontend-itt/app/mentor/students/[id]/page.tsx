@@ -252,15 +252,15 @@ const StudentDetailPage = () => {
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 panel border-[#CECFD2] border-[1px] shadow-sm rounded-xl p-8">
-                    <div className="flex items-start gap-6">
+                <div className="lg:col-span-2 panel border-[#CECFD2] border-[1px] shadow-sm rounded-xl p-4 sm:p-8">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
                         <ImageWithAuth 
                             userId={studentId} 
-                            className="w-32 h-32 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
+                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
                             fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}&background=random`}
                         />
-                        <div className="flex flex-col">
-                            <div className={`px-3 py-1 rounded-full border text-[12px] font-bold flex items-center gap-2 w-max mb-5 ${
+                        <div className="flex flex-col items-center sm:items-start w-full">
+                            <div className={`px-3 py-1 rounded-full border text-[12px] font-bold flex items-center justify-center gap-2 w-max mb-3 sm:mb-5 ${
                                 profile.internshipStatus === 'COMPLETE' 
                                 ? 'bg-green-50 border-green-200 text-green-700' 
                                 : 'bg-[#FEF7EB] border-[#FDB022] text-[#944900]'
@@ -268,10 +268,10 @@ const StudentDetailPage = () => {
                                 <div className={`w-2.5 h-2.5 rounded-full ${profile.internshipStatus === 'COMPLETE' ? 'bg-green-500' : 'bg-[#FDB022]'}`}></div>
                                 {profile.internshipStatus === 'COMPLETE' ? 'สิ้นสุดการฝึกงาน' : 'อยู่ระหว่างฝึกงาน'}
                             </div>
-                            <h1 className="text-[24px] font-medium text-[#111827] leading-tight">{profile.fullName}</h1>
-                            <p className="text-[#61646C] text-[14px] font-medium">{profile.position || 'นักศึกษาฝึกงาน'}</p>
+                            <h1 className="text-[20px] sm:text-[24px] font-medium text-[#111827] leading-tight">{profile.fullName}</h1>
+                            <p className="text-[#61646C] text-[14px] font-medium mt-1">{profile.position || 'นักศึกษาฝึกงาน'}</p>
                             
-                            <div className="grid grid-cols-2 gap-y-4 gap-x-4 mt-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 mt-6 sm:mt-8 w-full">
                                 <div>
                                     <p className="text-[#98A2B3] text-[15px] mb-0.5">ชื่อสถานบัน</p>
                                     <p className="text-[#111827] text-[18px] font-normal leading-tight">{profile.institution || '-'}</p>
@@ -422,15 +422,35 @@ const StudentDetailPage = () => {
                                                         หลักฐาน.{row.evidenceUrl.split('.').pop()?.substring(0, 4)}
                                                     </span>
                                                 </button>
+                                            ) : row.status === 'LEAVE' ? (
+                                                <div className="inline-flex items-center justify-center px-4 py-1.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl">
+                                                    <span className="text-[15px] font-medium text-[#6B7280]">
+                                                        - ไม่มีไฟล์แนบ -
+                                                    </span>
+                                                </div>
                                             ) : (
                                                 <span className="text-[#98A2B3] text-[16px]">-</span>
                                             )}
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-center">
-                                        <span className="text-[16px] font-medium text-[#000000]">
-                                            {row.note || '-'}
-                                        </span>
+                                        {(() => {
+                                            if (!row.note) return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
+                                            
+                                            const isCorrection = row.note.includes('แก้ไขเวลา') || row.note.includes('ปฏิบัติงานนอกสถานที่');
+                                            
+                                            // Show time corrections in red always
+                                            if (isCorrection) {
+                                                return <span className="text-[16px] font-medium text-[#E04B3E]">{row.note}</span>;
+                                            }
+                                            
+                                            // Hide notes entirely for LATE status (like location names) or if the note literally says 'สาย'
+                                            if (row.status === 'LATE' || row.note === 'สาย') {
+                                                return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
+                                            }
+                                            
+                                            return <span className="text-[16px] font-medium text-[#000000]">{row.note}</span>;
+                                        })()}
                                     </td>
                                 </tr>
                             ))}
