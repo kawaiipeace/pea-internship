@@ -291,14 +291,22 @@ const LeaveHistoryPage = () => {
             setIsLoading(true);
             const rawType = item.leaveType === 'ลากิจ' ? 'ABSENCE' : 'SICK';
             
-            // Backend expects startDate, endDate, reason, leaveType, attachment
-            const response = await axiosInstance.post('/leave', {
-                startDate: item.startDateStr,
-                endDate: item.endDateStr,
-                leaveType: rawType,
-                reason: item.leaveReason === 'ไม่ระบุเหตุผล' ? '' : item.leaveReason,
-                attachment: item.evidenceUrl || undefined
-            }, {
+            // Format dates to YYYY-MM-DD (regex pattern in backend validation)
+            const formattedStartDate = item.startDateStr.substring(0, 10);
+            const formattedEndDate = item.endDateStr.substring(0, 10);
+            const reason = item.leaveReason === 'ไม่ระบุเหตุผล' ? '' : item.leaveReason;
+
+            // Use FormData for multipart/form-data consistency
+            const formData = new FormData();
+            formData.append('startDate', formattedStartDate);
+            formData.append('endDate', formattedEndDate);
+            formData.append('leaveType', rawType);
+            formData.append('reason', reason);
+            if (item.evidenceUrl) {
+                formData.append('attachment', item.evidenceUrl);
+            }
+            
+            const response = await axiosInstance.post('/leave', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             
