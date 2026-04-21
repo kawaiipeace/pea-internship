@@ -5,7 +5,7 @@ import { UserService } from "./service";
 
 const userService = new UserService();
 
-export const user = new Elysia({ prefix: "/user", tags: ["Users"] })
+export const user = new Elysia({ prefix: "/user", tags: ["Users(ข้อมูลผู้ใช้)"] })
   .use(isAuthenticated)
   .get(
     "/profile",

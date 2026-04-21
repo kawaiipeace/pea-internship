@@ -7,7 +7,7 @@ const service = new OwnerStudentStatusService();
 
 export const ownerStudents = new Elysia({
   prefix: "/owner/students",
-  tags: ["End Internships"],
+  tags: ["End Internships(จบการฝึกงานของนักศึกษา)"],
 })
   .use(isAuthenticated)
   .get(

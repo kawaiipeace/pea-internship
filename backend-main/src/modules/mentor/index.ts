@@ -7,7 +7,7 @@ const mentorService = new MentorService();
 
 export const mentor = new Elysia({
   prefix: "/mentor",
-  tags: ["Mentor Dashboard"],
+  tags: ["Mentor Dashboard(แดชบอร์ดของพี่เลี้ยง)"],
 })
   .use(isAuthenticated)
   .get(

@@ -6,7 +6,7 @@ const fileService = new FileService();
 
 export const file = new Elysia({
   prefix: "/files",
-  tags: ["Files"],
+  tags: ["Files(ดาวน์โหลดไฟล์)"],
 })
   .use(isAuthenticated)
   .get(

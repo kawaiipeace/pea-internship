@@ -6,7 +6,7 @@ const service = new InstitutionTicketService();
 
 export const institutionTicketRoutes = new Elysia({
   prefix: "/institution_ticket",
-  tags: ["Institutions"],
+  tags: ["Institutions(สถาบันการศึกษา)"],
 }).get(
   "/:id",
   ({ params, set }) => {

@@ -9,7 +9,7 @@ const service = new StaffLogsService();
 
 export const staffLogs = new Elysia({
   prefix: "/staff-logs",
-  tags: ["Staff Logs"],
+  tags: ["Staff Logs(บันทึกการกระทำของผู้ใช้(พนักงาน))"],
 })
   .use(isAuthenticated)
   .post(
