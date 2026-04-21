@@ -83,7 +83,7 @@ export class LeaveService {
         record.reason === currentGroup.reason &&
         record.attachmentUrl === currentGroup.attachmentUrl &&
         record.userId === currentGroup.userId &&
-        record.approverNote === (currentGroup as any).approverNote
+        record.approverNote === currentGroup.approverNote
       ) {
         currentGroup.endDate = record.leaveDate;
         currentGroup.ids.push(record.id);

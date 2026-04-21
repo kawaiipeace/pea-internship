@@ -13,7 +13,8 @@ export const institutionTicketRoutes = new Elysia({
     set.headers["Cache-Control"] = "public, max-age=300";
     return service.findById(params.id);
   },
-  { params: model.params ,
+  {
+    params: model.params,
     detail: {
       summary: "ค้นหา และ query ชื่อสถาบันอย่างรวดเร็วด้วย ticket",
       description:
