@@ -9,6 +9,8 @@ import {
   authStorage,
   favoriteApi,
   notificationApi,
+  userApi,
+  extractStudentProfile,
   type NotificationItem,
 } from "@/services/api";
 import Toast from "@/components/ui/Toast";
@@ -49,6 +51,7 @@ export default function NavbarIntern({
     useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
+  const [internshipStatus, setInternshipStatus] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
 
@@ -216,6 +219,20 @@ export default function NavbarIntern({
     }
   }, []);
 
+  const loadInternshipStatus = useCallback(async () => {
+    try {
+      const profile = await userApi.getUserProfile();
+      const sp = extractStudentProfile(profile.profile);
+      setInternshipStatus(sp?.internshipStatus ?? null);
+    } catch {
+      setInternshipStatus(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInternshipStatus();
+  }, [loadInternshipStatus]);
+
   useEffect(() => {
     loadFavoritesCount();
 
@@ -305,6 +322,19 @@ export default function NavbarIntern({
           <div className="flex items-center gap-3">
             {/* Navigation Links */}
             <div className="hidden md:flex items-center gap-8 mr-4">
+              {/* iTT link — shown only while waiting to start or actively interning */}
+              {(internshipStatus === "AWAITING" || internshipStatus === "ACTIVE") && (
+                <Link
+                  href="/itt"
+                  className={`font-medium transition-colors ${
+                    pathname === "/itt"
+                      ? "text-primary-600 hover:text-primary-700"
+                      : "text-gray-600 hover:text-primary-600"
+                  }`}
+                >
+                  iTT
+                </Link>
+              )}
               <Link
                 href="/intern-home"
                 className={`font-medium transition-colors ${
@@ -753,6 +783,23 @@ export default function NavbarIntern({
 
             {/* Menu Items */}
             <nav className="flex-1 py-4">
+              {/* iTT link in mobile sidebar */}
+              {(internshipStatus === "AWAITING" || internshipStatus === "ACTIVE") && (
+                <Link
+                  href="/itt"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-6 py-3 transition-colors ${
+                    pathname === "/itt"
+                      ? "text-primary-600 font-medium bg-primary-50"
+                      : "text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600"
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  iTT
+                </Link>
+              )}
               <Link
                 href="/intern-home"
                 onClick={() => setIsMobileMenuOpen(false)}

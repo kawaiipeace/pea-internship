@@ -36,7 +36,7 @@ export const application = new Elysia({
       role: [3],
       body: model.CreateApplicationBody,
       detail: {
-        summary: "กดสมัคร (ยังไม่สร้างใบสมัคร)",
+        summary: "กดปุ่มสมัคร (Auth user data&role)",
         description:
           "ตรวจสิทธิ์นักศึกษา + ตรวจประกาศ OPEN แต่ยังไม่สร้าง application_statuses จนกว่าจะส่งข้อมูล skill/expectation",
       },
@@ -60,7 +60,7 @@ export const application = new Elysia({
       params: model.positionParams,
       body: model.ApplicationInformationBody,
       detail: {
-        summary: "ส่ง skill/expectation เพื่อสร้างใบสมัคร",
+        summary: "ส่ง skill/expectation เพื่อสร้างใบสมัคร (Create Application)",
         description:
           "สร้าง application_statuses + application_informations พร้อมกัน และเปลี่ยนสถานะ student จาก IDLE เป็น PENDING",
       },

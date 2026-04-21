@@ -7,7 +7,7 @@ const checkTimeService = new CheckTimeService();
 
 export const checkTime = new Elysia({
   prefix: "/check-time",
-  tags: ["check-time"],
+  tags: ["Check-time"],
 })
 
   .use(isAuthenticated)

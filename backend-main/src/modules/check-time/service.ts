@@ -819,7 +819,7 @@ export class CheckTimeService {
         data.checkOutTime
       );
 
-      let resultRequest;
+      let resultRequest: { id: number } | null = null;
 
       if (duplicateCheckInTx) {
         // Update existing rejected request

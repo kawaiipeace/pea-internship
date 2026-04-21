@@ -22,6 +22,10 @@ export const staffLogs = new Elysia({
     {
       role: [1, 2],
       body: model.CreateStaffLogBody,
+      detail: {
+        summary: "บันทึกการกระทำของพนักงานในระบบ Internships (Create Staff log)",
+        description: "บันทึก log การกระทำของ Admin และ Owner",
+      },
     }
   )
 
@@ -36,7 +40,7 @@ export const staffLogs = new Elysia({
       role: [1, 2], // Admin, Owner
       query: model.GetStaffLogsQuery,
       detail: {
-        summary: "List staff logs",
+        summary: "แสดง logs การทำงานของพนักงาน (Get Staff logs)",
         description: "ดู log การกระทำของ Admin และ Owner",
       },
     }

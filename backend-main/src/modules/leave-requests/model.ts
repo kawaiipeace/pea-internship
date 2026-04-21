@@ -13,7 +13,11 @@ export const SubmitLeaveBody = t.Object({
     description: "ประเภทการลา (ABSENCE = ลากิจ, SICK = ลาป่วย)",
   }),
   reason: t.String({ minLength: 1, description: "เหตุผลการลา" }),
-  attachment: t.Optional(t.File({ description: "ไฟล์แนบหลักฐานการลา (ถ้ามี)" })),
+  attachment: t.Optional(
+    t.Union([t.File(), t.String()], {
+      description: "ไฟล์แนบหลักฐานการลา (ถ้ามี) หรือ URL ไฟล์เดิมสำหรับการส่งซ้ำ",
+    })
+  ),
 });
 
 export const params = t.Object({
@@ -70,4 +74,8 @@ export const BulkApproveBody = t.Object({
 export const BulkRejectBody = t.Object({
   ids: t.Array(t.Numeric(), { description: "รายการ ID ที่ต้องการไม่卧ุมัติ" }),
   reason: t.String({ description: "เหตุผลที่ไม่อนุมัติ" }),
+});
+
+export const ResubmitLeaveBody = t.Object({
+  ids: t.Array(t.Numeric(), { description: "รายการ ID ที่ต้องการส่งคำขอซ้ำ" }),
 });
