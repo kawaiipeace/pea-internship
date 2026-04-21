@@ -7,7 +7,7 @@ const service = new ApplicationDocumentsService();
 
 export const ApplicationDocuments = new Elysia({
   prefix: "/application-documents",
-  tags: ["Application Documents"],
+  tags: ["Documents"],
 })
   .use(isAuthenticated)
 
@@ -23,7 +23,7 @@ export const ApplicationDocuments = new Elysia({
       role: [1],
       query: model.AdminListDocsQuery,
       detail: {
-        summary: "Admin list application documents (findAll + filters)",
+        summary: "แสดงเอกสารทั้งหมดในระบบ Internships (Get Documents)",
         description:
           "แสดงเอกสารทั้งหมดในระบบ โดยสามารถ filter/search ได้ด้วย applicationStatusId, departmentId, userId, docTypeId, validationStatus, q, page, limit",
       },
@@ -45,5 +45,10 @@ export const ApplicationDocuments = new Elysia({
     {
       auth: true,
       query: model.AdminGetFileQuery,
+      detail: {
+        summary: "เปิดดูไฟล์เอกสาร PDF (Stream file from Object Storage)",
+        description:
+          "เปิดดูไฟล์เอกสารโดยผ่านการ Stream ผ่าน Object Storage (minio s3)",
+      },
     }
   );

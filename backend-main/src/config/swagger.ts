@@ -4,23 +4,25 @@ const swaggerConfig = swagger({
   path: "/docs",
   documentation: {
     info: {
-      title: "PEA Internship Management API",
+      title: "PEA Internships, PEA Itt API",
       version: "1.0.0",
-      description: "ระบบบริหารจัดการนักศึกษาฝึกงาน การไฟฟ้าส่วนภูมิภาค (PEA)",
+      description:
+        "ระบบบริหารจัดการนักศึกษาฝึกงาน การไฟฟ้าส่วนภูมิภาค (PEA), ระบบบันทึกเวลาทำงานของนักศึกษาฝึกงาน (PEA)",
     },
     tags: [
       {
-        name: "Auth",
-        description: "ระบบยืนยันตัวตน, Login, Register และ Session",
+        name: "Authentication",
+        description:
+          "ระบบยืนยันตัวตน Login, Register และ Session มาตรฐานด้วย BetterAuth, Keycloak",
       },
       {
         name: "Users",
-        description: "ข้อมูลบัญชีผู้ใช้ (Admin, Owner, Student)",
+        description: "ระบบจะเก็บข้อมูลบัญชีผู้ใช้ในทุกบทบาทหน้าที่ (ADMIN, OWNER, STUDENT)",
       },
       {
         name: "Roles",
         description:
-          "จัดการข้อมูลบทบาทและสิทธิ์การเข้าใช้งานระบบ (Roles & Permissions)",
+          "จัดการข้อมูลบทบาทและสิทธิ์การเข้าใช้งานระบบ (Roles & Permissions)\nADMIN: เจ้าหน้าที่ฝ่ายทรัพยากรบุคคล มีหน้าที่ตรวจสอบเอกสารขอความอนุเคราะห์ของนักศึกษา และมีสิทธิ์ในการเข้าถึงทุก Feature ของ OWNER\nOWNER: เจ้าหน้าที่ดูแลประจำแต่ละกองงาน มีหน้าที่เปิดรับสมัคร และอนุมัติรับนักศึกษาเข้าฝึกงาน\n.STUDENT: นักศึกษา ที่ต้องการสมัครฝึกงาน มีหน้าที่เลือกสมัครตามใบประกาศที่เปิดรับ และส่งเอกสารตามที่กำหนดไว้ในระบบ ",
       },
       {
         name: "Institutions",
@@ -54,11 +56,7 @@ const swaggerConfig = swagger({
       },
       {
         name: "Notifications",
-        description: "ระบบแจ้งเตือนภายในระบบ",
-      },
-      {
-        name: "Admin",
-        description: "การจัดการและการตรวจสอบโดยผู้ดูแลระบบ",
+        description: "มีระบบแจ้งเตือนภายในระบบ",
       },
     ],
   },

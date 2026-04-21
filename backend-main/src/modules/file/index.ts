@@ -6,7 +6,7 @@ const fileService = new FileService();
 
 export const file = new Elysia({
   prefix: "/files",
-  tags: ["files"],
+  tags: ["Files"],
 })
   .use(isAuthenticated)
   .get(
@@ -21,7 +21,7 @@ export const file = new Elysia({
     {
       auth: true,
       detail: {
-        summary: "ดาวน์โหลดไฟล์จากระบบ",
+        summary: "ดาวน์โหลดไฟล์จากระบบ (Download file)",
         description: "รับพารามิเตอร์ key เพื่อระบุไฟล์ที่ต้องการดาวน์โหลดจาก MinIO",
       },
     }

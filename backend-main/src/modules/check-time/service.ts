@@ -819,7 +819,7 @@ export class CheckTimeService {
         data.checkOutTime
       );
 
-      let resultRequest;
+      let resultRequest: { id: number } | null = null;
 
       if (duplicateCheckInTx) {
         // Update existing rejected request
@@ -832,7 +832,8 @@ export class CheckTimeService {
             requestedCheckOut: newOutDate,
             calculatedHours: calculatedHours,
             reason: data.reason,
-            attachmentUrl: uploadedAttachmentUrl || duplicateCheckInTx.attachmentUrl,
+            attachmentUrl:
+              uploadedAttachmentUrl || duplicateCheckInTx.attachmentUrl,
             status: "PENDING",
             updatedAt: new Date(),
           })
@@ -1029,7 +1030,7 @@ export class CheckTimeService {
         workDate: attendanceLogs.workDate,
         fname: users.fname,
         lname: users.lname,
-        username: users.username,
+        username: users.displayUsername,
         image: studentProfiles.image,
       })
       .from(timeCorrectionRequests)

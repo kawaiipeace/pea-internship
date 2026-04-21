@@ -4,7 +4,9 @@ import { ApplicationInterviewTimeoutService } from "./service";
 
 const service = new ApplicationInterviewTimeoutService();
 
-export const applicationInterviewTimeoutCron = new Elysia().use(
+export const applicationInterviewTimeoutCron = new Elysia({
+  tags: ["Cronjobs"],
+}).use(
   cron({
     name: "abort-pending-interview",
     pattern: "0 00 * * *", // everyday at 12am

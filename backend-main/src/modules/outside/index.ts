@@ -7,7 +7,7 @@ const offsiteTaskService = new OffsiteTaskService();
 
 export const offsiteTasks = new Elysia({
   prefix: "/offsite-tasks",
-  tags: ["offsite-tasks"],
+  tags: ["Offsite-tasks"],
 })
   .use(isAuthenticated)
 
