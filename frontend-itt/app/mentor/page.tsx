@@ -7,8 +7,8 @@ import ImageWithAuth from '@/components/ImageWithAuth';
 
 // ---- Types ----
 interface LeaveRequest {
-    id: number;
     ids: number[];
+    id: number;
     studentName: string;
     type: string;
     typeBg: string;
@@ -27,83 +27,25 @@ interface LeaveRequest {
     attachmentUrl?: string;
 }
 
+interface TimeCorrectionRequest {
+    id: number;
+    studentName: string;
+    profileImg: string | null;
+    createdAt: string;
+    workDate: string;
+    originalTime: string;
+    requestedTime: string;
+    hoursWorked: number | string;
+    reason: string;
+    attachmentUrl: string | null;
+    status: string;
+}
+
+
 // ---- Data ----
 
-const timeEditRequests = [
-    {
-        id: 1,
-        studentName: 'สมหมาย สายเสมอ (นาย)',
-        type: 'ไม่ผ่านการครองเวลา',
-        typeBg: 'bg-gray-100',
-        typeText: 'text-gray-600',
-        typeBorder: 'border-gray-300',
-        typeIcon: 'hourglass_disabled',
-        typeCircleBg: 'bg-gray-500',
-        submittedDate: '16 มกราคม 2569',
-        date: '15 มกราคม 2569',
-        originalTime: '08:30 - ไม่ลงเวลา',
-        requestedTime: '08:30 - 16:30',
-        workHours: 7,
-        reason: 'ดีลดเวลาออก',
-        profileImg: '/assets/images/profile-1.jpeg',
-        hasFile: false,
-    },
-    {
-        id: 2,
-        studentName: 'สมหมาย สายเสมอ (นาย)',
-        type: 'สาย',
-        typeBg: 'bg-[#FFF9E5]',
-        typeText: 'text-gray-600',
-        typeBorder: 'border-[#FFCA5F]',
-        typeIcon: 'schedule',
-        typeCircleBg: 'bg-[#FDB022]',
-        submittedDate: '15 มกราคม 2569',
-        date: '14 มกราคม 2569',
-        originalTime: '10:00 - 16:30',
-        requestedTime: '08:30 - 16:30',
-        workHours: 2,
-        reason: 'ระบบขัดข้องทำให้ลงเวลาไม่ได้',
-        profileImg: '/assets/images/profile-2.jpeg',
-        hasFile: false,
-    },
-    {
-        id: 3,
-        studentName: 'สมหมาย สายเสมอ (นาย)',
-        type: 'ขาด',
-        typeBg: 'bg-[#FFF1EF]',
-        typeText: 'text-gray-600',
-        typeBorder: 'border-[#FF8980]',
-        typeIcon: 'close',
-        typeCircleBg: 'bg-[#D92D20]',
-        submittedDate: '15 มกราคม 2569',
-        date: '14 มกราคม 2569',
-        originalTime: '10:00 - 16:30',
-        requestedTime: '08:30 - 16:30',
-        workHours: 2,
-        reason: 'ระบบขัดข้องทำให้ลงเวลาไม่ได้',
-        profileImg: '/assets/images/profile-2.jpeg',
-        hasFile: false,
-    },
-    {
-        id: 3,
-        studentName: 'สมหมาย สายเสมอ (นาย)',
-        type: 'ขาด',
-        typeBg: 'bg-[#FFF1EF]',
-        typeText: 'text-gray-600',
-        typeBorder: 'border-[#FF8980]',
-        typeIcon: 'close',
-        typeCircleBg: 'bg-[#D92D20]',
-        submittedDate: '15 มกราคม 2569',
-        date: '14 มกราคม 2569',
-        originalTime: '10:00 - 16:30',
-        requestedTime: '08:30 - 16:30',
-        workHours: 2,
-        reason: 'ระบบขัดข้องทำให้ลงเวลาไม่ได้',
-        profileImg: '/assets/images/profile-2.jpeg',
-        hasFile: false,
-    },
-    
-];
+// Data fetching and states will be handled inside the component
+
 
 // ---- Reject Modal ----
 
@@ -466,69 +408,93 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
 // ---- Time Edit Request Card ----
 
 
-const TimeEditCard = ({ request, onReject, onApprove }: { request: typeof timeEditRequests[0] & { attachmentUrl?: string }; onReject: () => void; onApprove: () => void }) => (
-    <div className="bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-white-dark/10 rounded-2xl p-5 shadow-sm">
-        <StudentHeader {...request} />
+const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectionRequest; onReject: () => void; onApprove: () => void }) => {
+    const getThaiDate = (dateStr: string) => {
+        try {
+            return new Date(dateStr).toLocaleDateString('th-TH', { 
+                year: 'numeric', month: 'long', day: 'numeric' 
+            });
+        } catch (e) {
+            return dateStr;
+        }
+    };
 
-        {/* Date */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark mb-3">
-            <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-                calendar_today
-            </span>
-            <span>วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{request.date}</span></span>
-        </div>
+    return (
+        <div className="bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-white-dark/10 rounded-2xl p-5 shadow-sm">
+            <StudentHeader 
+                userId={undefined} 
+                profileImg={request.profileImg}
+                studentName={request.studentName}
+                type="คำขอแก้ไขเวลา"
+                typeBg="bg-[#FFF6D4]"
+                typeText="text-gray-600"
+                typeBorder="border-[#FFCA5F]"
+                typeIcon="manage_history"
+                typeCircleBg="bg-[#D9692C]"
+                submittedDate={getThaiDate(request.createdAt)}
+            />
 
-        {/* Time Row */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-                <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#E4E7EC]">
-                    <span className="material-symbols-outlined text-black" style={{ fontSize: '16px' }}>schedule</span>
+            {/* Date */}
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark mb-3">
+                <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+                    calendar_today
                 </span>
-                <span>เวลาเดิม : <span className="font-semibold text-gray-800 dark:text-white-light">{request.originalTime}</span></span>
+                <span>วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-                <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#A9EFC5]">
-                    <span className="material-symbols-outlined text-[#074D31]" style={{ fontSize: '16px' }}>manage_history</span>
-                </span>
-                <span>เวลาที่ขอแก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.requestedTime}</span></span>
-            </div>
-        </div>
 
-        {/* Work Hours */}
-        <p className="text-sm text-gray-500 mb-3">
-            ชั่วโมงทำงานที่แก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.workHours} ชั่วโมง</span>
-        </p>
-
-        {/* Reason Box */}
-        <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-xs text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
-            <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
-        </div>
-
-        {/* File Attachment */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-            <span className="text-gray-400">ไฟล์แนบ :</span>
-            {request.hasFile ? (
-                <div 
-                    onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
-                    className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
-                >
-                    <span className="text-xs font-medium text-gray-600 dark:text-white-light hover:underline hover:text-blue-500">ดูไฟล์</span>
+            {/* Time Row */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                    <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#E4E7EC]">
+                        <span className="material-symbols-outlined text-black" style={{ fontSize: '16px' }}>schedule</span>
+                    </span>
+                    <span>เวลาเดิม : <span className="font-semibold text-gray-800 dark:text-white-light">{request.originalTime}</span></span>
                 </div>
-            ) : (
-                <span className="text-xs text-gray-400">- ไม่มีไฟล์แนบ -</span>
-            )}
-        </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                    <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#A9EFC5]">
+                        <span className="material-symbols-outlined text-[#074D31]" style={{ fontSize: '16px' }}>manage_history</span>
+                    </span>
+                    <span>เวลาที่ขอแก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.requestedTime}</span></span>
+                </div>
+            </div>
 
-        <ActionButtons onReject={onReject} onApprove={onApprove} />
-    </div>
-);
+            {/* Work Hours */}
+            <p className="text-sm text-gray-500 mb-3">
+                ชั่วโมงทำงานที่แก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.hoursWorked} ชั่วโมง</span>
+            </p>
+
+            {/* Reason Box */}
+            <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
+                <p className="text-xs text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
+                <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            </div>
+
+            {/* File Attachment */}
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                <span className="text-gray-400">ไฟล์แนบ :</span>
+                {request.attachmentUrl ? (
+                    <div 
+                        onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
+                        className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+                    >
+                        <span className="text-xs font-medium text-gray-600 dark:text-white-light hover:underline hover:text-blue-500">ดูไฟล์</span>
+                    </div>
+                ) : (
+                    <span className="text-xs text-gray-400">- ไม่มีไฟล์แนบ -</span>
+                )}
+            </div>
+
+            <ActionButtons onReject={onReject} onApprove={onApprove} />
+        </div>
+    );
+};
 
 // ---- Main Page ----
 
 const ApprovalRequestPage = () => {
     const [activeTab, setActiveTab] = useState<'leave' | 'time-edit'>('leave');
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [timeCorrectionRequests, setTimeCorrectionRequests] = useState<TimeCorrectionRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [selectedId, setSelectedId] = useState<number[] | null>(null);
@@ -538,22 +504,20 @@ const ApprovalRequestPage = () => {
     const [rejectSuccessOpen, setRejectSuccessOpen] = useState(false);
 
     const PAGE_SIZE = 5;
-    const [meta, setMeta] = useState({ totalPages: 1, totalRecords: 0 });
+    const [leaveMeta, setLeaveMeta] = useState({ totalPages: 1, totalRecords: 0 });
+    const [timeMeta, setTimeMeta] = useState({ totalPages: 1, totalRecords: 0 });
     const [page, setPage] = useState(1);
 
     const records = useMemo(() => {
         if (activeTab === 'leave') return leaveRequests;
-        const sourceData = timeEditRequests;
-        const from = (page - 1) * PAGE_SIZE;
-        const to = from + PAGE_SIZE;
-        return sourceData.slice(from, to);
-    }, [page, activeTab, leaveRequests]);
+        return timeCorrectionRequests;
+    }, [page, activeTab, leaveRequests, timeCorrectionRequests]);
 
     const totalPages = useMemo(() => {
-        if (activeTab === 'leave') return meta.totalPages;
-        const sourceData = timeEditRequests;
-        return Math.max(1, Math.ceil(sourceData.length / PAGE_SIZE));
-    }, [activeTab, leaveRequests, meta.totalPages]);
+        if (activeTab === 'leave') return leaveMeta.totalPages;
+        return timeMeta.totalPages;
+    }, [activeTab, leaveMeta.totalPages, timeMeta.totalPages]);
+
 
     useEffect(() => {
         setPage(1);
@@ -644,7 +608,7 @@ const ApprovalRequestPage = () => {
                     });
                 setLeaveRequests(mappedData);
                 if (response.data.meta) {
-                    setMeta(response.data.meta);
+                    setLeaveMeta(response.data.meta);
                 }
             }
         } catch (error) {
@@ -654,11 +618,39 @@ const ApprovalRequestPage = () => {
         }
     };
 
+    const fetchTimeCorrectionRequests = async () => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get('/check-time/mentor/corrections', {
+                params: {
+                    page,
+                    limit: PAGE_SIZE,
+                    status: 'PENDING',
+                    viewType: 'MINE'
+                }
+            });
+
+            if (response.data && response.data.data) {
+                setTimeCorrectionRequests(response.data.data);
+                if (response.data.meta) {
+                    setTimeMeta(response.data.meta);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching time correction requests API:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (activeTab === 'leave') {
             fetchLeaveRequests();
+        } else if (activeTab === 'time-edit') {
+            fetchTimeCorrectionRequests();
         }
     }, [page, activeTab]);
+
 
     const openRejectModal = (tabType: 'leave' | 'time-edit', ids: number[]) => {
         const title = tabType === 'leave' ? 'ไม่อนุมัติการลา' : 'ไม่อนุมัติการแก้ไขเวลา';
@@ -677,8 +669,9 @@ const ApprovalRequestPage = () => {
         try {
             if (activeTab === 'leave') {
                  await axiosInstance.post(`/leave/bulk-reject`, { ids: selectedId, reason });
-            } else {
-                 // TODO: timeedit bulk reject logic
+            } else if (activeTab === 'time-edit') {
+                 // For time corrections, we handle it individually for now as per backend design
+                 await axiosInstance.post(`/check-time/mentor/corrections/${selectedId[0]}/reject`, { reason });
             }
             
             setRejectModal({ open: false, title: '' });
@@ -686,7 +679,8 @@ const ApprovalRequestPage = () => {
             setTimeout(() => {
                 setRejectSuccessOpen(false);
                 setSelectedId(null);
-                fetchLeaveRequests(); // refresh data
+                if (activeTab === 'leave') fetchLeaveRequests();
+                else fetchTimeCorrectionRequests();
             }, 2000);
         } catch (error) {
             console.error('Failed to reject:', error);
@@ -696,6 +690,7 @@ const ApprovalRequestPage = () => {
             setSubmitting(false);
         }
     };
+
 
     const openApproveConfirm = (ids: number[]) => {
         setSelectedId(ids);
@@ -708,28 +703,30 @@ const ApprovalRequestPage = () => {
         try {
             if (activeTab === 'leave') {
                 await axiosInstance.post(`/leave/bulk-approve`, { ids: selectedId });
-            } else {
-                // await axiosInstance.post(`/time-edit/${selectedId}/approve`);
+            } else if (activeTab === 'time-edit') {
+                await axiosInstance.post(`/check-time/mentor/corrections/${selectedId[0]}/approve`);
             }
             setApproveConfirmOpen(false);
             setApproveSuccessOpen(true);
             setTimeout(() => {
                 setApproveSuccessOpen(false);
                 setSelectedId(null);
-                fetchLeaveRequests(); // refresh data
+                if (activeTab === 'leave') fetchLeaveRequests();
+                else fetchTimeCorrectionRequests();
             }, 2000);
         } catch (error) {
-            console.error('Failed to approve leave request:', error);
+            console.error('Failed to approve request:', error);
         } finally {
             setSubmitting(false);
         }
     };
 
+
     const summaryCards = [
         {
             key: 'leave' as const,
             title: 'คำขอลา',
-            count: activeTab === 'leave' ? `${meta.totalRecords} รายการ` : `${leaveRequests.length} รายการ`,
+            count: `${activeTab === 'leave' ? leaveMeta.totalRecords : leaveRequests.length} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#1AB3FF]">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '22px' }}>lab_profile</span>
@@ -743,7 +740,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'time-edit' as const,
             title: 'คำขอแก้ไขเวลา',
-            count: `${timeEditRequests.length} รายการ`,
+            count: `${activeTab === 'time-edit' ? timeMeta.totalRecords : timeCorrectionRequests.length} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full bg-[#D9692C] flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>edit_square</span>
@@ -755,6 +752,7 @@ const ApprovalRequestPage = () => {
             inactiveBorder: 'border-[#FFF6D4]',
         },
     ];
+
 
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
@@ -791,21 +789,29 @@ const ApprovalRequestPage = () => {
 
             {/* Request List */}
             <div className="space-y-4">
-                {activeTab === 'leave'
-                    ? loading ? (
+                {activeTab === 'leave' ? (
+                    loading ? (
                         <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
                     ) : records.length === 0 ? (
                         <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอลาในขณะนี้</p>
-                    ) : records.map((r) => (
-                        <LeaveCard key={r.id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
-                    ))
-                    : records.length === 0 ? (
+                    ) : (
+                        records.map((r) => (
+                            <LeaveCard key={(r as any).id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
+                        ))
+                    )
+                ) : (
+                    loading ? (
+                        <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
+                    ) : records.length === 0 ? (
                         <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอแก้ไขเวลาในขณะนี้</p>
-                    ) : records.map((r) => (
-                        <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', [(r as any).id])} onApprove={() => openApproveConfirm([(r as any).id])} />
-                    ))
-                }
+                    ) : (
+                        records.map((r) => (
+                            <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', [(r as any).id])} onApprove={() => openApproveConfirm([(r as any).id])} />
+                        ))
+                    )
+                )}
             </div>
+
 
             {/* Pagination */}
             {totalPages > 1 && (
