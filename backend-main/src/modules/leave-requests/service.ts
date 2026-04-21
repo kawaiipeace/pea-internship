@@ -333,6 +333,7 @@ export class LeaveService {
         status: record.status,
         reason: record.reason,
         attachmentUrl: record.file,
+        approverNote: record.approverNote,
       };
     });
 
