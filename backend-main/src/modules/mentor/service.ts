@@ -10,6 +10,7 @@ import {
   lte,
   or,
   type SQL,
+  sql,
 } from "drizzle-orm";
 import { ForbiddenError, NotFoundError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -20,8 +21,12 @@ import {
   checkTimes,
   institutions,
   internshipPositions,
+  leaveRequests,
+  offsiteTaskStudents,
+  offsiteTasks,
   staffProfiles,
   studentProfiles,
+  timeCorrectionRequests,
   users,
 } from "@/db/schema";
 import type * as model from "./model";
@@ -215,6 +220,7 @@ export class MentorService {
         userId: users.id,
         firstName: users.fname,
         lastName: users.lname,
+        username: users.username,
         email: users.email,
         phone: users.phoneNumber,
         image: studentProfiles.image,
@@ -308,10 +314,38 @@ export class MentorService {
         checkInNote: checkInTable.note,
         checkOutTime: checkOutTable.time,
         checkOutNote: checkOutTable.note,
+        leaveReason: leaveRequests.reason,
+        offsiteLocation: offsiteTasks.locationName,
+        offsiteTaskDetail: offsiteTasks.taskDetail,
+        correctionReason: timeCorrectionRequests.reason,
       })
       .from(attendanceLogs)
       .leftJoin(checkInTable, eq(attendanceLogs.checkInId, checkInTable.id))
       .leftJoin(checkOutTable, eq(attendanceLogs.checkOutId, checkOutTable.id))
+      .leftJoin(
+        leaveRequests,
+        and(
+          eq(leaveRequests.userId, studentInfo.userId),
+          sql`DATE(${leaveRequests.leaveDatetime}) = DATE(${attendanceLogs.workDate})`,
+          eq(leaveRequests.status, "APPROVED")
+        )
+      )
+      .leftJoin(
+        offsiteTasks,
+        sql`DATE(${offsiteTasks.workDate}) = DATE(${attendanceLogs.workDate}) 
+            AND EXISTS (
+              SELECT 1 FROM ${offsiteTaskStudents} ots 
+              WHERE ots.task_id = ${offsiteTasks.id} 
+              AND ots.student_id = ${studentInfo.userId}
+            )`
+      )
+      .leftJoin(
+        timeCorrectionRequests,
+        and(
+          eq(timeCorrectionRequests.attendanceLogId, attendanceLogs.id),
+          eq(timeCorrectionRequests.status, "APPROVED")
+        )
+      )
       .where(eq(attendanceLogs.studentProfileId, studentInfo.studentProfileId))
       .orderBy(desc(attendanceLogs.workDate))
       .limit(limit)
@@ -327,8 +361,55 @@ export class MentorService {
     };
 
     const tableRecords = paginatedLogs.map((log) => {
-      const note =
-        log.dailyTaskNote || log.checkOutNote || log.checkInNote || "-";
+      const noteList: { type: string; detail: string }[] = [];
+
+      // 1. ข้อมูลการลา
+      if (log.status === "LEAVE" && log.leaveReason) {
+        noteList.push({
+          type: "LEAVE",
+          detail: `${log.leaveReason}`,
+        });
+      }
+
+      // 2. ข้อมูลนอกสถานที่
+      if (log.offsiteTaskDetail) {
+        noteList.push({
+          type: "OFFSITE",
+          detail: `ปฏิบัติงานนอกสถานที่`,
+        });
+      }
+
+      // 3. ข้อมูลคำขอแก้ไขเวลา
+      if (log.correctionReason) {
+        noteList.push({
+          type: "CORRECTION",
+          detail: `แก้ไขเวลาออกงาน`,
+        });
+      }
+
+      // // 4. Note งานประจำวัน
+      // if (log.dailyTaskNote) {
+      //   noteList.push({
+      //     type: "TASK",
+      //     detail: `งาน: ${log.dailyTaskNote}`
+      //   });
+      // }
+
+      // // 5. Note ตอนเข้างาน
+      // if (log.checkInNote) {
+      //   noteList.push({
+      //     type: "CHECK_IN",
+      //     detail: `เข้า: ${log.checkInNote}`
+      //   });
+      // }
+
+      // // 6. Note ตอนออกงาน
+      // if (log.checkOutNote) {
+      //   noteList.push({
+      //     type: "CHECK_OUT",
+      //     detail: `ออก: ${log.checkOutNote}`
+      //   });
+      // }
 
       return {
         id: log.id,
@@ -340,14 +421,14 @@ export class MentorService {
           Number(log.actualHoursWorked || 0) +
           Number(log.approvedLeaveHours || 0),
         evidenceUrl: null,
-        note: note,
+        notes: noteList,
       };
     });
 
     return {
       profile: {
         id: studentInfo.userId,
-        fullName: `${studentInfo.firstName} ${studentInfo.lastName}`,
+        fullName: `${studentInfo.firstName} ${studentInfo.lastName} (${studentInfo.username})`,
         image: studentInfo.image,
         position: studentInfo.positionName,
         institution: studentInfo.institutionName,

@@ -539,7 +539,7 @@ const LeaveHistoryPage = () => {
                                                                 }
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
-                                                                    handleDeleteLeaveRequest(item.id);
+                                                                    handleDeleteLeaveRequest(item.ids);
                                                                 }
                                                             });
                                                         }}
