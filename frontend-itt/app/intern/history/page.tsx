@@ -435,6 +435,52 @@ const AttendanceHistoryPage = () => {
     }
   };
 
+  const handleAutoResubmit = async (item: any) => {
+    const result = await Swal.fire({
+      title: 'ยืนยันการส่งคำขออีกครั้ง',
+      text: 'คุณต้องการส่งคำขอแก้ไขเวลานี้ใหม่อีกครั้งโดยใช้ข้อมูลเดิมใช่หรือไม่?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#A80689',
+      cancelButtonColor: '#d33',
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('attendanceLogId', String(item.id));
+        formData.append('checkInTime', item.reqCheckInTime);
+        formData.append('checkOutTime', item.reqCheckOutTime);
+        formData.append('reason', item.reqReason);
+        
+        const response = await axiosInstance.put('/check-time/edit', formData);
+        
+        if (response.data && response.data.success) {
+          await Swal.fire({
+            title: 'ส่งคำขออีกครั้งสำเร็จ',
+            text: 'ส่งคำขอแก้ไขเวลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)',
+            icon: 'success',
+            confirmButtonColor: '#A80689',
+          });
+          setIsDetailModalOpen(false);
+          fetchHistory();
+        }
+      } catch (error: any) {
+        Swal.fire({
+          title: 'เกิดข้อผิดพลาด',
+          text: error.response?.data?.message || 'ไม่สามารถส่งคำขอได้ กรุณาลองใหม่อีกครั้ง',
+          icon: 'error',
+          confirmButtonColor: '#A80689',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   // Dummy Data
   // Dynamic Summary Data from API
   const summaryData = [
