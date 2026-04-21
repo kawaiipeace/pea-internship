@@ -570,4 +570,41 @@ export class LeaveService {
       return { success: true, message: "ยกเลิกคำขอลาเรียบร้อยแล้ว" };
     });
   }
+
+  async resubmitLeaveRequests(userId: string, ids: number[]) {
+    await this.assertUserExists(userId);
+
+    const requests = await db.query.leaveRequests.findMany({
+      where: and(
+        inArray(leaveRequests.id, ids),
+        eq(leaveRequests.userId, userId)
+      ),
+    });
+
+    if (requests.length === 0) {
+      throw new NotFoundError("ไม่พบข้อมูลคำขอลาที่ต้องการส่งซ้ำ");
+    }
+
+    const unresubmittable = requests.filter((r) => r.status !== "REJECTED");
+    if (unresubmittable.length > 0) {
+      throw new ConflictError(
+        "สามารถส่งคำขอซ้ำได้เฉพาะรายการที่ถูกปฏิเสธ (REJECTED) เท่านั้น"
+      );
+    }
+
+    await db
+      .update(leaveRequests)
+      .set({
+        status: "PENDING",
+        approvedBy: null,
+        approverNote: null,
+        approvedAt: null,
+      })
+      .where(inArray(leaveRequests.id, ids));
+
+    return {
+      success: true,
+      message: "ส่งคำขออีกครั้งเรียบร้อยแล้ว",
+    };
+  }
 }

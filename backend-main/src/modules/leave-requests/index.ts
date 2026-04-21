@@ -192,4 +192,24 @@ export const leave = new Elysia({
           "ดึงรายการคำขอลาของนักศึกษา รองรับการกรองด้วย status (เช่น PENDING) และ viewType (MINE/ALL)",
       },
     }
+  )
+  .post(
+    "/resubmit",
+    async ({ body, set, user }) => {
+      const response = await leaveService.resubmitLeaveRequests(
+        user.id,
+        body.ids
+      );
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [3],
+      body: model.ResubmitLeaveBody,
+      detail: {
+        summary: "ส่งคำขอลาซ้ำ (Resubmit Rejected Leave Request)",
+        description: "เปลี่ยนสถานะจาก REJECTED กลับเป็น PENDING เพื่อส่งคำขอเดิมซ้ำ",
+      },
+    }
   );
