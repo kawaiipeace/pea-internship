@@ -78,6 +78,8 @@ function InternLoginContent() {
         authStorage.setUser(response.user);
         // Set user_role cookie สำหรับ middleware
         document.cookie = `user_role=intern; path=/; max-age=86400`;
+        // Set token cookie สำหรับ iTT SSO (shared on same domain)
+        document.cookie = `token=${response.token}; path=/; max-age=86400; SameSite=Lax`;
 
         console.log("Login สำเร็จ:", response.user);
         // Redirect to intern home page
