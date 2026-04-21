@@ -12,7 +12,7 @@ const StudentsPage = () => {
     const PAGE_SIZES = [5, 10, 20, 50];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
     const [dateRange, setDateRange] = useState<any>('');
-    const [confirmedDateStr, setConfirmedDateStr] = useState(''); 
+    const [confirmedDateStr, setConfirmedDateStr] = useState('');
     const flatpickrRef = useRef<any>(null);
     const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +68,7 @@ const StudentsPage = () => {
                 const nameParts = rawName.split(' (');
                 const mainName = nameParts[0];
                 const extractedNick = nameParts[1] ? nameParts[1].replace(')', '') : '';
-                
+
                 // Prioritize nickname field if backend starts providing it separately, 
                 // but always fall back to extracting from the fullName string
                 const nick = s.nickname || detail?.profile?.nickname || extractedNick;
@@ -271,13 +271,13 @@ const StudentsPage = () => {
         let csvContent = BOM + 'ลำดับ,ชื่อนักศึกษา,สถานะวันนี้,มา,สาย,ลา,ขาด,ชั่วโมงทำงาน(ปัจจุบัน),ชั่วโมงทำงาน(ทั้งหมด)\n';
 
         filteredItems.forEach((student, index) => {
-            const statusLabel = 
+            const statusLabel =
                 student.status === 'PRESENT' ? 'เข้างานปกติ' :
-                student.status === 'LEAVE' ? 'ลากิจ' :
-                student.status === 'MISSING_OUT' ? 'ไม่ลงเวลาออก' :
-                student.status === 'ABSENT' ? 'ขาด' :
-                student.status === 'LATE' ? 'สาย' : '';
-            
+                    student.status === 'LEAVE' ? 'ลากิจ' :
+                        student.status === 'MISSING_OUT' ? 'ไม่ลงเวลาออก' :
+                            student.status === 'ABSENT' ? 'ขาด' :
+                                student.status === 'LATE' ? 'สาย' : '';
+
             const row = [
                 index + 1,
                 `"${student.name}"`,
@@ -381,111 +381,111 @@ const StudentsPage = () => {
                             </thead>
                             <tbody className="divide-y divide-[#F2F4F7]">
                                 {records.map((student) => (
-                                <tr
-                                    key={student.id}
-                                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                                    onClick={() => router.push(`/admin/mentor/students/${student.id}`)}
-                                >
-                                    <td className="py-4 px-6 text-left">
-                                        <div className="flex items-center gap-4">
-                                            <ImageWithAuth
-                                                userId={student.id}
-                                                className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
-                                                fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
-                                            />
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">
-                                                        {student.name.split(' (')[0]}
-                                                    </span>
-                                                    {student.nickname && (
-                                                        <span className="font-bold text-[#000000] text-[14px] whitespace-nowrap">
-                                                            ({student.nickname})
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6">
-                                        <div className="flex justify-center">
-                                            <div className="w-[124px] flex justify-start">
-                                                {renderStatusBadge(student.status)}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6 text-center">
-                                        <div className="flex justify-center gap-2">
-                                            {/* มา */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">มา</span>
-                                            </div>
-                                            {/* สาย */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#FDB022] leading-none">{student.attendance.late}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">สาย</span>
-                                            </div>
-                                            {/* ลา */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
-                                            </div>
-                                            {/* ขาด */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">ขาด</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6">
-                                        <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
-                                            <div className="flex items-center justify-end px-1 mb-1">
-                                                <span className="text-[10px] text-[#9ca3af] font-medium uppercase tracking-wider">
-                                                    <b className="text-[#a80689] text-[14px]">{student.progress.current}</b>
-                                                    / {student.progress.total} ชั่วโมง
-                                                </span>
-                                            </div>
-                                            <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
-                                                <div
-                                                    className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
-                                                    style={{ width: `${student.progress.percent}%` }}
+                                    <tr
+                                        key={student.id}
+                                        className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                        onClick={() => router.push(`/admin/mentor/students/${student.id}`)}
+                                    >
+                                        <td className="py-4 px-6 text-left">
+                                            <div className="flex items-center gap-4">
+                                                <ImageWithAuth
+                                                    userId={student.id}
+                                                    className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                                                    fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
                                                 />
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">
+                                                            {student.name.split(' (')[0]}
+                                                        </span>
+                                                        {student.nickname && (
+                                                            <span className="font-bold text-[#000000] text-[14px] whitespace-nowrap">
+                                                                ({student.nickname})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 px-1 mt-1">
-                                                <span
-                                                    className="material-symbols-outlined select-none"
-                                                    style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
-                                                >
-                                                    schedule
-                                                </span>
-                                                <span className={`text-[12px] font-normal ${student.statusType === 'ended' ? 'text-[#D92D20]' :
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex justify-center">
+                                                <div className="w-[124px] flex justify-start">
+                                                    {renderStatusBadge(student.status)}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-center">
+                                            <div className="flex justify-center gap-2">
+                                                {/* มา */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">มา</span>
+                                                </div>
+                                                {/* สาย */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#FDB022] leading-none">{student.attendance.late}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">สาย</span>
+                                                </div>
+                                                {/* ลา */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
+                                                </div>
+                                                {/* ขาด */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">ขาด</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
+                                                <div className="flex items-center justify-end px-1 mb-1">
+                                                    <span className="text-[10px] text-[#9ca3af] font-medium uppercase tracking-wider">
+                                                        <b className="text-[#a80689] text-[14px]">{student.progress.current}</b>
+                                                        / {student.progress.total} ชั่วโมง
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                                                    <div
+                                                        className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
+                                                        style={{ width: `${student.progress.percent}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-2 px-1 mt-1">
+                                                    <span
+                                                        className="material-symbols-outlined select-none"
+                                                        style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
+                                                    >
+                                                        schedule
+                                                    </span>
+                                                    <span className={`text-[12px] font-normal ${student.statusType === 'ended' ? 'text-[#D92D20]' :
                                                         student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
+                                                        }`}>
+                                                        {student.statusMessage}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-center">
+                                            <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
+                                                <span className={`font-semibold text-[14px] whitespace-nowrap ${student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
                                                     }`}>
-                                                    {student.statusMessage}
+                                                    {student.consideration}
                                                 </span>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6 text-center">
-                                        <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
-                                            <span className={`font-semibold text-[14px] whitespace-nowrap ${student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
-                                                }`}>
-                                                {student.consideration}
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
             )}
 
             <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 pb-10 gap-6 px-2">
-                <button 
+                <button
                     onClick={handleExportExcel}
                     className="flex items-center  text-[#A80689] font-bold text-[14px] "
                 >

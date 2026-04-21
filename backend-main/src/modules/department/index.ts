@@ -5,7 +5,10 @@ import { DepartmentService } from "./service";
 
 const departmentService = new DepartmentService();
 
-export const department = new Elysia({ prefix: "/dept", tags: ["Departments(กองงาน/หน่วยงาน)"] })
+export const department = new Elysia({
+  prefix: "/dept",
+  tags: ["Departments(กองงาน/หน่วยงาน)"],
+})
   .use(isAuthenticated)
   .get(
     "/",

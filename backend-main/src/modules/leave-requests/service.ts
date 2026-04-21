@@ -17,6 +17,7 @@ import {
   applicationStatuses,
   attendanceLogs,
   leaveRequests,
+  type leaveStatusEnum,
   studentProfiles,
   users,
 } from "@/db/schema";
@@ -455,7 +456,9 @@ export class LeaveService {
         studentName: (() => {
           const fullName = `${record.fname || ""} ${record.lname || ""}`.trim();
           const nick = record.username;
-          return nick ? `${fullName} (${nick})` : fullName || "นักศึกษา (ไม่ระบุชื่อ)";
+          return nick
+            ? `${fullName} (${nick})`
+            : fullName || "นักศึกษา (ไม่ระบุชื่อ)";
         })(),
         profileImg: record.image || null,
       };
@@ -617,7 +620,7 @@ export class LeaveService {
     return {
       success: true,
       message: "ส่งคำขออีกครั้งเรียบร้อยแล้ว",
-    }; 
+    };
   }
 
   async getMentorAuditView(mentorUserId: string, leaveId: number) {
@@ -695,7 +698,7 @@ export class LeaveService {
       },
     };
   }
-  
+
   async getMentorAuditList(
     mentorUserId: string,
     query: { page?: number; limit?: number; status?: string }
@@ -734,7 +737,12 @@ export class LeaveService {
           mentor.roleId !== 1
             ? eq(users.departmentId, mentor.departmentId!)
             : undefined,
-          status ? eq(leaveRequests.status, status as any) : undefined
+          status
+            ? eq(
+                leaveRequests.status,
+                status as (typeof leaveStatusEnum.enumValues)[number]
+              )
+            : undefined
         )
       )
       .orderBy(
@@ -753,7 +761,12 @@ export class LeaveService {
           mentor.roleId !== 1
             ? eq(users.departmentId, mentor.departmentId!)
             : undefined,
-          status ? eq(leaveRequests.status, status as any) : undefined
+          status
+            ? eq(
+                leaveRequests.status,
+                status as (typeof leaveStatusEnum.enumValues)[number]
+              )
+            : undefined
         )
       );
 
