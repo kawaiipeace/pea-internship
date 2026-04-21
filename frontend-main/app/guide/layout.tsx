@@ -66,7 +66,56 @@ const sections = [
     id: "staff",
     label: "วิธีการใช้งานระบบ\nPEA Internship พนักงาน",
     href: "/guide/staff",
-    children: [],
+    children: [
+      {
+        id: "staff-basic",
+        label: "ระบบเบื้องต้น",
+        href: "/guide/staff/basic",
+        children: [
+          { id: "staff-basic-login", label: "การเข้าสู่ระบบ", href: "/guide/staff/basic#login" },
+          { id: "staff-basic-logout", label: "การออกจากระบบ", href: "/guide/staff/basic#logout" },
+          { id: "staff-basic-report", label: "แจ้งปัญหาการใช้งาน", href: "/guide/staff/basic#report" },
+        ],
+      },
+      {
+        id: "staff-howto",
+        label: "คู่มืออธิบายการใช้งานระบบ\nของพนักงาน",
+        href: "/guide/staff/howto",
+        children: [
+          { id: "staff-howto-owner", label: "ระบบสำหรับพนักงาน", href: "/guide/staff/howto#owner" },
+          { id: "staff-howto-create", label: "การสร้างประกาศรับสมัคร", href: "/guide/staff/howto#create" },
+          { id: "staff-howto-edit", label: "การแก้ไขประกาศรับสมัคร", href: "/guide/staff/howto#edit" },
+        ],
+      },
+      {
+        id: "staff-selection",
+        label: "การคัดเลือกผู้สมัคร",
+        href: "/guide/staff/selection",
+        children: [
+          { id: "staff-selection-manage", label: "การจัดการผู้สมัคร", href: "/guide/staff/selection#manage" },
+          { id: "staff-selection-steps", label: "ขั้นตอนการคัดเลือกผู้สมัคร", href: "/guide/staff/selection#steps" },
+        ],
+      },
+      {
+        id: "staff-post-selection",
+        label: "ขั้นตอนหลังการคัดเลือก",
+        href: "/guide/staff/post-selection",
+        children: [
+          { id: "staff-post-steps", label: "ขั้นตอนหลังการคัดเลือก", href: "/guide/staff/post-selection#steps" },
+          { id: "staff-post-track", label: "การติดตามและจัดการนักศึกษา", href: "/guide/staff/post-selection#track" },
+          { id: "staff-post-cancel", label: "การยกเลิกการฝึกงาน", href: "/guide/staff/post-selection#cancel" },
+        ],
+      },
+      {
+        id: "staff-dashboard",
+        label: "แดชบอร์ดสำหรับพนักงาน",
+        href: "/guide/staff/dashboard",
+        children: [
+          { id: "staff-dashboard-overview", label: "ภาพรวมข้อมูลการรับสมัคร", href: "/guide/staff/dashboard#overview" },
+          { id: "staff-dashboard-list", label: "รายชื่อนักศึกษาฝึกงาน", href: "/guide/staff/dashboard#list" },
+        ],
+      },
+    ],
   },
   {
     id: "admin",

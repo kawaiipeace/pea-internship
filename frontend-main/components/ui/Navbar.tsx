@@ -25,8 +25,10 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const helpRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -42,6 +44,12 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
         !notificationRef.current.contains(event.target as Node)
       ) {
         setIsNotificationOpen(false);
+      }
+      if (
+        helpRef.current &&
+        !helpRef.current.contains(event.target as Node)
+      ) {
+        setIsHelpOpen(false);
       }
     };
 
@@ -237,7 +245,9 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                       <Link
                         href="/intern-info"
-                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className={`flex items-center gap-3 px-4 py-2 hover:bg-primary-50 transition-colors ${
+                          pathname === "/intern-info" ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"
+                        }`}
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <svg
@@ -257,7 +267,9 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                       </Link>
                       <Link
                         href="/application-history"
-                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className={`flex items-center gap-3 px-4 py-2 hover:bg-primary-50 transition-colors ${
+                          pathname === "/application-history" ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"
+                        }`}
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <svg
@@ -277,7 +289,9 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                       </Link>
                       <Link
                         href="/application-status"
-                        className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className={`flex items-center gap-3 px-4 py-2 hover:bg-primary-50 transition-colors ${
+                          pathname === "/application-status" ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"
+                        }`}
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <svg
@@ -343,26 +357,56 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                   >
                     ข้อมูลกฟภ.
                   </Link>
-                  <Link
-                    href="/faqs"
-                    className={`font-medium transition-colors ${
-                      pathname === "/faqs"
-                        ? "text-primary-600 hover:text-primary-700"
-                        : "text-gray-600 hover:text-primary-600"
-                    }`}
-                  >
-                    FAQs
-                  </Link>
-                  <Link
-                    href="/credits"
-                    className={`font-medium transition-colors ${
-                      pathname === "/credits"
-                        ? "text-primary-600 hover:text-primary-700"
-                        : "text-gray-600 hover:text-primary-600"
-                    }`}
-                  >
-                    ผู้จัดทำ
-                  </Link>
+                  {/* ช่วยเหลือ dropdown */}
+                  <div ref={helpRef} className="relative">
+                    <button
+                      onClick={() => setIsHelpOpen((v) => !v)}
+                      className={`flex items-center gap-1 font-medium transition-colors ${
+                        ['/faqs', '/credits'].includes(pathname) || pathname.startsWith('/guide')
+                          ? 'text-primary-600'
+                          : 'text-gray-600 hover:text-primary-600'
+                      }`}
+                    >
+                      ช่วยเหลือ
+                      <svg className={`w-4 h-4 transition-transform ${isHelpOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {isHelpOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                        <Link
+                          href="/guide"
+                          onClick={() => setIsHelpOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname.startsWith('/guide') ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'}`}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                          คู่มือการใช้งาน
+                        </Link>
+                        <Link
+                          href="/faqs"
+                          onClick={() => setIsHelpOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname === '/faqs' ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'}`}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          FAQs
+                        </Link>
+                        <Link
+                          href="/credits"
+                          onClick={() => setIsHelpOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname === '/credits' ? 'text-primary-600 font-medium bg-primary-50' : 'text-gray-700'}`}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          ผู้จัดทำ
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Link
                   href="/login/intern"
@@ -494,6 +538,30 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                   />
                 </svg>
                 ข้อมูลกฟภ.
+              </Link>
+              <Link
+                href="/guide"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname.startsWith("/guide")
+                    ? "text-primary-600 font-medium bg-primary-50"
+                    : ""
+                }`}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+                คู่มือการใช้งาน
               </Link>
               <Link
                 href="/faqs"

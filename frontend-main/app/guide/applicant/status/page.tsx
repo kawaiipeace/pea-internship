@@ -71,14 +71,14 @@ export default function ApplicantStatusPage() {
                 </p>
                 <ul className="space-y-4">
                     <li className="flex items-start gap-3 text-gray-600">
-                        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary-500 mt-2" />
+                        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary-600 mt-2" />
                         <span>
                             <span className="font-medium">การแจ้งเตือนผ่านอีเมล (Email)</span>
                             <span className="block text-sm text-gray-500 mt-0.5">ระบบจะส่งอีเมลแจ้งเตือนไปยังที่อยู่อีเมลที่ผู้สมัครลงทะเบียนไว้ เมื่อมีการเปลี่ยนแปลงสถานะ เพื่อให้ผู้สมัครได้รับข้อมูลแม้ไม่ได้เปิดเว็บไซต์อยู่</span>
                         </span>
                     </li>
                     <li className="flex items-start gap-3 text-gray-600">
-                        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary-500 mt-2" />
+                        <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary-600 mt-2" />
                         <span>
                             <span className="font-medium">การแจ้งเตือนภายในเว็บไซต์ (Notification)</span>
                             <span className="block text-sm text-gray-500 mt-0.5">ระบบจะแสดงการแจ้งเตือนผ่านไอคอนกระดิ่งที่อยู่ในแถบนำทางด้านบนของเว็บไซต์ ผู้สมัครสามารถกดเพื่อดูรายละเอียดการแจ้งเตือนทั้งหมดได้</span>

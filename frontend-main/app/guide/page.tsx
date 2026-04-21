@@ -66,16 +66,19 @@ export default function GuidePage() {
           <Link
             key={card.href}
             href={card.href}
-            className="block border border-gray-200 rounded-xl p-5 hover:border-primary-300 hover:shadow-sm transition-all"
+            className="group block border border-gray-200 rounded-xl p-5 hover:border-primary-300 hover:shadow-sm transition-all"
           >
             <div className={`w-11 h-11 rounded-lg flex items-center justify-center mb-3 ${card.iconBg}`}>
               {card.icon}
             </div>
             <h3 className="font-bold text-gray-900 mb-1">{card.title}</h3>
             <p className="text-gray-500 text-sm leading-relaxed">{card.desc}</p>
-            <span className="inline-block mt-3 text-primary-600 text-sm font-medium">
-              อ่านคู่มือ →
-            </span>
+            <div className="flex items-center gap-1 text-sm text-primary-600 font-medium group-hover:gap-2 transition-all">
+              อ่านคู่มือ
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
           </Link>
         ))}
       </div>
