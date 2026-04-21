@@ -1,6 +1,15 @@
 import crypto from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, desc, eq, gte, inArray, lte, sql, aliasedTable } from "drizzle-orm";
+import {
+  aliasedTable,
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lte,
+  sql,
+} from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ConflictError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -592,7 +601,9 @@ export class LeaveService {
         and(
           eq(leaveRequests.id, leaveId),
           // ถ้าไม่ใช่ Admin (1) ต้องอยู่แผนกเดียวกัน
-          mentor.roleId !== 1 ? eq(users.departmentId, mentor.departmentId!) : undefined
+          mentor.roleId !== 1
+            ? eq(users.departmentId, mentor.departmentId!)
+            : undefined
         )
       )
       .limit(1);
@@ -608,7 +619,7 @@ export class LeaveService {
     if (data.leave.approvedBy) {
       const approver = await db.query.users.findFirst({
         where: eq(users.id, data.leave.approvedBy),
-        columns: { fname: true, lname: true }
+        columns: { fname: true, lname: true },
       });
       if (approver) {
         approverInfo = `${approver.fname} ${approver.lname}`;
@@ -623,7 +634,7 @@ export class LeaveService {
         time: data.leave.leaveDatetime,
         by: data.studentName,
         note: data.leave.reason,
-      }
+      },
     ];
 
     if (data.leave.status !== "PENDING") {
@@ -642,11 +653,14 @@ export class LeaveService {
         leaveId: data.leave.id,
         studentName: data.studentName,
         currentStatus: data.leave.status,
-        timeline
-      }
+        timeline,
+      },
     };
   }
-  async getMentorAuditList(mentorUserId: string, query: { page?: number; limit?: number; status?: string }) {
+  async getMentorAuditList(
+    mentorUserId: string,
+    query: { page?: number; limit?: number; status?: string }
+  ) {
     const { page = 1, limit = 10, status } = query;
     const offset = (page - 1) * limit;
 
@@ -678,11 +692,16 @@ export class LeaveService {
       .leftJoin(approver, eq(leaveRequests.approvedBy, approver.id)) // Join หาคนอนุมัติ
       .where(
         and(
-          mentor.roleId !== 1 ? eq(users.departmentId, mentor.departmentId!) : undefined,
+          mentor.roleId !== 1
+            ? eq(users.departmentId, mentor.departmentId!)
+            : undefined,
           status ? eq(leaveRequests.status, status as any) : undefined
         )
       )
-      .orderBy(desc(leaveRequests.approvedAt), desc(leaveRequests.leaveDatetime))
+      .orderBy(
+        desc(leaveRequests.approvedAt),
+        desc(leaveRequests.leaveDatetime)
+      )
       .limit(limit)
       .offset(offset);
 
@@ -692,7 +711,9 @@ export class LeaveService {
       .innerJoin(users, eq(leaveRequests.userId, users.id))
       .where(
         and(
-          mentor.roleId !== 1 ? eq(users.departmentId, mentor.departmentId!) : undefined,
+          mentor.roleId !== 1
+            ? eq(users.departmentId, mentor.departmentId!)
+            : undefined,
           status ? eq(leaveRequests.status, status as any) : undefined
         )
       );
@@ -704,8 +725,8 @@ export class LeaveService {
         page,
         limit,
         total: count,
-        totalPages: Math.ceil(count / limit)
-      }
+        totalPages: Math.ceil(count / limit),
+      },
     };
   }
 }
