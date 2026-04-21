@@ -30,7 +30,6 @@ import {
   users,
 } from "@/db/schema";
 import type * as model from "./model";
-import { username } from "better-auth/plugins";
 
 export class MentorService {
   async getStudents(
