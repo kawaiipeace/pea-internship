@@ -83,9 +83,9 @@ export class CheckTimeService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -1029,6 +1029,7 @@ export class CheckTimeService {
         workDate: attendanceLogs.workDate,
         fname: users.fname,
         lname: users.lname,
+        username: users.username,
         image: studentProfiles.image,
       })
       .from(timeCorrectionRequests)
@@ -1057,7 +1058,8 @@ export class CheckTimeService {
 
     const records = requestsData.map((record) => ({
       id: record.id,
-      studentName: `${record.fname || ""} ${record.lname || ""}`.trim(),
+      studentName:
+        `${record.fname || ""} ${record.lname || ""} (${record.username || ""})`.trim(),
       profileImg: record.image || null,
       createdAt: record.createdAt,
       workDate: record.workDate,

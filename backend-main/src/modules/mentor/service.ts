@@ -81,6 +81,7 @@ export class MentorService {
         image: studentProfiles.image,
         totalHoursGoal: applicationInformations.hours,
         positionName: internshipPositions.name,
+        username: users.username,
       })
       .from(applicationStatuses)
       .innerJoin(users, eq(users.id, applicationStatuses.userId))
@@ -166,7 +167,7 @@ export class MentorService {
       return {
         id: student.userId,
         profileId: student.studentProfileId,
-        fullName: `${student.firstName} ${student.lastName}`,
+        fullName: `${student.firstName} ${student.lastName} (${student.username})`,
         image: student.image,
         positionName: student.positionName || "ไม่ระบุตำแหน่ง",
         todayStatus: {
