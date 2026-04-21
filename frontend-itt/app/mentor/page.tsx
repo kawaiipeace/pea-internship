@@ -306,7 +306,12 @@ const ActionButtons = ({ onReject, onApprove }: { onReject: () => void; onApprov
     </>
 );
 
-const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate }: any) => (
+const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate }: any) => {
+    const match = typeof studentName === 'string' ? studentName.match(/^(.*?)\s*\(([^)]+)\)\s*$/) : null;
+    const displayName = match ? match[1] : studentName;
+    const nickname = match ? match[2] : null;
+
+    return (
     <div className="flex items-start gap-4 mb-4">
         <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-gray-100">
             <ImageWithAuth 
@@ -317,7 +322,9 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
             />
         </div>
         <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-800 dark:text-white-light text-base leading-tight mb-1.5">{studentName}</p>
+            <p className="font-bold text-gray-800 dark:text-white-light text-base leading-tight mb-1.5">
+                {displayName}{nickname && <span className="font-bold text-[#000000] dark:text-white-light"> ({nickname})</span>}
+            </p>
             <div className="flex items-center gap-2 mb-1">
                 <span className={`inline-flex items-center gap-2 text-[12px] pl-1 pr-4 py-1 rounded-full border ${typeBg} ${typeText} ${typeBorder}`}>
                     <span className={`w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 ${typeCircleBg}`}>
@@ -329,7 +336,8 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
             <p className="text-xs text-gray-400">วันที่ส่งคำขอ : {submittedDate}</p>
         </div>
     </div>
-);
+    );
+};
 
 
 // ---- Helper Methods ----
