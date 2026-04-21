@@ -1,9 +1,8 @@
 // backend/src/leave/index.ts
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
 import { LeaveService } from "./service";
-import { t } from "elysia";
 
 const leaveService = new LeaveService();
 
@@ -207,7 +206,7 @@ export const leave = new Elysia({
     {
       role: [1, 2],
       params: t.Object({
-        leaveId: t.Numeric()
+        leaveId: t.Numeric(),
       }),
       detail: {
         summary: "ดูประวัติใบลาของนักศึกษาในดูแล (Mentor Audit View)",
@@ -229,13 +228,11 @@ export const leave = new Elysia({
       query: t.Object({
         page: t.Optional(t.Numeric({ default: 1 })),
         limit: t.Optional(t.Numeric({ default: 10 })),
-        status: t.Optional(t.String())
+        status: t.Optional(t.String()),
       }),
       detail: {
         summary: "รายการประวัติการอนุมัติใบลาทั้งหมด (Mentor Audit List)",
         description: "ดึงรายการใบลาและสถานะการอนุมัติของนักศึกษาทุกคนในแผนก",
       },
     }
-  )
-
-
+  );
