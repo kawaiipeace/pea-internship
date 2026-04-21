@@ -17,6 +17,7 @@ import IconSend from '@/components/icon/icon-send';
 import IconPaperclipPlus from '@/components/icon/icon-paperclip-plus';
 import axiosInstance from '@/api/axios';
 import Swal from 'sweetalert2';
+import TimeWheelPicker from './TimeWheelPicker';
 
 interface EditTimeFormProps {
     selectedHistoryItem: any;
@@ -43,6 +44,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [pickingType, setPickingType] = useState<'in' | 'out' | null>(null);
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -241,39 +243,27 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* เวลาเข้า */}
                     <div className="mb-[14px]">
                         <div className="text-[13px] text-[#828282] font-semibold mb-2">เวลาเข้างาน :</div>
-                        <div className="relative w-full max-w-[450px]">
-                            <input
-                                type="text"
-                                value={checkInTime}
-                                onChange={(e) => setCheckInTime(e.target.value)}
-                                className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
-                            />
-                            <button 
-                                onClick={() => setCheckInTime("")}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]"
-                            >
-                                <IconX className="w-[14px] h-[14px]" />
-                            </button>
-                        </div>
+                        <button 
+                            type="button"
+                            onClick={() => setPickingType('in')}
+                            className="w-full max-w-[450px] h-[43px] px-[14px] border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold flex items-center justify-between hover:border-[#D1D1D1] transition-all"
+                        >
+                            <span>{checkInTime || "--:--"}</span>
+                            <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                        </button>
                     </div>
 
                     {/* เวลาออก */}
                     <div className="mb-2">
                         <div className="text-[13px] text-[#828282] font-semibold mb-2">เวลาออกงาน :</div>
-                        <div className="relative w-full max-w-[450px]">
-                            <input
-                                type="text"
-                                value={checkOutTime}
-                                onChange={(e) => setCheckOutTime(e.target.value)}
-                                className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
-                            />
-                            <button 
-                                onClick={() => setCheckOutTime("")}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]"
-                            >
-                                <IconX className="w-[14px] h-[14px]" />
-                            </button>
-                        </div>
+                        <button 
+                            type="button"
+                            onClick={() => setPickingType('out')}
+                            className="w-full max-w-[450px] h-[43px] px-[14px] border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold flex items-center justify-between hover:border-[#D1D1D1] transition-all"
+                        >
+                            <span>{checkOutTime || "--:--"}</span>
+                            <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                        </button>
                     </div>
 
                     {/* หมายเหตุ */}
@@ -461,41 +451,28 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                          ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                     </div>
 
-                    {/* Time Inputs */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <div className="text-[14px] text-[#828282] font-bold mb-2">เวลาเข้างาน</div>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={checkInTime}
-                                    onChange={(e) => setCheckInTime(e.target.value)}
-                                    className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
-                                />
-                                <button 
-                                    onClick={() => setCheckInTime("")}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
-                                >
-                                    <IconX className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setPickingType('in')}
+                                className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold flex items-center justify-between"
+                            >
+                                <span>{checkInTime || "--:--"}</span>
+                                <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                            </button>
                         </div>
                         <div>
                             <div className="text-[14px] text-[#828282] font-bold mb-2">เวลาออกงาน</div>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={checkOutTime}
-                                    onChange={(e) => setCheckOutTime(e.target.value)}
-                                    className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
-                                />
-                                <button 
-                                    onClick={() => setCheckOutTime("")}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
-                                >
-                                    <IconX className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setPickingType('out')}
+                                className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold flex items-center justify-between"
+                            >
+                                <span>{checkOutTime || "--:--"}</span>
+                                <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                            </button>
                         </div>
                     </div>
 
@@ -621,7 +598,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             {/* ✅ Success Modal via Portal */}
             {mounted && showSuccess &&
                 createPortal(
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 lg:pl-[260px]">
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px] lg:pl-[260px]">
                         <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl p-8 w-[280px] text-center flex flex-col items-center mx-4">
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#11A75C] text-white">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
@@ -636,6 +613,18 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     document.body
                 )
             }
+
+            {/* ✅ Time Picker Modal */}
+            <TimeWheelPicker 
+                isOpen={!!pickingType}
+                initialTime={pickingType === 'in' ? checkInTime : checkOutTime}
+                onConfirm={(time) => {
+                    if (pickingType === 'in') setCheckInTime(time);
+                    if (pickingType === 'out') setCheckOutTime(time);
+                    setPickingType(null);
+                }}
+                onClose={() => setPickingType(null)}
+            />
         </>
     );
 };
