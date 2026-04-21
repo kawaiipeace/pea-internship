@@ -336,10 +336,11 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
 
 export const handleViewFile = async (attachmentUrl: string) => {
     try {
-        const key = attachmentUrl.split('/').pop();
+        const key = attachmentUrl.startsWith('/') ? attachmentUrl.substring(1) : attachmentUrl;
         if (!key) return;
         
-        const response = await axiosInstance.get(`/files/${key}`, {
+        const response = await axiosInstance.get('/check-time/file', {
+            params: { key },
             responseType: 'blob'
         });
         
