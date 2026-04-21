@@ -20,7 +20,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
     {
       query: model.GetPositionsQuery,
       detail: {
-        summary: "ดูรายการใบประกาศรับสมัครทั้งหมด",
+        summary: "ดูรายการใบประกาศรับสมัครทั้งหมด (Get Positions)",
         description: "เรียกดูใบประกาศทั้งหมดในระบบ โดยทุก role มีสิทธิ์ในการเรียกดู",
       },
     }
@@ -38,7 +38,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       role: [1, 2],
       body: model.CreatePositionBody,
       detail: {
-        summary: "สร้างประกาศตำแหน่งฝึกงาน",
+        summary: "สร้างประกาศตำแหน่งฝึกงาน (Create Position)",
         description:
           "ทำได้เฉพาะ Staff ที่เป็น OWNER และมีสังกัด Department (departmentId จะถูกผูกจากสิทธิ์ ไม่รับจาก body)",
       },
@@ -58,7 +58,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       params: model.params,
       body: model.UpdatePositionBody,
       detail: {
-        summary: "แก้ไขประกาศตำแหน่ง",
+        summary: "แก้ไขประกาศตำแหน่ง (Update Position)",
         description: "แก้ได้เฉพาะตำแหน่งของ Department ตัวเอง",
       },
     }
@@ -76,7 +76,7 @@ export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
       role: [1, 2],
       params: model.params,
       detail: {
-        summary: "ลบประกาศตำแหน่ง",
+        summary: "ลบประกาศตำแหน่ง (Delete Position)",
         description: "ลบได้เฉพาะตำแหน่งของ Department ตัวเอง",
       },
     }

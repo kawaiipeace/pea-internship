@@ -4,7 +4,9 @@ import { CheckTimeService } from "../daily-attendance-sync/service";
 
 const checkTimeService = new CheckTimeService();
 
-export const dailyAttendanceSyncCron = new Elysia().use(
+export const dailyAttendanceSyncCron = new Elysia({
+  tags: ["Cronjobs"],
+}).use(
   cron({
     name: "daily-attendance-sync",
     pattern: "50 23 * * 1-5",

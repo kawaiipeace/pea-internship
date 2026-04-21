@@ -4,7 +4,9 @@ import { ApplicationRequestTimeoutService } from "./service";
 
 const service = new ApplicationRequestTimeoutService();
 
-export const applicationRequestTimeoutCron = new Elysia().use(
+export const applicationRequestTimeoutCron = new Elysia({
+  tags: ["Cronjobs"],
+}).use(
   cron({
     name: "abort-expired-pending-request",
     pattern: "0 00 * * *", // everyday at 1am

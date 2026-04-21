@@ -4,7 +4,9 @@ import { AwaitingCronService } from "./service";
 
 const service = new AwaitingCronService();
 
-export const awaitingCron = new Elysia().use(
+export const awaitingCron = new Elysia({
+  tags: ["Cronjobs"],
+}).use(
   cron({
     name: "activate-awaiting-internships",
     pattern: "0 00 * * *", // everyday at 12am

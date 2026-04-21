@@ -20,7 +20,7 @@ import { role } from "./role";
 import { staffLogs } from "./staff-logs";
 import { user } from "./user";
 
-const modules = new Elysia({ prefix: "/api" })
+const modules = new Elysia({ prefix: "/api"})
   .use(department)
   .use(role)
   .use(auth)

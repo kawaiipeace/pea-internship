@@ -25,7 +25,7 @@ export const notification = new Elysia({
       auth: true,
       query: model.GetNotificationsQuery,
       detail: {
-        summary: "ดู notifications ของตัวเอง",
+        summary: "ดู notifications ของตัวเอง (Get notification)",
       },
     }
   )
@@ -46,7 +46,7 @@ export const notification = new Elysia({
       params: model.params,
       body: model.MarkReadBody,
       detail: {
-        summary: "ตั้งค่าอ่านแล้ว/ยังไม่อ่าน",
+        summary: "ตั้งค่าอ่านแล้ว/ยังไม่อ่าน (Readed/Not read yet)",
       },
     }
   )
@@ -61,7 +61,7 @@ export const notification = new Elysia({
     {
       auth: true,
       detail: {
-        summary: "อ่านทั้งหมด",
+        summary: "อ่านทั้งหมด (Read all)",
       },
     }
   )
@@ -80,7 +80,7 @@ export const notification = new Elysia({
       role: [1, 2, 3],
       params: model.params,
       detail: {
-        summary: "ลบ notification ของตนเอง",
+        summary: "ลบ notification ของตนเอง (Delete notification)",
         description:
           "ผู้ใช้สามารถลบได้เฉพาะ notification ของตนเอง และระบบจะลบออกจากฐานข้อมูลจริง",
       },
