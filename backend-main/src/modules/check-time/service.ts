@@ -33,6 +33,7 @@ import {
 } from "@/db/schema";
 import { BUCKET_NAME, s3Client } from "@/lib/s3";
 import type * as checkSchema from "./model";
+import { username } from "better-auth/plugins";
 
 type CorrectionRequestData = {
   id: number;
@@ -1005,6 +1006,7 @@ export class CheckTimeService {
         workDate: attendanceLogs.workDate,
         fname: users.fname,
         lname: users.lname,
+        username: users.username,
         image: studentProfiles.image,
       })
       .from(timeCorrectionRequests)
@@ -1033,7 +1035,7 @@ export class CheckTimeService {
 
     const records = requestsData.map((record) => ({
       id: record.id,
-      studentName: `${record.fname || ""} ${record.lname || ""}`.trim(),
+      studentName: `${record.fname || ""} ${record.lname || ""} (${record.username || ""})`.trim(),
       profileImg: record.image || null,
       createdAt: record.createdAt,
       workDate: record.workDate,
