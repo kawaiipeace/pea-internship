@@ -8,7 +8,7 @@ const leaveService = new LeaveService();
 
 export const leave = new Elysia({
   prefix: "/leave",
-  tags: ["Leave Requests"],
+  tags: ["Leave Requests(การลา)"],
 })
   .use(isAuthenticated)
   .post(

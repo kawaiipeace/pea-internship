@@ -8,7 +8,7 @@ const institutionService = new InstitutionService();
 
 export const institution = new Elysia({
   prefix: "/institution",
-  tags: ["Institutions"],
+  tags: ["Institutions(สถาบันการศึกษา)"],
 })
   .use(isAuthenticated)
 

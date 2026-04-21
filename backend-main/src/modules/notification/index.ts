@@ -7,7 +7,7 @@ const notificationService = new NotificationService();
 
 export const notification = new Elysia({
   prefix: "/notifications",
-  tags: ["Notifications"],
+  tags: ["Notifications(ระบบแจ้งเตือน)"],
 })
   .use(isAuthenticated)
 

@@ -4,7 +4,7 @@ import { AuthService } from "./service";
 
 const authService = new AuthService();
 
-export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication"] })
+export const auth = new Elysia({ prefix: "/auth", tags: ["Authentication(การยืนยันตัวตน)"] })
   .post(
     "/sign-up/intern",
     async ({ body, set }) => {
