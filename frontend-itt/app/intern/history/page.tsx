@@ -172,8 +172,12 @@ const AttendanceHistoryPage = () => {
           text: 'กรุณาอนุญาตให้เบราว์เซอร์เปิดหน้าต่างป็อปอัพ',
           icon: 'warning',
           confirmButtonText: 'ตกลง',
+          buttonsStyling: false,
           customClass: {
-            confirmButton: 'bg-[#A80689] text-white px-6 py-2 rounded-lg'
+            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+            confirmButton: 'bg-[#A80689] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
           }
         });
       }
@@ -222,6 +226,13 @@ const AttendanceHistoryPage = () => {
         title: "เกิดข้อผิดพลาด",
         text: "ไม่สามารถโหลดไฟล์ได้",
         confirmButtonText: "ตกลง",
+        buttonsStyling: false,
+        customClass: {
+          popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+          title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+          htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+          confirmButton: 'bg-[#EF4444] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+        }
       });
     }
   };
@@ -384,7 +395,14 @@ const AttendanceHistoryPage = () => {
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text: 'ไม่สามารถดึงข้อมูลประวัติการลงเวลาได้',
-        confirmButtonText: 'ตกลง'
+        confirmButtonText: 'ตกลง',
+        buttonsStyling: false,
+        customClass: {
+          popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+          title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+          htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+          confirmButton: 'bg-[#EF4444] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+        }
       });
     } finally {
       setIsLoading(false);
@@ -432,6 +450,72 @@ const AttendanceHistoryPage = () => {
       console.error("Failed to fetch correction detail:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAutoResubmit = async (item: any) => {
+    const result = await Swal.fire({
+      title: 'ยืนยันการส่งคำขออีกครั้ง',
+      text: 'คุณต้องการส่งคำขอแก้ไขเวลานี้ใหม่อีกครั้งโดยใช้ข้อมูลเดิมใช่หรือไม่?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+        title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+        htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+        confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center mx-2',
+        cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center mx-2'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('attendanceLogId', String(item.id));
+        formData.append('checkInTime', item.reqCheckInTime);
+        formData.append('checkOutTime', item.reqCheckOutTime);
+        formData.append('reason', item.reqReason);
+        
+        const response = await axiosInstance.put('/check-time/edit', formData);
+        
+        if (response.data && response.data.success) {
+          await Swal.fire({
+            title: 'ส่งคำขออีกครั้งสำเร็จ',
+            text: 'ส่งคำขอแก้ไขเวลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)',
+            icon: 'success',
+            confirmButtonText: 'ตกลง',
+            buttonsStyling: false,
+            customClass: {
+              popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+              title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+              htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+              confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+            }
+          });
+          setIsDetailModalOpen(false);
+          fetchHistory();
+        }
+      } catch (error: any) {
+        Swal.fire({
+          title: 'เกิดข้อผิดพลาด',
+          text: error.response?.data?.message || 'ไม่สามารถส่งคำขอได้ กรุณาลองใหม่อีกครั้ง',
+          icon: 'error',
+          confirmButtonText: 'ตกลง',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+            confirmButton: 'bg-[#EF4444] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+          }
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -1477,16 +1561,20 @@ const AttendanceHistoryPage = () => {
                                         type="button"
                                         className="w-full h-[50px] bg-[#A80689] text-white rounded-[12px] text-[17px] font-bold flex items-center justify-center shadow-lg shadow-purple-100"
                                         onClick={() => {
-                                          localStorage.setItem(
-                                            "editItem",
-                                            JSON.stringify(selectedHistoryItem),
-                                          );
-                                          router.push(
-                                            "/intern/history/edit-time",
-                                          );
+                                          if (selectedHistoryItem.approvalStatus === 'denied') {
+                                            handleAutoResubmit(selectedHistoryItem);
+                                          } else {
+                                            localStorage.setItem(
+                                              "editItem",
+                                              JSON.stringify(selectedHistoryItem),
+                                            );
+                                            router.push(
+                                              "/intern/history/edit-time",
+                                            );
+                                          }
                                         }}
                                       >
-                                        ส่งคำขอแก้ไขเวลา
+                                        {selectedHistoryItem.approvalStatus === 'denied' ? 'ส่งคำขอแก้ไขเวลาอีกครั้ง' : 'ส่งคำขอแก้ไขเวลา'}
                                       </button>
                                     </div>
                                   )}

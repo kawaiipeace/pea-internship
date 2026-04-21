@@ -83,9 +83,9 @@ export class CheckTimeService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -737,9 +737,9 @@ export class CheckTimeService {
       where: eq(timeCorrectionRequests.attendanceLogId, data.attendanceLogId),
     });
 
-    if (existingRequest) {
+    if (existingRequest && existingRequest.status !== "REJECTED") {
       throw new ConflictError(
-        "คุณได้ส่งคำขอแก้ไขเวลาสำหรับรายการนี้ไปแล้ว (สามารถแก้ไขได้เพียงรอบเดียวเท่านั้น)"
+        "คุณได้ส่งคำขอแก้ไขเวลาสำหรับรายการนี้ไปแล้ว (รอการตรวจสอบ)"
       );
     }
 
@@ -800,8 +800,8 @@ export class CheckTimeService {
           where: eq(timeCorrectionRequests.attendanceLogId, existingLog.id),
         });
 
-      if (duplicateCheckInTx) {
-        throw new ConflictError("คำขอแก้ไขเวลานี้ถูกส่งไปแล้ว");
+      if (duplicateCheckInTx && duplicateCheckInTx.status !== "REJECTED") {
+        throw new ConflictError("คำขอแก้ไขเวลานี้ถูกส่งไปแล้วและอยู่ระหว่างรอตรวจสอบ");
       }
 
       const originalIn = existingLog.checkIn?.time || null;
@@ -819,26 +819,50 @@ export class CheckTimeService {
         data.checkOutTime
       );
 
-      const [newRequest] = await tx
-        .insert(timeCorrectionRequests)
-        .values({
-          attendanceLogId: existingLog.id,
-          studentProfileId: student.id,
-          originalCheckIn: originalIn,
-          originalCheckOut: originalOut,
-          requestedCheckIn: newInDate,
-          requestedCheckOut: newOutDate,
-          calculatedHours: calculatedHours,
-          reason: data.reason,
-          attachmentUrl: uploadedAttachmentUrl,
-          status: "PENDING",
-        })
-        .returning();
+      let resultRequest;
+
+      if (duplicateCheckInTx) {
+        // Update existing rejected request
+        const [updatedRequest] = await tx
+          .update(timeCorrectionRequests)
+          .set({
+            originalCheckIn: originalIn,
+            originalCheckOut: originalOut,
+            requestedCheckIn: newInDate,
+            requestedCheckOut: newOutDate,
+            calculatedHours: calculatedHours,
+            reason: data.reason,
+            attachmentUrl: uploadedAttachmentUrl || duplicateCheckInTx.attachmentUrl,
+            status: "PENDING",
+            updatedAt: new Date(),
+          })
+          .where(eq(timeCorrectionRequests.id, duplicateCheckInTx.id))
+          .returning();
+        resultRequest = updatedRequest;
+      } else {
+        // Create new request
+        const [newRequest] = await tx
+          .insert(timeCorrectionRequests)
+          .values({
+            attendanceLogId: existingLog.id,
+            studentProfileId: student.id,
+            originalCheckIn: originalIn,
+            originalCheckOut: originalOut,
+            requestedCheckIn: newInDate,
+            requestedCheckOut: newOutDate,
+            calculatedHours: calculatedHours,
+            reason: data.reason,
+            attachmentUrl: uploadedAttachmentUrl,
+            status: "PENDING",
+          })
+          .returning();
+        resultRequest = newRequest;
+      }
 
       return {
         success: true,
         message: "ส่งคำขอแก้ไขเวลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)",
-        requestId: newRequest.id,
+        requestId: resultRequest.id,
         hoursWorked: calculatedHours,
       };
     });
@@ -1005,6 +1029,7 @@ export class CheckTimeService {
         workDate: attendanceLogs.workDate,
         fname: users.fname,
         lname: users.lname,
+        username: users.username,
         image: studentProfiles.image,
       })
       .from(timeCorrectionRequests)
@@ -1033,7 +1058,8 @@ export class CheckTimeService {
 
     const records = requestsData.map((record) => ({
       id: record.id,
-      studentName: `${record.fname || ""} ${record.lname || ""}`.trim(),
+      studentName:
+        `${record.fname || ""} ${record.lname || ""} (${record.username || ""})`.trim(),
       profileImg: record.image || null,
       createdAt: record.createdAt,
       workDate: record.workDate,
