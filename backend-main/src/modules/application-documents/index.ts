@@ -7,7 +7,7 @@ const service = new ApplicationDocumentsService();
 
 export const ApplicationDocuments = new Elysia({
   prefix: "/application-documents",
-  tags: ["Documents"],
+  tags: ["Documents(เอกสารสมัครฝึกงาน)"],
 })
   .use(isAuthenticated)
 

@@ -7,7 +7,7 @@ const service = new ApplicationCompleteModalService();
 
 export const applicationCompleteModal = new Elysia({
   prefix: "/student/application-complete-modal",
-  tags: ["Applications"],
+  tags: ["Applications(การสมัครฝึกงาน)"],
 })
   .use(isAuthenticated)
   .get(

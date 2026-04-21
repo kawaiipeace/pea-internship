@@ -5,7 +5,7 @@ import { FavoriteService } from "./service";
 
 const favoriteService = new FavoriteService();
 
-export const favorite = new Elysia({ prefix: "/favorite", tags: ["Favorites"] })
+export const favorite = new Elysia({ prefix: "/favorite", tags: ["Favorites(บันทึกกองงานที่ชอบ)"] })
   .use(isAuthenticated)
 
   .get(

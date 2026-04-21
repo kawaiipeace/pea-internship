@@ -6,7 +6,7 @@ import { PositionService } from "./service";
 
 const positionService = new PositionService();
 
-export const position = new Elysia({ prefix: "/position", tags: ["Positions"] })
+export const position = new Elysia({ prefix: "/position", tags: ["Positions(ใบประกาศรับสมัครฝึกงาน)"] })
   .use(isAuthenticated)
 
   .get(

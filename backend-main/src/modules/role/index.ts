@@ -3,7 +3,7 @@ import * as model from "./model";
 import { RoleService } from "./service";
 
 const roleService = new RoleService();
-export const role = new Elysia({ prefix: "/role", tags: ["Roles"] })
+export const role = new Elysia({ prefix: "/role", tags: ["Roles(บทบาทผู้ใช้)"] })
   .get(
     "/",
     async ({ set }) => {

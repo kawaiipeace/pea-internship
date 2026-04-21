@@ -18,7 +18,7 @@ type DocTypeName = keyof typeof DOC_TYPE_MAP;
 
 export const application = new Elysia({
   prefix: "/applications",
-  tags: ["Applications"],
+  tags: ["Applications(การสมัครฝึกงาน)"],
 })
   .use(isAuthenticated)
 
