@@ -1029,7 +1029,7 @@ export class CheckTimeService {
         workDate: attendanceLogs.workDate,
         fname: users.fname,
         lname: users.lname,
-        username: users.username,
+        username: users.displayUsername,
         image: studentProfiles.image,
       })
       .from(timeCorrectionRequests)
