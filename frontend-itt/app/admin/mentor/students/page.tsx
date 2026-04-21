@@ -315,7 +315,7 @@ const StudentsPage = () => {
                                 <tr 
                                     key={student.id} 
                                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                                    onClick={() => router.push(`/mentor/students/${student.id}`)}
+                                    onClick={() => router.push(`/admin/mentor/students/${student.id}`)}
                                 >
                                     <td className="py-4 px-6 text-left">
                                         <div className="flex items-center gap-4">

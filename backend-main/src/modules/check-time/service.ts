@@ -1084,7 +1084,7 @@ export class CheckTimeService {
           typeCheck: "IN",
           isOnsite: true,
           location: "แก้ไขเวลาโดยพี่เลี้ยง",
-          note: "System: แก้ไขเวลา",
+          note: "แก้ไขเวลาออกงาน",
         })
         .returning();
 
@@ -1096,7 +1096,7 @@ export class CheckTimeService {
           typeCheck: "OUT",
           isOnsite: true,
           location: "แก้ไขเวลาโดยพี่เลี้ยง",
-          note: "System: แก้ไขเวลา",
+          note: "แก้ไขเวลาออกงาน",
         })
         .returning();
 
