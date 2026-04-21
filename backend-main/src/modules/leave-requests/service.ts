@@ -617,15 +617,16 @@ export class LeaveService {
     return {
       success: true,
       message: "ส่งคำขออีกครั้งเรียบร้อยแล้ว",
+    }; 
+  }
+
   async getMentorAuditView(mentorUserId: string, leaveId: number) {
-    // 1. ดึงข้อมูลพี่เลี้ยงเพื่อเอา departmentId มาเช็คสิทธิ์
     const mentor = await db.query.users.findFirst({
       where: eq(users.id, mentorUserId),
     });
 
     if (!mentor) throw new ForbiddenError("ไม่พบข้อมูลผู้ใช้งาน");
 
-    // 2. Query ข้อมูลใบลา โดยเช็คว่าเด็กต้องอยู่แผนกเดียวกับพี่เลี้ยง (ยกเว้น Admin role 1)
     const result = await db
       .select({
         leave: leaveRequests,
@@ -694,6 +695,7 @@ export class LeaveService {
       },
     };
   }
+  
   async getMentorAuditList(
     mentorUserId: string,
     query: { page?: number; limit?: number; status?: string }
