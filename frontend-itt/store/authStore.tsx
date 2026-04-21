@@ -8,6 +8,7 @@ interface UserProfile {
     userId: string;
     image: string | null;
     institutionId: number;
+    institution?: { id: number; name: string } ;
     faculty: string;
     major: string;
     isActive: boolean;
