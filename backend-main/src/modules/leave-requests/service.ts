@@ -422,6 +422,7 @@ export class LeaveService {
         userId: leaveRequests.userId,
         fname: users.fname,
         lname: users.lname,
+        username: users.displayUsername,
         image: studentProfiles.image,
       })
       .from(leaveRequests)
@@ -442,9 +443,11 @@ export class LeaveService {
         status: record.status,
         reason: record.reason,
         attachmentUrl: record.file,
-        studentName:
-          `${record.fname || ""} ${record.lname || ""}`.trim() ||
-          "นักศึกษา (ไม่ระบุชื่อ)",
+        studentName: (() => {
+          const fullName = `${record.fname || ""} ${record.lname || ""}`.trim();
+          const nick = record.username;
+          return nick ? `${fullName} (${nick})` : fullName || "นักศึกษา (ไม่ระบุชื่อ)";
+        })(),
         profileImg: record.image || null,
       };
     });
