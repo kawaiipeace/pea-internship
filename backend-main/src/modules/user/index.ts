@@ -43,8 +43,7 @@ export const user = new Elysia({ prefix: "/user", tags: ["Users(ข้อมู�
       }),
       detail: {
         summary: "ดึงรายชื่อเจ้าหน้าที่",
-        description:
-          "ใช้สำหรับดึงรายชื่อเจ้าหน้าที่ทั้งหมด หรือกรองตาม departmentId ที่ระบุ",
+        description: "ใช้สำหรับดึงรายชื่อเจ้าหน้าที่ทั้งหมด หรือกรองตาม departmentId ที่ระบุ",
       },
     }
   )
@@ -65,8 +64,7 @@ export const user = new Elysia({ prefix: "/user", tags: ["Users(ข้อมู�
       }),
       detail: {
         summary: "ดึงรายชื่อนักศึกษา",
-        description:
-          "ใช้สำหรับดึงรายชื่อนักศึกษาทั้งหมด หรือกรองตาม departmentId ที่ระบุ",
+        description: "ใช้สำหรับดึงรายชื่อนักศึกษาทั้งหมด หรือกรองตาม departmentId ที่ระบุ",
       },
     }
   )

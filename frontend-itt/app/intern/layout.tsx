@@ -1,6 +1,6 @@
 'use client';
 import ContentAnimation from '@/components/layouts/content-animation';
-import Header from '@/components/layouts/header';
+import Header from '@/components/layouts/header-intern';
 import MainContainer from '@/components/layouts/main-container';
 import Overlay from '@/components/layouts/overlay';
 import Setting from '@/components/layouts/setting';

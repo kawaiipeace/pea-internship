@@ -6,7 +6,8 @@ const swaggerConfig = swagger({
     info: {
       title: "PEA Internships, PEA Itt API",
       version: "1.0.0",
-      description: "ระบบบริหารจัดการนักศึกษาฝึกงาน การไฟฟ้าส่วนภูมิภาค (PEA), ระบบบันทึกเวลาทำงานของนักศึกษาฝึกงาน (PEA)",
+      description:
+        "ระบบบริหารจัดการนักศึกษาฝึกงาน การไฟฟ้าส่วนภูมิภาค (PEA), ระบบบันทึกเวลาทำงานของนักศึกษาฝึกงาน (PEA)",
     },
     tags: [
       {
