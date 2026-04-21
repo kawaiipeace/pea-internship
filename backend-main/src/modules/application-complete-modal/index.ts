@@ -7,7 +7,7 @@ const service = new ApplicationCompleteModalService();
 
 export const applicationCompleteModal = new Elysia({
   prefix: "/student/application-complete-modal",
-  tags: ["Application Complete Modal"],
+  tags: ["Applications"],
 })
   .use(isAuthenticated)
   .get(
@@ -21,7 +21,7 @@ export const applicationCompleteModal = new Elysia({
       role: [3],
       response: model.ApplicationCompleteModalResponse,
       detail: {
-        summary: "Check whether complete internship modal should be shown",
+        summary: "ตรวจสอบ Acknowledge ของ student",
         description: "ใช้สำหรับเช็คว่า student ต้องเห็น modal รับทราบการจบฝึกงานหรือไม่",
       },
     }
@@ -37,7 +37,7 @@ export const applicationCompleteModal = new Elysia({
       role: [3],
       response: model.AcknowledgeApplicationCompleteModalResponse,
       detail: {
-        summary: "Acknowledge complete internship modal",
+        summary: "บันทึกการ Acknowledge ของ student",
         description:
           "ใช้สำหรับบันทึกว่า student กดรับทราบ modal แล้ว เพื่อไม่ให้ modal นี้แสดงอีก",
       },

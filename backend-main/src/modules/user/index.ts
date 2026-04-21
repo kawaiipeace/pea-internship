@@ -5,7 +5,7 @@ import { UserService } from "./service";
 
 const userService = new UserService();
 
-export const user = new Elysia({ prefix: "/user", tags: ["user"] })
+export const user = new Elysia({ prefix: "/user", tags: ["Users"] })
   .use(isAuthenticated)
   .get(
     "/profile",
@@ -18,6 +18,11 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
     },
     {
       auth: true,
+      detail: {
+        summary: "ดึงข้อมูลโปรไฟล์ของผู้ใช้",
+        description:
+          "ใช้สำหรับดึงข้อมูลโปรไฟล์ของผู้ใช้ที่กำลัง login อยู่ โดยอ้างอิงจาก session ปัจจุบัน",
+      },
     }
   )
   .get(
@@ -36,6 +41,11 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
       query: t.Object({
         departmentId: t.Optional(t.Numeric()),
       }),
+      detail: {
+        summary: "ดึงรายชื่อเจ้าหน้าที่",
+        description:
+          "ใช้สำหรับดึงรายชื่อเจ้าหน้าที่ทั้งหมด หรือกรองตาม departmentId ที่ระบุ",
+      },
     }
   )
   .get(
@@ -53,6 +63,11 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
           t.Numeric({ description: "ID ของแผนกที่ต้องการกรองดูนักศึกษา" })
         ),
       }),
+      detail: {
+        summary: "ดึงรายชื่อนักศึกษา",
+        description:
+          "ใช้สำหรับดึงรายชื่อนักศึกษาทั้งหมด หรือกรองตาม departmentId ที่ระบุ",
+      },
     }
   )
   .put(
@@ -72,6 +87,11 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
         email: t.Optional(t.String()),
         phoneNumber: t.Optional(t.String()),
       }),
+      detail: {
+        summary: "แก้ไขข้อมูลผู้ใช้",
+        description:
+          "ใช้สำหรับแก้ไขข้อมูลพื้นฐานของผู้ใช้ที่กำลัง login อยู่ เช่น ชื่อ นามสกุล อีเมล และเบอร์โทรศัพท์",
+      },
     }
   )
   .put(
@@ -94,6 +114,11 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
       body: t.Object({
         phoneNumber: t.String(),
       }),
+      detail: {
+        summary: "แก้ไขเบอร์โทรเจ้าหน้าที่",
+        description:
+          "ใช้สำหรับแก้ไขหมายเลขโทรศัพท์ของเจ้าหน้าที่ โดยระบุ staffProfileId ของเจ้าหน้าที่ที่ต้องการแก้ไข",
+      },
     }
   )
   .put(
@@ -115,6 +140,11 @@ export const user = new Elysia({ prefix: "/user", tags: ["user"] })
         startDate: t.Optional(t.String()),
         endDate: t.Optional(t.String()),
       }),
+      detail: {
+        summary: "แก้ไขข้อมูลโปรไฟล์นักศึกษา",
+        description:
+          "ใช้สำหรับแก้ไขข้อมูลโปรไฟล์นักศึกษา เช่น ชั่วโมงฝึกงาน คณะ สาขา หมายเหตุ และช่วงวันที่ฝึกงาน",
+      },
     }
   )
   .get(

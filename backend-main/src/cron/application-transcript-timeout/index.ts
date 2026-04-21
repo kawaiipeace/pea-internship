@@ -4,7 +4,9 @@ import { ApplicationTimeoutService } from "./service";
 
 const service = new ApplicationTimeoutService();
 
-export const applicationTranscriptTimeoutCron = new Elysia().use(
+export const applicationTranscriptTimeoutCron = new Elysia({
+  tags: ["Cronjobs"],
+}).use(
   cron({
     name: "cancel-pending-document",
     pattern: "0 00 * * *", // everyday at 1am

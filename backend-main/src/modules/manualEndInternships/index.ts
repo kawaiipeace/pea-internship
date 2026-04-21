@@ -7,7 +7,7 @@ const service = new OwnerStudentStatusService();
 
 export const ownerStudents = new Elysia({
   prefix: "/owner/students",
-  tags: ["Owner Students"],
+  tags: ["End Internships"],
 })
   .use(isAuthenticated)
   .get(
@@ -24,7 +24,7 @@ export const ownerStudents = new Elysia({
       role: [1, 2],
       params: model.studentUserParams,
       detail: {
-        summary: "Get student internship end history",
+        summary: "ดึงประวัติการจบฝึกงานของนักศึกษาทั้งหมด",
         description:
           "ดึงประวัติการจบฝึกงาน (COMPLETE / CANCEL) ของนักศึกษา พร้อมผู้ที่เป็นคนเปลี่ยนสถานะ",
       },
@@ -46,9 +46,9 @@ export const ownerStudents = new Elysia({
       params: model.studentUserParams,
       body: model.UpdateStudentInternshipStatusBody,
       detail: {
-        summary: "Admin or Owner end student internship (COMPLETE / CANCEL)",
+        summary: "ADMIN หรือ OWNER ทำการจบการฝึกงานของนักศึกษา (COMPLETE/CANCEL)",
         description:
-          "ทำได้เฉพาะนักศึกษาที่อยู่กองเดียวกัน และนักศึกษาต้องอยู่สถานะ ACTIVE เท่านั้น; CANCEL ต้องส่ง reason เพื่อเก็บลง student_profiles.status_note",
+          "ทำได้เฉพาะนักศึกษาที่อยู่กองเดียวกัน และนักศึกษาต้องอยู่สถานะ ACTIVE เท่านั้น; CANCEL ต้องส่ง reason เพื่อเก็บลง student_profiles.status_note และ application_statuses.status_note",
       },
     }
   );

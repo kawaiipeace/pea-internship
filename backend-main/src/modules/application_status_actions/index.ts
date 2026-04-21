@@ -7,7 +7,7 @@ const actionService = new ApplicationStatusActionService();
 
 export const applicationStatusActionsModule = new Elysia({
   prefix: "/application-status-actions",
-  tags: ["Application Status Actions"],
+  tags: ["Applications"],
 })
   .use(isAuthenticated)
 
