@@ -1,9 +1,151 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
 import Swal from 'sweetalert2';
+
+const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: any) => {
+    const defaultMissing = Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0));
+    const [hours, setHours] = useState<string>(defaultMissing.toString());
+
+    useEffect(() => {
+        if (isOpen) {
+            setHours(defaultMissing.toString());
+        }
+    }, [isOpen, defaultMissing]);
+
+    if (!isOpen) return null;
+
+    const parsedHours = parseFloat(hours) || 0;
+    const days = Math.ceil(parsedHours / 7);
+
+    // Calculate new end date (skipping weekends)
+    let endDate = profile?.period?.endDate ? new Date(profile.period.endDate) : new Date();
+    let added = 0;
+    while (added < days) {
+        endDate.setDate(endDate.getDate() + 1);
+        if (endDate.getDay() !== 0 && endDate.getDay() !== 6) {
+            added++;
+        }
+    }
+
+    const thaiEndDate = endDate.toLocaleDateString('th-TH', { 
+        day: 'numeric', month: 'long', year: 'numeric' 
+    });
+
+    const formatOrigEnd = profile?.period?.endDate ? new Date(profile.period.endDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+    
+    // Calculate remaining days for original end date
+    const now = new Date();
+    const origEnd = profile?.period?.endDate ? new Date(profile.period.endDate) : new Date();
+    const timeDiff = Math.ceil((origEnd.getTime() - now.getTime()) / (1000 * 3600 * 24));
+    const remainDays = Math.max(0, timeDiff);
+
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[620px] mx-4 p-7" onClick={e => e.stopPropagation()}>
+                {/* Header Profile */}
+                <div className="flex items-center gap-4 mb-6">
+                    <ImageWithAuth 
+                        userId={studentId} 
+                        imageKey={profile?.profileImg} 
+                        className="w-16 h-16 rounded-full object-cover border border-gray-100 shrink-0"
+                        fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.fullName || '')}&background=random`}
+                    />
+                    <div>
+                        <h2 className="text-[20px] font-bold text-[#111827]">
+                            {profile?.fullName} {(profile?.gender === 'M' || profile?.gender === 'ชาย') ? '(ชาย)' : (profile?.gender === 'F' || profile?.gender === 'หญิง') ? '(หญิง)' : ''}
+                        </h2>
+                        <p className="text-[#61646C] text-[14px] mt-0.5">{profile?.position || 'นักศึกษาฝึกงาน'}</p>
+                    </div>
+                </div>
+
+                {/* Two Cards */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-[#F8F9FA] rounded-xl p-4 border border-[#F2F4F7]">
+                        <p className="text-[#111827] font-bold text-[14px] mb-2">สถานะนักศึกษา</p>
+                        <p className="text-[#61646C] text-[13px] mb-1">วันสิ้นสุด: <span className="text-[#111827] font-bold">{formatOrigEnd}</span></p>
+                        <p className="text-[#61646C] text-[13px]">เหลือเวลา: <span className="text-[#A80689] font-bold">{remainDays} วัน</span></p>
+                    </div>
+                    <div className="bg-[#A80689] rounded-xl p-4 text-white flex flex-col justify-between">
+                        <p className="font-bold text-[14px]">ความคืบหน้าในการฝึกงาน</p>
+                        <div>
+                            <p className="text-[22px] font-bold mt-1 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{progress?.accumulatedHours} <span className="text-[13px] font-normal text-white/80">/{progress?.totalHoursGoal} ชั่วโมง</span></p>
+                            <p className="text-[13px] text-white/90 text-right mt-1">ขาดอีก <span className="font-bold text-white">{defaultMissing} ชั่วโมง</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Title */}
+                <div className="flex items-start gap-4 mb-5">
+                    <div className="w-[40px] h-[40px] rounded-full bg-[#FFF5FD] flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[#A80689] text-[22px]">calendar_add_on</span>
+                    </div>
+                    <div>
+                        <h3 className="text-[18px] font-bold text-[#A80689]">ชดเชยวันปฏิบัติงาน</h3>
+                        <p className="text-[13px] text-[#61646C] mt-1 leading-snug">จำนวนวันที่ต้องปฏิบัติงานเพิ่มเติมหลังวันสิ้นสุดการฝึกงาน โดยคำนวณจากจำนวนชั่วโมงที่ยังไม่ครบ</p>
+                    </div>
+                </div>
+
+                {/* Input Area */}
+                <div className="bg-[#F8F9FA] rounded-[14px] p-5 mb-4">
+                    <div className="grid grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-[13px] font-bold text-[#111827] mb-2">จำนวนชั่วโมงที่ต้องชดเชย</label>
+                            <div className="relative">
+                                <input 
+                                    type="number" 
+                                    value={hours} 
+                                    onChange={(e) => setHours(e.target.value)}
+                                    className="w-full bg-white border border-[#D0D5DD] rounded-xl py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 focus:ring-[#A80689]/20 focus:border-[#A80689] outline-none"
+                                />
+                                <span className="absolute right-3 top-2.5 text-[14px] text-[#61646C] pointer-events-none">ชั่วโมง</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-[13px] font-bold text-[#111827] mb-2">คิดเป็นจำนวนวัน</label>
+                            <div className="w-full bg-[#F2F4F7] border border-[#EAECF0] rounded-xl py-2.5 px-3 text-[14px] font-medium text-[#111827]">
+                                {days} วัน / วันสิ้นสุด: {thaiEndDate}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-2.5 text-[#98A2B3]">
+                                <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+                                <span className="text-[11px]">ระบบคำนวณจาก 7 ชั่วโมง/วัน และปัดขึ้นเสมอ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Alert */}
+                <div className="bg-[#FFF5FD] rounded-xl p-3 flex items-center gap-2 mb-6">
+                    <span className="material-symbols-outlined text-[#A80689] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+                    <span className="text-[#A80689] text-[13px] font-medium">ระบบคำนวณให้อัตโนมัติ สามารถปรับได้ตามความเหมาะสม</span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3">
+                    <button 
+                        onClick={onClose}
+                        className="px-6 py-2.5 bg-white border border-[#D0D5DD] rounded-xl text-[#344054] text-[14px] font-bold hover:bg-gray-50 transition-colors"
+                    >
+                        ยกเลิก
+                    </button>
+                    <button 
+                        onClick={() => {
+                            Swal.fire({ title: 'สำเร็จ', text: 'บันทึกการชดเชยสำเร็จ', icon: 'success' });
+                            onClose();
+                        }}
+                        className="px-6 py-2.5 bg-[#0EBA67] rounded-xl text-white text-[14px] font-bold hover:bg-[#0da45a] transition-colors shadow-sm"
+                    >
+                        ยืนยัน
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+};
 
 const StudentDetailPage = () => {
     const router = useRouter();
@@ -15,6 +157,7 @@ const StudentDetailPage = () => {
     const [studentData, setStudentData] = useState<any>(null);
     const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
     const [pagination, setPagination] = useState<any>(null);
+    const [isCompensateModalOpen, setIsCompensateModalOpen] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         setIsLoading(true);
@@ -342,7 +485,10 @@ const StudentDetailPage = () => {
                             <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
                             ผ่านการฝึกงาน
                         </button>
-                        <button className="w-full py-3 bg-[#FFF5FD] text-[#333741]/60 border border-[#A80689] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors shadow-sm text-[18px]">
+                        <button 
+                            onClick={() => setIsCompensateModalOpen(true)}
+                            className="w-full py-3 bg-[#FFF5FD] text-[#A80689] border border-[#A80689] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 transition-colors shadow-sm text-[18px]"
+                        >
                             ชดเชยวันทำงาน
                         </button>
                     </div>
@@ -506,6 +652,14 @@ const StudentDetailPage = () => {
                     </div>
                 )}
             </div>
+
+            <CompensationModal 
+                isOpen={isCompensateModalOpen}
+                onClose={() => setIsCompensateModalOpen(false)}
+                profile={profile}
+                progress={progress}
+                studentId={studentId}
+            />
         </div>
     );
 };
