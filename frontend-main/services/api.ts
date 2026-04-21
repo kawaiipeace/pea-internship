@@ -1420,10 +1420,10 @@ api.interceptors.response.use(
       authStorage.clearAuth();
       if (typeof window !== "undefined") {
         // ไม่ redirect ถ้าอยู่หน้า public ("/", "/pea-info", "/faqs", "/jobs")
-        const publicPaths = ["/", "/pea-info", "/faqs", "/jobs"];
+        const publicPaths = ["/", "/pea-info", "/faqs", "/jobs", "/guide"];
         const currentPath = window.location.pathname;
         const isAuthPage = currentPath.startsWith("/login") || currentPath.startsWith("/register");
-        const isPublicPage = publicPaths.some(p => currentPath === p || currentPath.startsWith("/jobs/"));
+        const isPublicPage = publicPaths.some(p => currentPath === p || currentPath.startsWith("/jobs/") || currentPath.startsWith("/guide"));
 
         if (!isPublicPage && !isAuthPage) {
           const loginUrl = new URL("/login/intern", window.location.origin);
