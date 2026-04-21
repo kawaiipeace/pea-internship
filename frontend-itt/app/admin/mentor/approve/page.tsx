@@ -641,6 +641,15 @@ const ApprovalRequestPage = () => {
         }
     };
 
+    // Initial fetch to get counts for both tabs
+    useEffect(() => {
+        if (activeTab === 'leave') {
+            fetchTimeCorrectionRequests();
+        } else {
+            fetchLeaveRequests();
+        }
+    }, []);
+
     useEffect(() => {
         if (activeTab === 'leave') {
             fetchLeaveRequests();
@@ -724,7 +733,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'leave' as const,
             title: 'คำขอลา',
-            count: `${activeTab === 'leave' ? leaveMeta.totalRecords : leaveRequests.length} รายการ`,
+            count: `${leaveMeta.totalRecords} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#1AB3FF]">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '22px' }}>lab_profile</span>
@@ -738,7 +747,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'time-edit' as const,
             title: 'คำขอแก้ไขเวลา',
-            count: `${activeTab === 'time-edit' ? timeMeta.totalRecords : timeCorrectionRequests.length} รายการ`,
+            count: `${timeMeta.totalRecords} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full bg-[#D9692C] flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>edit_square</span>

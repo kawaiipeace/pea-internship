@@ -1028,6 +1028,7 @@ export class CheckTimeService {
         attachmentUrl: timeCorrectionRequests.attachmentUrl,
         status: timeCorrectionRequests.status,
         workDate: attendanceLogs.workDate,
+        dailyStatus: attendanceLogs.dailyStatus,
         fname: users.fname,
         lname: users.lname,
         username: users.displayUsername,
@@ -1070,6 +1071,7 @@ export class CheckTimeService {
       reason: record.reason,
       attachmentUrl: record.attachmentUrl,
       status: record.status,
+      dailyStatus: record.dailyStatus,
     }));
 
     return {

@@ -208,11 +208,15 @@ const StudentDetailPage = () => {
                             });
 
                             if (matchingLeave) {
+                                const existingNotes = record.notes || [];
+                                const leaveReason = matchingLeave.reason || matchingLeave.note;
+                                const hasLeaveNote = leaveReason ? existingNotes.some((n: any) => n.detail === leaveReason) : true;
+
                                 return {
                                     ...record,
                                     leaveType: matchingLeave.leaveType,
                                     evidenceUrl: matchingLeave.attachmentUrl || record.evidenceUrl,
-                                    note: matchingLeave.reason || matchingLeave.note || record.note
+                                    notes: hasLeaveNote ? existingNotes : [...existingNotes, { type: 'LEAVE', detail: leaveReason }]
                                 };
                             }
                         }
@@ -377,7 +381,15 @@ const StudentDetailPage = () => {
             }
 
             const timeStr = row.status === 'ABSENT' || row.status === 'LEAVE' ? '-' : `${row.checkInTime || '-'} - ${row.checkOutTime || '-'}`;
-            const noteStr = row.note ? `"${row.note.replace(/"/g, '""')}"` : '-';
+            
+            // Collect all notes
+            const allNotes = (row.notes || []).map((n: any) => n.detail).filter(Boolean);
+            if (row.note && !allNotes.includes(row.note)) {
+                allNotes.push(row.note);
+            }
+            const joinedNotes = allNotes.join(' | ');
+            const noteStr = joinedNotes ? `"${joinedNotes.replace(/"/g, '""')}"` : '-';
+            
             const hoursStr = row.hours || '0';
 
             const csvRow = [
@@ -615,23 +627,44 @@ const StudentDetailPage = () => {
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-center">
-                                        {(() => {
-                                            if (!row.note) return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
+                                        <div className="flex flex-col items-center gap-1">
+                                            {(() => {
+                                                const allNotes: any[] = [...(row.notes || [])];
+                                                
+                                                // Fallback for old note string if it exists and isn't already in notes array
+                                                if (row.note && !allNotes.find(n => n.detail === row.note)) {
+                                                    const isCorrection = row.note.includes('แก้ไขเวลา') || row.note.includes('ปฏิบัติงานนอกสถานที่');
+                                                    allNotes.push({
+                                                        type: isCorrection ? 'CORRECTION' : 'REGULAR',
+                                                        detail: row.note
+                                                    });
+                                                }
 
-                                            const isCorrection = row.note.includes('แก้ไขเวลา') || row.note.includes('ปฏิบัติงานนอกสถานที่');
+                                                if (allNotes.length === 0) {
+                                                    return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
+                                                }
 
-                                            // Show time corrections in red always
-                                            if (isCorrection) {
-                                                return <span className="text-[16px] font-medium text-[#E04B3E]">{row.note}</span>;
-                                            }
+                                                return allNotes.map((note, idx) => {
+                                                    const isSpecial = note.type === 'CORRECTION' || 
+                                                                    note.detail.includes('แก้ไขเวลา') || 
+                                                                    note.detail.includes('ปฏิบัติงานนอกสถานที่');
+                                                    
+                                                    // Hide notes that are just repeat status for LATE
+                                                    if (row.status === 'LATE' && (note.detail === 'สาย' || note.type === 'LATE')) {
+                                                        return null;
+                                                    }
 
-                                            // Hide notes entirely for LATE status (like location names) or if the note literally says 'สาย'
-                                            if (row.status === 'LATE' || row.note === 'สาย') {
-                                                return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
-                                            }
-
-                                            return <span className="text-[16px] font-medium text-[#000000]">{row.note}</span>;
-                                        })()}
+                                                    return (
+                                                        <span 
+                                                            key={idx} 
+                                                            className={`text-[16px] font-medium ${isSpecial ? 'text-[#E04B3E]' : 'text-[#000000]'}`}
+                                                        >
+                                                            {note.detail}
+                                                        </span>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
