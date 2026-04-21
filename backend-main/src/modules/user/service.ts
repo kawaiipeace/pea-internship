@@ -27,7 +27,11 @@ export class UserService {
       where: eq(users.id, userId),
       with: {
         staffProfiles: true,
-        studentProfiles: true,
+        studentProfiles: {
+          with: {
+            institution: true,
+          },
+        },
       },
     });
 

@@ -328,7 +328,7 @@ const Header = () => {
                                 button={
                                     <div className="relative group block h-9 w-9">
                                         {user?.roleId === 3 ? (
-                                            <ImageWithAuth className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
+                                            <ImageWithAuth userId={user?.id} className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
                                         ) : (
                                             <img className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" src="/assets/images/user-profile.jpeg" alt="userProfile" />
                                         )}
@@ -339,7 +339,7 @@ const Header = () => {
                                     <li>
                                         <div className="flex items-center px-4 py-4">
                                             {user?.roleId === 3 ? (
-                                                <ImageWithAuth className="h-10 w-10 rounded-md object-cover" />
+                                                <ImageWithAuth userId={user?.id} className="h-10 w-10 rounded-md object-cover" />
                                             ) : (
                                                 <img className="h-10 w-10 rounded-md object-cover" src="/assets/images/user-profile.jpeg" alt="userProfile" />
                                             )}
