@@ -9,6 +9,7 @@ import { db } from "@/db";
 import {
   applicationInformations,
   applicationStatuses,
+  institutions,
   staffProfiles,
   studentAttendanceSummary,
   studentProfiles,
@@ -139,9 +140,29 @@ export class UserService {
       conditions.push(eq(users.departmentId, departmentId));
     }
 
-    return db.query.users.findMany({
-      where: and(...conditions),
-    });
+    return await db
+      .select({
+        id: users.id,
+        fname: users.fname,
+        lname: users.lname,
+        nickname: users.displayUsername,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        departmentId: users.departmentId,
+        image: studentProfiles.image,
+        faculty: studentProfiles.faculty,
+        major: studentProfiles.major,
+        internshipStatus: studentProfiles.internshipStatus,
+        institutionName: institutions.name,
+      })
+      .from(users)
+      .leftJoin(studentProfiles, eq(users.id, studentProfiles.userId))
+      .leftJoin(
+        institutions,
+        eq(studentProfiles.institutionId, institutions.id)
+      )
+      .where(and(...conditions))
+      .orderBy(desc(users.createdAt));
   }
 
   async updateUser(

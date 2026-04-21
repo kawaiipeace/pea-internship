@@ -1,5 +1,5 @@
 // backend/src/leave/index.ts
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
 import { LeaveService } from "./service";
@@ -201,6 +201,12 @@ export const leave = new Elysia({
         body.ids
       );
 
+  .get(
+    "/mentor/audit/:leaveId", // เปลี่ยนพารามิเตอร์เป็น :leaveId ให้ตรงกับ params
+    async ({ params: { leaveId }, set, user }) => {
+      // ตรวจสอบว่ามี user และ id (จาก middleware auth)
+      const response = await leaveService.getMentorAuditView(user.id, leaveId);
+
       set.status = 200;
       return response;
     },
@@ -210,6 +216,35 @@ export const leave = new Elysia({
       detail: {
         summary: "ส่งคำขอลาซ้ำ (Resubmit Rejected Leave Request)",
         description: "เปลี่ยนสถานะจาก REJECTED กลับเป็น PENDING เพื่อส่งคำขอเดิมซ้ำ",
+      role: [1, 2],
+      params: t.Object({
+        leaveId: t.Numeric(),
+      }),
+      detail: {
+        summary: "ดูประวัติใบลาของนักศึกษาในดูแล (Mentor Audit View)",
+        description: "ดึง Timeline ของใบลาเฉพาะนักศึกษาที่อยู่ในแผนกเดียวกันเท่านั้น",
+      },
+    }
+  )
+
+  .get(
+    "/mentor/audit-list",
+    async ({ query, set, user }) => {
+      const response = await leaveService.getMentorAuditList(user.id, query);
+
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+      query: t.Object({
+        page: t.Optional(t.Numeric({ default: 1 })),
+        limit: t.Optional(t.Numeric({ default: 10 })),
+        status: t.Optional(t.String()),
+      }),
+      detail: {
+        summary: "รายการประวัติการอนุมัติใบลาทั้งหมด (Mentor Audit List)",
+        description: "ดึงรายการใบลาและสถานะการอนุมัติของนักศึกษาทุกคนในแผนก",
       },
     }
   );

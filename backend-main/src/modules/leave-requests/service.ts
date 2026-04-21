@@ -1,6 +1,15 @@
 import crypto from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import {
+  aliasedTable,
+  and,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lte,
+  sql,
+} from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { ConflictError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -608,6 +617,153 @@ export class LeaveService {
     return {
       success: true,
       message: "ส่งคำขออีกครั้งเรียบร้อยแล้ว",
+  async getMentorAuditView(mentorUserId: string, leaveId: number) {
+    // 1. ดึงข้อมูลพี่เลี้ยงเพื่อเอา departmentId มาเช็คสิทธิ์
+    const mentor = await db.query.users.findFirst({
+      where: eq(users.id, mentorUserId),
+    });
+
+    if (!mentor) throw new ForbiddenError("ไม่พบข้อมูลผู้ใช้งาน");
+
+    // 2. Query ข้อมูลใบลา โดยเช็คว่าเด็กต้องอยู่แผนกเดียวกับพี่เลี้ยง (ยกเว้น Admin role 1)
+    const result = await db
+      .select({
+        leave: leaveRequests,
+        studentName: sql<string>`concat(${users.fname}, ' ', ${users.lname})`,
+        studentDept: users.departmentId,
+      })
+      .from(leaveRequests)
+      .innerJoin(users, eq(leaveRequests.userId, users.id))
+      .where(
+        and(
+          eq(leaveRequests.id, leaveId),
+          // ถ้าไม่ใช่ Admin (1) ต้องอยู่แผนกเดียวกัน
+          mentor.roleId !== 1
+            ? eq(users.departmentId, mentor.departmentId!)
+            : undefined
+        )
+      )
+      .limit(1);
+
+    if (result.length === 0) {
+      throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงข้อมูลใบลาของนักศึกษาท่านนี้");
+    }
+
+    const data = result[0];
+
+    // 3. หาข้อมูลคน Approve (ถ้ามี)
+    let approverInfo = null;
+    if (data.leave.approvedBy) {
+      const approver = await db.query.users.findFirst({
+        where: eq(users.id, data.leave.approvedBy),
+        columns: { fname: true, lname: true },
+      });
+      if (approver) {
+        approverInfo = `${approver.fname} ${approver.lname}`;
+      }
+    }
+
+    // 4. จัด Format เป็น Timeline
+    const timeline = [
+      {
+        status: "SUBMITTED",
+        label: "นักศึกษาส่งคำขอลา",
+        time: data.leave.leaveDatetime,
+        by: data.studentName,
+        note: data.leave.reason,
+      },
+    ];
+
+    if (data.leave.status !== "PENDING") {
+      timeline.push({
+        status: data.leave.status,
+        label: data.leave.status === "APPROVED" ? "อนุมัติการลา" : "ปฏิเสธการลา",
+        time: data.leave.approvedAt,
+        by: approverInfo || "เจ้าหน้าที่",
+        note: data.leave.approverNote,
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        leaveId: data.leave.id,
+        studentName: data.studentName,
+        currentStatus: data.leave.status,
+        timeline,
+      },
+    };
+  }
+  async getMentorAuditList(
+    mentorUserId: string,
+    query: { page?: number; limit?: number; status?: string }
+  ) {
+    const { page = 1, limit = 10, status } = query;
+    const offset = (page - 1) * limit;
+
+    const mentor = await db.query.users.findFirst({
+      where: eq(users.id, mentorUserId),
+    });
+
+    if (!mentor) throw new ForbiddenError("ไม่พบข้อมูลผู้ใช้งาน");
+
+    const approver = aliasedTable(users, "approver");
+
+    const records = await db
+      .select({
+        id: leaveRequests.id,
+        leaveType: leaveRequests.leaveRequestType,
+        leaveDate: leaveRequests.leaveDatetime,
+        status: leaveRequests.status,
+        reason: leaveRequests.reason,
+        file: leaveRequests.file,
+        studentName: sql<string>`concat(${users.fname}, ' ', ${users.lname})`,
+        studentImage: studentProfiles.image,
+        approverName: sql<string>`concat(${approver.fname}, ' ', ${approver.lname})`,
+        approvedAt: leaveRequests.approvedAt,
+        approverNote: leaveRequests.approverNote,
+      })
+      .from(leaveRequests)
+      .innerJoin(users, eq(leaveRequests.userId, users.id))
+      .innerJoin(studentProfiles, eq(studentProfiles.userId, users.id))
+      .leftJoin(approver, eq(leaveRequests.approvedBy, approver.id)) // Join หาคนอนุมัติ
+      .where(
+        and(
+          mentor.roleId !== 1
+            ? eq(users.departmentId, mentor.departmentId!)
+            : undefined,
+          status ? eq(leaveRequests.status, status as any) : undefined
+        )
+      )
+      .orderBy(
+        desc(leaveRequests.approvedAt),
+        desc(leaveRequests.leaveDatetime)
+      )
+      .limit(limit)
+      .offset(offset);
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(leaveRequests)
+      .innerJoin(users, eq(leaveRequests.userId, users.id))
+      .where(
+        and(
+          mentor.roleId !== 1
+            ? eq(users.departmentId, mentor.departmentId!)
+            : undefined,
+          status ? eq(leaveRequests.status, status as any) : undefined
+        )
+      );
+
+    return {
+      success: true,
+      data: records,
+      meta: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
     };
   }
 }
