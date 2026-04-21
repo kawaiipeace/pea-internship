@@ -129,56 +129,64 @@ const ProfilePage = () => {
         }
     };
 
-    const { user, actionSetUser } = useAuthStore();
+    const { user, actionSetUser, actionFetchProfile } = useAuthStore();
 
-    // ── Fetch student profile from /user/student ──────────────────────────────
+    // ── Sync Global User to Local State ──────────────────────────────
+    useEffect(() => {
+        if (!user) return;
+        
+        const data = user;
+        const name = [data.fname, data.lname].filter(Boolean).join(' ') || '';
+        setFullName(name);
+
+        const profile: any = data.profile ?? {};
+
+        // แปลง startDate / endDate → period
+        const formatDate = (d: string | null | undefined) => {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('th-TH', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+        };
+        const period =
+            profile.startDate && profile.endDate
+                ? `${formatDate(profile.startDate)} - ${formatDate(profile.endDate)}`
+                : '';
+
+        // การศึกษาปัจจุบัน -> คณะ + สาขา
+        const faculty = profile.faculty ?? '';
+        const major = profile.major ?? '';
+        const eduStatus = faculty && major ? `${faculty} สาขา${major}` : (faculty || major || '');
+
+        // ชื่อสถาบัน -> profile.institution?.name หรือ profile.institution
+        const instName = profile.institution?.name || profile.institution || '';
+
+        setUserData((prev) => ({
+            ...prev,
+            nickname: data.displayUsername ?? '',
+            gender: data.gender ?? '',
+            email: data.email ?? '',
+            phone: data.phoneNumber ?? '',
+            educationStatus: eduStatus,
+            institution: typeof instName === 'string' ? instName : '',
+            period,
+            hoursRequired: profile.hours ? `${profile.hours} ชั่วโมง` : '',
+        }));
+        setIsLoading(false);
+    }, [user]);
+
+    // ── Fetch student profile ──────────────────────────────
     const fetchStudentProfile = useCallback(async () => {
         try {
-            const response = await axiosInstance.get('/user/profile');
-            const data = response.data;
-            if (data) {
-                // Sync to global store
-                actionSetUser(data);
-
-                // ชื่อจริง - นามสกุล
-                const name = [data.fname, data.lname].filter(Boolean).join(' ') || '';
-                setFullName(name);
-
-                // profile คือ studentProfiles ที่ merge มาจาก backend
-                const profile = data.profile ?? {};
-
-                // แปลง startDate / endDate → period
-                const formatDate = (d: string | null | undefined) => {
-                    if (!d) return '';
-                    return new Date(d).toLocaleDateString('th-TH', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                    });
-                };
-                const period =
-                    profile.startDate && profile.endDate
-                        ? `${formatDate(profile.startDate)} - ${formatDate(profile.endDate)}`
-                        : '';
-
-                setUserData((prev) => ({
-                    ...prev,
-                    nickname: data.displayUsername ?? '',              // ชื่อเล่น
-                    gender: data.gender ?? '',                         // MALE / FEMALE / OTHER
-                    email: data.email ?? '',
-                    phone: data.phoneNumber ?? '',                     // phoneNumber (ไม่ใช่ phone)
-                    educationStatus: profile.faculty ?? '',            // คณะ
-                    institution: profile.major ?? '',                  // สาขา
-                    period,                                            // วันเริ่ม - วันสิ้นสุด
-                    hoursRequired: profile.hours ? `${profile.hours} ชั่วโมง` : '',
-                }));
-            }
+            await actionFetchProfile();
         } catch (error) {
             console.error('Error fetching student profile:', error);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [actionFetchProfile]);
 
     // ── Fetch internship info (department, position, mentors) ─────────────────
     const fetchInternshipInfo = useCallback(async () => {
@@ -425,6 +433,7 @@ const ProfilePage = () => {
                                 ) : (
                                     // ดึงรูปจาก API อย่างปลอดภัย
                                     <ImageWithAuth
+                                        userId={user?.id}
                                         className="w-full h-full object-cover"
                                         fallbackSrc={defaultAvatarUrl}
                                     />
@@ -591,6 +600,7 @@ const ProfilePage = () => {
                             ) : (
                                 // ดึงรูปจาก API อย่างปลอดภัย
                                 <ImageWithAuth
+                                    userId={user?.id}
                                     className="w-full h-full object-cover"
                                     fallbackSrc={defaultAvatarUrl}
                                 />

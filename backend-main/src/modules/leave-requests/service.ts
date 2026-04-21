@@ -24,6 +24,7 @@ interface LeaveRecord {
   attachmentUrl: string | null;
   studentName?: string;
   profileImg?: string | null;
+  approverNote?: string | null;
 }
 
 interface GroupedLeaveRecord extends Omit<LeaveRecord, "id" | "leaveDate"> {
@@ -81,7 +82,8 @@ export class LeaveService {
         record.status === currentGroup.status &&
         record.reason === currentGroup.reason &&
         record.attachmentUrl === currentGroup.attachmentUrl &&
-        record.userId === currentGroup.userId
+        record.userId === currentGroup.userId &&
+        record.approverNote === (currentGroup as any).approverNote
       ) {
         currentGroup.endDate = record.leaveDate;
         currentGroup.ids.push(record.id);
@@ -122,21 +124,27 @@ export class LeaveService {
     let uploadedAttachmentUrl: string | null = null;
 
     if (data.attachment) {
-      const file = data.attachment as File;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const fileExtension = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${fileExtension}`;
-      const s3Key = `leave-documents/${userId}/${fileName}`;
+      if (typeof data.attachment === "string") {
+        // Reuse existing attachment URL
+        uploadedAttachmentUrl = data.attachment;
+      } else {
+        // New file upload
+        const file = data.attachment as File;
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const fileExtension = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}.${fileExtension}`;
+        const s3Key = `leave-documents/${userId}/${fileName}`;
 
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: s3Key,
-          Body: buffer,
-          ContentType: file.type,
-        })
-      );
-      uploadedAttachmentUrl = `/${s3Key}`;
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: s3Key,
+            Body: buffer,
+            ContentType: file.type,
+          })
+        );
+        uploadedAttachmentUrl = `/${s3Key}`;
+      }
     }
 
     return await db.transaction(async (tx) => {

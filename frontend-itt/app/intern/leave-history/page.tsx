@@ -136,7 +136,8 @@ const LeaveHistoryPage = () => {
                     leaveReason: r.reason || 'ไม่ระบุเหตุผล',
                     isRange,
                     startDateStr: r.startDate,
-                    endDateStr: r.endDate
+                    endDateStr: r.endDate,
+                    mentorReason: r.approverNote || ""
                 };
             }));
             setSummary(data.summary);
@@ -248,20 +249,93 @@ const LeaveHistoryPage = () => {
                 }
             });
             
-            // Refresh summary and data
             fetchLeaveHistory();
         } catch (error: any) {
             console.error('Error deleting leave request:', error);
-            const errorMessage = error.response?.data?.message || 'ไม่สามารถยกเลิกคำขอได้';
             Swal.fire({
-                title: 'เกิดข้อผิดพลาด',
-                text: errorMessage,
-                icon: 'error',
-                confirmButtonText: 'ตกลง',
-                customClass: {
-                    confirmButton: 'bg-[#A80689] text-white px-6 py-2 rounded-lg'
-                }
+              icon: 'error',
+              title: 'เกิดข้อผิดพลาด',
+              text: 'ไม่สามารถยกเลิกคำขอได้',
+              confirmButtonText: 'ตกลง',
+              buttonsStyling: false,
+              customClass: {
+                popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+                confirmButton: 'bg-[#EF4444] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+              }
             });
+        }
+    };
+
+    const handleAutoResubmitLeave = async (item: any) => {
+        const result = await Swal.fire({
+          title: 'ยืนยันการส่งคำขออีกครั้ง',
+          text: 'คุณต้องการส่งคำขอการลานี้ใหม่อีกครั้งโดยใช้ข้อมูลเดิมใช่หรือไม่?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'ยืนยัน',
+          cancelButtonText: 'ยกเลิก',
+          buttonsStyling: false,
+          customClass: {
+            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+            confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center mx-2',
+            cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center mx-2'
+          }
+        });
+    
+        if (result.isConfirmed) {
+          try {
+            setIsLoading(true);
+            const rawType = item.leaveType === 'ลากิจ' ? 'ABSENCE' : 'SICK';
+            
+            // Backend expects startDate, endDate, reason, leaveType, attachment
+            const response = await axiosInstance.post('/leave', {
+                startDate: item.startDateStr,
+                endDate: item.endDateStr,
+                leaveType: rawType,
+                reason: item.leaveReason === 'ไม่ระบุเหตุผล' ? '' : item.leaveReason,
+                attachment: item.evidenceUrl || undefined
+            }, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            
+            if (response.data && response.data.success) {
+              await Swal.fire({
+                title: 'ส่งคำขออีกครั้งสำเร็จ',
+                text: 'ส่งคำขอการลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)',
+                icon: 'success',
+                confirmButtonText: 'ตกลง',
+                buttonsStyling: false,
+                customClass: {
+                  popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                  title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                  htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+                  confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                }
+              });
+              setIsDetailModalOpen(false);
+              fetchLeaveHistory();
+            }
+          } catch (error: any) {
+            Swal.fire({
+              title: 'เกิดข้อผิดพลาด',
+              text: error.response?.data?.message || 'ไม่สามารถส่งคำขอได้ กรุณาลองใหม่อีกครั้ง',
+              icon: 'error',
+              confirmButtonText: 'ตกลง',
+              buttonsStyling: false,
+              customClass: {
+                popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
+                confirmButton: 'bg-[#EF4444] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+              }
+            });
+          } finally {
+            setIsLoading(false);
+          }
         }
     };
 
@@ -539,7 +613,7 @@ const LeaveHistoryPage = () => {
                                                                 }
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
-                                                                    handleDeleteLeaveRequest(item.id);
+                                                                    handleDeleteLeaveRequest(item.ids);
                                                                 }
                                                             });
                                                         }}
@@ -680,8 +754,9 @@ const LeaveHistoryPage = () => {
                                                                                         buttonsStyling: false,
                                                                                         reverseButtons: true,
                                                                                         customClass: {
-                                                                                            popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                                            title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
+                                                                                            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                                                                                            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                                                                                            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
                                                                                             actions: 'flex gap-3 w-full justify-center mt-3',
                                                                                             confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
                                                                                             cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
@@ -754,6 +829,32 @@ const LeaveHistoryPage = () => {
                                                                     </button>
                                                                 </div>
                                                             </div>
+
+                                                            {/* Rejection Reason Section */}
+                                                            {selectedHistoryItem.status === "ไม่อนุมัติการลา" && (
+                                                              <div className="w-full space-y-3 mt-6">
+                                                                <div className="flex items-center gap-2 text-[16px] text-[#B42318] font-bold">
+                                                                  <span className="material-symbols-rounded !text-[20px]">error</span>
+                                                                  เหตุผลที่ไม่สามารถอนุมัติการลา
+                                                                </div>
+                                                                <div className="w-full bg-[#FFFBFA] dark:bg-red-900/10 border border-[#FDA29B] dark:border-red-800 rounded-[6px] px-4 py-2 min-h-[40px] flex items-center text-[15px] text-[#B42318] dark:text-red-400 shadow-sm">
+                                                                  {selectedHistoryItem.mentorReason || "ไม่ระบุเหตุผล"}
+                                                                </div>
+                                                              </div>
+                                                            )}
+
+                                                            {/* Action Button */}
+                                                            {selectedHistoryItem.status === "ไม่อนุมัติการลา" && (
+                                                              <div className="mt-6 w-full">
+                                                                <button
+                                                                  type="button"
+                                                                  className="w-full h-[50px] bg-[#A80689] text-white rounded-[12px] text-[17px] font-bold flex items-center justify-center shadow-lg shadow-purple-100 active:scale-[0.98] transition-transform"
+                                                                  onClick={() => handleAutoResubmitLeave(selectedHistoryItem)}
+                                                                >
+                                                                  ส่งคำขอการลาอีกครั้ง
+                                                                </button>
+                                                              </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                         )}

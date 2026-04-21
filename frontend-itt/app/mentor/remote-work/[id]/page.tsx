@@ -12,6 +12,7 @@ interface Student {
     nickname: string;
     faculty: string;
     major: string;
+    positionName: string;
 }
 
 interface OffsiteTask {
@@ -204,10 +205,10 @@ const RemoteWorkDetailPage = () => {
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-[14px] font-bold text-[#101828] dark:text-white truncate">
-                                            {student.name} {student.nickname && `(${student.nickname})`}
+                                            {student.name} { `(${student.nickname})`}
                                         </p>
                                         <p className="text-[12px] text-[#667085] dark:text-gray-400 truncate">
-                                            {student.major || student.faculty || "นักศึกษาฝึกงาน"}
+                                            {student.positionName }
                                         </p>
                                     </div>
                                 </div>

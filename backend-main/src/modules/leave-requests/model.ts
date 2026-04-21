@@ -13,7 +13,11 @@ export const SubmitLeaveBody = t.Object({
     description: "ประเภทการลา (ABSENCE = ลากิจ, SICK = ลาป่วย)",
   }),
   reason: t.String({ minLength: 1, description: "เหตุผลการลา" }),
-  attachment: t.Optional(t.File({ description: "ไฟล์แนบหลักฐานการลา (ถ้ามี)" })),
+  attachment: t.Optional(
+    t.Union([t.File(), t.String()], {
+      description: "ไฟล์แนบหลักฐานการลา (ถ้ามี) หรือ URL ไฟล์เดิมสำหรับการส่งซ้ำ",
+    })
+  ),
 });
 
 export const params = t.Object({
