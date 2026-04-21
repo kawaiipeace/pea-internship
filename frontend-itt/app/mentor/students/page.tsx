@@ -74,9 +74,20 @@ const StudentsPage = () => {
                     }
                 }
 
+                const rawName = s.fullName || 'ไม่ระบุชื่อ';
+                const nameParts = rawName.split(' (');
+                const mainName = nameParts[0];
+                const extractedNick = nameParts[1] ? nameParts[1].replace(')', '') : '';
+                
+                // Prioritize nickname field if backend starts providing it separately, 
+                // but always fall back to extracting from the fullName string
+                const nick = s.nickname || detail?.profile?.nickname || extractedNick;
+                const displayName = nick ? `${mainName} (${nick})` : mainName;
+
                 return {
                     id: s.id,
-                    name: s.fullName || 'ไม่ระบุชื่อ',
+                    name: displayName,
+                    nickname: nick,
                     role: detail?.profile?.position || 'นักศึกษาฝึกงาน',
                     university: detail?.profile?.institution || 'การไฟฟ้าส่วนภูมิภาค',
                     status: s.todayStatus?.code || 'IDLE',
@@ -393,7 +404,16 @@ const StudentsPage = () => {
                                                 fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
                                             />
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">{student.name}</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">
+                                                        {student.name.split(' (')[0]}
+                                                    </span>
+                                                    {student.nickname && (
+                                                        <span className="font-bold text-[#000000] text-[14px] whitespace-nowrap">
+                                                            ({student.nickname})
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
                                             </div>
                                         </div>

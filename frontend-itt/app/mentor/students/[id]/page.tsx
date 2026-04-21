@@ -31,12 +31,12 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
         }
     }
 
-    const thaiEndDate = endDate.toLocaleDateString('th-TH', { 
-        day: 'numeric', month: 'long', year: 'numeric' 
+    const thaiEndDate = endDate.toLocaleDateString('th-TH', {
+        day: 'numeric', month: 'long', year: 'numeric'
     });
 
     const formatOrigEnd = profile?.period?.endDate ? new Date(profile.period.endDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
-    
+
     // Calculate remaining days for original end date
     const now = new Date();
     const origEnd = profile?.period?.endDate ? new Date(profile.period.endDate) : new Date();
@@ -48,15 +48,32 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
             <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[620px] mx-4 p-7" onClick={e => e.stopPropagation()}>
                 {/* Header Profile */}
                 <div className="flex items-center gap-4 mb-6">
-                    <ImageWithAuth 
-                        userId={studentId} 
-                        imageKey={profile?.profileImg} 
+                    <ImageWithAuth
+                        userId={studentId}
+                        imageKey={profile?.profileImg}
                         className="w-16 h-16 rounded-full object-cover border border-gray-100 shrink-0"
                         fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.fullName || '')}&background=random`}
                     />
                     <div>
                         <h2 className="text-[20px] font-bold text-[#111827]">
-                            {profile?.fullName} {(profile?.gender === 'M' || profile?.gender === 'ชาย') ? '(ชาย)' : (profile?.gender === 'F' || profile?.gender === 'หญิง') ? '(หญิง)' : ''}
+                            {(() => {
+                                const rawName = profile?.fullName || '';
+                                const parts = rawName.split(' (');
+                                const mainName = parts[0];
+                                const extractedNick = parts[1] ? parts[1].replace(')', '') : '';
+                                const nick = profile?.nickname || extractedNick;
+                                const genderLabel = (profile?.gender === 'M' || profile?.gender === 'ชาย') ? '(ชาย)' : (profile?.gender === 'F' || profile?.gender === 'หญิง') ? '(หญิง)' : '';
+
+                                return (
+                                    <>
+                                        {mainName}
+                                        {nick && (
+                                            <span className="text-[#000000] font-bold ml-2">({nick})</span>
+                                        )}
+                                        {genderLabel && <span className="ml-2 font-normal text-gray-500">{genderLabel}</span>}
+                                    </>
+                                );
+                            })()}
                         </h2>
                         <p className="text-[#61646C] text-[14px] mt-0.5">{profile?.position || 'นักศึกษาฝึกงาน'}</p>
                     </div>
@@ -95,9 +112,9 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
                         <div>
                             <label className="block text-[13px] font-bold text-[#111827] mb-2">จำนวนชั่วโมงที่ต้องชดเชย</label>
                             <div className="relative">
-                                <input 
-                                    type="number" 
-                                    value={hours} 
+                                <input
+                                    type="number"
+                                    value={hours}
                                     onChange={(e) => setHours(e.target.value)}
                                     className="w-full bg-white border border-[#D0D5DD] rounded-xl py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 focus:ring-[#A80689]/20 focus:border-[#A80689] outline-none"
                                 />
@@ -125,13 +142,13 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3">
-                    <button 
+                    <button
                         onClick={onClose}
                         className="px-6 py-2.5 bg-white border border-[#D0D5DD] rounded-xl text-[#344054] text-[14px] font-bold hover:bg-gray-50 transition-colors"
                     >
                         ยกเลิก
                     </button>
-                    <button 
+                    <button
                         onClick={() => {
                             Swal.fire({ title: 'สำเร็จ', text: 'บันทึกการชดเชยสำเร็จ', icon: 'success' });
                             onClose();
@@ -151,7 +168,7 @@ const StudentDetailPage = () => {
     const router = useRouter();
     const params = useParams();
     const studentId = params.id as string;
-    
+
     const [page, setPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [studentData, setStudentData] = useState<any>(null);
@@ -167,26 +184,26 @@ const StudentDetailPage = () => {
             });
             const data = response.data;
             setStudentData(data);
-            
+
             let finalRecords = data.attendanceTable.records || [];
-            
+
             try {
                 const leaveRes = await axiosInstance.get('/leave/mentor/requests', {
                     params: { viewType: 'ALL', limit: 100, status: 'APPROVED' }
                 });
                 if (leaveRes.data && leaveRes.data.data) {
                     const leaveRequests = leaveRes.data.data.filter((req: any) => req.userId === data.profile.id);
-                    
+
                     finalRecords = finalRecords.map((record: any) => {
                         if (record.status === 'LEAVE') {
                             const workDateObj = new Date(record.workDate);
-                            workDateObj.setHours(0,0,0,0);
-                            
+                            workDateObj.setHours(0, 0, 0, 0);
+
                             const matchingLeave = leaveRequests.find((lr: any) => {
                                 const start = new Date(lr.startDate);
-                                start.setHours(0,0,0,0);
+                                start.setHours(0, 0, 0, 0);
                                 const end = new Date(lr.endDate);
-                                end.setHours(0,0,0,0);
+                                end.setHours(0, 0, 0, 0);
                                 return workDateObj.getTime() >= start.getTime() && workDateObj.getTime() <= end.getTime();
                             });
 
@@ -218,7 +235,7 @@ const StudentDetailPage = () => {
 
     const handleViewFile = async (evidenceUrl: string) => {
         if (!evidenceUrl) return;
-        
+
         try {
             Swal.fire({
                 title: 'กำลังโหลดไฟล์...',
@@ -227,7 +244,7 @@ const StudentDetailPage = () => {
             });
 
             const key = evidenceUrl.startsWith('/') ? evidenceUrl.substring(1) : evidenceUrl;
-            
+
             const response = await axiosInstance.get(`/files/${encodeURIComponent(key)}`, {
                 responseType: 'blob'
             });
@@ -239,7 +256,7 @@ const StudentDetailPage = () => {
             const blobUrl = URL.createObjectURL(response.data);
             window.open(blobUrl, '_blank');
             Swal.close();
-            
+
             setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         } catch (error) {
             console.error('Error fetching file:', error);
@@ -386,7 +403,7 @@ const StudentDetailPage = () => {
 
     return (
         <div className="p-4 sm:p-6 space-y-6">
-            <button 
+            <button
                 onClick={() => router.back()}
                 className="flex items-center gap-1.5 text-[#111827] hover:opacity-70 transition-all font-medium text-[15px]"
             >
@@ -397,41 +414,59 @@ const StudentDetailPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 panel border-[#CECFD2] border-[1px] shadow-sm rounded-xl p-4 sm:p-8">
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-                        <ImageWithAuth 
-                            userId={studentId} 
-                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border border-[#E5E7EB] shrink-0" 
+                        <ImageWithAuth
+                            userId={studentId}
+                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border border-[#E5E7EB] shrink-0"
                             fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}&background=random`}
                         />
                         <div className="flex flex-col items-center sm:items-start w-full">
-                            <div className={`px-3 py-1 rounded-full border text-[12px] font-bold flex items-center justify-center gap-2 w-max mb-3 sm:mb-5 ${
-                                profile.internshipStatus === 'COMPLETE' 
-                                ? 'bg-green-50 border-green-200 text-green-700' 
-                                : 'bg-[#FEF7EB] border-[#FDB022] text-[#944900]'
-                            }`}>
+                            <div className={`px-3 py-1 rounded-full border text-[12px] font-bold flex items-center justify-center gap-2 w-max mb-3 sm:mb-5 ${profile.internshipStatus === 'COMPLETE'
+                                    ? 'bg-green-50 border-green-200 text-green-700'
+                                    : 'bg-[#FEF7EB] border-[#FDB022] text-[#944900]'
+                                }`}>
                                 <div className={`w-2.5 h-2.5 rounded-full ${profile.internshipStatus === 'COMPLETE' ? 'bg-green-500' : 'bg-[#FDB022]'}`}></div>
                                 {profile.internshipStatus === 'COMPLETE' ? 'สิ้นสุดการฝึกงาน' : 'อยู่ระหว่างฝึกงาน'}
                             </div>
-                            <h1 className="text-[20px] sm:text-[24px] font-medium text-[#111827] leading-tight">{profile.fullName}</h1>
+                            <h1 className="text-[20px] sm:text-[24px] font-medium text-[#111827] leading-tight">
+                                {(() => {
+                                    const rawName = profile.fullName || '';
+                                    const parts = rawName.split(' (');
+                                    const mainName = parts[0];
+                                    const extractedNick = parts[1] ? parts[1].replace(')', '') : '';
+
+                                    // Prioritize nickname from API if available
+                                    const nick = profile.nickname || extractedNick;
+
+                                    return (
+                                        <>
+                                            {mainName}
+                                            {nick && (
+                                                <span className="text-[#000000] font-bold ml-2">({nick})</span>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </h1>
                             <p className="text-[#61646C] text-[14px] font-medium mt-1">{profile.position || 'นักศึกษาฝึกงาน'}</p>
-                            
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 mt-6 sm:mt-8 w-full">
                                 <div>
-                                    <p className="text-[#98A2B3] text-[15px] mb-0.5">ชื่อสถานบัน</p>
-                                    <p className="text-[#111827] text-[18px] font-normal leading-tight">{profile.institution || '-'}</p>
+                                    <p className="text-[#98A2B3] text-[14px] mb-0.5">ชื่อสถานบัน</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">{profile.institution || '-'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[#98A2B3] text-[15px] mb-0.5">ระยะเวลาการฝึกงาน</p>
-                                    <p className="text-[#111827] text-[18px] font-normal leading-tight">
+                                    <p className="text-[#98A2B3] text-[14px] mb-0.5">ระยะเวลาการฝึกงาน</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">
                                         {formatDate(profile.period?.startDate)} - {formatDate(profile.period?.endDate)}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-[#98A2B3] text-[15px] mb-0.5">อีเมล</p>
-                                    <p className="text-[#111827] text-[18px] font-normal leading-tight">{profile.email || '-'}</p>
+                                    <p className="text-[#98A2B3] text-[14px] mb-0.5">อีเมล</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">{profile.email || '-'}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[#98A2B3] text-[15px] mb-0.5">เบอร์โทร</p>
-                                    <p className="text-[#111827] text-[18px] font-normal leading-tight">{profile.phone || '-'}</p>
+                                    <p className="text-[#98A2B3] text-[14px] mb-0.5">เบอร์โทร</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">{profile.phone || '-'}</p>
                                 </div>
                             </div>
                         </div>
@@ -447,7 +482,7 @@ const StudentDetailPage = () => {
                                 <span className="text-[16px] text-[#61646C] font-medium">/ {progress.totalHoursGoal} ชั่วโมง</span>
                             </div>
                             <div className="w-full bg-[#F2F4F7] rounded-full h-3 overflow-hidden">
-                                <div 
+                                <div
                                     className="bg-[#A80689] h-3 rounded-full shadow-sm transition-all duration-700"
                                     style={{ width: `${Math.min(100, progressPercent)}%` }}
                                 ></div>
@@ -458,15 +493,15 @@ const StudentDetailPage = () => {
                                 const now = new Date();
                                 const diff = end.getTime() - now.getTime();
                                 const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                                
+
                                 const isUrgent = days <= 7;
                                 const displayColor = isUrgent ? '#B42318' : '#6b7280';
                                 const iconColor = isUrgent ? '#B42318' : '#85888E';
 
                                 return (
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span 
-                                            className="material-symbols-outlined select-none" 
+                                        <span
+                                            className="material-symbols-outlined select-none"
                                             style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: iconColor }}
                                         >
                                             schedule
@@ -479,13 +514,13 @@ const StudentDetailPage = () => {
                             })()}
                         </div>
                     </div>
-                    
+
                     <div className="w-full space-y-3 mt-8">
                         <button className="w-full py-3 bg-[#74D1A6] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#067647] transition-colors shadow-sm text-[18px]">
                             <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
                             ผ่านการฝึกงาน
                         </button>
-                        <button 
+                        <button
                             onClick={() => setIsCompensateModalOpen(true)}
                             className="w-full py-3 bg-[#FFF5FD] text-[#A80689] border border-[#A80689] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 transition-colors shadow-sm text-[18px]"
                         >
@@ -507,7 +542,7 @@ const StudentDetailPage = () => {
                             <span className="material-symbols-outlined text-white select-none" style={{ fontSize: '24px' }}>{stat.icon}</span>
                         </div>
                         <div>
-                            <p className="text-[#61646C] text-[12px] font-medium">{stat.label}</p>
+                            <p className="text-[#61646C] text-[14px] font-medium">{stat.label}</p>
                             <p className="text-[#111827] text-[16px] font-bold">{stat.value} รายการ</p>
                         </div>
                     </div>
@@ -543,7 +578,7 @@ const StudentDetailPage = () => {
                                     <td className="py-4 px-6">
                                         <div className="flex justify-center">
                                             {row.evidenceUrl ? (
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={() => handleViewFile(row.evidenceUrl)}
                                                     className="inline-flex items-center gap-2 px-1.5 py-1.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl hover:bg-[#E5E7EB] transition-colors cursor-pointer"
@@ -556,7 +591,7 @@ const StudentDetailPage = () => {
                                                         </div>
                                                     ) : (
                                                         <div className="w-8 h-8 rounded-lg bg-[#ffffff] flex items-center justify-center shrink-0">
-                                                            <span 
+                                                            <span
                                                                 className="material-symbols-outlined text-[#000000] text-[18px]"
                                                                 style={{ fontVariationSettings: "'FILL' 1" }}
                                                             >
@@ -582,19 +617,19 @@ const StudentDetailPage = () => {
                                     <td className="py-4 px-6 text-center">
                                         {(() => {
                                             if (!row.note) return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
-                                            
+
                                             const isCorrection = row.note.includes('แก้ไขเวลา') || row.note.includes('ปฏิบัติงานนอกสถานที่');
-                                            
+
                                             // Show time corrections in red always
                                             if (isCorrection) {
                                                 return <span className="text-[16px] font-medium text-[#E04B3E]">{row.note}</span>;
                                             }
-                                            
+
                                             // Hide notes entirely for LATE status (like location names) or if the note literally says 'สาย'
                                             if (row.status === 'LATE' || row.note === 'สาย') {
                                                 return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
                                             }
-                                            
+
                                             return <span className="text-[16px] font-medium text-[#000000]">{row.note}</span>;
                                         })()}
                                     </td>
@@ -606,7 +641,7 @@ const StudentDetailPage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-2">
-                <button 
+                <button
                     onClick={handleExportExcel}
                     className="flex items-center gap-2.5 text-[#A80689] font-bold text-[16px] hover:opacity-80 transition-all"
                 >
@@ -623,14 +658,14 @@ const StudentDetailPage = () => {
                         >
                             <span className="material-symbols-outlined text-[22px]">chevron_left</span>
                         </button>
-                        
+
                         {Array.from({ length: pagination.totalPages }).map((_, index) => {
                             const p = index + 1;
                             if (p === 1 || p === pagination.totalPages || (p >= page - 1 && p <= page + 1)) {
                                 return (
-                                    <button 
+                                    <button
                                         key={p}
-                                        onClick={() => setPage(p)} 
+                                        onClick={() => setPage(p)}
                                         className={`w-11 h-10 flex items-center justify-center text-[14px] font-medium transition-all border-r border-[#CECFD2] ${page === p ? 'bg-[#E4E7EC] text-[#1F2937]' : 'text-[#6B7280] hover:bg-gray-50'}`}
                                     >
                                         {p}
@@ -653,7 +688,7 @@ const StudentDetailPage = () => {
                 )}
             </div>
 
-            <CompensationModal 
+            <CompensationModal
                 isOpen={isCompensateModalOpen}
                 onClose={() => setIsCompensateModalOpen(false)}
                 profile={profile}
