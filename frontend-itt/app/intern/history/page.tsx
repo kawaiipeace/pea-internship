@@ -425,6 +425,7 @@ const AttendanceHistoryPage = () => {
           originalCheckInTime: detail.original.checkInTime,
           originalCheckOutTime: detail.original.checkOutTime,
           originalWorkingHours: `${detail.original.hoursWorked} ชั่วโมง`,
+          mentorReason: detail.approverNote || "",
         }));
       }
     } catch (error) {
@@ -1362,6 +1363,19 @@ const AttendanceHistoryPage = () => {
                                             )}
                                           </div>
                                         </div>
+
+                                        {/* Rejection Reason - Highlighted for Denied Status */}
+                                        {selectedHistoryItem.approvalStatus === 'denied' && selectedHistoryItem.mentorReason && (
+                                          <div className="w-full space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-300">
+                                            <div className="flex items-center gap-2 text-[15px] font-bold text-red-600">
+                                              <span className="material-symbols-outlined text-[20px]">assignment_late</span>
+                                              เหตุผลที่ไม่สามารถอนุญาติแก้ไขเวลา
+                                            </div>
+                                            <div className="w-full min-h-[42px] bg-red-50/50 border border-red-200 rounded-[10px] px-4 py-3 flex items-start text-[14px] text-red-700 shadow-sm leading-relaxed font-medium">
+                                              {selectedHistoryItem.mentorReason}
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     ) : (
                                       /* Normal Detail View (Simplified Redesign) */
@@ -1451,15 +1465,13 @@ const AttendanceHistoryPage = () => {
                                   </div>
                                 )}
 
-                                {/* Action Button Mobile (Only for relevant states) */}
-                                {!selectedHistoryItem.approvalStatus &&
+                                {(!selectedHistoryItem.approvalStatus || selectedHistoryItem.approvalStatus === 'denied') &&
                                   (selectedHistoryItem.status === "สาย" ||
-                                    selectedHistoryItem.statusType ===
-                                    "warning" ||
-                                    selectedHistoryItem.statusType ===
-                                    "danger" ||
-                                    selectedHistoryItem.statusType ===
-                                    "default") && (
+                                    selectedHistoryItem.status === "ขาด" ||
+                                    selectedHistoryItem.status === "ไม่ลงเวลาออก" ||
+                                    selectedHistoryItem.statusType === "warning" ||
+                                    selectedHistoryItem.statusType === "danger" ||
+                                    selectedHistoryItem.statusType === "default") && (
                                     <div className="mt-4">
                                       <button
                                         type="button"
