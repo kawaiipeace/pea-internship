@@ -5,7 +5,12 @@ import {
   NotFoundError,
 } from "@/common/exceptions";
 import { db } from "@/db";
-import { offsiteTaskStudents, offsiteTasks, users, applicationStatuses } from "@/db/schema";
+import {
+  applicationStatuses,
+  offsiteTaskStudents,
+  offsiteTasks,
+  users,
+} from "@/db/schema";
 import type * as offsiteModel from "./model";
 
 export class OffsiteTaskService {
@@ -66,9 +71,9 @@ export class OffsiteTaskService {
       ),
       with: {
         internshipPosition: {
-          columns: { name: true }
-        }
-      }
+          columns: { name: true },
+        },
+      },
     });
 
     const positionName = studentApp?.internshipPosition?.name || "ไม่ระบุตำแหน่ง";
@@ -337,10 +342,10 @@ export class OffsiteTaskService {
                   where: eq(applicationStatuses.isActive, true),
                   with: {
                     internshipPosition: {
-                      columns: { name: true }
-                    }
-                  }
-                }
+                      columns: { name: true },
+                    },
+                  },
+                },
               },
             },
           },
@@ -384,7 +389,8 @@ export class OffsiteTaskService {
         task.assignedByUser.staffProfiles[0]?.employeeId || null,
       students: task.students.map((s) => {
         const activeApp = s.student.applicationStatuses?.[0];
-        const positionName = activeApp?.internshipPosition?.name || "ไม่ระบุตำแหน่ง";
+        const positionName =
+          activeApp?.internshipPosition?.name || "ไม่ระบุตำแหน่ง";
 
         return {
           id: s.student.id,
