@@ -1572,7 +1572,7 @@ export default function CreateAnnouncementPage() {
                       }
                       disabled
                       placeholder="อีเมลผู้ประกาศรับสมัคร"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed pointer-events-none focus:outline-none focus:ring-0"
                     />
                   </div>
                   <div data-field="contactPhone">
@@ -1743,7 +1743,7 @@ export default function CreateAnnouncementPage() {
                       value={mentor.email}
                       readOnly
                       placeholder="อีเมลพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed pointer-events-none focus:outline-none focus:ring-0"
                     />
                   </div>
                   <div>
