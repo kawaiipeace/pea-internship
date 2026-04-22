@@ -45,7 +45,7 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[620px] mx-4 p-7" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[700px] mx-4 p-7" onClick={e => e.stopPropagation()}>
                 {/* Header Profile */}
                 <div className="flex items-center gap-4 mb-6">
                     <ImageWithAuth
@@ -80,55 +80,65 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
                 </div>
 
                 {/* Two Cards */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-[#F8F9FA] rounded-xl p-4 border border-[#F2F4F7]">
-                        <p className="text-[#111827] font-bold text-[14px] mb-2">สถานะนักศึกษา</p>
-                        <p className="text-[#61646C] text-[13px] mb-1">วันสิ้นสุด: <span className="text-[#111827] font-bold">{formatOrigEnd}</span></p>
-                        <p className="text-[#61646C] text-[13px]">เหลือเวลา: <span className="text-[#A80689] font-bold">{remainDays} วัน</span></p>
+                <div className="flex gap-6 mb-16 justify-center">
+                    <div className="bg-[#F2F4F7] rounded-xl p-1.5  border border-[#F2F4F7] w-[253px] h-[93px] shrink-0">
+                        <p className="text-[#111827] font-bold text-[16px] mb-1 ml-2">สถานะนักศึกษา</p>
+                        <p className="text-[#61646C] text-[16px] mb-1 ml-2">วันสิ้นสุด: <span className="text-[#111827] font-bold">{formatOrigEnd}</span></p>
+                        <p className="text-[#61646C] text-[16px] ml-2">เหลือเวลา: <span className="text-[#A80689] font-bold">{remainDays} วัน</span></p>
                     </div>
-                    <div className="bg-[#A80689] rounded-xl p-4 text-white flex flex-col justify-between">
-                        <p className="font-bold text-[14px]">ความคืบหน้าในการฝึกงาน</p>
-                        <div>
-                            <p className="text-[22px] font-bold mt-1 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{progress?.accumulatedHours} <span className="text-[13px] font-normal text-white/80">/{progress?.totalHoursGoal} ชั่วโมง</span></p>
-                            <p className="text-[13px] text-white/90 text-right mt-1">ขาดอีก <span className="font-bold text-white">{defaultMissing} ชั่วโมง</span></p>
+                    <div className="bg-[#A80689] rounded-xl p-3 text-white flex flex-col justify-between w-[350px] h-[93px] shrink-0">
+                        <p className="font-semibold text-[14px]">ความคืบหน้าในการฝึกงาน</p>
+                        <div className="flex justify-between items-end">
+                            <p className="text-[22px] font-semibold max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                                {progress?.accumulatedHours} <span className="text-[14px] font-normal text-white/80">/{progress?.totalHoursGoal} ชั่วโมง</span>
+                            </p>
+                            <div className="text-right flex flex-col items-end">
+                                <span className="text-[12px] text-white/80 leading-none">ขาดอีก</span>
+                                <span className="text-[14px] font-semibold text-white mt-1">{defaultMissing} ชั่วโมง</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Title */}
-                <div className="flex items-start gap-4 mb-5">
-                    <div className="w-[40px] h-[40px] rounded-full bg-[#FFF5FD] flex items-center justify-center shrink-0">
+                <div className="flex items-start gap-1 mb-5">
+                    <div className="w-[40px] h-[40px] rounded-full  bg-[#FFF5FD] flex items-center justify-center shrink-0">
                         <span className="material-symbols-outlined text-[#A80689] text-[22px]">calendar_add_on</span>
                     </div>
                     <div>
                         <h3 className="text-[18px] font-bold text-[#A80689]">ชดเชยวันปฏิบัติงาน</h3>
-                        <p className="text-[13px] text-[#61646C] mt-1 leading-snug">จำนวนวันที่ต้องปฏิบัติงานเพิ่มเติมหลังวันสิ้นสุดการฝึกงาน โดยคำนวณจากจำนวนชั่วโมงที่ยังไม่ครบ</p>
+                        <p className="text-[14px] text-[#85888E]  mt-1 leading-snug">จำนวนวันที่ต้องปฏิบัติงานเพิ่มเติมหลังวันสิ้นสุดการฝึกงาน โดยคำนวณจากจำนวนชั่วโมงที่ยังไม่ครบ</p>
                     </div>
                 </div>
 
                 {/* Input Area */}
-                <div className="bg-[#F8F9FA] rounded-[14px] p-5 mb-4">
+                <div className="bg-[#F2F4F7] rounded-[10px] p-5 mb-4">
                     <div className="grid grid-cols-2 gap-5">
                         <div>
-                            <label className="block text-[13px] font-bold text-[#111827] mb-2">จำนวนชั่วโมงที่ต้องชดเชย</label>
+                            <label className="block text-[14px] font-normal text-[#111827] mb-2">จำนวนชั่วโมงที่ต้องชดเชย</label>
                             <div className="relative">
                                 <input
                                     type="number"
+                                    min="0"
                                     value={hours}
-                                    onChange={(e) => setHours(e.target.value)}
-                                    className="w-full bg-white border border-[#D0D5DD] rounded-xl py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 focus:ring-[#A80689]/20 focus:border-[#A80689] outline-none"
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (parseFloat(val) < 0) return;
+                                        setHours(val);
+                                    }}
+                                    className="w-full bg-white border border-[#F2F4F7] rounded-[5px] py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 focus:ring-[#A80689]/20 focus:border-[#A80689] outline-none"
                                 />
                                 <span className="absolute right-3 top-2.5 text-[14px] text-[#61646C] pointer-events-none">ชั่วโมง</span>
                             </div>
                         </div>
                         <div>
-                            <label className="block text-[13px] font-bold text-[#111827] mb-2">คิดเป็นจำนวนวัน</label>
-                            <div className="w-full bg-[#F2F4F7] border border-[#EAECF0] rounded-xl py-2.5 px-3 text-[14px] font-medium text-[#111827]">
+                            <label className="block text-[14px] font-normal text-[#111827] mb-2">คิดเป็นจำนวนวัน</label>
+                            <div className="w-full bg-[#ECECED] border border-[#EAECF0] rounded-[5px] py-2.5 px-3 text-[14px] font-medium text-[#333741]">
                                 {days} วัน / วันสิ้นสุด: {thaiEndDate}
                             </div>
                             <div className="flex items-center gap-1.5 mt-2.5 text-[#98A2B3]">
-                                <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
-                                <span className="text-[11px]">ระบบคำนวณจาก 7 ชั่วโมง/วัน และปัดขึ้นเสมอ</span>
+                                <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>info</span>
+                                <span className="text-[12px]">ระบบคำนวณจาก 7 ชั่วโมง/วัน และปัดขึ้นเสมอ</span>
                             </div>
                         </div>
                     </div>
