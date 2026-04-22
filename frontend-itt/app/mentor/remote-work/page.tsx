@@ -119,53 +119,47 @@ const RemoteWorkPage = () => {
 
     const handleDeleteTask = async (id: number) => {
         const result = await Swal.fire({
-            width: '380px',
             html: `
                 <div class="flex flex-col items-center">
-                    <div class="w-[64px] h-[64px] bg-[#FEE4E2] rounded-full flex items-center justify-center mb-6">
-                        <div class="w-[44px] h-[44px] bg-[#D92D20] rounded-full flex items-center justify-center shadow-sm">
-                            <span class="material-symbols-rounded text-white text-[24px]">close</span>
+                    <div class="w-[64px] h-[64px] bg-[#FEE4E2] rounded-full flex items-center justify-center mb-6 shadow-sm">
+                        <div class="w-[40px] h-[40px] bg-[#D92D20] rounded-full flex items-center justify-center shadow-md">
+                            <span class="material-symbols-rounded text-white !text-[24px]">close</span>
                         </div>
                     </div>
-                    <h2 class="text-[16px] font-bold text-[#000] mb-2">ยืนยันการลบ?</h2>
-                    <p class="text-[14px] text-gray-500 text-center">คุณต้องการลบรายการมอบหมายงานนอกสถานที่นี้ใช่หรือไม่?</p>
+                    <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-2 text-center">ยืนยันการลบ?</h2>
                 </div>
             `,
             showCancelButton: true,
             confirmButtonText: 'ลบเลย',
             cancelButtonText: 'ยกเลิก',
-            confirmButtonColor: '#D92D20',
-            customClass: {
-                popup: 'rounded-[16px] !p-7',
-                confirmButton: 'w-[130px] h-[48px] !bg-[#D92D20] rounded-[8px] text-[16px] text-white  !mx-2',
-                cancelButton: 'w-[130px] h-[48px] !bg-white rounded-[8px] text-[16px] border-2 border-black !text-black !mx-2'
-            },
-            reverseButtons: true,
             buttonsStyling: false,
+            customClass: {
+                popup: 'rounded-[24px] p-10 w-auto min-w-[340px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+                actions: 'flex gap-4 w-full px-2 mt-4',
+                confirmButton: 'flex-1 h-[48px] bg-[#D92D20] hover:bg-[#B42318] text-white rounded-[12px] text-[16px] font-bold order-2 shadow-md transition-colors',
+                cancelButton: 'flex-1 h-[48px] bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-[12px] text-[16px] font-bold order-1 transition-colors'
+            }
         });
 
         if (result.isConfirmed) {
             try {
                 await axiosInstance.delete(`/offsite-tasks/${id}`);
                 await Swal.fire({
-                    width: '380px',
                     html: `
-                        <div class="flex flex-col items-center">
-                            <div class="w-[64px] h-[64px] bg-[#DCFAE6] rounded-full flex items-center justify-center mb-6">
-                                <div class="w-[44px] h-[44px] bg-[#17B26A] rounded-full flex items-center justify-center shadow-sm">
-                                    <span class="material-symbols-rounded text-white text-[24px]">check</span>
+                        <div class="flex flex-col items-center py-4">
+                            <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6] shadow-sm">
+                                <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                                    <span class="material-symbols-rounded !text-[32px]">check</span>
                                 </div>
                             </div>
-                            <h2 class="text-[16px] font-bold text-[#000] mb-2">ลบสำเร็จ</h2>
+                            <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ลบสำเร็จ</h2>
                         </div>
                     `,
-                    confirmButtonText: 'ตกลง',
-                    confirmButtonColor: '#17B26A',
+                    showConfirmButton: false,
+                    timer: 2000,
                     customClass: {
-                        popup: 'rounded-[16px] !p-7',
-                        confirmButton: 'w-[130px] h-[48px] !bg-[#17B26A] rounded-[8px] text-[16px] text-white '
-                    },
-                    buttonsStyling: false,
+                        popup: 'rounded-[24px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+                    }
                 });
                 fetchTasks();
             } catch (error) {
@@ -194,12 +188,6 @@ const RemoteWorkPage = () => {
                     });
                     const list = staffRes.data || [];
                     setStaffList(list);
-
-                    // Set initial filter to current user
-                    setAssignerFilter({ 
-                        label: `${user.fname} ${user.lname}`, 
-                        value: user.id 
-                    });
                 }
             } catch (error) {
                 console.error('Error fetching initial filter data:', error);

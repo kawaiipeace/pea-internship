@@ -144,8 +144,10 @@ const StudentsPage = () => {
         }
 
         // Filter by internship period (date range from calendar)
-        if (Array.isArray(dateRange) && dateRange.length === 2) {
-            const [start, end] = dateRange;
+        if (Array.isArray(dateRange) && dateRange.length > 0) {
+            const start = dateRange[0];
+            const end = dateRange.length === 2 ? dateRange[1] : dateRange[0];
+            
             if (start && end) {
                 const filterStart = new Date(start);
                 const filterEnd = new Date(end);

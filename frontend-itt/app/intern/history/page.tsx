@@ -447,19 +447,25 @@ const AttendanceHistoryPage = () => {
 
   const handleAutoResubmit = async (item: any) => {
     const result = await Swal.fire({
-      title: 'ยืนยันการส่งคำขออีกครั้ง',
-      text: 'คุณต้องการส่งคำขอแก้ไขเวลานี้ใหม่อีกครั้งโดยใช้ข้อมูลเดิมใช่หรือไม่?',
-      icon: 'question',
+      html: `
+        <div class="flex flex-col items-center">
+          <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#DCFAE6]">
+            <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+              <span class="material-symbols-rounded !text-[24px]">check</span>
+            </div>
+          </div>
+          <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-4">ยืนยันส่งคำขอ</h2>
+        </div>
+      `,
       showCancelButton: true,
       confirmButtonText: 'ยืนยัน',
-      cancelButtonText: 'ยกเลิก',
+      cancelButtonText: 'ย้อนกลับ',
       buttonsStyling: false,
       customClass: {
-        popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-        title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-        htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-        confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center mx-2',
-        cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center mx-2'
+        popup: 'rounded-[16px] p-8 w-auto min-w-[320px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+        actions: 'flex gap-3 w-full px-4',
+        confirmButton: 'flex-1 py-2.5 bg-[#11A75C] hover:bg-[#0E8F4D] text-white rounded-xl text-[15px] font-bold order-2',
+        cancelButton: 'flex-1 py-2.5 bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-xl text-[15px] font-bold order-1'
       }
     });
 
@@ -476,16 +482,20 @@ const AttendanceHistoryPage = () => {
 
         if (response.data && response.data.success) {
           await Swal.fire({
-            title: 'ส่งคำขออีกครั้งสำเร็จ',
-            text: 'ส่งคำขอแก้ไขเวลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)',
-            icon: 'success',
-            confirmButtonText: 'ตกลง',
-            buttonsStyling: false,
+            html: `
+              <div class="flex flex-col items-center py-4">
+                <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6]">
+                  <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                    <span class="material-symbols-rounded !text-[32px]">check</span>
+                  </div>
+                </div>
+                <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ส่งคำขอเรียบร้อยแล้ว</h2>
+              </div>
+            `,
+            showConfirmButton: false,
+            timer: 2000,
             customClass: {
-              popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-              title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-              htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-              confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+              popup: 'rounded-[20px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
             }
           });
           setIsDetailModalOpen(false);
@@ -1280,20 +1290,18 @@ const AttendanceHistoryPage = () => {
                                             </div>
                                             <div className="space-y-3">
                                               <div className="flex items-center gap-1 text-gray-700 font-bold text-[13px]">
-                                                <span className="material-symbols-rounded text-[18px] text-gray-700">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                <span 
+                                                  className="material-symbols-rounded text-[18px]"
+                                                  style={{ 
+                                                    color: (selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                            ? "#079455" : "#FDB022" 
+                                                  }}
+                                                >
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
@@ -1354,20 +1362,18 @@ const AttendanceHistoryPage = () => {
                                             </div>
                                             <div className="space-y-3">
                                               <div className="flex items-center gap-1 text-[#A80689] font-bold text-[13px]">
-                                                <span className="material-symbols-rounded text-[18px] text-[#A80689]">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                <span 
+                                                  className="material-symbols-rounded text-[18px]"
+                                                  style={{ 
+                                                    color: (selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                            ? "#079455" : "#FDB022" 
+                                                  }}
+                                                >
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
@@ -1462,29 +1468,24 @@ const AttendanceHistoryPage = () => {
                                         <div className="flex flex-col gap-1 px-1">
                                           {/* Location Row (Dynamic Icon) */}
                                           <div className="flex items-center gap-2 text-[#1C1C1C] font-bold text-[16px]">
-                                            {selectedHistoryItem.status ===
-                                              "เข้างานปกติ" ||
-                                              selectedHistoryItem.status ===
-                                              "สาย" ||
-                                              selectedHistoryItem.status ===
-                                              "ไม่ลงเวลาออก" ? (
-                                              <span className="material-symbols-rounded text-[24px]">
+                                            {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location) ? (
+                                              <span 
+                                                className="material-symbols-rounded text-[24px]"
+                                                style={{ color: "#079455" }}
+                                              >
                                                 apartment
                                               </span>
                                             ) : (
-                                              <span className="material-symbols-rounded text-[24px]">
+                                              <span 
+                                                className="material-symbols-rounded text-[24px]"
+                                                style={{ color: "#FDB022" }}
+                                              >
                                                 globe_location_pin
                                               </span>
                                             )}
                                             <span>
-                                              {selectedHistoryItem.status ===
-                                                "เข้างานปกติ" ||
-                                                selectedHistoryItem.status ===
-                                                "สาย" ||
-                                                selectedHistoryItem.status ===
-                                                "ไม่ลงเวลาออก"
-                                                ? "อยู่ในสถานที่"
-                                                : "อยู่นอกสถานที่"}
+                                              {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                             </span>
                                           </div>
 
