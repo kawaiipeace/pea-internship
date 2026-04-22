@@ -1280,20 +1280,18 @@ const AttendanceHistoryPage = () => {
                                             </div>
                                             <div className="space-y-3">
                                               <div className="flex items-center gap-1 text-gray-700 font-bold text-[13px]">
-                                                <span className="material-symbols-rounded text-[18px] text-gray-700">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                <span 
+                                                  className="material-symbols-rounded text-[18px]"
+                                                  style={{ 
+                                                    color: (selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                            ? "#079455" : "#FDB022" 
+                                                  }}
+                                                >
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
@@ -1354,20 +1352,18 @@ const AttendanceHistoryPage = () => {
                                             </div>
                                             <div className="space-y-3">
                                               <div className="flex items-center gap-1 text-[#A80689] font-bold text-[13px]">
-                                                <span className="material-symbols-rounded text-[18px] text-[#A80689]">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                <span 
+                                                  className="material-symbols-rounded text-[18px]"
+                                                  style={{ 
+                                                    color: (selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                            ? "#079455" : "#FDB022" 
+                                                  }}
+                                                >
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.status === "เข้างานปกติ" ||
-                                                    selectedHistoryItem.statusType === "success" ||
-                                                    selectedHistoryItem.status === "สาย" ||
-                                                    selectedHistoryItem.statusType === "warning" ||
-                                                    selectedHistoryItem.status === "ไม่ลงเวลาออก")
+                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
                                                     ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
@@ -1462,29 +1458,24 @@ const AttendanceHistoryPage = () => {
                                         <div className="flex flex-col gap-1 px-1">
                                           {/* Location Row (Dynamic Icon) */}
                                           <div className="flex items-center gap-2 text-[#1C1C1C] font-bold text-[16px]">
-                                            {selectedHistoryItem.status ===
-                                              "เข้างานปกติ" ||
-                                              selectedHistoryItem.status ===
-                                              "สาย" ||
-                                              selectedHistoryItem.status ===
-                                              "ไม่ลงเวลาออก" ? (
-                                              <span className="material-symbols-rounded text-[24px]">
+                                            {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location) ? (
+                                              <span 
+                                                className="material-symbols-rounded text-[24px]"
+                                                style={{ color: "#079455" }}
+                                              >
                                                 apartment
                                               </span>
                                             ) : (
-                                              <span className="material-symbols-rounded text-[24px]">
+                                              <span 
+                                                className="material-symbols-rounded text-[24px]"
+                                                style={{ color: "#FDB022" }}
+                                              >
                                                 globe_location_pin
                                               </span>
                                             )}
                                             <span>
-                                              {selectedHistoryItem.status ===
-                                                "เข้างานปกติ" ||
-                                                selectedHistoryItem.status ===
-                                                "สาย" ||
-                                                selectedHistoryItem.status ===
-                                                "ไม่ลงเวลาออก"
-                                                ? "อยู่ในสถานที่"
-                                                : "อยู่นอกสถานที่"}
+                                              {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                             </span>
                                           </div>
 
