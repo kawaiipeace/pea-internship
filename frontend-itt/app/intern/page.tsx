@@ -3,10 +3,9 @@ import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Swal from 'sweetalert2';
 import axiosInstance from '@/api/axios';
-import IconMapPin from '@/components/icon/icon-map-pin';
 
-const OFFICE_LAT = 13.892833591030753;
-const OFFICE_LNG = 100.47589981923538;
+const OFFICE_LAT = 13.851119091153935;
+const OFFICE_LNG = 100.55810839569543;
 const MAX_DISTANCE_METERS = 300;
 // 13.851119091153935, 100.55810839569543 pea
 // 13.892833591030753, 100.47589981923538 tha-it
