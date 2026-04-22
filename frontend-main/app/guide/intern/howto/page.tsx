@@ -13,7 +13,7 @@ export default function ApplicantHowtoPage() {
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        <Link href="/guide/applicant" className="hover:text-primary-600 transition-colors">
+        <Link href="/guide/intern" className="hover:text-primary-600 transition-colors">
           วิธีการใช้งานระบบ PEA Internship ผู้สมัคร
         </Link>
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -151,13 +151,13 @@ export default function ApplicantHowtoPage() {
 
       {/* Navigation footer */}
       <div className="mt-4 flex justify-between items-center pt-8 border-t border-gray-200">
-        <Link href="/guide/applicant/basic" className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary-600 transition-colors">
+        <Link href="/guide/intern/basic" className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary-600 transition-colors">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           ระบบเบื้องต้น
         </Link>
-        <Link href="/guide/applicant/status" className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 transition-colors font-medium">
+        <Link href="/guide/intern/status" className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 transition-colors font-medium">
           การติดตามสถานะ
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

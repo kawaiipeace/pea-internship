@@ -1,28 +1,28 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const cards = [
   {
-    href: "/guide/staff/basic",
+    href: "/guide/owner/basic",
     title: "ระบบเบื้องต้น",
     desc: "ระบบสำหรับสร้างประกาศรับสมัครและจัดการนักศึกษาฝึกงานในหน่วยงาน",
   },
   {
-    href: "/guide/staff/howto",
+    href: "/guide/owner/howto",
     title: "คู่มืออธิบายการใช้งานระบบของพนักงาน",
     desc: "แนะนำขั้นตอนการใช้งานตั้งแต่สร้างประกาศจนถึงดูแลนักศึกษาฝึกงาน",
   },
   {
-    href: "/guide/staff/selection",
+    href: "/guide/owner/selection",
     title: "การคัดเลือกผู้สมัคร",
     desc: "ตรวจสอบเอกสาร นัดสัมภาษณ์ และพิจารณารับเข้าฝึกงาน",
   },
   {
-    href: "/guide/staff/post-selection",
+    href: "/guide/owner/post-selection",
     title: "ขั้นตอนหลังการคัดเลือก",
     desc: "ขั้นตอนหลังคัดเลือก การติดตามนักศึกษา และการยกเลิกการฝึกงาน",
   },
   {
-    href: "/guide/staff/dashboard",
+    href: "/guide/owner/dashboard",
     title: "แดชบอร์ดสำหรับพนักงาน",
     desc: "แสดงภาพรวมข้อมูลการรับสมัครและรายชื่อนักศึกษาฝึกงานในหน่วยงาน",
   },

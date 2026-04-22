@@ -1,23 +1,23 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const cards = [
   {
-    href: "/guide/applicant/basic",
+    href: "/guide/intern/basic",
     title: "ระบบเบื้องต้น",
     desc: "เป็นพื้นฐานที่สำคัญในการใช้งานระบบ PEA Internship",
   },
   {
-    href: "/guide/applicant/howto",
+    href: "/guide/intern/howto",
     title: "คู่มืออธิบายการใช้งานระบบของผู้สมัครฝึกงาน",
     desc: "แนะนำขั้นตอนการใช้งานตั้งแต่สมัครจนถึงกระบวนการฝึกงาน",
   },
   {
-    href: "/guide/applicant/status",
+    href: "/guide/intern/status",
     title: "การติดตามสถานะการสมัคร",
     desc: "ตรวจสอบสถานะการสมัครและรับแจ้งเตือนผ่านอีเมลและในระบบ",
   },
   {
-    href: "/guide/applicant/itt",
+    href: "/guide/intern/itt",
     title: "ระบบ ITT สำหรับนักศึกษาฝึกงาน",
     desc: "ระบบสำหรับเวลาลงทะเบียน-ออกงาน ใช้งานหลังผ่านการคัดเลือก",
   },
