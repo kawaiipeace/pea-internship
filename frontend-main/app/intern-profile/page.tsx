@@ -950,11 +950,7 @@ export default function InternProfilePage() {
                     label="ชื่อผู้ติดต่อ"
                     value={(() => {
                       const ownerData =
-                        applicationPosition.owner ||
-                        (applicationPosition.owners &&
-                        applicationPosition.owners.length > 0
-                          ? applicationPosition.owners[0]
-                          : null);
+                        applicationPosition.positionOwner || null;
                       return ownerData
                         ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim() ||
                             "-"
@@ -966,11 +962,7 @@ export default function InternProfilePage() {
                     label="อีเมลผู้ติดต่อ"
                     value={(() => {
                       const ownerData =
-                        applicationPosition.owner ||
-                        (applicationPosition.owners &&
-                        applicationPosition.owners.length > 0
-                          ? applicationPosition.owners[0]
-                          : null);
+                        applicationPosition.positionOwner || null;
                       return ownerData?.email || "-";
                     })()}
                   />
@@ -979,11 +971,7 @@ export default function InternProfilePage() {
                     label="เบอร์โทรกองงาน"
                     value={(() => {
                       const ownerData =
-                        applicationPosition.owner ||
-                        (applicationPosition.owners &&
-                        applicationPosition.owners.length > 0
-                          ? applicationPosition.owners[0]
-                          : null);
+                        applicationPosition.positionOwner || null;
                       return ownerData?.phoneNumber || "-";
                     })()}
                   />

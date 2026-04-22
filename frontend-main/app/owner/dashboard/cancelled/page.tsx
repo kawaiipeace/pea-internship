@@ -1794,12 +1794,7 @@ function CancelledApplicationsContent() {
                           <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                           <p className="text-gray-900 text-sm">
                             {(() => {
-                              const od =
-                                positionInfo?.owner ||
-                                (positionInfo?.owners &&
-                                positionInfo.owners.length > 0
-                                  ? positionInfo.owners[0]
-                                  : null);
+                              const od = positionInfo?.positionOwner || null;
                               const ownerName = od
                                 ? `${od.fname || ""} ${od.lname || ""}`.trim() ||
                                   "-"
@@ -2018,12 +2013,7 @@ function CancelledApplicationsContent() {
                                 {isCancelledInternship ? (
                                   <>
                                     {(() => {
-                                      const od =
-                                        positionInfo?.owner ||
-                                        (positionInfo?.owners &&
-                                        positionInfo.owners.length > 0
-                                          ? positionInfo.owners[0]
-                                          : null);
+                                      const od = positionInfo?.positionOwner || null;
                                       const ownerName = od
                                         ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
                                         : null;

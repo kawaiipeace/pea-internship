@@ -275,11 +275,7 @@ export default function EditProfilePage() {
                   );
                   if (pos) {
                     setApplicationPosition(pos);
-                    const ownerData =
-                      pos.owner ||
-                      (pos.owners && pos.owners.length > 0
-                        ? pos.owners[0]
-                        : null);
+                    const ownerData = pos.positionOwner || null;
                     setForm((prev) => ({
                       ...prev,
                       department:

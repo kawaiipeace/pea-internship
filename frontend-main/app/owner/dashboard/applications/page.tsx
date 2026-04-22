@@ -1145,11 +1145,7 @@ function ApplicationsContent() {
         const buddhistYear = now.getFullYear() + 543;
         const rejectedDate = `${buddhistYear}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
         // Use the position owner name (logged-in user who performed the action)
-        const ownerData =
-          positionInfo?.owner ||
-          (positionInfo?.owners && positionInfo.owners.length > 0
-            ? positionInfo.owners[0]
-            : null);
+        const ownerData = positionInfo?.positionOwner || null;
         const ownerName = ownerData
           ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
           : "เจ้าของหน่วยงาน";
@@ -1833,11 +1829,7 @@ function ApplicationsContent() {
                   <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                   <p className="text-gray-900 text-sm">
                     {(() => {
-                      const od =
-                        positionInfo?.owner ||
-                        (positionInfo?.owners && positionInfo.owners.length > 0
-                          ? positionInfo.owners[0]
-                          : null);
+                      const od = positionInfo?.positionOwner || null;
                       const ownerName = od
                         ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
                         : "-";
@@ -1981,12 +1973,7 @@ function ApplicationsContent() {
                       <>
                         <p className="font-bold text-gray-900">ยกเลิกฝึกงาน</p>
                         {(() => {
-                          const od =
-                            positionInfo?.owner ||
-                            (positionInfo?.owners &&
-                            positionInfo.owners.length > 0
-                              ? positionInfo.owners[0]
-                              : null);
+                          const od = positionInfo?.positionOwner || null;
                           const ownerName = od
                             ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
                             : null;
@@ -2427,11 +2414,7 @@ function ApplicationsContent() {
             const rejectData = rejectedAppsData.find(
               (a) => a.id === selectedApplication.id,
             );
-            const od =
-              positionInfo?.owner ||
-              (positionInfo?.owners && positionInfo.owners.length > 0
-                ? positionInfo.owners[0]
-                : null);
+            const od = positionInfo?.positionOwner || null;
             const ownerName = od
               ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
               : "-";
@@ -3386,12 +3369,7 @@ function ApplicationsContent() {
                       <>
                         <p className="font-bold text-gray-900">ยกเลิกฝึกงาน</p>
                         {(() => {
-                          const od =
-                            positionInfo?.owner ||
-                            (positionInfo?.owners &&
-                            positionInfo.owners.length > 0
-                              ? positionInfo.owners[0]
-                              : null);
+                          const od = positionInfo?.positionOwner || null;
                           const ownerName = od
                             ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
                             : null;

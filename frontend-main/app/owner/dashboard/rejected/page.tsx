@@ -884,11 +884,7 @@ function RejectedStatusContent() {
           const rejectData = rejectedAppsData.find(
             (a) => a.id === selectedApplication.id,
           );
-          const od =
-            positionInfo?.owner ||
-            (positionInfo?.owners && positionInfo.owners.length > 0
-              ? positionInfo.owners[0]
-              : null);
+          const od = positionInfo?.positionOwner || null;
           const ownerName = od
             ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
             : "-";

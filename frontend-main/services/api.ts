@@ -634,10 +634,8 @@ export interface Position {
   recruitmentStatus: "OPEN" | "CLOSE";
   createdAt: string;
   updatedAt: string;
-  // ข้อมูลผู้ประกาศ (owner) ที่ join มาจาก backend
-  owner?: PositionOwner | null;
-  // owners array จาก backend (roleId=2 ใน department เดียวกัน)
-  owners?: PositionOwner[];
+  // ข้อมูลผู้ประกาศ (positionOwner) ที่ backend ส่งมาจาก FK internship_positions.position_owner
+  positionOwner?: PositionOwner | null;
   // ข้อมูลพี่เลี้ยง (mentors) array จาก internshipPositionMentors table
   mentors?: PositionMentor[];
   // ข้อมูล department ที่ join มาจาก backend
@@ -759,13 +757,8 @@ export const positionToJob = (position: Position): {
   // ใช้ข้อมูล department ที่ join มาจาก backend
   const departmentName = position.department?.deptFull || position.department?.deptShort || `กองงาน ${position.departmentId || "-"}`;
 
-  // ใช้ข้อมูล owner ที่ join มาจาก backend
-  // owners[] = ทุกคนที่ roleId=2 ใน department เดียวกัน → เลือกคนที่มีเบอร์โทร (ผู้สร้างจะบันทึกเบอร์ตอน create)
-  const ownerData = position.owner || (() => {
-    if (!position.owners || position.owners.length === 0) return null;
-    const withPhone = position.owners.find(o => o.phoneNumber);
-    return withPhone || position.owners[0];
-  })();
+  // ใช้ข้อมูล positionOwner ที่ backend ส่งมาจาก FK internship_positions.position_owner
+  const ownerData = position.positionOwner || null;
   const ownerName = ownerData
     ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
     : undefined;
@@ -826,8 +819,8 @@ export const positionToJobWithStaff = (
 ): ReturnType<typeof positionToJob> => {
   const baseJob = positionToJob(position);
 
-  // ถ้ามี owner หรือ owners จาก API แล้ว ใช้เลย
-  if (position.owner || (position.owners && position.owners.length > 0)) {
+  // ถ้ามี positionOwner จาก API แล้ว ใช้เลย
+  if (position.positionOwner) {
     return baseJob;
   }
 
@@ -851,7 +844,7 @@ export const positionToJobWithStaff = (
 };
 
 // Helper function to convert Position to JobAnnouncement format (for Owner pages)
-// currentUser: ถ้าส่งมา จะใช้เป็นข้อมูลผู้ประกาศแทน owners[0]
+// currentUser: ถ้าส่งมา จะใช้เป็นข้อมูลผู้ประกาศแทน positionOwner จาก API
 export const positionToAnnouncement = (position: Position, currentUser?: { fname?: string; lname?: string; email?: string; phoneNumber?: string } | null): {
   id: string;
   title: string;
@@ -882,12 +875,8 @@ export const positionToAnnouncement = (position: Position, currentUser?: { fname
   const departmentLocation = position.department?.location || "";
 
   // Owner info: ถ้ามี currentUser ให้ใช้ก่อน (ผู้ที่ login อยู่คือผู้ประกาศ)
-  // fallback: เลือก owner ที่มีเบอร์โทร (ผู้สร้างจะบันทึกเบอร์ตอน create)
-  const ownerData = currentUser || position.owner || (() => {
-    if (!position.owners || position.owners.length === 0) return null;
-    const withPhone = position.owners.find(o => o.phoneNumber);
-    return withPhone || position.owners[0];
-  })();
+  // fallback: positionOwner ที่ backend ส่งมาจาก FK internship_positions.position_owner
+  const ownerData = currentUser || position.positionOwner || null;
   const ownerName = ownerData
     ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
     : "";
@@ -958,6 +947,8 @@ export interface CreatePositionData {
   recruitmentStatus: "OPEN" | "CLOSE";
   // Array ของ staffProfileId สำหรับพี่เลี้ยง (backend ต้องการ array)
   mentorStaffIds: number[];
+  // userId ของผู้ประกาศรับสมัคร (optional — backend แก้ได้เฉพาะเมื่อส่งมา)
+  positionOwner?: string;
 }
 
 // ข้อมูลสำหรับอัพเดท Position

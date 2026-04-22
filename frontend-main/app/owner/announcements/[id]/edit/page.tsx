@@ -62,7 +62,7 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     "ไม่มีค่าตอบแทน",
   ]);
 
-  // Staff list for mentor selection
+  // Staff list for mentor + owner selection (backend filters to roleId ADMIN/OWNER)
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [showMentorDropdown, setShowMentorDropdown] = useState<number | null>(
@@ -77,6 +77,15 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     }[]
   >([{ staffProfileId: null, name: "", email: "", phone: "" }]);
   const mentorDropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // ผู้ประกาศรับสมัคร (FK internship_positions.position_owner)
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+  const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
+  const ownerDropdownRef = useRef<HTMLDivElement>(null);
+  // staffProfileId ของผู้ประกาศที่เลือก (ใช้เทียบกับ mentor เพื่อ sync เบอร์โทร)
+  const ownerStaffProfileId = ownerUserId
+    ? (staffList.find((s) => s.id === ownerUserId)?.staffProfileId ?? null)
+    : null;
 
   // Current user (owner) info
   const [currentUser, setCurrentUser] = useState<StaffUser | null>(null);
@@ -149,16 +158,22 @@ export default function EditAnnouncementPage({ params }: PageProps) {
       ) {
         setShowStatusDropdown(false);
       }
+      if (
+        ownerDropdownRef.current &&
+        !ownerDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowOwnerDropdown(false);
+      }
     };
 
-    if (showFieldDropdown || showStatusDropdown) {
+    if (showFieldDropdown || showStatusDropdown || showOwnerDropdown) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showFieldDropdown, showStatusDropdown]);
+  }, [showFieldDropdown, showStatusDropdown, showOwnerDropdown]);
 
   // Close mentor dropdown when clicking outside
   useEffect(() => {
@@ -293,10 +308,10 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
         const position = await positionApi.getPositionById(positionId);
         if (position) {
-          // ดึง profile ของ user ที่ login อยู่เพื่อใช้เป็นข้อมูลผู้ประกาศ
-          const userProfile = await userApi.getUserProfile();
-          const announcement = positionToAnnouncement(position, userProfile);
+          // ดึงข้อมูลผู้ประกาศจาก position.positionOwner (FK ใน internship_positions)
+          const announcement = positionToAnnouncement(position, null);
           setAcceptedCount(position.acceptedCount ?? 0);
+          setOwnerUserId(position.positionOwner?.id ?? null);
 
           const formatDateForInput = (
             dateStr: string | null | undefined,
@@ -374,13 +389,29 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     loadData();
   }, [id]);
 
+  // Handle owner (ผู้ประกาศรับสมัคร) selection — populate ชื่อ/อีเมล/เบอร์ จาก staff record
+  const handleOwnerSelect = (staff: StaffUser) => {
+    setOwnerUserId(staff.id);
+    setFormData((prev) =>
+      prev
+        ? {
+            ...prev,
+            contactName: `${staff.fname} ${staff.lname}`.trim(),
+            contactEmail: staff.email || "",
+            contactPhone: staff.phoneNumber || "",
+          }
+        : prev,
+    );
+    setShowOwnerDropdown(false);
+  };
+
   // Handle mentor selection for a specific index
   const handleMentorSelect = (staff: StaffUser, index: number) => {
     const profileId = staff.staffProfileId ?? null;
     // ถ้าพี่เลี้ยงที่เลือกเป็นคนเดียวกับผู้ประกาศรับสมัคร → ใช้เบอร์จากฟอร์มด้านบน
-    const isSameAsContact = currentUser && staff.id === currentUser.id;
+    const isSameAsOwner = ownerUserId != null && staff.id === ownerUserId;
     const phone =
-      isSameAsContact && formData
+      isSameAsOwner && formData
         ? formData.contactPhone
         : staff.phoneNumber || "";
     const newMentors = [...mentors];
@@ -403,22 +434,18 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     ]);
   };
 
-  // Sync mentor phone when contactPhone changes and mentor is the same person
+  // Sync mentor phone with contactPhone เมื่อ mentor เป็นคนเดียวกับผู้ประกาศที่เลือก
   useEffect(() => {
-    if (!currentUser || !formData) return;
-    const updated = mentors.map((m) => {
-      if (
-        m.staffProfileId === currentUser.staffProfileId &&
-        currentUser.staffProfileId != null
-      ) {
-        return { ...m, phone: formData.contactPhone };
-      }
-      return m;
-    });
+    if (!formData || ownerStaffProfileId == null) return;
+    const updated = mentors.map((m) =>
+      m.staffProfileId === ownerStaffProfileId
+        ? { ...m, phone: formData.contactPhone }
+        : m,
+    );
     const changed = updated.some((m, i) => m.phone !== mentors[i].phone);
     if (changed) setMentors(updated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData?.contactPhone, currentUser]);
+  }, [formData?.contactPhone, ownerStaffProfileId]);
 
   // Remove mentor at index
   const handleRemoveMentor = (index: number) => {
@@ -484,8 +511,8 @@ export default function EditAnnouncementPage({ params }: PageProps) {
     if (requirementsList.filter((r) => r.trim()).length === 0) {
       newErrors.qualifications = "ระบุคุณสมบัติ";
     }
-    if (!formData.contactName.trim()) {
-      newErrors.contactName = "ระบุชื่อผู้ติดต่อ";
+    if (!ownerUserId || !formData.contactName.trim()) {
+      newErrors.contactName = "เลือกผู้ประกาศรับสมัคร";
     }
     if (!formData.contactEmail.trim()) {
       newErrors.contactEmail = "ระบุอีเมลผู้ติดต่อ";
@@ -562,13 +589,24 @@ export default function EditAnnouncementPage({ params }: PageProps) {
         resumeRq,
         portfolioRq,
         mentorStaffIds,
+        ...(ownerUserId ? { positionOwner: ownerUserId } : {}),
       };
 
       console.log("Updating position:", positionId, updateData);
-      // Save phone number to user profile (non-blocking)
-      if (formData.contactPhone) {
+      // บันทึกเบอร์โทรของผู้ประกาศที่เลือก (self → updateUser, other → updateStaffPhone)
+      if (formData.contactPhone && ownerUserId) {
         try {
-          await userApi.updateUser({ phoneNumber: formData.contactPhone });
+          if (ownerUserId === currentUser?.id) {
+            await userApi.updateUser({ phoneNumber: formData.contactPhone });
+          } else {
+            const ownerStaff = staffList.find((s) => s.id === ownerUserId);
+            if (ownerStaff?.staffProfileId != null) {
+              await userApi.updateStaffPhone(
+                ownerStaff.staffProfileId,
+                formData.contactPhone,
+              );
+            }
+          }
         } catch (phoneErr) {
           console.warn("Failed to update phone number:", phoneErr);
           setEditErrorModal({
@@ -1560,23 +1598,79 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                 รายละเอียดผู้ประกาศรับสมัคร
               </h2>
               <p className="text-gray-500 text-sm mb-4">
-                ข้อมูลจากบัญชีผู้ใช้ของคุณ
+                เลือกผู้ประกาศจากพนักงานในกองเดียวกัน (ADMIN/OWNER)
               </p>
 
               <div className="space-y-4">
-                <div>
+                {/* Owner Selection Dropdown */}
+                <div ref={ownerDropdownRef} className="relative">
                   <label
                     className={`block text-sm font-medium mb-1 ${errors.contactName ? "text-red-500" : "text-gray-700"}`}
                   >
                     <span>ชื่อผู้ประกาศรับสมัคร</span>
                     <span className="text-red-500"> *</span>
                   </label>
-                  <input
-                    type="text"
-                    value={formData.contactName}
-                    disabled
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOwnerDropdown(!showOwnerDropdown)}
+                    disabled={loadingStaff}
+                    className={`w-full px-4 py-3 rounded-lg border bg-white text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.contactName ? "border-red-400" : "border-gray-200"}`}
+                  >
+                    <span
+                      className={
+                        formData.contactName
+                          ? "text-gray-800"
+                          : "text-gray-400"
+                      }
+                    >
+                      {loadingStaff
+                        ? "กำลังโหลด..."
+                        : formData.contactName || "เลือกผู้ประกาศรับสมัคร"}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transition-transform ${showOwnerDropdown ? "rotate-180" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {showOwnerDropdown && !loadingStaff && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {staffList.length > 0 ? (
+                        staffList.map((staff) => (
+                          <button
+                            key={staff.id}
+                            type="button"
+                            onClick={() => handleOwnerSelect(staff)}
+                            className={`w-full px-4 py-3 text-left hover:bg-primary-50 border-b border-gray-100 last:border-b-0 ${
+                              ownerUserId === staff.id
+                                ? "bg-primary-100 text-primary-800"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            <div className="font-medium">
+                              {staff.fname} {staff.lname}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {staff.email}
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-gray-500 text-center">
+                          ไม่พบพนักงานในกองนี้
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {errors.contactName && (
                     <p className="text-red-500 text-xs mt-1">
                       {errors.contactName}
@@ -1586,23 +1680,17 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label
-                      className={`block text-sm font-medium mb-1 ${errors.contactEmail ? "text-red-500" : "text-gray-700"}`}
-                    >
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
                       <span>อีเมลผู้ประกาศรับสมัคร</span>
                       <span className="text-red-500"> *</span>
                     </label>
                     <input
                       type="email"
                       value={formData.contactEmail}
-                      disabled
+                      readOnly
+                      placeholder="อีเมลผู้ประกาศรับสมัคร"
                       className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
                     />
-                    {errors.contactEmail && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.contactEmail}
-                      </p>
-                    )}
                   </div>
                   <div>
                     <label

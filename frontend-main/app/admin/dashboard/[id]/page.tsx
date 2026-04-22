@@ -459,7 +459,7 @@ export default function AdminApplicationDetailPage() {
       : "เหตุผลที่ยกเลิกฝึกงาน";
 
   // Owner & department from position
-  const owner = position?.owners?.[0] || position?.owner;
+  const owner = position?.positionOwner;
   const departmentName =
     position?.department?.deptFull || position?.department?.deptShort || "-";
   const parsedNote = parseStudentNote(application.studentNote);

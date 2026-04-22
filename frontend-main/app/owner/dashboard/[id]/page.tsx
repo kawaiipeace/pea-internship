@@ -1353,12 +1353,7 @@ function ApplicationDetailContent() {
                               (isAbort
                                 ? "ระบบ (อัตโนมัติ)"
                                 : (() => {
-                                    const od =
-                                      positionInfo?.owner ||
-                                      (positionInfo?.owners &&
-                                      positionInfo.owners.length > 0
-                                        ? positionInfo.owners[0]
-                                        : null);
+                                    const od = positionInfo?.positionOwner || null;
                                     return od
                                       ? `${od.fname || ""} ${od.lname || ""}`.trim() ||
                                           "-"
