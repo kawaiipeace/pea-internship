@@ -1015,6 +1015,14 @@ export class CheckTimeService {
     const totalPages = Math.ceil(totalFilteredRecords / limit);
     const offset = (page - 1) * limit;
 
+    const bkkFormatter2 = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const todayStr = bkkFormatter2.format(new Date());
+
     const requestsData = await db
       .select({
         id: timeCorrectionRequests.id,
@@ -1029,6 +1037,8 @@ export class CheckTimeService {
         status: timeCorrectionRequests.status,
         workDate: attendanceLogs.workDate,
         dailyStatus: attendanceLogs.dailyStatus,
+        checkInId: attendanceLogs.checkInId,
+        checkOutId: attendanceLogs.checkOutId,
         fname: users.fname,
         lname: users.lname,
         username: users.displayUsername,
@@ -1058,21 +1068,35 @@ export class CheckTimeService {
       });
     };
 
-    const records = requestsData.map((record) => ({
-      id: record.id,
-      studentName:
-        `${record.fname || ""} ${record.lname || ""} (${record.username || ""})`.trim(),
-      profileImg: record.image || null,
-      createdAt: record.createdAt,
-      workDate: record.workDate,
-      originalTime: `${formatTime(record.originalCheckIn)} - ${formatTime(record.originalCheckOut)}`,
-      requestedTime: `${formatTime(record.requestedCheckIn)} - ${formatTime(record.requestedCheckOut)}`,
-      hoursWorked: record.calculatedHours,
-      reason: record.reason,
-      attachmentUrl: record.attachmentUrl,
-      status: record.status,
-      dailyStatus: record.dailyStatus,
-    }));
+    const records = requestsData.map((record) => {
+      const logDateStr = String(record.workDate).substring(0, 10);
+      let attendanceStatus = record.dailyStatus;
+
+      if (
+        (record.dailyStatus === "PRESENT" || record.dailyStatus === "LATE") &&
+        record.checkInId &&
+        !record.checkOutId &&
+        logDateStr !== todayStr
+      ) {
+        attendanceStatus = "MISSING_OUT";
+      }
+
+      return {
+        id: record.id,
+        studentName:
+          `${record.fname || ""} ${record.lname || ""} (${record.username || ""})`.trim(),
+        profileImg: record.image || null,
+        createdAt: record.createdAt,
+        workDate: record.workDate,
+        originalTime: `${formatTime(record.originalCheckIn)} - ${formatTime(record.originalCheckOut)}`,
+        requestedTime: `${formatTime(record.requestedCheckIn)} - ${formatTime(record.requestedCheckOut)}`,
+        hoursWorked: record.calculatedHours,
+        reason: record.reason,
+        attachmentUrl: record.attachmentUrl,
+        status: record.status,
+        attendanceStatus: attendanceStatus,
+      };
+    });
 
     return {
       data: records,
