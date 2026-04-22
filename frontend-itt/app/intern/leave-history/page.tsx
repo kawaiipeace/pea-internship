@@ -237,15 +237,20 @@ const LeaveHistoryPage = () => {
             setIsDetailModalOpen(false);
 
             Swal.fire({
-                title: 'ยกเลิกสำเร็จ!',
-                icon: 'success',
-                confirmButtonText: 'ตกลง',
-                buttonsStyling: false,
+                html: `
+                  <div class="flex flex-col items-center py-4">
+                    <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6]">
+                      <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                        <span class="material-symbols-rounded !text-[32px]">check</span>
+                      </div>
+                    </div>
+                    <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ยกเลิกสำเร็จ!</h2>
+                  </div>
+                `,
+                showConfirmButton: false,
+                timer: 2000,
                 customClass: {
-                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                    title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                    htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                    confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                  popup: 'rounded-[20px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
                 }
             });
             
@@ -270,19 +275,25 @@ const LeaveHistoryPage = () => {
 
     const handleAutoResubmitLeave = async (item: any) => {
         const result = await Swal.fire({
-          title: 'ยืนยันการส่งคำขออีกครั้ง',
-          text: 'คุณต้องการส่งคำขอการลานี้ใหม่อีกครั้งโดยใช้ข้อมูลเดิมใช่หรือไม่?',
-          icon: 'question',
+          html: `
+            <div class="flex flex-col items-center">
+              <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#DCFAE6]">
+                <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                  <span class="material-symbols-rounded !text-[24px]">check</span>
+                </div>
+              </div>
+              <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-2">ยืนยันการส่งคำขออีกครั้ง</h2>
+            </div>
+          `,
           showCancelButton: true,
           confirmButtonText: 'ยืนยัน',
           cancelButtonText: 'ยกเลิก',
           buttonsStyling: false,
           customClass: {
-            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-            confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center mx-2',
-            cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center mx-2'
+            popup: 'rounded-[16px] p-8 w-auto min-w-[320px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+            actions: 'flex gap-3 w-full px-4 mt-6',
+            confirmButton: 'flex-1 py-2.5 bg-[#11A75C] hover:bg-[#0E8F4D] text-white rounded-xl text-[15px] font-bold order-2 shadow-md',
+            cancelButton: 'flex-1 py-2.5 bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-xl text-[15px] font-bold order-1'
           }
         });
     
@@ -297,16 +308,20 @@ const LeaveHistoryPage = () => {
             
             if (response.data && response.data.success) {
               await Swal.fire({
-                title: 'ส่งคำขออีกครั้งสำเร็จ',
-                text: 'ส่งคำขอการลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)',
-                icon: 'success',
-                confirmButtonText: 'ตกลง',
-                buttonsStyling: false,
+                html: `
+                  <div class="flex flex-col items-center py-4">
+                    <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6]">
+                      <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                        <span class="material-symbols-rounded !text-[32px]">check</span>
+                      </div>
+                    </div>
+                    <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ส่งคำขออีกครั้งสำเร็จ</h2>
+                  </div>
+                `,
+                showConfirmButton: false,
+                timer: 2000,
                 customClass: {
-                  popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                  title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                  htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                  confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                  popup: 'rounded-[20px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
                 }
               });
               setIsDetailModalOpen(false);
@@ -320,10 +335,10 @@ const LeaveHistoryPage = () => {
               confirmButtonText: 'ตกลง',
               buttonsStyling: false,
               customClass: {
-                popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                confirmButton: 'bg-[#EF4444] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+                popup: 'rounded-[16px] p-8 w-auto min-w-[320px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+                title: 'text-[18px] font-bold text-[#1C1C1C] dark:text-white mb-4',
+                htmlContainer: 'text-[14px] text-gray-500 mb-6',
+                confirmButton: 'w-full py-2.5 bg-[#E22E2E] hover:bg-[#C12727] text-white rounded-xl text-[15px] font-bold shadow-md transition-colors'
               }
             });
           } finally {
@@ -492,19 +507,25 @@ const LeaveHistoryPage = () => {
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             Swal.fire({
-                                                                title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
-                                                                icon: 'error',
+                                                                html: `
+                                                                  <div class="flex flex-col items-center">
+                                                                    <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#FEE4E2]">
+                                                                      <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#D92D20] text-white">
+                                                                        <span class="material-symbols-rounded !text-[24px]">close</span>
+                                                                      </div>
+                                                                    </div>
+                                                                    <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-2">ยกเลิกส่งคำขอ</h2>
+                                                                  </div>
+                                                                `,
                                                                 showCancelButton: true,
-                                                                confirmButtonText: 'ตกลง',
-                                                                cancelButtonText: 'ย้อนกลับ',
+                                                                confirmButtonText: 'ยืนยัน',
+                                                                cancelButtonText: 'ดำเนินการต่อ',
                                                                 buttonsStyling: false,
-                                                                reverseButtons: true,
                                                                 customClass: {
-                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
-                                                                    actions: 'flex gap-3 w-full justify-center mt-3',
-                                                                    confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                                    cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
+                                                                    popup: 'rounded-[24px] p-10 w-auto min-w-[340px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+                                                                    actions: 'flex gap-4 w-full px-2 mt-4',
+                                                                    confirmButton: 'flex-1 h-[48px] bg-[#D92D20] hover:bg-[#B42318] text-white rounded-[12px] text-[16px] font-bold order-2 shadow-md transition-colors',
+                                                                    cancelButton: 'flex-1 h-[48px] bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-[12px] text-[16px] font-bold order-1 transition-colors'
                                                                 }
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
@@ -590,19 +611,25 @@ const LeaveHistoryPage = () => {
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             Swal.fire({
-                                                                title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
-                                                                icon: 'error',
+                                                                html: `
+                                                                  <div class="flex flex-col items-center">
+                                                                    <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#FEE4E2]">
+                                                                      <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#D92D20] text-white">
+                                                                        <span class="material-symbols-rounded !text-[24px]">close</span>
+                                                                      </div>
+                                                                    </div>
+                                                                    <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-2 text-center">ยกเลิกส่งคำขอ</h2>
+                                                                  </div>
+                                                                `,
                                                                 showCancelButton: true,
-                                                                confirmButtonText: 'ตกลง',
-                                                                cancelButtonText: 'ย้อนกลับ',
+                                                                confirmButtonText: 'ยืนยัน',
+                                                                cancelButtonText: 'ดำเนินการต่อ',
                                                                 buttonsStyling: false,
-                                                                reverseButtons: true,
                                                                 customClass: {
-                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
-                                                                    actions: 'flex gap-3 w-full justify-center mt-3',
-                                                                    confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                                    cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
+                                                                    popup: 'rounded-[24px] p-10 w-auto min-w-[340px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+                                                                    actions: 'flex gap-4 w-full px-2 mt-4',
+                                                                    confirmButton: 'flex-1 h-[48px] bg-[#D92D20] hover:bg-[#B42318] text-white rounded-[12px] text-[16px] font-bold order-2 shadow-md transition-colors',
+                                                                    cancelButton: 'flex-1 h-[48px] bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-[12px] text-[16px] font-bold order-1 transition-colors'
                                                                 }
                                                             }).then((result) => {
                                                                 if (result.isConfirmed) {
@@ -739,20 +766,25 @@ const LeaveHistoryPage = () => {
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
                                                                                     Swal.fire({
-                                                                                        title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
-                                                                                        icon: 'error',
+                                                                                        html: `
+                                                                                          <div class="flex flex-col items-center">
+                                                                                            <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#FEE4E2]">
+                                                                                              <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#D92D20] text-white">
+                                                                                                <span class="material-symbols-rounded !text-[24px]">close</span>
+                                                                                              </div>
+                                                                                            </div>
+                                                                                            <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-2">ยกเลิกส่งคำขอ</h2>
+                                                                                          </div>
+                                                                                        `,
                                                                                         showCancelButton: true,
-                                                                                        confirmButtonText: 'ตกลง',
-                                                                                        cancelButtonText: 'ย้อนกลับ',
+                                                                                        confirmButtonText: 'ยืนยัน',
+                                                                                        cancelButtonText: 'ดำเนินการต่อ',
                                                                                         buttonsStyling: false,
-                                                                                        reverseButtons: true,
                                                                                         customClass: {
-                                                                                            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                                            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                                                                                            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                                            actions: 'flex gap-3 w-full justify-center mt-3',
-                                                                                            confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                                                            cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
+                                                                                            popup: 'rounded-[24px] p-10 w-auto min-w-[340px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+                                                                                            actions: 'flex gap-4 w-full px-2 mt-4',
+                                                                                            confirmButton: 'flex-1 h-[48px] bg-[#D92D20] hover:bg-[#B42318] text-white rounded-[12px] text-[16px] font-bold order-2 shadow-md transition-colors',
+                                                                                            cancelButton: 'flex-1 h-[48px] bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-[12px] text-[16px] font-bold order-1 transition-colors'
                                                                                         }
                                                                                     }).then((result) => {
                                                                                         if (result.isConfirmed) {
