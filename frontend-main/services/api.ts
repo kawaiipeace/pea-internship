@@ -1280,7 +1280,7 @@ export const applicationApi = {
       responseType: "blob",
     });
     const blob = new Blob([response.data], {
-      type: response.headers["content-type"] || "application/octet-stream",
+      type: typeof response.headers["content-type"] === "string" ? response.headers["content-type"] : "application/octet-stream",
     });
     const url = window.URL.createObjectURL(blob);
     if (download) {
