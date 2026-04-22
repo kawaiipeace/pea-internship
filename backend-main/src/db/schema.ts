@@ -550,6 +550,10 @@ export const leaveRequests = pgTable(
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
   },
   (table) => [
     foreignKey({
