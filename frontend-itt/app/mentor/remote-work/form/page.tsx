@@ -295,7 +295,7 @@ const RemoteWorkFormPage = () => {
                         </div>
                         <div className="w-[348px]">
                             <CustomDatePicker
-                                multiple={!isEditMode}
+                                range={!isEditMode}
                                 value={isEditMode ? workDates[0] : undefined}
                                 selectedDates={!isEditMode ? workDates : []}
                                 onChange={(date) => {

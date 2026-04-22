@@ -7,21 +7,23 @@ interface CustomDatePickerProps {
     value?: string; // YYYY-MM-DD (Single Mode)
     onChange?: (date: string) => void; // (Single Mode)
     multiple?: boolean;
-    selectedDates?: string[]; // (Multiple Mode)
-    onDatesChange?: (dates: string[]) => void; // (Multiple Mode)
+    range?: boolean; // New prop for range selection
+    selectedDates?: string[]; // (Multiple/Range Mode)
+    onDatesChange?: (dates: string[]) => void; // (Multiple/Range Mode)
     placeholder?: string;
     error?: string;
 }
 
-const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, multiple, selectedDates = [], onDatesChange, placeholder, error }) => {
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, multiple, range, selectedDates = [], onDatesChange, placeholder, error }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [viewDate, setViewDate] = useState(new Date());
     const [internalSelectedDate, setInternalSelectedDate] = useState<Date | null>(value ? new Date(value) : null);
     const [internalMultipleDates, setInternalMultipleDates] = useState<string[]>(selectedDates);
+    const [hoverDate, setHoverDate] = useState<string | null>(null);
 
     // Sync internal state when external value changes
     useEffect(() => {
-        if (!multiple) {
+        if (!multiple && !range) {
             if (value) {
                 const d = new Date(value);
                 setInternalSelectedDate(d);
@@ -32,10 +34,11 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
         } else {
             setInternalMultipleDates(selectedDates);
             if (selectedDates.length > 0 && !isOpen) {
+                // For range mode, if multiple dates are passed, we might want to just show the first one's month
                 setViewDate(new Date(selectedDates[0]));
             }
         }
-    }, [value, selectedDates, multiple, isOpen]);
+    }, [value, selectedDates, multiple, range, isOpen]);
 
     const months = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -67,7 +70,20 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
         const dayStr = String(newDate.getDate()).padStart(2, '0');
         const dateStr = `${year}-${month}-${dayStr}`;
 
-        if (multiple) {
+        if (range) {
+            if (internalMultipleDates.length === 0 || internalMultipleDates.length === 2) {
+                // Start a new range
+                setInternalMultipleDates([dateStr]);
+            } else if (internalMultipleDates.length === 1) {
+                // Complete the range
+                const start = internalMultipleDates[0];
+                const end = dateStr;
+                
+                // Sort dates to ensure start is before end
+                const sorted = [start, end].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+                setInternalMultipleDates(sorted);
+            }
+        } else if (multiple) {
             const newDates = internalMultipleDates.includes(dateStr)
                 ? internalMultipleDates.filter(d => d !== dateStr)
                 : [...internalMultipleDates, dateStr];
@@ -78,14 +94,32 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
     };
 
     const handleOk = () => {
-        if (multiple) {
+        if (range) {
             if (onDatesChange) {
-                // Sort dates before returning
+                if (internalMultipleDates.length === 2) {
+                    // Expand range to all dates in between
+                    const start = new Date(internalMultipleDates[0]);
+                    const end = new Date(internalMultipleDates[1]);
+                    const allDates: string[] = [];
+                    let curr = new Date(start);
+                    while (curr <= end) {
+                        const y = curr.getFullYear();
+                        const m = String(curr.getMonth() + 1).padStart(2, '0');
+                        const d = String(curr.getDate()).padStart(2, '0');
+                        allDates.push(`${y}-${m}-${d}`);
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                    onDatesChange(allDates);
+                } else if (internalMultipleDates.length === 1) {
+                    onDatesChange(internalMultipleDates);
+                }
+            }
+        } else if (multiple) {
+            if (onDatesChange) {
                 const sortedDates = [...internalMultipleDates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
                 onDatesChange(sortedDates);
             }
         } else if (internalSelectedDate) {
-            // Format to YYYY-MM-DD for consistency
             const year = internalSelectedDate.getFullYear();
             const month = String(internalSelectedDate.getMonth() + 1).padStart(2, '0');
             const day = String(internalSelectedDate.getDate()).padStart(2, '0');
@@ -95,7 +129,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
     };
 
     const handleClear = () => {
-        if (multiple) {
+        if (multiple || range) {
             setInternalMultipleDates([]);
             if (onDatesChange) onDatesChange([]);
         } else {
@@ -116,82 +150,69 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
 
     const formatMultipleDatesDisplay = (dates: string[]) => {
         if (!dates || dates.length === 0) return '';
-        // Sort dates to ensure they appear in order
+        
+        if (range) {
+            if (dates.length === 1) return formatDateDisplay(dates[0]);
+            // If it's range mode and we have many dates, it means it's already expanded or it's start/end
+            // We want to show "Start - End"
+            const start = dates[0];
+            const end = dates[dates.length - 1];
+            return `${formatDateDisplay(start)} - ${formatDateDisplay(end)}`;
+        }
+
         const sortedDates = [...dates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
         const formatted = sortedDates.map(d => formatDateDisplay(d));
-        
-        // If many dates are selected, they might overflow. 
-        // We can join them with a dash or comma as requested.
         return formatted.join(' - ');
     };
 
-    const renderCalendar = () => {
-        const year = viewDate.getFullYear();
-        const month = viewDate.getMonth();
-        const daysInMonth = getDaysInMonth(year, month);
-        const firstDay = getFirstDayOfMonth(year, month);
-        
-        const calendarDays = [];
-        
-        // Padding for previous month days
-        for (let i = 0; i < firstDay; i++) {
-            calendarDays.push(<div key={`empty-${i}`} className="h-[34px] w-[36px]"></div>);
+    const isDateSelected = (dateStr: string) => {
+        if (range) {
+            if (internalMultipleDates.length === 2) {
+                const start = new Date(internalMultipleDates[0]).getTime();
+                const end = new Date(internalMultipleDates[1]).getTime();
+                const current = new Date(dateStr).getTime();
+                return current >= start && current <= end;
+            }
+            return internalMultipleDates.includes(dateStr);
         }
+        return internalMultipleDates.includes(dateStr);
+    };
 
-        for (let day = 1; day <= daysInMonth; day++) {
-            const isSelected = selectedDate && 
-                selectedDate.getDate() === day && 
-                selectedDate.getMonth() === month && 
-                selectedDate.getFullYear() === year;
-            
-            const isToday = new Date().getDate() === day && 
-                new Date().getMonth() === month && 
-                new Date().getFullYear() === year;
-
-            calendarDays.push(
-                <div 
-                    key={day}
-                    onClick={() => handleDateSelect(day)}
-                    className={`h-[34px] w-[36px] flex items-center justify-center text-[14px] cursor-pointer rounded-[8px] transition-all
-                        ${isSelected ? 'bg-[#A80689] text-white font-bold' : 'hover:bg-[#FDF2FE] text-[#101828]'}
-                        ${isToday && !isSelected ? 'border border-[#A80689]/30' : ''}
-                    `}
-                >
-                    {day}
-                </div>
-            );
-        }
-
-        return calendarDays;
+    const isDateInRange = (dateStr: string) => {
+        if (!range || internalMultipleDates.length !== 1 || !hoverDate) return false;
+        
+        const start = new Date(internalMultipleDates[0]).getTime();
+        const hover = new Date(hoverDate).getTime();
+        const current = new Date(dateStr).getTime();
+        
+        const rangeStart = Math.min(start, hover);
+        const rangeEnd = Math.max(start, hover);
+        
+        return current >= rangeStart && current <= rangeEnd;
     };
 
     return (
         <div className="relative w-full">
-            {/* Input Overlay */}
             <div 
                 onClick={() => setIsOpen(true)}
                 className={`w-full h-[45px] px-4 bg-white dark:bg-gray-900 border ${error ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[8px] text-[14px] flex items-center cursor-pointer focus:outline-none transition-colors`}
             >
-                <span className={(multiple ? internalMultipleDates.length > 0 : value) ? 'text-[#101828] dark:text-white' : 'text-[#9ca3af]'}>
-                    {multiple 
+                <span className={((multiple || range) ? internalMultipleDates.length > 0 : value) ? 'text-[#101828] dark:text-white' : 'text-[#9ca3af]'}>
+                    {(multiple || range) 
                         ? (internalMultipleDates.length > 0 ? formatMultipleDatesDisplay(internalMultipleDates) : placeholder || 'เลือกวันที่')
                         : (value ? formatDateDisplay(value) : placeholder || 'วว/ดด/ปปปป')
                     }
                 </span>
-                
             </div>
             
             {error && <p className="text-[#D92D20] text-[12px] mt-0.5">{error}</p>}
 
-            {/* Calendar Dropdown */}
             {isOpen && (
                 <div className="absolute top-[50px] left-0 z-[100]">
                     <ClickAwayListener onClickAway={() => setIsOpen(false)}>
                         <div className="bg-white dark:bg-[#121212] w-[348px] h-[350px] rounded-[16px] shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col justify-between">
-                            {/* Calendar Content Area */}
                             <div className="p-3 w-full flex flex-col items-center">
                                 <div className="w-[252px]">
-                                    {/* Month/Year Nav */}
                                     <div className="flex items-center justify-between mb-3">
                                         <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
                                             <span className="material-symbols-rounded text-[20px] text-gray-600 dark:text-gray-400">arrow_back</span>
@@ -204,7 +225,6 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                                         </button>
                                     </div>
 
-                                    {/* Weekdays */}
                                     <div className="grid grid-cols-7 mb-1">
                                         {daysOfWeek.map(day => (
                                             <div key={day} className="w-[36px] h-7 flex items-center justify-center text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
@@ -213,9 +233,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                                         ))}
                                     </div>
 
-                                    {/* Days Grid */}
                                     <div className="grid grid-cols-7 h-[180px]">
-                                        {/* Updated Cell Size to fit */}
                                         {(() => {
                                             const year = viewDate.getFullYear();
                                             const month = viewDate.getMonth();
@@ -226,24 +244,62 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                                                 calendarDays.push(<div key={`empty-${i}`} className="h-[30px] w-[36px]"></div>);
                                             }
                                             for (let day = 1; day <= daysInMonth; day++) {
-                                                const year = viewDate.getFullYear();
-                                                const month = viewDate.getMonth();
                                                 const dayStr = String(day).padStart(2, '0');
                                                 const monthStr = String(month + 1).padStart(2, '0');
                                                 const dateStr = `${year}-${monthStr}-${dayStr}`;
 
-                                                const isSelected = multiple 
-                                                    ? internalMultipleDates.includes(dateStr)
+                                                const isSelected = multiple || range
+                                                    ? isDateSelected(dateStr)
                                                     : (internalSelectedDate && internalSelectedDate.getDate() === day && internalSelectedDate.getMonth() === month && internalSelectedDate.getFullYear() === year);
                                                 
+                                                const isInRange = isDateInRange(dateStr);
                                                 const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
+
+                                                // Range visual logic
+                                                const isRangeStart = range && internalMultipleDates.length >= 1 && internalMultipleDates[0] === dateStr;
+                                                const isRangeEnd = range && internalMultipleDates.length === 2 && internalMultipleDates[1] === dateStr;
+                                                const isHoverEnd = range && internalMultipleDates.length === 1 && hoverDate === dateStr;
+
+                                                let bgClass = 'hover:bg-[#FDF2FE] text-[#101828]';
+                                                let roundedClass = 'rounded-[4px]';
+
+                                                if (isSelected || isInRange) {
+                                                    bgClass = 'bg-[#A80689] text-white font-bold';
+                                                    if (range) {
+                                                        const start = internalMultipleDates[0];
+                                                        const end = internalMultipleDates.length === 2 ? internalMultipleDates[1] : hoverDate;
+                                                        
+                                                        if (start && end) {
+                                                            const sTime = new Date(start).getTime();
+                                                            const eTime = new Date(end).getTime();
+                                                            const cTime = new Date(dateStr).getTime();
+                                                            const realStart = Math.min(sTime, eTime);
+                                                            const realEnd = Math.max(sTime, eTime);
+
+                                                            if (cTime === realStart && cTime === realEnd) {
+                                                                roundedClass = 'rounded-[8px]';
+                                                            } else if (cTime === realStart) {
+                                                                roundedClass = 'rounded-l-[8px] rounded-r-none';
+                                                            } else if (cTime === realEnd) {
+                                                                roundedClass = 'rounded-r-[8px] rounded-l-none';
+                                                            } else if (cTime > realStart && cTime < realEnd) {
+                                                                roundedClass = 'rounded-none';
+                                                                bgClass = 'bg-[#A80689]/10 text-[#A80689] font-bold';
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
                                                 calendarDays.push(
                                                     <div 
                                                         key={day}
                                                         onClick={() => handleDateSelect(day)}
-                                                        className={`h-[30px] w-[36px] flex items-center justify-center text-[14px] cursor-pointer rounded-[4px] transition-all
-                                                            ${isSelected ? 'bg-[#A80689] text-white font-bold' : 'hover:bg-[#FDF2FE] text-[#101828]'}
-                                                            ${isToday && !isSelected ? 'border border-[#A80689]/30' : ''}
+                                                        onMouseEnter={() => range && setHoverDate(dateStr)}
+                                                        onMouseLeave={() => range && setHoverDate(null)}
+                                                        className={`h-[30px] w-[36px] flex items-center justify-center text-[14px] cursor-pointer transition-all
+                                                            ${bgClass}
+                                                            ${roundedClass}
+                                                            ${isToday && !isSelected && !isInRange ? 'border border-[#A80689]/30' : ''}
                                                         `}
                                                     >
                                                         {day}
@@ -256,7 +312,6 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                                 </div>
                             </div>
 
-                            {/* Footer Buttons */}
                             <div className="flex gap-3 p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#121212]">
                                 <button 
                                     onClick={handleClear}
@@ -278,5 +333,6 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
         </div>
     );
 };
+
 
 export default CustomDatePicker;
