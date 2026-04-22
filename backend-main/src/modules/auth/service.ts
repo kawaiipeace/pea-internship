@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { BadRequestError, InternalServerError } from "@/common/exceptions";
 import { db } from "@/db";
-import { studentProfiles, users } from "@/db/schema";
+import { studentProfiles, users, userFcmTokens } from "@/db/schema";
 import { type Auth, auth } from "@/lib/auth";
 import type * as model from "./model";
 
@@ -122,11 +122,18 @@ export class AuthService {
     return response;
   }
 
-  async logout(headers: Headers) {
+  async logout(headers: Headers, userId: string) {
     const response = await auth.api.signOut({
       headers: headers,
       asResponse: true,
     });
+
+    try {
+      await db.delete(userFcmTokens).where(eq(userFcmTokens.userId, userId));
+      console.log(`[FCM] All tokens removed for user: ${userId}`);
+    } catch (error) {
+      console.error("[FCM] Failed to remove tokens during logout:", error);
+    }
 
     return response;
   }

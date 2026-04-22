@@ -42,6 +42,9 @@ CREATE TYPE public.correction_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJEC
 
 CREATE TYPE public.internship_end_history_enum AS ENUM ('COMPLETE', 'CANCEL');
 
+CREATE TYPE public.extension_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'CANCEL');
+
+
 CREATE TABLE -- all
   public.roles (
     id SERIAL PRIMARY KEY,
@@ -316,6 +319,9 @@ CREATE TABLE -- itt
     approved_by VARCHAR(50),
     approver_note TEXT,
     approved_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES public.users (id),
     FOREIGN KEY (approved_by) REFERENCES public.users (id)
   );
@@ -559,6 +565,8 @@ CREATE TABLE
     note TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    reason_for_deletion TEXT,
     CONSTRAINT offsite_tasks_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.users (id) ON DELETE CASCADE
   );
 
@@ -596,6 +604,38 @@ CREATE TABLE public.time_correction_requests (
 );
 
 COMMENT ON TABLE public.time_correction_requests IS 'เก็บข้อมูลคำขอแก้ไขเวลาเข้า-ออกงาน พร้อมไฟล์แนบ รอการอนุมัติ';
+
+
+CREATE TABLE public.internship_extensions (
+    id SERIAL PRIMARY KEY,
+    application_status_id INT NOT NULL,
+    request_by VARCHAR(50) NOT NULL,
+    new_end_date TIMESTAMP,        
+    additional_hours DECIMAL(10, 2),
+    reason TEXT NOT NULL,           
+    status public.extension_status_enum DEFAULT 'PENDING' NOT NULL,
+    approved_by VARCHAR(50),        
+    approver_note TEXT,
+    approved_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_extension_app_status FOREIGN KEY (application_status_id) REFERENCES public.application_statuses (id) ON DELETE CASCADE,
+    CONSTRAINT fk_extension_request_by FOREIGN KEY (request_by) REFERENCES public.users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_extension_approved_by FOREIGN KEY (approved_by) REFERENCES public.users (id) ON DELETE SET NULL
+);
+
+COMMENT ON TABLE public.internship_extensions IS 'เก็บข้อมูลการขอขยายระยะเวลาฝึกงานหรือชดเชยชั่วโมง';
+
+CREATE TABLE public.user_fcm_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL, 
+    token TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_fcm_user FOREIGN KEY (user_id) REFERENCES public.users (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_user_fcm_tokens_user_id ON public.user_fcm_tokens (user_id);
 
 CREATE
 OR REPLACE VIEW public.student_attendance_summary AS
