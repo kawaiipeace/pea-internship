@@ -11,15 +11,55 @@ import {
   offsiteTasks,
   users,
 } from "@/db/schema";
+import { sendNotification } from "../../config/firebase";
+import { FCMService } from "../fcm/service";
 import type * as offsiteModel from "./model";
 
 export class OffsiteTaskService {
+  private fcmService = new FCMService();
+
+  private async sendOffsiteNotification(
+    mentorId: string,
+    studentIds: string[],
+    location: string,
+    date: string
+  ) {
+    try {
+      const mentor = await db.query.users.findFirst({
+        where: eq(users.id, mentorId),
+        columns: { fname: true, lname: true },
+      });
+
+      const mentorName = mentor
+        ? `${mentor.fname} ${mentor.lname}`
+        : "พี่เลี้ยงของคุณ";
+
+      for (const studentId of studentIds) {
+        const tokens = await this.fcmService.getTokensByUserId(studentId);
+
+        for (const token of tokens) {
+          await sendNotification({
+            token,
+            title: "📍 มอบหมายงานนอกสถานที่ใหม่",
+            body: `${mentorName} ได้มอบหมายงานให้คุณไปที่ ${location} ในวันที่ ${date}`,
+            data: {
+              type: "OFFSITE_TASK",
+              click_action: "/intern/offsite-tasks",
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error("[FCM] Failed to send offsite notifications:", error);
+    }
+  }
+
   async createTask(mentorId: string, data: offsiteModel.CreateOffsiteTaskDto) {
     if (!data.studentIds || data.studentIds.length === 0) {
       throw new BadRequestError("ต้องระบุนักศึกษาอย่างน้อย 1 คน");
     }
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       const [newTask] = await tx
         .insert(offsiteTasks)
         .values({
@@ -44,6 +84,15 @@ export class OffsiteTaskService {
         taskId: newTask.id,
       };
     });
+
+    this.sendOffsiteNotification(
+      mentorId,
+      data.studentIds,
+      data.locationName,
+      data.workDate
+    );
+
+    return result;
   }
 
   async getTasksByMentor(mentorId: string) {

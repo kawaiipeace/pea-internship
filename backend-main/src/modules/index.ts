@@ -8,6 +8,7 @@ import { auth } from "./auth";
 import { checkTime } from "./check-time";
 import { department } from "./department";
 import { favorite } from "./favorite";
+import { fcm } from "./fcm";
 import { file } from "./file";
 import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
@@ -40,6 +41,7 @@ const modules = new Elysia({ prefix: "/api" })
   .use(leave)
   .use(mentor)
   .use(file)
+  .use(fcm)
   .use(applicationStatusActionsModule)
   .use(applicationCompleteModal)
   .use(adminDashboard);

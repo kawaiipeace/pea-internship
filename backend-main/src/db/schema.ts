@@ -1134,17 +1134,17 @@ export const internshipExtensions = pgTable(
     id: serial().primaryKey().notNull(),
     applicationStatusId: integer("application_status_id").notNull(),
     requestBy: varchar("request_by", { length: 50 }).notNull(),
-    
+
     newEndDate: timestamp("new_end_date", { mode: "date" }),
     additionalHours: numeric("additional_hours", { precision: 10, scale: 2 }),
-    
+
     reason: text().notNull(),
     status: extensionStatusEnum("status").default("PENDING").notNull(),
-    
+
     approvedBy: varchar("approved_by", { length: 50 }),
     approverNote: text("approver_note"),
     approvedAt: timestamp("approved_at", { mode: "date" }),
-    
+
     createdAt: timestamp("created_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
