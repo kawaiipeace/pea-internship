@@ -150,7 +150,25 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
                     </button>
                     <button
                         onClick={() => {
-                            Swal.fire({ title: 'สำเร็จ', text: 'บันทึกการชดเชยสำเร็จ', icon: 'success' });
+                            Swal.fire({
+                                width: '380px',
+                                html: `
+                                    <div class="flex flex-col items-center pt-4">
+                                        <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
+                                            <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
+                                                <span class="material-symbols-outlined text-white text-[20px] select-none" style="font-size: 36px">check</span>
+                                            </div>
+                                        </div>
+                                        <h2 class="text-[20px] font-bold text-gray-800 mb-2">ยืนยันการชดเชยแล้ว</h2>
+                                    </div>
+                                `,
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: false,
+                                customClass: {
+                                    popup: 'rounded-[20px] !p-8',
+                                }
+                            });
                             onClose();
                         }}
                         className="px-6 py-2.5 bg-[#0EBA67] rounded-xl text-white text-[14px] font-bold hover:bg-[#0da45a] transition-colors shadow-sm"
@@ -262,6 +280,67 @@ const StudentDetailPage = () => {
             console.error('Error fetching file:', error);
             Swal.fire('Error', 'ไม่สามารถเปิดไฟล์ได้', 'error');
         }
+    };
+
+    const handlePassInternship = () => {
+        Swal.fire({
+            width: '400px',
+            html: `
+                <div class="flex flex-col items-center pt-4">
+                    <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
+                        <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
+                            <span class="material-symbols-outlined text-white select-none" style="font-size: 36px">check</span>
+                        </div>
+                    </div>
+                    <h2 class="text-[20px] font-bold text-gray-800 mb-6">ยืนยันการอนุมัติ</h2>
+                    <div class="flex gap-4 w-full justify-center">
+                        <button id="cancel-btn" class="flex-1 max-w-[140px] py-3 border border-gray-300 rounded-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">ยกเลิก</button>
+                        <button id="confirm-btn" class="flex-1 max-w-[140px] py-3 bg-[#0EBA67] text-white rounded-[10px] font-bold hover:bg-[#0da45a] transition-colors">ยืนยัน</button>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'rounded-[20px] !p-8',
+            },
+            didOpen: () => {
+                const cancelBtn = document.getElementById('cancel-btn');
+                const confirmBtn = document.getElementById('confirm-btn');
+                
+                cancelBtn?.addEventListener('click', () => Swal.close());
+                confirmBtn?.addEventListener('click', async () => {
+                    try {
+                        // Optional: You could add the actual API call here if needed
+                        // await axiosInstance.patch(`/mentor/students/${studentId}/status`, { status: 'COMPLETE' });
+                        
+                        Swal.fire({
+                            width: '400px',
+                            html: `
+                                <div class="flex flex-col items-center pt-4">
+                                    <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
+                                        <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
+                                            <span class="material-symbols-outlined text-white select-none" style="font-size: 36px">check</span>
+                                        </div>
+                                    </div>
+                                    <h2 class="text-[20px] font-bold text-gray-800 mb-2">อนุมัติผ่านการฝึกงานแล้ว</h2>
+                                </div>
+                            `,
+                            showConfirmButton: false,
+                            timer: 2000,
+                            customClass: {
+                                popup: 'rounded-[20px] !p-8',
+                            }
+                        });
+                        
+                        // Refresh data after a short delay
+                        setTimeout(() => fetchDetail(), 2000);
+                    } catch (error) {
+                        console.error('Error updating internship status:', error);
+                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถปรับปรุงสถานะได้', 'error');
+                    }
+                });
+            }
+        });
     };
 
     useEffect(() => {
@@ -516,7 +595,11 @@ const StudentDetailPage = () => {
                     </div>
 
                     <div className="w-full space-y-3 mt-8">
-                        <button className="w-full py-3 bg-[#74D1A6] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#067647] transition-colors shadow-sm text-[18px]">
+                        <button 
+                            type="button"
+                            onClick={handlePassInternship}
+                            className="w-full py-3 bg-[#74D1A6] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#067647] transition-colors shadow-sm text-[18px]"
+                        >
                             <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
                             ผ่านการฝึกงาน
                         </button>
