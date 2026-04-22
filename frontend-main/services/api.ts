@@ -426,6 +426,8 @@ export const authStorage = {
     authStorage.removeUser();
     // ลบ Better Auth session cookies ด้วย
     authStorage.clearBetterAuthCookies();
+    // ลบ token cookie ที่ใช้ข้ามระบบไป iTT
+    deleteCookie("token");
   },
 
   // ตรวจสอบว่า login อยู่หรือไม่

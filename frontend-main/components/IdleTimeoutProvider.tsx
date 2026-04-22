@@ -19,11 +19,21 @@ const ACTIVITY_EVENTS: (keyof DocumentEventMap)[] = [
 ];
 
 // หน้าที่ไม่ต้องตรวจ idle (public pages)
-const PUBLIC_PATHS = ["/", "/login", "/register", "/pea-info", "/faqs", "/jobs", "/credits", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/register",
+  "/pea-info",
+  "/faqs",
+  "/jobs",
+  "/credits",
+  "/forgot-password",
+  "/reset-password",
+];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
+    (p) => pathname === p || pathname.startsWith(p + "/"),
   );
 }
 
@@ -37,12 +47,18 @@ function isUserLoggedIn(): boolean {
     return name === "user_role" && !!value;
   });
   // fallback: ตรวจ auth_token cookie ด้วย (ถ้าอ่านได้)
-  const hasAuthToken = cookies.split("; ").some((c) => c.startsWith("auth_token="));
+  const hasAuthToken = cookies
+    .split("; ")
+    .some((c) => c.startsWith("auth_token="));
   // fallback: ตรวจ better-auth session cookie ด้วย
-  const hasBetterAuth = cookies.split("; ").some((c) => c.startsWith("better-auth.session_token="));
+  const hasBetterAuth = cookies
+    .split("; ")
+    .some((c) => c.startsWith("better-auth.session_token="));
 
   const result = hasUserRole || hasAuthToken || hasBetterAuth;
-  console.log(`[IdleTimeout] isUserLoggedIn: userRole=${hasUserRole}, authToken=${hasAuthToken}, betterAuth=${hasBetterAuth} → ${result}`);
+  console.log(
+    `[IdleTimeout] isUserLoggedIn: userRole=${hasUserRole}, authToken=${hasAuthToken}, betterAuth=${hasBetterAuth} → ${result}`,
+  );
   return result;
 }
 
@@ -107,7 +123,9 @@ export default function IdleTimeoutProvider({
     const isPublic = isPublicPath(pathname);
     const isLoggedIn = isUserLoggedIn();
 
-    console.log(`[IdleTimeout] pathname=${pathname}, isPublic=${isPublic}, isLoggedIn=${isLoggedIn}`);
+    console.log(
+      `[IdleTimeout] pathname=${pathname}, isPublic=${isPublic}, isLoggedIn=${isLoggedIn}`,
+    );
 
     // ไม่ต้องตรวจ idle ถ้าอยู่หน้า public หรือไม่ได้ login
     if (isPublic || !isLoggedIn) {
@@ -118,7 +136,9 @@ export default function IdleTimeoutProvider({
       return;
     }
 
-    console.log(`[IdleTimeout] ✅ เริ่ม idle timer ${IDLE_TIMEOUT_MS / 1000} วินาที`);
+    console.log(
+      `[IdleTimeout] ✅ เริ่ม idle timer ${IDLE_TIMEOUT_MS / 1000} วินาที`,
+    );
 
     // เริ่มนับ timer
     resetTimer();
@@ -131,26 +151,6 @@ export default function IdleTimeoutProvider({
       document.addEventListener(event, handleActivity, { passive: true });
     });
 
-    // ฟัง activity จาก tab อื่นผ่าน localStorage
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "lastActivity") {
-        resetTimer();
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-
-    // broadcast activity ไปยัง tab อื่น
-    const broadcastActivity = () => {
-      try {
-        localStorage.setItem("lastActivity", Date.now().toString());
-      } catch {
-        // localStorage อาจไม่พร้อมใช้
-      }
-    };
-    ACTIVITY_EVENTS.forEach((event) => {
-      document.addEventListener(event, broadcastActivity, { passive: true });
-    });
-
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -158,9 +158,7 @@ export default function IdleTimeoutProvider({
       }
       ACTIVITY_EVENTS.forEach((event) => {
         document.removeEventListener(event, handleActivity);
-        document.removeEventListener(event, broadcastActivity);
       });
-      window.removeEventListener("storage", handleStorage);
     };
   }, [pathname, resetTimer]);
 
