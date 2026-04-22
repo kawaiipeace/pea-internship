@@ -52,8 +52,10 @@ export default function NavbarIntern({
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [internshipStatus, setInternshipStatus] = useState<string | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const helpRef = useRef<HTMLDivElement>(null);
 
   // Notification state
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -280,6 +282,12 @@ export default function NavbarIntern({
       ) {
         setIsNotificationOpen(false);
       }
+      if (
+        helpRef.current &&
+        !helpRef.current.contains(event.target as Node)
+      ) {
+        setIsHelpOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -368,16 +376,46 @@ export default function NavbarIntern({
                   <span className="absolute -right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary-600 rounded-full animate-pulse" />
                 )}
               </Link>
-              <Link
-                href="/faqs"
-                className={`font-medium transition-colors ${
-                  pathname === "/faqs"
-                    ? "text-primary-600 hover:text-primary-700"
-                    : "text-gray-600 hover:text-primary-600"
-                }`}
-              >
-                FAQs
-              </Link>
+              {/* ช่วยเหลือ dropdown */}
+              <div ref={helpRef} className="relative">
+                <button
+                  onClick={() => setIsHelpOpen((v) => !v)}
+                  className={`flex items-center gap-1 font-medium transition-colors ${
+                    ["/faqs"].includes(pathname) || pathname.startsWith("/guide")
+                      ? "text-primary-600"
+                      : "text-gray-600 hover:text-primary-600"
+                  }`}
+                >
+                  ช่วยเหลือ
+                  <svg className={`w-4 h-4 transition-transform ${isHelpOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isHelpOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                    <Link
+                      href="/guide"
+                      onClick={() => setIsHelpOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname.startsWith("/guide") ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      คู่มือการใช้งาน
+                    </Link>
+                    <Link
+                      href="/faqs"
+                      onClick={() => setIsHelpOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname === "/faqs" ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      FAQs
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Notification Bell - Desktop */}
@@ -900,6 +938,30 @@ export default function NavbarIntern({
                   />
                 </svg>
                 <span>FAQs</span>
+              </Link>
+              <Link
+                href="/guide"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600 transition-colors ${
+                  pathname.startsWith("/guide")
+                    ? "bg-primary-50 text-primary-600"
+                    : ""
+                }`}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+                <span>คู่มือการใช้งาน</span>
               </Link>
               <a
                 href="https://forms.gle/EFAqAP1F3JUeN7wF6"

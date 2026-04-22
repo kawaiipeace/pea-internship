@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { authApi } from "@/services/api";
 
 // Helper: navigate browser directly to Keycloak SSO (must be browser navigation, not AJAX)
@@ -14,6 +14,19 @@ const handleKeycloakRedirect = () => {
 export default function NavbarPublic() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const helpRef = useRef<HTMLDivElement>(null);
+
+  // Close help dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (helpRef.current && !helpRef.current.contains(e.target as Node)) {
+        setIsHelpOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
@@ -33,7 +46,7 @@ export default function NavbarPublic() {
           {/* Navigation and Auth Buttons */}
           <div className="flex items-center gap-3">
             {/* Navigation Links - desktop only */}
-            <div className="hidden lg:flex items-center gap-8 mr-4">
+            <div className="hidden lg:flex items-center gap-8 mr-4 nav-text-links">
               <Link
                 href="/"
                 className={`font-medium transition-colors ${
@@ -54,26 +67,56 @@ export default function NavbarPublic() {
               >
                 ข้อมูลกฟภ.
               </Link>
-              <Link
-                href="/faqs"
-                className={`font-medium transition-colors ${
-                  pathname === "/faqs"
-                    ? "text-primary-600 hover:text-primary-700"
-                    : "text-gray-600 hover:text-primary-600"
-                }`}
-              >
-                FAQs
-              </Link>
-              <Link
-                href="/credits"
-                className={`font-medium transition-colors ${
-                  pathname === "/credits"
-                    ? "text-primary-600 hover:text-primary-700"
-                    : "text-gray-600 hover:text-primary-600"
-                }`}
-              >
-                ผู้จัดทำ
-              </Link>
+              {/* ช่วยเหลือ dropdown */}
+              <div ref={helpRef} className="relative">
+                <button
+                  onClick={() => setIsHelpOpen((v) => !v)}
+                  className={`flex items-center gap-1 font-medium transition-colors ${
+                    ["/faqs", "/credits"].includes(pathname) || pathname.startsWith("/guide")
+                      ? "text-primary-600"
+                      : "text-gray-600 hover:text-primary-600"
+                  }`}
+                >
+                  ช่วยเหลือ
+                  <svg className={`w-4 h-4 transition-transform ${isHelpOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isHelpOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 nav-dropdown-menu">
+                    <Link
+                      href="/guide"
+                      onClick={() => setIsHelpOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname.startsWith("/guide") ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      คู่มือการใช้งาน
+                    </Link>
+                    <Link
+                      href="/faqs"
+                      onClick={() => setIsHelpOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname === "/faqs" ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      FAQs
+                    </Link>
+                    <Link
+                      href="/credits"
+                      onClick={() => setIsHelpOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname === "/credits" ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      ผู้จัดทำ
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Auth Buttons - desktop only */}
@@ -85,7 +128,7 @@ export default function NavbarPublic() {
             </Link>
             <button
               onClick={handleKeycloakRedirect}
-              className="hidden lg:block px-8 py-3 bg-primary-600 text-white rounded-2xl font-medium hover:bg-white hover:text-primary-600 border-2 border-primary-600 transition-colors text-base cursor-pointer"
+              className="hidden lg:block px-8 py-3 bg-primary-600 text-white rounded-2xl font-medium hover:bg-primary-700 hover:text-white border-2 border-primary-600 transition-colors text-base cursor-pointer"
             >
               เข้าสู่ระบบพนักงาน PEA
             </button>
@@ -158,6 +201,16 @@ export default function NavbarPublic() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 ข้อมูลกฟภ.
+              </Link>
+              <Link
+                href="/guide"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-6 py-3 hover:bg-primary-50 active:bg-primary-100 transition-colors ${pathname.startsWith("/guide") ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                คู่มือการใช้งาน
               </Link>
               <Link
                 href="/faqs"

@@ -115,26 +115,52 @@ body {
   border-color: transparent !important;
   box-shadow: none !important;
 }
-/* Only color the top bar (first child div = max-w-7xl wrapper) white */
+/* Color nav links/buttons white so they are visible on the dark/gradient bg */
 .credits-nav-glass > nav > div:first-child a,
 .credits-nav-glass > nav > div:first-child button {
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.9) !important;
 }
+/* General hover → white (for auth buttons), but nav text links override below */
 .credits-nav-glass > nav > div:first-child a:hover,
 .credits-nav-glass > nav > div:first-child button:hover {
-  color: #ffffff;
+  color: #ffffff !important;
+}
+/* Nav text links (ตำแหน่งฝึกงาน / ข้อมูลกฟภ. / ช่วยเหลือ) hover → primary-600, no bg
+   Specificity (0,3,3) beats the white rule (0,2,3) */
+.credits-nav-glass > nav > div:first-child .nav-text-links a:hover,
+.credits-nav-glass > nav > div:first-child .nav-text-links > div > button:hover {
+  color: var(--color-primary-600) !important;
 }
 /* Active link on desktop credits navbar - full white + bold */
 .credits-nav-glass > nav > div:first-child .text-primary-600 {
   color: rgba(255, 255, 255, 1) !important;
   font-weight: 700 !important;
 }
+/* Outline button border – semi-transparent white */
 .credits-nav-glass > nav > div:first-child .border-primary-600 {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5) !important;
 }
+/* PEA button – keep solid primary color to match other navs */
 .credits-nav-glass > nav > div:first-child .bg-primary-600 {
-  background: rgba(168, 6, 137, 0.8);
-  border-color: rgba(168, 6, 137, 0.8);
+  background: var(--color-primary-600) !important;
+  border-color: var(--color-primary-600) !important;
+  color: #ffffff !important;
+}
+/* Restore normal dark text inside dropdown popup (bg-white)
+   Use div.nav-dropdown-menu to raise specificity above (0,2,3) → (0,3,4) */
+.credits-nav-glass > nav > div:first-child div.nav-dropdown-menu a,
+.credits-nav-glass > nav > div:first-child div.nav-dropdown-menu button {
+  color: #374151 !important;
+}
+.credits-nav-glass > nav > div:first-child div.nav-dropdown-menu a:hover,
+.credits-nav-glass > nav > div:first-child div.nav-dropdown-menu button:hover {
+  color: var(--color-primary-600) !important;
+}
+/* Active (current page) item inside dropdown — show primary color + bg-primary-50 */
+.credits-nav-glass > nav > div:first-child div.nav-dropdown-menu .text-primary-600 {
+  color: var(--color-primary-600) !important;
+  font-weight: 600 !important;
+  background-color: var(--color-primary-50) !important;
 }
 
 /* Custom select styling */
