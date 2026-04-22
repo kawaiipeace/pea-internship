@@ -259,9 +259,7 @@ const AttendanceHistoryPage = () => {
       if (response.data) {
         const { summary, records, pagination: paginationData } = response.data;
 
-        // Map records to UI format
         const mappedRecords = records.map((log: any) => {
-          // Replace symbols with "ไม่ลงเวลา"
           const formatTimeDisplay = (time: string) => (time === "--:--" ? "ไม่ลงเวลา" : time);
           const inTimeDisplay = formatTimeDisplay(log.checkInTime);
           const outTimeDisplay = formatTimeDisplay(log.checkOutTime);

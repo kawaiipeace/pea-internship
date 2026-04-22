@@ -452,7 +452,7 @@ const StudentDetailPage = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 mt-6 sm:mt-8 w-full">
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">ชื่อสถานบัน</p>
-                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">{profile.institution || '-'}</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight break-words max-w-[200px]">{profile.institution || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">ระยะเวลาการฝึกงาน</p>
@@ -462,7 +462,7 @@ const StudentDetailPage = () => {
                                 </div>
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">อีเมล</p>
-                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">{profile.email || '-'}</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight break-all max-w-[200px]">{profile.email || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">เบอร์โทร</p>
@@ -615,23 +615,44 @@ const StudentDetailPage = () => {
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-center">
-                                        {(() => {
-                                            if (!row.note) return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
+                                        <div className="flex flex-col items-center gap-1">
+                                            {(() => {
+                                                const allNotes: any[] = [];
+                                                
+                                                // 1. Add notes from the backend array if present
+                                                if (row.notes && Array.isArray(row.notes)) {
+                                                    row.notes.forEach((n: any) => {
+                                                        if (n.detail) allNotes.push(n);
+                                                    });
+                                                }
+                                                
+                                                // 2. Add the merged 'note' field (leaves, etc) if not already included
+                                                if (row.note && !allNotes.some(n => n.detail === row.note)) {
+                                                    allNotes.push({ type: 'OTHER', detail: row.note });
+                                                }
 
-                                            const isCorrection = row.note.includes('แก้ไขเวลา') || row.note.includes('ปฏิบัติงานนอกสถานที่');
+                                                if (allNotes.length === 0) return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
 
-                                            // Show time corrections in red always
-                                            if (isCorrection) {
-                                                return <span className="text-[16px] font-medium text-[#E04B3E]">{row.note}</span>;
-                                            }
+                                                return allNotes.map((n, idx) => {
+                                                    // Force red color for Correction and Offsite as requested
+                                                    const isCorrection = n.type === 'CORRECTION' || n.detail.includes('แก้ไขเวลา');
+                                                    const isOffsite = n.type === 'OFFSITE' || n.detail.includes('ปฏิบัติงานนอกสถานที่');
+                                                    
+                                                    // Hide LATE specific notes like location names if status is LATE
+                                                    if (row.status === 'LATE' && (n.detail === 'สาย' || !isCorrection && !isOffsite && n.type !== 'LEAVE')) {
+                                                        return null;
+                                                    }
 
-                                            // Hide notes entirely for LATE status (like location names) or if the note literally says 'สาย'
-                                            if (row.status === 'LATE' || row.note === 'สาย') {
-                                                return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
-                                            }
-
-                                            return <span className="text-[16px] font-medium text-[#000000]">{row.note}</span>;
-                                        })()}
+                                                    const color = (isCorrection || isOffsite) ? 'text-[#D92D20]' : 'text-[#000000]';
+                                                    
+                                                    return (
+                                                        <span key={idx} className={`text-[16px] font-medium ${color}`}>
+                                                            {n.detail}
+                                                        </span>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
