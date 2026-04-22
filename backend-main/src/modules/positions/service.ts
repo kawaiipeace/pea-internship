@@ -27,13 +27,6 @@ type PositionWithMentors = typeof internshipPositions.$inferSelect & {
   mentors: MentorDTO[];
 };
 
-type OwnerDTO = {
-  fname: string | null;
-  lname: string | null;
-  email: string | null;
-  phoneNumber: string | null;
-};
-
 type DepartmentDTO = {
   id: number;
   deptSap: number;
@@ -49,8 +42,16 @@ type OfficeDTO = {
   shortName: string;
 };
 
-type EnrichedPosition = PositionWithMentors & {
-  owners: OwnerDTO[];
+type PositionOwnerDTO = {
+  id: string;
+  fname: string | null;
+  lname: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+};
+
+type EnrichedPosition = Omit<PositionWithMentors, "positionOwner"> & {
+  positionOwner: PositionOwnerDTO | null;
   department: DepartmentDTO | null;
   office: OfficeDTO | null;
 };
@@ -108,6 +109,49 @@ export class PositionService {
     }
 
     return { departmentId: row.departmentId, officeId: row.officeId };
+  }
+
+  /**
+   * ตรวจสอบว่า user ที่จะถูกตั้งเป็น positionOwner:
+   * - มีอยู่จริง
+   * - อยู่ department เดียวกับ position
+   * - มี role เป็น ADMIN(1) หรือ OWNER(2)
+   */
+  private async assertAssignablePositionOwner(
+    tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+    positionOwnerUserId: string,
+    positionDepartmentId: number
+  ) {
+    const [targetUser] = await tx
+      .select({
+        id: users.id,
+        roleId: users.roleId,
+        departmentId: users.departmentId,
+      })
+      .from(users)
+      .where(eq(users.id, positionOwnerUserId));
+
+    if (!targetUser) {
+      throw new NotFoundError("ไม่พบผู้ใช้งานที่จะตั้งเป็น position owner");
+    }
+
+    if (targetUser.departmentId === null) {
+      throw new BadRequestError(
+        "ผู้ใช้งานที่จะตั้งเป็น position owner ยังไม่มี department"
+      );
+    }
+
+    if (targetUser.departmentId !== positionDepartmentId) {
+      throw new ForbiddenError(
+        "position owner ต้องอยู่กองเดียวกับใบประกาศ"
+      );
+    }
+
+    if (![1, 2].includes(targetUser.roleId)) {
+      throw new ForbiddenError(
+        "position owner ต้องมี role เป็น ADMIN หรือ OWNER"
+      );
+    }
   }
 
   /**
@@ -199,25 +243,38 @@ export class PositionService {
 
     const departmentIds = [...new Set(positions.map((p) => p.departmentId))];
     const officeIds = [...new Set(positions.map((p) => p.officeId))];
+    const positionOwnerIds = [
+      ...new Set(
+        positions
+          .map((p) => p.positionOwner)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
 
-    const owners =
-      departmentIds.length > 0
+    const ownerRows =
+      positionOwnerIds.length > 0
         ? await db
             .select({
-              departmentId: users.departmentId,
+              id: users.id,
               fname: users.fname,
               lname: users.lname,
               email: users.email,
               phoneNumber: users.phoneNumber,
             })
             .from(users)
-            .where(
-              and(
-                or(eq(users.roleId, 1), eq(users.roleId, 2)),
-                or(...departmentIds.map((dId) => eq(users.departmentId, dId)))
-              )
-            )
+            .where(or(...positionOwnerIds.map((id) => eq(users.id, id))))
         : [];
+
+    const ownerMap = new Map<string, PositionOwnerDTO>();
+    for (const owner of ownerRows) {
+      ownerMap.set(owner.id, {
+        id: owner.id,
+        fname: owner.fname ?? null,
+        lname: owner.lname ?? null,
+        email: owner.email ?? null,
+        phoneNumber: owner.phoneNumber ?? null,
+      });
+    }
 
     const departmentData =
       departmentIds.length > 0
@@ -248,28 +305,15 @@ export class PositionService {
             .where(or(...officeIds.map((oId) => eq(offices.id, oId))))
         : [];
 
-    const ownersByDept = new Map<number, OwnerDTO[]>();
-    for (const o of owners) {
-      const deptId = o.departmentId;
-      if (deptId === null) continue;
-
-      const list = ownersByDept.get(deptId) ?? [];
-      list.push({
-        fname: o.fname ?? null,
-        lname: o.lname ?? null,
-        email: o.email ?? null,
-        phoneNumber: o.phoneNumber ?? null,
-      });
-      ownersByDept.set(deptId, list);
-    }
-
     const enriched: EnrichedPosition[] = positions.map((position) => {
       const dept = departmentData.find((d) => d.id === position.departmentId);
       const off = officeData.find((o) => o.id === position.officeId);
 
       return {
         ...position,
-        owners: ownersByDept.get(position.departmentId) ?? [],
+        positionOwner: position.positionOwner
+          ? ownerMap.get(position.positionOwner) ?? null
+          : null,
         department: dept
           ? {
               id: dept.id,
@@ -305,71 +349,73 @@ export class PositionService {
     };
   }
 
-  /**
-   * POST /position
-   * ผูก departmentId + officeId จาก user
-   * ผูก mentor
-   */
-  async create(userId: string, data: model.CreatePositionBodyType) {
-    await this.assertUserExists(userId);
-    const { departmentId, officeId } =
-      await this.getUserDepartmentAndOffice(userId);
+    /**
+     * POST /position
+     * ผูก departmentId + officeId จาก user
+     * ผูก mentor
+     * บันทึก positionOwner = user ที่ login อยู่
+     */
+    async create(userId: string, data: model.CreatePositionBodyType) {
+      await this.assertUserExists(userId);
+      const { departmentId, officeId } =
+        await this.getUserDepartmentAndOffice(userId);
 
-    return await db.transaction(async (tx) => {
-      const autoStatus = computeAutoStatus(
-        data.recruitStart ?? null,
-        data.recruitEnd ?? null
-      );
-
-      if (data.recruitmentStatus === "CLOSE") {
-        throw new ForbiddenError("ไม่สามารถสร้างประกาศที่มีสถานะ CLOSE ได้");
-      }
-
-      const [position] = await tx
-        .insert(internshipPositions)
-        .values({
-          departmentId,
-          officeId,
-
-          name: data.name,
-          location: data.location ?? null,
-          positionCount: data.positionCount ?? null,
-          major: data.major ?? null,
-
-          recruitStart: data.recruitStart ?? null,
-          recruitEnd: data.recruitEnd ?? null,
-          applyStart: data.applyStart ?? null,
-          applyEnd: data.applyEnd ?? null,
-
-          resumeRq: data.resumeRq ?? false,
-          portfolioRq: data.portfolioRq ?? false,
-
-          jobDetails: data.jobDetails ?? null,
-          requirement: data.requirement ?? null,
-          benefits: data.benefits ?? null,
-
-          recruitmentStatus: autoStatus,
-        })
-        .returning();
-
-      if (data.mentorStaffIds && data.mentorStaffIds.length > 0) {
-        await tx.insert(internshipPositionMentors).values(
-          data.mentorStaffIds.map((mentorStaffId) => ({
-            positionId: position.id,
-            mentorStaffId,
-          }))
+      return await db.transaction(async (tx) => {
+        const autoStatus = computeAutoStatus(
+          data.recruitStart ?? null,
+          data.recruitEnd ?? null
         );
-      }
 
-      await staffLogsService.log(
-        tx,
-        userId,
-        `CREATE_POSITION positionId=${position.id}`
-      );
+        if (data.recruitmentStatus === "CLOSE") {
+          throw new ForbiddenError("ไม่สามารถสร้างประกาศที่มีสถานะ CLOSE ได้");
+        }
 
-      return position;
-    });
-  }
+        const [position] = await tx
+          .insert(internshipPositions)
+          .values({
+            departmentId,
+            officeId,
+            positionOwner: userId,
+
+            name: data.name,
+            location: data.location ?? null,
+            positionCount: data.positionCount ?? null,
+            major: data.major ?? null,
+
+            recruitStart: data.recruitStart ?? null,
+            recruitEnd: data.recruitEnd ?? null,
+            applyStart: data.applyStart ?? null,
+            applyEnd: data.applyEnd ?? null,
+
+            resumeRq: data.resumeRq ?? false,
+            portfolioRq: data.portfolioRq ?? false,
+
+            jobDetails: data.jobDetails ?? null,
+            requirement: data.requirement ?? null,
+            benefits: data.benefits ?? null,
+
+            recruitmentStatus: autoStatus,
+          })
+          .returning();
+
+        if (data.mentorStaffIds && data.mentorStaffIds.length > 0) {
+          await tx.insert(internshipPositionMentors).values(
+            data.mentorStaffIds.map((mentorStaffId) => ({
+              positionId: position.id,
+              mentorStaffId,
+            }))
+          );
+        }
+
+        await staffLogsService.log(
+          tx,
+          userId,
+          `CREATE_POSITION positionId=${position.id} positionOwner=${userId}`
+        );
+
+        return position;
+      });
+    }
 
   /**
    * PUT /position/:id
@@ -388,6 +434,7 @@ export class PositionService {
           recruitEnd: internshipPositions.recruitEnd,
           recruitmentStatus: internshipPositions.recruitmentStatus,
           acceptedCount: internshipPositions.acceptedCount,
+          positionOwner: internshipPositions.positionOwner,
         })
         .from(internshipPositions)
         .where(eq(internshipPositions.id, id));
@@ -395,6 +442,20 @@ export class PositionService {
       if (!existing) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
       if (existing.departmentId !== departmentId) {
         throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขใบประกาศของกองอื่น");
+      }
+
+      if ("positionOwner" in data && data.positionOwner !== undefined) {
+        if (data.positionOwner === null || data.positionOwner === "") {
+          throw new BadRequestError(
+            "ไม่อนุญาตให้ล้าง position owner ผ่าน endpoint นี้"
+          );
+        }
+
+        await this.assertAssignablePositionOwner(
+          tx,
+          data.positionOwner,
+          existing.departmentId
+        );
       }
 
       if ("positionCount" in data) {
@@ -468,6 +529,10 @@ export class PositionService {
       if ("requirement" in data) updateData.requirement = data.requirement;
       if ("benefits" in data) updateData.benefits = data.benefits;
 
+      if ("positionOwner" in data && data.positionOwner !== undefined) {
+        updateData.positionOwner = data.positionOwner;
+      }
+
       const [updated] = await tx
         .update(internshipPositions)
         .set(updateData)
@@ -499,7 +564,11 @@ export class PositionService {
       await staffLogsService.log(
         tx,
         userId,
-        `UPDATE_POSITION positionId=${updated.id}`
+        `UPDATE_POSITION positionId=${updated.id}${
+          "positionOwner" in data && data.positionOwner !== undefined
+            ? ` positionOwner=${data.positionOwner}`
+            : ""
+        }`
       );
 
       return updated;

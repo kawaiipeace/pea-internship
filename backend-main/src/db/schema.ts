@@ -563,6 +563,7 @@ export const internshipPositions = pgTable(
 
     officeId: integer("office_id").notNull(),
     departmentId: integer("department_id").notNull(),
+    positionOwner: varchar("position_owner", { length: 50 }),
 
     location: varchar({ length: 255 }),
     positionCount: integer("position_count"),
@@ -598,6 +599,7 @@ export const internshipPositions = pgTable(
     })
       .onUpdate("cascade")
       .onDelete("restrict"),
+
     foreignKey({
       columns: [table.departmentId],
       foreignColumns: [departments.deptSap],
@@ -605,6 +607,21 @@ export const internshipPositions = pgTable(
     })
       .onUpdate("cascade")
       .onDelete("restrict"),
+
+    foreignKey({
+      columns: [table.positionOwner],
+      foreignColumns: [users.id],
+      name: "internship_positions_position_owner_fkey",
+    })
+      .onUpdate("cascade")
+      .onDelete("set null"),
+
+    index("idx_internship_positions_office_id").on(table.officeId),
+    index("idx_internship_positions_department_id").on(table.departmentId),
+    index("idx_internship_positions_recruitment_status").on(
+      table.recruitmentStatus
+    ),
+    index("idx_internship_positions_position_owner").on(table.positionOwner),
   ]
 );
 

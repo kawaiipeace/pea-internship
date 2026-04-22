@@ -354,18 +354,43 @@ CREATE TABLE -- intern
     requirement TEXT,
     benefits TEXT,
     recruitment_status public.recruitment_status_enum NOT NULL,
+    position_owner VARCHAR(50) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT internship_positions_position_owner_fkey FOREIGN KEY (position_owner) REFERENCES public.users (id) ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT internship_positions_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.offices (id) ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT internship_positions_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments (dept_sap) ON UPDATE CASCADE ON DELETE RESTRICT
   );
-
 -- indexes
 CREATE INDEX idx_internship_positions_office_id ON public.internship_positions (office_id);
-
 CREATE INDEX idx_internship_positions_department_id ON public.internship_positions (department_id);
-
 CREATE INDEX idx_internship_positions_recruitment_status ON public.internship_positions (recruitment_status);
+CREATE INDEX idx_internship_positions_position_owner ON public.internship_positions (position_owner);
+
+-- Department's position_owner change trigger
+CREATE OR REPLACE FUNCTION public.trg_clear_position_owner_when_user_department_changes()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF NEW.department_id IS DISTINCT FROM OLD.department_id THEN
+    UPDATE public.internship_positions
+    SET position_owner = NULL
+    WHERE position_owner = OLD.id;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS trg_after_update_clear_position_owner_on_department_change
+ON public.users;
+
+CREATE TRIGGER trg_after_update_clear_position_owner_on_department_change
+AFTER UPDATE OF department_id ON public.users
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_clear_position_owner_when_user_department_changes();
+
+-- 
 
 CREATE TABLE -- intern
   public.internship_position_mentors (

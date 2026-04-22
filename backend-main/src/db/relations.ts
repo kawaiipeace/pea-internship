@@ -72,6 +72,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   internshipEndHistoryChangedBy: many(internshipEndHistory),
   completeAcknowledge: many(completeAcknowledge),
+  createdInternshipPositions: many(internshipPositions, {
+    relationName: "internshipPositionPositionOwner",
+  })
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -219,6 +222,11 @@ export const internshipPositionsRelations = relations(
     department: one(departments, {
       fields: [internshipPositions.departmentId],
       references: [departments.deptSap],
+    }),
+    positionOwnerUser: one(users, {
+      fields: [internshipPositions.positionOwner],
+      references: [users.id],
+      relationName: "internshipPositionPositionOwner",
     }),
     mentors: many(internshipPositionMentors),
     favorites: many(favorites),
