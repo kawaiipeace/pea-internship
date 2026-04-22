@@ -35,6 +35,10 @@ const CheckInPage = () => {
     const [hasCheckedInToday, setHasCheckedInToday] = useState<boolean>(false);
     const [hasClockedOutToday, setHasClockedOutToday] = useState<boolean>(false);
 
+    // Offsite Work States
+    const [isOffsiteToday, setIsOffsiteToday] = useState<boolean>(false);
+    const [offsiteInfo, setOffsiteInfo] = useState<{ locationName: string } | null>(null);
+
     // Progress State
     const [progressData, setProgressData] = useState<{ accumulatedHours: number, totalHoursGoal: number, percentage: number } | null>(null);
 
@@ -78,7 +82,7 @@ const CheckInPage = () => {
     }, []);
 
     const handleCheckIn = async (actionType: 'in' | 'out') => {
-        if (locationStatus !== 'found') {
+        if (locationStatus !== 'found' && !isOffsiteToday) {
             Swal.fire({ icon: 'warning', title: 'ไม่อยู่ในสถานที่', text: 'คุณต้องอยู่ในสถานที่ที่กำหนดเพื่อลงเวลาเข้างาน', confirmButtonColor: '#A80689' });
             return;
         }
@@ -86,7 +90,7 @@ const CheckInPage = () => {
             await axiosInstance.post('/check-time/in', {
                 latitude: currentPosition?.lat,
                 longitude: currentPosition?.lng,
-                location_note: 'กฟภ. สำนักงานใหญ่'
+                location_note: isOffsiteToday ? offsiteInfo?.locationName : 'กฟภ. สำนักงานใหญ่'
             });
             setCheckInActionType(actionType);
             setCheckInTime(new Date());
@@ -99,7 +103,7 @@ const CheckInPage = () => {
     };
 
     const handleClockOut = () => {
-        if (locationStatus !== 'found') {
+        if (locationStatus !== 'found' && !isOffsiteToday) {
             Swal.fire({ icon: 'warning', title: 'ไม่อยู่ในสถานที่', text: 'คุณต้องอยู่ในสถานที่ที่กำหนดเพื่อลงเวลาออกงาน', confirmButtonColor: '#A80689' });
             return;
         }
@@ -118,7 +122,7 @@ const CheckInPage = () => {
             await axiosInstance.post('/check-time/out', {
                 latitude: currentPosition?.lat,
                 longitude: currentPosition?.lng,
-                location_note: 'กฟภ. สำนักงานใหญ่'
+                location_note: isOffsiteToday ? offsiteInfo?.locationName : 'กฟภ. สำนักงานใหญ่'
             });
             setShowConfirmOutModal(false);
             setCheckInTime(new Date());
@@ -139,6 +143,28 @@ const CheckInPage = () => {
             }
         } catch (error) {
             console.error('Error fetching progress:', error);
+        }
+    }, []);
+
+    const fetchOffsiteTasks = useCallback(async () => {
+        try {
+            const response = await axiosInstance.get('/offsite-tasks/student');
+            if (response.data && Array.isArray(response.data)) {
+                const now = new Date();
+                const bkkFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' });
+                const todayStr = bkkFormatter.format(now);
+                
+                const todayTask = response.data.find((task: any) => task.workDate === todayStr);
+                if (todayTask) {
+                    setIsOffsiteToday(true);
+                    setOffsiteInfo(todayTask);
+                } else {
+                    setIsOffsiteToday(false);
+                    setOffsiteInfo(null);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching offsite tasks:', error);
         }
     }, []);
 
@@ -184,6 +210,7 @@ const CheckInPage = () => {
         checkLocation();
         fetchProgress();
         fetchTodayStatus();
+        fetchOffsiteTasks();
         
         let lastDate = new Date().toDateString();
         setCurrentTime(new Date());
@@ -199,11 +226,12 @@ const CheckInPage = () => {
                 setHasClockedOutToday(false);
                 fetchTodayStatus();
                 fetchProgress();
+                fetchOffsiteTasks();
             }
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [checkLocation, fetchProgress, fetchTodayStatus]);
+    }, [checkLocation, fetchProgress, fetchTodayStatus, fetchOffsiteTasks]);
 
     // Desktop Location Status
     const renderDesktopLocationStatus = () => {
@@ -408,8 +436,13 @@ const CheckInPage = () => {
                         </div>
 
                         {/* Location Status Pill */}
-                        <div className="mt-14 mb-[70px] z-10">
+                        <div className="mt-14 mb-[70px] z-10 flex flex-col items-center">
                             {renderDesktopLocationStatus()}
+                            {isOffsiteToday && (
+                                <div className="text-[16px] font-normal text-[#996F15] mt-4 text-center">
+                                    มีกำหนดการปฏิบัติงานนอกสถานที่
+                                </div>
+                            )}
                         </div>
 
                         {/* Bottom Buttons */}
@@ -417,8 +450,8 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleCheckIn('in')}
-                                disabled={locationStatus !== 'found' || hasCheckedInToday}
-                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${(locationStatus !== 'found' || hasCheckedInToday)
+                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday)
                                         ? 'bg-[#ECECED] text-[#61646C]  border border-[#98A2B3]  shadow-none cursor-not-allowed'
                                         : 'hover:-translate-y-[1px] bg-[#A80689] text-white'
                                     }`}
@@ -428,8 +461,8 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={handleClockOut}
-                                disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
-                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
                                         ? 'bg-[#ECECED] text-[#61646C] border border-[#98A2B3] shadow-none cursor-not-allowed'
                                         : 'hover:-translate-y-[1px] bg-[#A80689] text-white '
                                     }`}
@@ -490,8 +523,13 @@ const CheckInPage = () => {
                     </div>
 
                     {/* Location Status */}
-                    <div className="mt-[64px]">
+                    <div className="mt-[64px] flex flex-col items-center">
                         {renderMobileLocationStatus()}
+                        {isOffsiteToday && (
+                            <div className="text-[14px] font-normal text-[#996F15] mt-2 text-center">
+                                มีกำหนดการปฏิบัติงานนอกสถานที่
+                            </div>
+                        )}
                     </div>
 
                     {/* Buttons */}
@@ -499,8 +537,8 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={() => handleCheckIn('in')}
-                            disabled={locationStatus !== 'found' || hasCheckedInToday}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || hasCheckedInToday)
+                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday)
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
                                     : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
@@ -510,8 +548,8 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={handleClockOut}
-                            disabled={locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${(locationStatus !== 'found' || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
                                     : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
@@ -579,9 +617,11 @@ const CheckInPage = () => {
                                         <div className="w-full flex items-center justify-between mb-4 mt-2">
                                             <div className="flex items-center gap-3 text-[#333741]">
                                                 <span className="material-symbols-rounded text-[20px] text-[#555555] select-none">location_on</span>
-                                                <span className="text-[14px] font-medium text-[#444]">สถานที่</span>
+                                            <span className="text-[14px] font-medium text-[#444]">สถานที่</span>
                                             </div>
-                                            <span className="text-[14px] font-medium text-[#333741]">อยู่ในสถานที่</span>
+                                            <span className="text-[14px] font-medium text-[#333741]">
+                                                {isOffsiteToday ? 'ปฏิบัติงานนอกสถานที่' : 'อยู่ในสถานที่'}
+                                            </span>
                                         </div>
 
                                         {/* Divider */}
