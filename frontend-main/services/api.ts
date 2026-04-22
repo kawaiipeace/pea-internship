@@ -528,24 +528,11 @@ export const institutionApi = {
     }
   },
 
-  // ดึงข้อมูลสถานศึกษาตาม ID (ค้นหาแบบ search เพื่อลด request)
+  // ดึงข้อมูลสถานศึกษาตาม ID ผ่าน institution_ticket endpoint (direct lookup)
   getInstitutionById: async (id: number): Promise<Institution | null> => {
     try {
-      // ดึง page ละ 1000 แล้ว find — เนื่องจากไม่มี GET /:id endpoint
-      let page = 1;
-      let hasNextPage = true;
-      const limit = 1000;
-
-      while (hasNextPage) {
-        const response = await api.get<InstitutionsResponse>(`/institution?limit=${limit}&page=${page}`);
-        const institutions = response.data.data || [];
-        const found = institutions.find((inst: Institution) => inst.id === id);
-        if (found) return found;
-        hasNextPage = response.data.meta?.hasNextPage || false;
-        page++;
-      }
-
-      return null;
+      const response = await api.get<Institution>(`/institution_ticket/${id}`);
+      return response.data;
     } catch {
       return null;
     }
