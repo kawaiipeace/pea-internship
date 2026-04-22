@@ -45,7 +45,7 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[620px] mx-4 p-7" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[700px] mx-4 p-7" onClick={e => e.stopPropagation()}>
                 {/* Header Profile */}
                 <div className="flex items-center gap-4 mb-6">
                     <ImageWithAuth
@@ -80,55 +80,65 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
                 </div>
 
                 {/* Two Cards */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-[#F8F9FA] rounded-xl p-4 border border-[#F2F4F7]">
-                        <p className="text-[#111827] font-bold text-[14px] mb-2">สถานะนักศึกษา</p>
-                        <p className="text-[#61646C] text-[13px] mb-1">วันสิ้นสุด: <span className="text-[#111827] font-bold">{formatOrigEnd}</span></p>
-                        <p className="text-[#61646C] text-[13px]">เหลือเวลา: <span className="text-[#A80689] font-bold">{remainDays} วัน</span></p>
+                <div className="flex gap-6 mb-16 justify-center">
+                    <div className="bg-[#F2F4F7] rounded-xl p-1.5  border border-[#F2F4F7] w-[253px] h-[93px] shrink-0">
+                        <p className="text-[#111827] font-bold text-[16px] mb-1 ml-2">สถานะนักศึกษา</p>
+                        <p className="text-[#61646C] text-[16px] mb-1 ml-2">วันสิ้นสุด: <span className="text-[#111827] font-bold">{formatOrigEnd}</span></p>
+                        <p className="text-[#61646C] text-[16px] ml-2">เหลือเวลา: <span className="text-[#A80689] font-bold">{remainDays} วัน</span></p>
                     </div>
-                    <div className="bg-[#A80689] rounded-xl p-4 text-white flex flex-col justify-between">
-                        <p className="font-bold text-[14px]">ความคืบหน้าในการฝึกงาน</p>
-                        <div>
-                            <p className="text-[22px] font-bold mt-1 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{progress?.accumulatedHours} <span className="text-[13px] font-normal text-white/80">/{progress?.totalHoursGoal} ชั่วโมง</span></p>
-                            <p className="text-[13px] text-white/90 text-right mt-1">ขาดอีก <span className="font-bold text-white">{defaultMissing} ชั่วโมง</span></p>
+                    <div className="bg-[#A80689] rounded-xl p-3 text-white flex flex-col justify-between w-[350px] h-[93px] shrink-0">
+                        <p className="font-semibold text-[14px]">ความคืบหน้าในการฝึกงาน</p>
+                        <div className="flex justify-between items-end">
+                            <p className="text-[22px] font-semibold max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                                {progress?.accumulatedHours} <span className="text-[14px] font-normal text-white/80">/{progress?.totalHoursGoal} ชั่วโมง</span>
+                            </p>
+                            <div className="text-right flex flex-col items-end">
+                                <span className="text-[12px] text-white/80 leading-none">ขาดอีก</span>
+                                <span className="text-[14px] font-semibold text-white mt-1">{defaultMissing} ชั่วโมง</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Title */}
-                <div className="flex items-start gap-4 mb-5">
-                    <div className="w-[40px] h-[40px] rounded-full bg-[#FFF5FD] flex items-center justify-center shrink-0">
+                <div className="flex items-start gap-1 mb-5">
+                    <div className="w-[40px] h-[40px] rounded-full  bg-[#FFF5FD] flex items-center justify-center shrink-0">
                         <span className="material-symbols-outlined text-[#A80689] text-[22px]">calendar_add_on</span>
                     </div>
                     <div>
                         <h3 className="text-[18px] font-bold text-[#A80689]">ชดเชยวันปฏิบัติงาน</h3>
-                        <p className="text-[13px] text-[#61646C] mt-1 leading-snug">จำนวนวันที่ต้องปฏิบัติงานเพิ่มเติมหลังวันสิ้นสุดการฝึกงาน โดยคำนวณจากจำนวนชั่วโมงที่ยังไม่ครบ</p>
+                        <p className="text-[14px] text-[#85888E]  mt-1 leading-snug">จำนวนวันที่ต้องปฏิบัติงานเพิ่มเติมหลังวันสิ้นสุดการฝึกงาน โดยคำนวณจากจำนวนชั่วโมงที่ยังไม่ครบ</p>
                     </div>
                 </div>
 
                 {/* Input Area */}
-                <div className="bg-[#F8F9FA] rounded-[14px] p-5 mb-4">
+                <div className="bg-[#F2F4F7] rounded-[10px] p-5 mb-4">
                     <div className="grid grid-cols-2 gap-5">
                         <div>
-                            <label className="block text-[13px] font-bold text-[#111827] mb-2">จำนวนชั่วโมงที่ต้องชดเชย</label>
+                            <label className="block text-[14px] font-normal text-[#111827] mb-2">จำนวนชั่วโมงที่ต้องชดเชย</label>
                             <div className="relative">
                                 <input
                                     type="number"
+                                    min="0"
                                     value={hours}
-                                    onChange={(e) => setHours(e.target.value)}
-                                    className="w-full bg-white border border-[#D0D5DD] rounded-xl py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 focus:ring-[#A80689]/20 focus:border-[#A80689] outline-none"
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (parseFloat(val) < 0) return;
+                                        setHours(val);
+                                    }}
+                                    className="w-full bg-white border border-[#F2F4F7] rounded-[5px] py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 focus:ring-[#A80689]/20 focus:border-[#A80689] outline-none"
                                 />
                                 <span className="absolute right-3 top-2.5 text-[14px] text-[#61646C] pointer-events-none">ชั่วโมง</span>
                             </div>
                         </div>
                         <div>
-                            <label className="block text-[13px] font-bold text-[#111827] mb-2">คิดเป็นจำนวนวัน</label>
-                            <div className="w-full bg-[#F2F4F7] border border-[#EAECF0] rounded-xl py-2.5 px-3 text-[14px] font-medium text-[#111827]">
+                            <label className="block text-[14px] font-normal text-[#111827] mb-2">คิดเป็นจำนวนวัน</label>
+                            <div className="w-full bg-[#ECECED] border border-[#EAECF0] rounded-[5px] py-2.5 px-3 text-[14px] font-medium text-[#333741]">
                                 {days} วัน / วันสิ้นสุด: {thaiEndDate}
                             </div>
                             <div className="flex items-center gap-1.5 mt-2.5 text-[#98A2B3]">
-                                <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
-                                <span className="text-[11px]">ระบบคำนวณจาก 7 ชั่วโมง/วัน และปัดขึ้นเสมอ</span>
+                                <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>info</span>
+                                <span className="text-[12px]">ระบบคำนวณจาก 7 ชั่วโมง/วัน และปัดขึ้นเสมอ</span>
                             </div>
                         </div>
                     </div>
@@ -150,7 +160,25 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
                     </button>
                     <button
                         onClick={() => {
-                            Swal.fire({ title: 'สำเร็จ', text: 'บันทึกการชดเชยสำเร็จ', icon: 'success' });
+                            Swal.fire({
+                                width: '380px',
+                                html: `
+                                    <div class="flex flex-col items-center pt-4">
+                                        <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
+                                            <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
+                                                <span class="material-symbols-outlined text-white text-[20px] select-none" style="font-size: 36px">check</span>
+                                            </div>
+                                        </div>
+                                        <h2 class="text-[20px] font-bold text-gray-800 mb-2">ยืนยันการชดเชยแล้ว</h2>
+                                    </div>
+                                `,
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: false,
+                                customClass: {
+                                    popup: 'rounded-[20px] !p-8',
+                                }
+                            });
                             onClose();
                         }}
                         className="px-6 py-2.5 bg-[#0EBA67] rounded-xl text-white text-[14px] font-bold hover:bg-[#0da45a] transition-colors shadow-sm"
@@ -262,6 +290,67 @@ const StudentDetailPage = () => {
             console.error('Error fetching file:', error);
             Swal.fire('Error', 'ไม่สามารถเปิดไฟล์ได้', 'error');
         }
+    };
+
+    const handlePassInternship = () => {
+        Swal.fire({
+            width: '400px',
+            html: `
+                <div class="flex flex-col items-center pt-4">
+                    <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
+                        <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
+                            <span class="material-symbols-outlined text-white select-none" style="font-size: 36px">check</span>
+                        </div>
+                    </div>
+                    <h2 class="text-[20px] font-bold text-gray-800 mb-6">ยืนยันการอนุมัติ</h2>
+                    <div class="flex gap-4 w-full justify-center">
+                        <button id="cancel-btn" class="flex-1 max-w-[140px] py-3 border border-gray-300 rounded-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-colors">ยกเลิก</button>
+                        <button id="confirm-btn" class="flex-1 max-w-[140px] py-3 bg-[#0EBA67] text-white rounded-[10px] font-bold hover:bg-[#0da45a] transition-colors">ยืนยัน</button>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'rounded-[20px] !p-8',
+            },
+            didOpen: () => {
+                const cancelBtn = document.getElementById('cancel-btn');
+                const confirmBtn = document.getElementById('confirm-btn');
+                
+                cancelBtn?.addEventListener('click', () => Swal.close());
+                confirmBtn?.addEventListener('click', async () => {
+                    try {
+                        // Optional: You could add the actual API call here if needed
+                        // await axiosInstance.patch(`/mentor/students/${studentId}/status`, { status: 'COMPLETE' });
+                        
+                        Swal.fire({
+                            width: '400px',
+                            html: `
+                                <div class="flex flex-col items-center pt-4">
+                                    <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
+                                        <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
+                                            <span class="material-symbols-outlined text-white select-none" style="font-size: 36px">check</span>
+                                        </div>
+                                    </div>
+                                    <h2 class="text-[20px] font-bold text-gray-800 mb-2">อนุมัติผ่านการฝึกงานแล้ว</h2>
+                                </div>
+                            `,
+                            showConfirmButton: false,
+                            timer: 2000,
+                            customClass: {
+                                popup: 'rounded-[20px] !p-8',
+                            }
+                        });
+                        
+                        // Refresh data after a short delay
+                        setTimeout(() => fetchDetail(), 2000);
+                    } catch (error) {
+                        console.error('Error updating internship status:', error);
+                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถปรับปรุงสถานะได้', 'error');
+                    }
+                });
+            }
+        });
     };
 
     useEffect(() => {
@@ -452,7 +541,7 @@ const StudentDetailPage = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 mt-6 sm:mt-8 w-full">
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">ชื่อสถานบัน</p>
-                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">{profile.institution || '-'}</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight break-words max-w-[200px]">{profile.institution || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">ระยะเวลาการฝึกงาน</p>
@@ -462,7 +551,7 @@ const StudentDetailPage = () => {
                                 </div>
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">อีเมล</p>
-                                    <p className="text-[#111827] text-[16px] font-normal leading-tight">{profile.email || '-'}</p>
+                                    <p className="text-[#111827] text-[16px] font-normal leading-tight break-all max-w-[200px]">{profile.email || '-'}</p>
                                 </div>
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">เบอร์โทร</p>
@@ -516,7 +605,11 @@ const StudentDetailPage = () => {
                     </div>
 
                     <div className="w-full space-y-3 mt-8">
-                        <button className="w-full py-3 bg-[#74D1A6] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#067647] transition-colors shadow-sm text-[18px]">
+                        <button 
+                            type="button"
+                            onClick={handlePassInternship}
+                            className="w-full py-3 bg-[#74D1A6] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#067647] transition-colors shadow-sm text-[18px]"
+                        >
                             <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
                             ผ่านการฝึกงาน
                         </button>
@@ -615,23 +708,44 @@ const StudentDetailPage = () => {
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-center">
-                                        {(() => {
-                                            if (!row.note) return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
+                                        <div className="flex flex-col items-center gap-1">
+                                            {(() => {
+                                                const allNotes: any[] = [];
+                                                
+                                                // 1. Add notes from the backend array if present
+                                                if (row.notes && Array.isArray(row.notes)) {
+                                                    row.notes.forEach((n: any) => {
+                                                        if (n.detail) allNotes.push(n);
+                                                    });
+                                                }
+                                                
+                                                // 2. Add the merged 'note' field (leaves, etc) if not already included
+                                                if (row.note && !allNotes.some(n => n.detail === row.note)) {
+                                                    allNotes.push({ type: 'OTHER', detail: row.note });
+                                                }
 
-                                            const isCorrection = row.note.includes('แก้ไขเวลา') || row.note.includes('ปฏิบัติงานนอกสถานที่');
+                                                if (allNotes.length === 0) return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
 
-                                            // Show time corrections in red always
-                                            if (isCorrection) {
-                                                return <span className="text-[16px] font-medium text-[#E04B3E]">{row.note}</span>;
-                                            }
+                                                return allNotes.map((n, idx) => {
+                                                    // Force red color for Correction and Offsite as requested
+                                                    const isCorrection = n.type === 'CORRECTION' || n.detail.includes('แก้ไขเวลา');
+                                                    const isOffsite = n.type === 'OFFSITE' || n.detail.includes('ปฏิบัติงานนอกสถานที่');
+                                                    
+                                                    // Hide LATE specific notes like location names if status is LATE
+                                                    if (row.status === 'LATE' && (n.detail === 'สาย' || !isCorrection && !isOffsite && n.type !== 'LEAVE')) {
+                                                        return null;
+                                                    }
 
-                                            // Hide notes entirely for LATE status (like location names) or if the note literally says 'สาย'
-                                            if (row.status === 'LATE' || row.note === 'สาย') {
-                                                return <span className="text-[16px] font-medium text-[#98A2B3]">-</span>;
-                                            }
-
-                                            return <span className="text-[16px] font-medium text-[#000000]">{row.note}</span>;
-                                        })()}
+                                                    const color = (isCorrection || isOffsite) ? 'text-[#D92D20]' : 'text-[#000000]';
+                                                    
+                                                    return (
+                                                        <span key={idx} className={`text-[16px] font-medium ${color}`}>
+                                                            {n.detail}
+                                                        </span>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

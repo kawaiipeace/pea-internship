@@ -79,10 +79,16 @@ const StudentsPage = () => {
                 const mainName = nameParts[0];
                 const extractedNick = nameParts[1] ? nameParts[1].replace(')', '') : '';
                 
-                // Prioritize nickname field if backend starts providing it separately, 
-                // but always fall back to extracting from the fullName string
                 const nick = s.nickname || detail?.profile?.nickname || extractedNick;
                 const displayName = nick ? `${mainName} (${nick})` : mainName;
+
+                // Check for compensation in statusNote (e.g. "COMPENSATION:2")
+                const statusNote = detail?.profile?.statusNote || '';
+                let compensationDays = 0;
+                if (statusNote.includes('COMPENSATION:')) {
+                    const match = statusNote.match(/COMPENSATION:(\d+)/);
+                    if (match) compensationDays = parseInt(match[1]);
+                }
 
                 return {
                     id: s.id,
@@ -101,8 +107,8 @@ const StudentsPage = () => {
                     progress: { current, total, percent: percent > 100 ? 100 : percent },
                     statusMessage,
                     statusType,
-                    consideration: '',
-                    // Period from detail API: profile.period.startDate / endDate
+                    internshipStatus: detail?.profile?.internshipStatus,
+                    compensationDays,
                     startDate: detail?.profile?.period?.startDate,
                     endDate: detail?.profile?.period?.endDate,
                 };
@@ -138,8 +144,10 @@ const StudentsPage = () => {
         }
 
         // Filter by internship period (date range from calendar)
-        if (Array.isArray(dateRange) && dateRange.length === 2) {
-            const [start, end] = dateRange;
+        if (Array.isArray(dateRange) && dateRange.length > 0) {
+            const start = dateRange[0];
+            const end = dateRange.length === 2 ? dateRange[1] : dateRange[0];
+            
             if (start && end) {
                 const filterStart = new Date(start);
                 const filterEnd = new Date(end);
@@ -235,13 +243,13 @@ const StudentsPage = () => {
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">เข้างานปกติ</span>
                     </div>
                 );
-            case 'LEAVE':
+            case 'LATE':
                 return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EFF8FF] border border-[#1AB3FF]/50 w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#1AB3FF] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>lab_profile</span>
+                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF9E5] border border-[#FFCA5F] w-max">
+                        <div className="w-8 h-8 flex items-center justify-center bg-[#FDB022] text-white rounded-full shrink-0 shadow-sm transition-transform">
+                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>schedule</span>
                         </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลากิจ</span>
+                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">สาย</span>
                     </div>
                 );
             case 'MISSING_OUT':
@@ -262,18 +270,38 @@ const StudentsPage = () => {
                         <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ขาด</span>
                     </div>
                 );
-            case 'LATE':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF9E5] border border-[#FFCA5F] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#FDB022] text-white rounded-full shrink-0 shadow-sm transition-transform">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>schedule</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">สาย</span>
-                    </div>
-                );
-            default:
-                return null;
+            default: return null;
         }
+    };
+
+    const renderConsiderationBadge = (student: any) => {
+        let text = '-';
+        let bgColor = '';
+        let textColor = '';
+
+        if (student.internshipStatus === 'COMPLETE') {
+            text = 'ผ่านการฝึกงาน';
+            bgColor = 'bg-[#BFF2CB]';
+            textColor = 'text-[#15803D]';
+        } else if (student.statusType === 'ended') {
+            if (student.compensationDays > 0) {
+                text = `ชดเชยวันทำงาน ${student.compensationDays} วัน`;
+                bgColor = 'bg-[#F2F2F2]';
+                textColor = 'text-[#D92D20]';
+            } else {
+                text = 'รออนุมัติการฝึกงาน';
+                bgColor = 'bg-[#F2F2F2]';
+                textColor = 'text-[#61646C]';
+            }
+        } else {
+            return <div className="text-[#9CA3AF] text-[14px]">-</div>;
+        }
+
+        return (
+            <div className={`px-4 py-2 rounded-[4px] ${bgColor} ${textColor} text-[14px] font-bold whitespace-nowrap flex items-center justify-center min-w-[140px]`}>
+                {text}
+            </div>
+        );
     };
 
     const handleExportExcel = () => {
@@ -478,12 +506,9 @@ const StudentsPage = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="py-4 px-6 text-center">
-                                        <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
-                                            <span className={`font-semibold text-[14px] whitespace-nowrap ${student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
-                                                }`}>
-                                                {student.consideration}
-                                            </span>
+                                    <td className="py-4 px-6">
+                                        <div className="flex items-center justify-center w-full">
+                                            {renderConsiderationBadge(student)}
                                         </div>
                                     </td>
                                 </tr>

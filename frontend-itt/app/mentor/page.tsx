@@ -306,7 +306,7 @@ const ActionButtons = ({ onReject, onApprove }: { onReject: () => void; onApprov
     </>
 );
 
-const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate }: any) => {
+const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate, attendanceStatusBadge }: any) => {
     const match = typeof studentName === 'string' ? studentName.match(/^(.*?)\s*\(([^)]+)\)\s*$/) : null;
     const displayName = match ? match[1] : studentName;
     const nickname = match ? match[2] : null;
@@ -326,12 +326,15 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
                 {displayName}{nickname && <span className="font-bold text-[#000000] dark:text-white-light"> ({nickname})</span>}
             </p>
             <div className="flex items-center gap-2 mb-1">
-                <span className={`inline-flex items-center gap-2 text-[12px] pl-1 pr-4 py-1 rounded-full border ${typeBg} ${typeText} ${typeBorder}`}>
-                    <span className={`w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 ${typeCircleBg}`}>
-                        <span className="material-symbols-outlined text-white text-[16px] select-none" style={{ fontSize: '18px' }}>{typeIcon}</span>
+                {type && (
+                    <span className={`inline-flex items-center gap-2 text-[12px] pl-1 pr-4 py-1 rounded-full border ${typeBg} ${typeText} ${typeBorder}`}>
+                        <span className={`w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 ${typeCircleBg}`}>
+                            <span className="material-symbols-outlined text-white text-[16px] select-none" style={{ fontSize: '18px' }}>{typeIcon}</span>
+                        </span>
+                        {type}
                     </span>
-                    {type}
-                </span>
+                )}
+                {attendanceStatusBadge && attendanceStatusBadge}
             </div>
             <p className="text-xs text-gray-400">วันที่ส่งคำขอ : {submittedDate}</p>
         </div>
@@ -427,19 +430,33 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
         }
     };
 
+    const getAttendanceStatusBadge = (attendanceStatus?: string) => {
+        if (!attendanceStatus) return null;
+        const map: Record<string, { label: string; icon: string; bg: string; text: string; border: string; iconBg: string }> = {
+            LATE:        { label: 'สาย',           icon: 'schedule',           bg: 'bg-[#FDF4D6]', text: 'text-[#FDB022]', border: 'border-[#FDB022]', iconBg: 'bg-[#FDB022]' },
+            ABSENT:      { label: 'ขาด',            icon: 'close',              bg: 'bg-[#FCEDED]', text: 'text-[#EF4444]', border: 'border-[#EF4444]', iconBg: 'bg-[#EF4444]' },
+            MISSING_OUT: { label: 'ไม่ลงเวลาออก',  icon: 'hourglass_disabled',  bg: 'bg-[#F3F4F6]', text: 'text-[#6B7280]', border: 'border-[#6B7280]', iconBg: 'bg-[#6B7280]' },
+        };
+        const cfg = map[attendanceStatus];
+        if (!cfg) return null;
+        return (
+            <span className={`inline-flex items-center gap-1.5 text-[11px] pl-1 pr-3 py-1 rounded-full border font-bold ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                <span className={`w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0 ${cfg.iconBg}`}>
+                    <span className="material-symbols-rounded text-white" style={{ fontSize: '12px' }}>{cfg.icon}</span>
+                </span>
+                {cfg.label}
+            </span>
+        );
+    };
+
     return (
         <div className="bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-white-dark/10 rounded-2xl p-5 shadow-sm">
             <StudentHeader 
                 userId={undefined} 
                 profileImg={request.profileImg}
                 studentName={request.studentName}
-                type="คำขอแก้ไขเวลา"
-                typeBg="bg-[#FFF6D4]"
-                typeText="text-gray-600"
-                typeBorder="border-[#FFCA5F]"
-                typeIcon="manage_history"
-                typeCircleBg="bg-[#D9692C]"
                 submittedDate={getThaiDate(request.createdAt)}
+                attendanceStatusBadge={getAttendanceStatusBadge(request.attendanceStatus)}
             />
 
             {/* Date */}
@@ -651,6 +668,12 @@ const ApprovalRequestPage = () => {
         }
     };
 
+    // Fetch both counts on initial mount so summary cards show correct numbers
+    useEffect(() => {
+        fetchLeaveRequests();
+        fetchTimeCorrectionRequests();
+    }, []);
+
     useEffect(() => {
         if (activeTab === 'leave') {
             fetchLeaveRequests();
@@ -734,7 +757,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'leave' as const,
             title: 'คำขอลา',
-            count: `${activeTab === 'leave' ? leaveMeta.totalRecords : leaveRequests.length} รายการ`,
+            count: `${leaveMeta.totalRecords} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#1AB3FF]">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '22px' }}>lab_profile</span>
@@ -748,7 +771,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'time-edit' as const,
             title: 'คำขอแก้ไขเวลา',
-            count: `${activeTab === 'time-edit' ? timeMeta.totalRecords : timeCorrectionRequests.length} รายการ`,
+            count: `${timeMeta.totalRecords} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full bg-[#D9692C] flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>edit_square</span>
