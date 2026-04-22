@@ -489,7 +489,16 @@ export default function NavbarIntern({
                           onClick={() => {
                             markAsRead(notification.id);
                             setIsNotificationOpen(false);
-                            router.push("/application-status");
+                            setIsMobileNotificationOpen(false);
+                            if (
+                              notification.title === "การฝึกงานถูกยกเลิก" ||
+                              (notification.title === "ผลการสมัครฝึกงาน" &&
+                                notification.message.includes("ถูกยกเลิกโดยกองงาน"))
+                            ) {
+                              router.push("/application-history");
+                            } else {
+                              router.push("/application-status");
+                            }
                           }}
                           className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${!notification.isRead ? "bg-primary-50/50" : ""}`}
                         >
@@ -1351,7 +1360,15 @@ export default function NavbarIntern({
                     onClick={() => {
                       markAsRead(notification.id);
                       setIsMobileNotificationOpen(false);
-                      router.push("/application-status");
+                      if (
+                        notification.title === "การฝึกงานถูกยกเลิก" ||
+                        (notification.title === "ผลการสมัครฝึกงาน" &&
+                          notification.message.includes("ถูกยกเลิกโดยกองงาน"))
+                      ) {
+                        router.push("/application-history");
+                      } else {
+                        router.push("/application-status");
+                      }
                     }}
                     className={`relative rounded-lg px-4 py-3 pr-14 cursor-pointer transition-colors ${!notification.isRead ? "bg-primary-100 hover:bg-primary-150" : "bg-primary-50 hover:bg-primary-100"}`}
                   >
