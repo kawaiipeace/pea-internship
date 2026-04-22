@@ -1689,7 +1689,7 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       value={formData.contactEmail}
                       readOnly
                       placeholder="อีเมลผู้ประกาศรับสมัคร"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed pointer-events-none focus:outline-none focus:ring-0"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed focus:outline-none focus:ring-0"
                     />
                   </div>
                   <div>
@@ -1858,7 +1858,7 @@ export default function EditAnnouncementPage({ params }: PageProps) {
                       value={mentor.email}
                       readOnly
                       placeholder="อีเมลพี่เลี้ยง"
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed pointer-events-none focus:outline-none focus:ring-0"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed focus:outline-none focus:ring-0"
                     />
                   </div>
                   <div>
