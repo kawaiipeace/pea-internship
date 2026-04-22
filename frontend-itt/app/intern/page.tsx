@@ -3,7 +3,6 @@ import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import Swal from 'sweetalert2';
 import axiosInstance from '@/api/axios';
-import IconMapPin from '@/components/icon/icon-map-pin';
 
 const OFFICE_LAT = 13.851119091153935;
 const OFFICE_LNG = 100.55810839569543;
