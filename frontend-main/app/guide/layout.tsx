@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,45 +19,45 @@ const sections = [
   {
     id: "applicant",
     label: "วิธีการใช้งานระบบ\nPEA Internship ผู้สมัคร",
-    href: "/guide/applicant",
+    href: "/guide/intern",
     children: [
       {
         id: "applicant-basic",
         label: "ระบบเบื้องต้น",
-        href: "/guide/applicant/basic",
+        href: "/guide/intern/basic",
         children: [
-          { id: "applicant-basic-login", label: "การเข้าสู่ระบบ", href: "/guide/applicant/basic#login" },
-          { id: "applicant-basic-profile", label: "ข้อมูลผู้ใช้งาน", href: "/guide/applicant/basic#profile" },
-          { id: "applicant-basic-logout", label: "การออกจากระบบ", href: "/guide/applicant/basic#logout" },
-          { id: "applicant-basic-report", label: "แจ้งปัญหาการใช้งาน", href: "/guide/applicant/basic#report" },
+          { id: "applicant-basic-login", label: "การเข้าสู่ระบบ", href: "/guide/intern/basic#login" },
+          { id: "applicant-basic-profile", label: "ข้อมูลผู้ใช้งาน", href: "/guide/intern/basic#profile" },
+          { id: "applicant-basic-logout", label: "การออกจากระบบ", href: "/guide/intern/basic#logout" },
+          { id: "applicant-basic-report", label: "แจ้งปัญหาการใช้งาน", href: "/guide/intern/basic#report" },
         ],
       },
       {
         id: "applicant-howto",
         label: "คู่มืออธิบายการใช้งานระบบ\nของผู้สมัครฝึกงาน",
-        href: "/guide/applicant/howto",
+        href: "/guide/intern/howto",
         children: [
-          { id: "applicant-howto-jobs", label: "หน้าตำแหน่งฝึกงาน", href: "/guide/applicant/howto#jobs" },
-          { id: "applicant-howto-form", label: "หน้ากรอกข้อมูลการสมัคร", href: "/guide/applicant/howto#form" },
-          { id: "applicant-howto-process", label: "ขั้นตอนการประสานงานและดำเนินการสมัคร", href: "/guide/applicant/howto#process" },
+          { id: "applicant-howto-jobs", label: "หน้าตำแหน่งฝึกงาน", href: "/guide/intern/howto#jobs" },
+          { id: "applicant-howto-form", label: "หน้ากรอกข้อมูลการสมัคร", href: "/guide/intern/howto#form" },
+          { id: "applicant-howto-process", label: "ขั้นตอนการประสานงานและดำเนินการสมัคร", href: "/guide/intern/howto#process" },
         ],
       },
       {
         id: "applicant-status",
         label: "การติดตามสถานะการสมัคร",
-        href: "/guide/applicant/status",
+        href: "/guide/intern/status",
         children: [
-          { id: "applicant-status-track", label: "การติดตามสถานะการสมัคร", href: "/guide/applicant/status#track" },
-          { id: "applicant-status-notify", label: "การแจ้งเตือนสถานะการสมัคร", href: "/guide/applicant/status#notify" },
+          { id: "applicant-status-track", label: "การติดตามสถานะการสมัคร", href: "/guide/intern/status#track" },
+          { id: "applicant-status-notify", label: "การแจ้งเตือนสถานะการสมัคร", href: "/guide/intern/status#notify" },
         ],
       },
       {
         id: "applicant-itt",
         label: "ระบบ ITT สำหรับนักศึกษาฝึกงาน",
-        href: "/guide/applicant/itt",
+        href: "/guide/intern/itt",
         children: [
-          { id: "applicant-itt-wait", label: "ระหว่างรอก่อนเริ่มฝึกงาน", href: "/guide/applicant/itt#wait" },
-          { id: "applicant-itt-what", label: "iTT คืออะไร", href: "/guide/applicant/itt#what" },
+          { id: "applicant-itt-wait", label: "ระหว่างรอก่อนเริ่มฝึกงาน", href: "/guide/intern/itt#wait" },
+          { id: "applicant-itt-what", label: "iTT คืออะไร", href: "/guide/intern/itt#what" },
         ],
       },
     ],
@@ -65,54 +65,54 @@ const sections = [
   {
     id: "staff",
     label: "วิธีการใช้งานระบบ\nPEA Internship พนักงาน",
-    href: "/guide/staff",
+    href: "/guide/owner",
     children: [
       {
         id: "staff-basic",
         label: "ระบบเบื้องต้น",
-        href: "/guide/staff/basic",
+        href: "/guide/owner/basic",
         children: [
-          { id: "staff-basic-login", label: "การเข้าสู่ระบบ", href: "/guide/staff/basic#login" },
-          { id: "staff-basic-logout", label: "การออกจากระบบ", href: "/guide/staff/basic#logout" },
-          { id: "staff-basic-report", label: "แจ้งปัญหาการใช้งาน", href: "/guide/staff/basic#report" },
+          { id: "staff-basic-login", label: "การเข้าสู่ระบบ", href: "/guide/owner/basic#login" },
+          { id: "staff-basic-logout", label: "การออกจากระบบ", href: "/guide/owner/basic#logout" },
+          { id: "staff-basic-report", label: "แจ้งปัญหาการใช้งาน", href: "/guide/owner/basic#report" },
         ],
       },
       {
         id: "staff-howto",
         label: "คู่มืออธิบายการใช้งานระบบ\nของพนักงาน",
-        href: "/guide/staff/howto",
+        href: "/guide/owner/howto",
         children: [
-          { id: "staff-howto-owner", label: "ระบบสำหรับพนักงาน", href: "/guide/staff/howto#owner" },
-          { id: "staff-howto-create", label: "การสร้างประกาศรับสมัคร", href: "/guide/staff/howto#create" },
-          { id: "staff-howto-edit", label: "การแก้ไขประกาศรับสมัคร", href: "/guide/staff/howto#edit" },
+          { id: "staff-howto-owner", label: "ระบบสำหรับพนักงาน", href: "/guide/owner/howto#owner" },
+          { id: "staff-howto-create", label: "การสร้างประกาศรับสมัคร", href: "/guide/owner/howto#create" },
+          { id: "staff-howto-edit", label: "การแก้ไขประกาศรับสมัคร", href: "/guide/owner/howto#edit" },
         ],
       },
       {
         id: "staff-selection",
         label: "การคัดเลือกผู้สมัคร",
-        href: "/guide/staff/selection",
+        href: "/guide/owner/selection",
         children: [
-          { id: "staff-selection-manage", label: "การจัดการผู้สมัคร", href: "/guide/staff/selection#manage" },
-          { id: "staff-selection-steps", label: "ขั้นตอนการคัดเลือกผู้สมัคร", href: "/guide/staff/selection#steps" },
+          { id: "staff-selection-manage", label: "การจัดการผู้สมัคร", href: "/guide/owner/selection#manage" },
+          { id: "staff-selection-steps", label: "ขั้นตอนการคัดเลือกผู้สมัคร", href: "/guide/owner/selection#steps" },
         ],
       },
       {
         id: "staff-post-selection",
         label: "ขั้นตอนหลังการคัดเลือก",
-        href: "/guide/staff/post-selection",
+        href: "/guide/owner/post-selection",
         children: [
-          { id: "staff-post-steps", label: "ขั้นตอนหลังการคัดเลือก", href: "/guide/staff/post-selection#steps" },
-          { id: "staff-post-track", label: "การติดตามและจัดการนักศึกษา", href: "/guide/staff/post-selection#track" },
-          { id: "staff-post-cancel", label: "การยกเลิกการฝึกงาน", href: "/guide/staff/post-selection#cancel" },
+          { id: "staff-post-steps", label: "ขั้นตอนหลังการคัดเลือก", href: "/guide/owner/post-selection#steps" },
+          { id: "staff-post-track", label: "การติดตามและจัดการนักศึกษา", href: "/guide/owner/post-selection#track" },
+          { id: "staff-post-cancel", label: "การยกเลิกการฝึกงาน", href: "/guide/owner/post-selection#cancel" },
         ],
       },
       {
         id: "staff-dashboard",
         label: "แดชบอร์ดสำหรับพนักงาน",
-        href: "/guide/staff/dashboard",
+        href: "/guide/owner/dashboard",
         children: [
-          { id: "staff-dashboard-overview", label: "ภาพรวมข้อมูลการรับสมัคร", href: "/guide/staff/dashboard#overview" },
-          { id: "staff-dashboard-list", label: "รายชื่อนักศึกษาฝึกงาน", href: "/guide/staff/dashboard#list" },
+          { id: "staff-dashboard-overview", label: "ภาพรวมข้อมูลการรับสมัคร", href: "/guide/owner/dashboard#overview" },
+          { id: "staff-dashboard-list", label: "รายชื่อนักศึกษาฝึกงาน", href: "/guide/owner/dashboard#list" },
         ],
       },
     ],
@@ -121,7 +121,37 @@ const sections = [
     id: "admin",
     label: "วิธีการใช้งานระบบ\nPEA Internship แอดมิน",
     href: "/guide/admin",
-    children: [],
+    children: [
+      {
+        id: "admin-basic",
+        label: "ระบบเบื้องต้น",
+        href: "/guide/admin/basic",
+        children: [
+          { id: "admin-basic-login", label: "การเข้าสู่ระบบ", href: "/guide/admin/basic#login" },
+          { id: "admin-basic-logout", label: "การออกจากระบบ", href: "/guide/admin/basic#logout" },
+          { id: "admin-basic-report", label: "แจ้งปัญหาการใช้งาน", href: "/guide/admin/basic#report" },
+        ],
+      },
+      {
+        id: "admin-howto",
+        label: "คู่มืออธิบายการใช้งานระบบ\nของแอดมิน",
+        href: "/guide/admin/howto",
+        children: [
+          { id: "admin-howto-overview", label: "ระบบสำหรับแอดมิน", href: "/guide/admin/howto#overview" },
+          { id: "admin-howto-duties", label: "หน้าที่ของแอดมิน", href: "/guide/admin/howto#duties" },
+          { id: "admin-howto-role", label: "ระบบเปลี่ยน Role", href: "/guide/admin/howto#role" },
+        ],
+      },
+      {
+        id: "admin-dashboard",
+        label: "แดชบอร์ดสำหรับแอดมิน",
+        href: "/guide/admin/dashboard",
+        children: [
+          { id: "admin-dashboard-overview", label: "ภาพรวมข้อมูลการรับสมัคร", href: "/guide/admin/dashboard#overview" },
+          { id: "admin-dashboard-data", label: "ข้อมูลหลักภายในแดชบอร์ด", href: "/guide/admin/dashboard#data" },
+        ],
+      },
+    ],
   },
 ];
 
