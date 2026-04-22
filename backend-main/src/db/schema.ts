@@ -99,6 +99,13 @@ export const internshipEndHistoryEnum = pgEnum("internship_end_history_enum", [
   "CANCEL",
 ]);
 
+export const extensionStatusEnum = pgEnum("extension_status_enum", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "CANCEL",
+]);
+
 export const docTypes = pgTable(
   "doc_types",
   {
@@ -1118,5 +1125,72 @@ export const timeCorrectionRequests = pgTable(
       foreignColumns: [users.id],
       name: "time_correction_requests_approved_by_fkey",
     }).onDelete("set null"),
+  ]
+);
+
+export const internshipExtensions = pgTable(
+  "internship_extensions",
+  {
+    id: serial().primaryKey().notNull(),
+    applicationStatusId: integer("application_status_id").notNull(),
+    requestBy: varchar("request_by", { length: 50 }).notNull(),
+    
+    newEndDate: timestamp("new_end_date", { mode: "date" }),
+    additionalHours: numeric("additional_hours", { precision: 10, scale: 2 }),
+    
+    reason: text().notNull(),
+    status: extensionStatusEnum("status").default("PENDING").notNull(),
+    
+    approvedBy: varchar("approved_by", { length: 50 }),
+    approverNote: text("approver_note"),
+    approvedAt: timestamp("approved_at", { mode: "date" }),
+    
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.applicationStatusId],
+      foreignColumns: [applicationStatuses.id],
+      name: "fk_extension_app_status",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.requestBy],
+      foreignColumns: [users.id],
+      name: "fk_extension_request_by",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.approvedBy],
+      foreignColumns: [users.id],
+      name: "fk_extension_approved_by",
+    }).onDelete("set null"),
+  ]
+);
+
+export const userFcmTokens = pgTable(
+  "user_fcm_tokens",
+  {
+    id: serial().primaryKey().notNull(),
+    userId: varchar("user_id", { length: 50 }).notNull(),
+    token: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "fk_fcm_user",
+    }).onDelete("cascade"),
+    unique("user_fcm_tokens_token_key").on(table.token),
+    index("idx_user_fcm_tokens_user_id").on(table.userId),
   ]
 );

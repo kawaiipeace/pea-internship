@@ -79,7 +79,6 @@ const authStore: StateCreator<AuthStore> = (set, get) => ({
         try {
             const res = await axios.get('/user/profile');
             const userData = (res.data.data || res.data) as UserSchema;
-            console.log('Fetched User Data:', userData);
             set({ user: userData });
         } catch (error) {
             console.error("Fetch profile failed:", error);

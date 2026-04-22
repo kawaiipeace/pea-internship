@@ -16,6 +16,7 @@ import {
   institutions,
   internProjects,
   internshipEndHistory,
+  internshipExtensions,
   internshipPositionMentors,
   internshipPositions,
   leaveRequests,
@@ -30,6 +31,7 @@ import {
   staffProfiles,
   studentProfiles,
   timeCorrectionRequests,
+  userFcmTokens,
   users,
 } from "./schema";
 
@@ -72,6 +74,13 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   internshipEndHistoryChangedBy: many(internshipEndHistory),
   completeAcknowledge: many(completeAcknowledge),
+  fcmTokens: many(userFcmTokens),
+  internshipExtensionRequests: many(internshipExtensions, {
+    relationName: "requestByRelation",
+  }),
+  approvedExtensions: many(internshipExtensions, {
+    relationName: "approvedByRelation",
+  }),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -272,6 +281,7 @@ export const applicationStatusesRelations = relations(
     applicationMentors: many(applicationMentors),
     applicationStatusActions: many(applicationStatusActions),
     completeAcknowledge: many(completeAcknowledge),
+    internshipExtensions: many(internshipExtensions),
   })
 );
 
@@ -432,3 +442,30 @@ export const timeCorrectionRequestsRelations = relations(
     }),
   })
 );
+
+export const internshipExtensionsRelations = relations(
+  internshipExtensions,
+  ({ one }) => ({
+    applicationStatus: one(applicationStatuses, {
+      fields: [internshipExtensions.applicationStatusId],
+      references: [applicationStatuses.id],
+    }),
+    requestByUser: one(users, {
+      fields: [internshipExtensions.requestBy],
+      references: [users.id],
+      relationName: "requestByRelation",
+    }),
+    approverUser: one(users, {
+      fields: [internshipExtensions.approvedBy],
+      references: [users.id],
+      relationName: "approvedByRelation",
+    }),
+  })
+);
+
+export const userFcmTokensRelations = relations(userFcmTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [userFcmTokens.userId],
+    references: [users.id],
+  }),
+}));
