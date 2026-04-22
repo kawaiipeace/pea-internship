@@ -289,135 +289,140 @@ const ApprovalHistoryPage = () => {
 
     const fetchLeaveRequests = async () => {
         setLoading(true);
-        setTimeout(() => {
-            const mockLeaveData: LeaveRequest[] = [
-                {
-                    ids: [1],
-                    id: 1,
-                    studentName: 'สมศรี สตรีไทย (เฟิร์น)',
-                    type: 'ลากิจ',
-                    typeBg: 'bg-[#EEEFFF]',
-                    typeText: 'text-[#61646C]',
-                    typeBorder: 'border-[#1A3CFF]',
-                    typeIcon: 'business_center',
-                    typeCircleBg: 'bg-[#1A3CFF]',
-                    submittedDate: '11 มกราคม 2569',
-                    leaveDate: '12 มกราคม 2569',
-                    reason: 'เข้าร่วมกิจกรรมมหาวิทยาลัย ขาดไม่ได้',
-                    profileImg: '/assets/images/profile-1.jpeg',
-                    userId: '1',
-                    fileName: 'หลักฐาน.png',
-                    fileIcon: 'image',
-                    hasFile: true,
-                    attachmentUrl: 'mock.png',
-                    status: 'REJECTED'
-                },
-                {
-                    ids: [2],
-                    id: 2,
-                    studentName: 'สมหมาย สายเสมอ (นาย)',
-                    type: 'ลาป่วย',
-                    typeBg: 'bg-[#FFEFF3]',
-                    typeText: 'text-pink-500',
-                    typeBorder: 'border-[#FF1A7D]',
-                    typeIcon: 'health_cross',
-                    typeCircleBg: 'bg-[#FF1A7D]',
-                    submittedDate: '9 มกราคม 2569',
-                    leaveDate: '10 มกราคม 2569',
-                    reason: 'ท้องเสียเนื่องจากอาหารเป็นพิษ',
-                    profileImg: '/assets/images/profile-2.jpeg',
-                    userId: '2',
-                    fileName: 'หลักฐาน.pdf',
-                    fileIcon: 'pdf',
-                    hasFile: true,
-                    attachmentUrl: 'mock.pdf',
-                    status: 'APPROVED'
-                }
-            ];
-            
-            // Filter by status if not ALL
-            const filteredData = statusFilter === 'ALL' 
-                ? mockLeaveData 
-                : mockLeaveData.filter(item => item.status === statusFilter);
+        try {
+            const params: any = {
+                page: page,
+                limit: PAGE_SIZE
+            };
+            if (statusFilter !== 'ALL') {
+                params.status = statusFilter;
+            }
 
-            setLeaveRequests(filteredData);
-            setLeaveMeta({ totalPages: 1, totalRecords: filteredData.length });
+            const response = await axiosInstance.get('/leave/mentor/audit-list', { params });
+            const result = response.data;
+            if (result.success) {
+                const mappedData: LeaveRequest[] = result.data.map((item: any) => {
+                    const isSick = item.leaveType === 'SICK';
+                    
+                    const fullName = item.studentName || 'นักศึกษา (ไม่ระบุชื่อ)';
+                    const nickname = item.username ? ` (${item.username})` : '';
+                    const displayStudentName = `${fullName}${nickname}`;
+
+                    let fileName = 'ดูไฟล์แนบ';
+                    let fileIcon = 'image';
+                    if (item.file) {
+                        const extension = item.file.split('.').pop()?.toLowerCase();
+                        if (extension === 'pdf') {
+                            fileIcon = 'pdf';
+                            fileName = `ไฟล์เอกสาร.${extension}`;
+                        } else {
+                            fileName = `รูปภาพหลักฐาน.${extension}`;
+                        }
+                    }
+
+                    return {
+                        ids: [item.id],
+                        id: item.id,
+                        studentName: displayStudentName,
+                        type: isSick ? 'ลาป่วย' : 'ลากิจ',
+                        typeBg: isSick ? 'bg-[#FFEFF3]' : 'bg-[#EEEFFF]',
+                        typeText: isSick ? 'text-pink-500' : 'text-[#61646C]',
+                        typeBorder: isSick ? 'border-[#FF1A7D]' : 'border-[#1A3CFF]',
+                        typeIcon: isSick ? 'local_hospital' : 'business_center',
+                        typeCircleBg: isSick ? 'bg-[#FF1A7D]' : 'bg-[#1A3CFF]',
+                        submittedDate: item.approvedAt ? getThaiDate(item.approvedAt) : 'ไม่ระบุ',
+                        leaveDate: item.leaveDate ? getThaiDate(item.leaveDate) : 'ไม่ระบุ',
+                        reason: item.reason || '-',
+                        profileImg: item.studentImage,
+                        userId: item.userId,
+                        fileName: fileName,
+                        fileIcon: fileIcon,
+                        hasFile: !!item.file,
+                        attachmentUrl: item.file,
+                        status: item.status
+                    };
+                });
+                
+                setLeaveRequests(mappedData);
+                setLeaveMeta({
+                    totalPages: result.meta.totalPages || 1,
+                    totalRecords: result.meta.total || 0
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching leave history:', error);
+            setLeaveRequests([]);
+            setLeaveMeta({ totalPages: 1, totalRecords: 0 });
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
 
     const fetchTimeCorrectionRequests = async () => {
         setLoading(true);
-        setTimeout(() => {
-            const mockTimeData: TimeCorrectionRequest[] = [
-                {
-                    id: 3,
-                    studentName: 'สมใจ ใฝ่ฝัน (ใจฝัน)',
-                    profileImg: '/assets/images/profile-3.jpeg',
-                    createdAt: '16 มกราคม 2569',
-                    workDate: '15 มกราคม 2569',
-                    originalTime: '08:30 - ไม่ลงเวลา',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'ลืมลงเวลาออก',
-                    attachmentUrl: null,
-                    status: 'APPROVED',
-                    type: 'ไม่ลงเวลาออก',
-                    typeBg: 'bg-[#F1F5F9]',
-                    typeText: 'text-[#475569]',
-                    typeBorder: 'border-[#94969C]',
-                    typeIcon: 'hourglass_disabled',
-                    typeCircleBg: 'bg-[#85888E]'
-                },
-                {
-                    id: 4,
-                    studentName: 'สมนึก คึกคะนอง (นิก)',
-                    profileImg: '/assets/images/profile-4.jpeg',
-                    createdAt: '15 มกราคม 2569',
-                    workDate: '14 มกราคม 2569',
-                    originalTime: '10:00 - 16:30',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'ระบบขัดข้องทำให้ลงเวลาไม่ได้',
-                    attachmentUrl: null,
-                    status: 'REJECTED',
-                    type: 'สาย',
-                    typeBg: 'bg-[#FEF3C7]',
-                    typeText: 'text-[#D97706]',
-                    typeBorder: 'border-[#FCD34D]',
-                    typeIcon: 'schedule',
-                    typeCircleBg: 'bg-[#F59E0B]'
-                },
-                {
-                    id: 5,
-                    studentName: 'สมชาย ล่าฝัน (ชาย)',
-                    profileImg: '/assets/images/profile-5.jpeg',
-                    createdAt: '11 มกราคม 2569',
-                    workDate: '10 มกราคม 2569',
-                    originalTime: 'ไม่ลงเวลา - ไม่ลงเวลา',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'เกิดอุบัติเหตุ',
-                    attachmentUrl: null,
-                    status: 'APPROVED',
-                    type: 'ขาด',
-                    typeBg: 'bg-[#FEE2E2]',
-                    typeText: 'text-[#EF4444]',
-                    typeBorder: 'border-[#FECACA]',
-                    typeIcon: 'close',
-                    typeCircleBg: 'bg-[#EF4444]'
-                }
-            ];
+        try {
+            const params: any = {
+                page: page,
+                limit: PAGE_SIZE,
+                viewType: 'MINE'
+            };
+            
+            if (statusFilter !== 'ALL') {
+                params.status = statusFilter;
+            } else {
+                params.excludePending = 'true';
+            }
 
-            // Filter by status if not ALL
-            const filteredData = statusFilter === 'ALL' 
-                ? mockTimeData 
-                : mockTimeData.filter(item => item.status === statusFilter);
+            const response = await axiosInstance.get('/check-time/mentor/corrections', { params });
+            const result = response.data;
+            
+            if (result && result.data) {
+                const mappedData: TimeCorrectionRequest[] = result.data.map((item: any) => {
+                    const getAttendanceType = (attendanceStatus?: string) => {
+                        const map: Record<string, { label: string; icon: string; bg: string; text: string; border: string; iconBg: string }> = {
+                            LATE:        { label: 'สาย',           icon: 'schedule',           bg: 'bg-[#FEF3C7]', text: 'text-[#D97706]', border: 'border-[#FCD34D]', iconBg: 'bg-[#F59E0B]' },
+                            ABSENT:      { label: 'ขาด',            icon: 'close',              bg: 'bg-[#FEE2E2]', text: 'text-[#EF4444]', border: 'border-[#FECACA]', iconBg: 'bg-[#EF4444]' },
+                            MISSING_OUT: { label: 'ไม่ลงเวลาออก',  icon: 'hourglass_disabled',  bg: 'bg-[#F1F5F9]', text: 'text-[#475569]', border: 'border-[#94969C]', iconBg: 'bg-[#85888E]' },
+                        };
+                        return map[attendanceStatus || ''] || map.MISSING_OUT;
+                    };
 
-            setTimeCorrectionRequests(filteredData);
-            setTimeMeta({ totalPages: 1, totalRecords: filteredData.length });
+                    const typeConfig = getAttendanceType(item.attendanceStatus);
+                    
+                    return {
+                        id: item.id,
+                        studentName: item.studentName,
+                        profileImg: item.profileImg,
+                        createdAt: item.createdAt,
+                        workDate: item.workDate,
+                        originalTime: item.originalTime,
+                        requestedTime: item.requestedTime,
+                        hoursWorked: item.hoursWorked,
+                        reason: item.reason || '-',
+                        attachmentUrl: item.attachmentUrl,
+                        status: item.status,
+                        type: typeConfig.label,
+                        typeBg: typeConfig.bg,
+                        typeText: typeConfig.text,
+                        typeBorder: typeConfig.border,
+                        typeIcon: typeConfig.icon,
+                        typeCircleBg: typeConfig.iconBg
+                    };
+                });
+
+                setTimeCorrectionRequests(mappedData);
+                setTimeMeta({ 
+                    totalPages: result.meta?.totalPages || 1, 
+                    totalRecords: result.meta?.totalRecords || mappedData.length 
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching time correction history:', error);
+            setTimeCorrectionRequests([]);
+            setTimeMeta({ totalPages: 1, totalRecords: 0 });
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
 
     useEffect(() => {

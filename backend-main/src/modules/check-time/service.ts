@@ -956,7 +956,7 @@ export class CheckTimeService {
     mentorUserId: string,
     query: checkSchema.GetMentorCorrectionsQueryType
   ) {
-    const { page = 1, limit = 10, status, viewType } = query;
+    const { page = 1, limit = 10, status, viewType, excludePending } = query;
 
     const mentor = await db.query.users.findFirst({
       where: eq(users.id, mentorUserId),
@@ -1007,6 +1007,10 @@ export class CheckTimeService {
 
     if (status) {
       correctionConditions.push(eq(timeCorrectionRequests.status, status));
+    }
+    
+    if (excludePending === "true") {
+      correctionConditions.push(not(eq(timeCorrectionRequests.status, "PENDING")));
     }
 
     const finalCondition = and(...correctionConditions);

@@ -540,6 +540,9 @@ export const leaveRequests = pgTable(
     approvedBy: varchar("approved_by", { length: 50 }),
     approverNote: text("approver_note"),
     approvedAt: timestamp("approved_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => [
     foreignKey({

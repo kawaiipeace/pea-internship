@@ -724,6 +724,8 @@ export class LeaveService {
         file: leaveRequests.file,
         studentName: sql<string>`concat(${users.fname}, ' ', ${users.lname})`,
         studentImage: studentProfiles.image,
+        userId: leaveRequests.userId,
+        username: users.displayUsername,
         approverName: sql<string>`concat(${approver.fname}, ' ', ${approver.lname})`,
         approvedAt: leaveRequests.approvedAt,
         approverNote: leaveRequests.approverNote,
@@ -742,7 +744,7 @@ export class LeaveService {
                 leaveRequests.status,
                 status as (typeof leaveStatusEnum.enumValues)[number]
               )
-            : undefined
+            : inArray(leaveRequests.status, ["APPROVED", "REJECTED"])
         )
       )
       .orderBy(
@@ -766,7 +768,7 @@ export class LeaveService {
                 leaveRequests.status,
                 status as (typeof leaveStatusEnum.enumValues)[number]
               )
-            : undefined
+            : inArray(leaveRequests.status, ["APPROVED", "REJECTED"])
         )
       );
 
