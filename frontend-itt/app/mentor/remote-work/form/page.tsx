@@ -11,6 +11,7 @@ interface Student {
     lname?: string;
     name?: string;
     displayUsername?: string;
+    nickname?: string;
 }
 
 const RemoteWorkFormPage = () => {
@@ -20,7 +21,7 @@ const RemoteWorkFormPage = () => {
     const isEditMode = !!taskId;
 
     // Form State
-    const [workDate, setWorkDate] = useState('');
+    const [workDates, setWorkDates] = useState<string[]>([]);
     const [locationName, setLocationName] = useState('');
     const [taskDetail, setTaskDetail] = useState('');
     const [note, setNote] = useState('');
@@ -81,7 +82,8 @@ const RemoteWorkFormPage = () => {
 
                     // Format Date for HTML5 input (YYYY-MM-DD)
                     if (task.workDate) {
-                        setWorkDate(new Date(task.workDate).toISOString().split('T')[0]);
+                        const formattedDate = new Date(task.workDate).toISOString().split('T')[0];
+                        setWorkDates([formattedDate]);
                     }
 
                     setLocationName(task.locationName);
@@ -135,7 +137,7 @@ const RemoteWorkFormPage = () => {
 
     const handleSubmit = async () => {
         const newErrors: Record<string, string> = {};
-        if (!workDate) newErrors.workDate = 'กรุณาระบุระยะเวลาปฏิบัติงาน';
+        if (workDates.length === 0) newErrors.workDate = 'กรุณาระบุระยะเวลาปฏิบัติงาน';
         if (!locationName) newErrors.locationName = 'กรุณาระบุสถานที่ปฏิบัติงาน';
         if (!taskDetail) newErrors.taskDetail = 'กรุณาระบุรายละเอียดการปฏิบัติงาน';
         if (studentIds.length === 0) newErrors.studentIds = 'กรุณาเลือกนักศึกษาอย่างน้อย 1 คน';
@@ -176,18 +178,28 @@ const RemoteWorkFormPage = () => {
 
         setIsSubmitting(true);
         try {
-            const payload = {
-                workDate,
-                locationName,
-                taskDetail,
-                note: note || undefined,
-                studentIds
-            };
-
             if (isEditMode) {
+                const payload = {
+                    workDate: workDates[0],
+                    locationName,
+                    taskDetail,
+                    note: note || undefined,
+                    studentIds
+                };
                 await axiosInstance.patch(`/offsite-tasks/${taskId}`, payload);
             } else {
-                await axiosInstance.post('/offsite-tasks', payload);
+                // Create individual records for each selected date
+                const promises = workDates.map(date => {
+                    const payload = {
+                        workDate: date,
+                        locationName,
+                        taskDetail,
+                        note: note || undefined,
+                        studentIds
+                    };
+                    return axiosInstance.post('/offsite-tasks', payload);
+                });
+                await Promise.all(promises);
             }
 
             setIsSubmitting(false);
@@ -290,12 +302,18 @@ const RemoteWorkFormPage = () => {
                         </div>
                         <div className="w-[348px]">
                             <CustomDatePicker
-                                value={workDate}
+                                multiple={!isEditMode}
+                                value={isEditMode ? workDates[0] : undefined}
+                                selectedDates={!isEditMode ? workDates : []}
                                 onChange={(date) => {
-                                    setWorkDate(date);
+                                    setWorkDates([date]);
                                     if (errors.workDate) setErrors(prev => ({ ...prev, workDate: '' }));
                                 }}
-                                placeholder="วว/ดด/ปปปป"
+                                onDatesChange={(dates) => {
+                                    setWorkDates(dates);
+                                    if (errors.workDate) setErrors(prev => ({ ...prev, workDate: '' }));
+                                }}
+                                placeholder={isEditMode ? "วว/ดด/ปปปป" : "เลือกวันที่ปฏิบัติงาน"}
                                 error={errors.workDate}
                             />
                         </div>
@@ -397,7 +415,11 @@ const RemoteWorkFormPage = () => {
                                         >
                                             <span className="text-[14px] text-[#333] font-semibold truncate pr-4">
                                                 {student 
-                                                    ? (student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id)
+                                                    ? (() => {
+                                                        const fullName = student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.id;
+                                                        const nickName = student.nickname || student.displayUsername;
+                                                        return nickName ? `${fullName} (${nickName})` : fullName;
+                                                    })()
                                                     : '...'}
                                             </span>
                                             <div className="flex items-center gap-2">
@@ -410,7 +432,6 @@ const RemoteWorkFormPage = () => {
                                                 >
                                                     <span className="material-symbols-rounded text-[20px]">close</span>
                                                 </button>
-                                                <span className={`material-symbols-rounded text-[#A80689] transition-transform duration-200 ${openDropdownIndex === index ? 'rotate-180' : ''}`}>expand_more</span>
                                             </div>
                                         </div>
 
@@ -425,7 +446,11 @@ const RemoteWorkFormPage = () => {
                                                             className={`px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] transition-all duration-200 cursor-pointer ${s.id === id ? 'bg-[#A80689] text-white' : 'text-[#101828] hover:bg-[#A80689] hover:text-white'}`}
                                                             onClick={() => handleSetStudent(index, s.id)}
                                                         >
-                                                            {s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.displayUsername || s.id}
+                                                            {(() => {
+                                                                const fullName = s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.id;
+                                                                const nickName = s.nickname || s.displayUsername;
+                                                                return nickName ? `${fullName} (${nickName})` : fullName;
+                                                            })()}
                                                         </div>
                                                     ))}
                                             </div>
@@ -461,7 +486,11 @@ const RemoteWorkFormPage = () => {
                                                             className="px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer transition-all duration-200"
                                                             onClick={() => handleSetStudent(studentIds.length, s.id)}
                                                         >
-                                                            {s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.displayUsername || s.id}
+                                                            {(() => {
+                                                                const fullName = s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.id;
+                                                                const nickName = s.nickname || s.displayUsername;
+                                                                return nickName ? `${fullName} (${nickName})` : fullName;
+                                                            })()}
                                                         </div>
                                                     ))
                                             )}
