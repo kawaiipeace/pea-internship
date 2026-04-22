@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { adminDashboard } from "./admin-dashboard";
 import { application } from "./application";
 import { applicationStatusActionsModule } from "./application_status_actions";
 import { applicationCompleteModal } from "./application-complete-modal";
@@ -40,5 +41,6 @@ const modules = new Elysia({ prefix: "/api" })
   .use(mentor)
   .use(file)
   .use(applicationStatusActionsModule)
-  .use(applicationCompleteModal);
+  .use(applicationCompleteModal)
+  .use(adminDashboard);
 export default modules;

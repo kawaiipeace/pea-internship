@@ -23,14 +23,18 @@ export const leave = new Elysia({
       body: model.SubmitLeaveBody,
       detail: {
         summary: "ส่งคำขอลา (Submit Leave Request)",
-        description: "ส่งคำขอลาพักของนักศึกษา รองรับการส่งไฟล์แนบ (multipart/form-data)",
+        description:
+          "ส่งคำขอลาพักของนักศึกษา รองรับการส่งไฟล์แนบ (multipart/form-data)",
       },
     }
   )
   .post(
     "/resubmit",
     async ({ body, set, user }) => {
-      const response = await leaveService.resubmitLeaveRequests(user.id, body.ids);
+      const response = await leaveService.resubmitLeaveRequests(
+        user.id,
+        body.ids
+      );
       set.status = 200;
       return response;
     },
@@ -55,7 +59,8 @@ export const leave = new Elysia({
       query: model.GetLeaveHistoryQuery,
       detail: {
         summary: "ประวัติการลา (Leave History)",
-        description: "ดึงประวัติการลาของนักศึกษาประจำเดือน พร้อมข้อมูลสรุป (Summary) และการแบ่งหน้า (Pagination)",
+        description:
+          "ดึงประวัติการลาของนักศึกษาประจำเดือน พร้อมข้อมูลสรุป (Summary) และการแบ่งหน้า (Pagination)",
       },
     }
   )
@@ -71,14 +76,18 @@ export const leave = new Elysia({
       params: model.params,
       detail: {
         summary: "ยกเลิกคำขอลา (Cancel/Delete Leave Request)",
-        description: "ลบรายการลาที่ส่งไปแล้ว (ลบได้เฉพาะสถานะ PENDING และต้องเป็นเจ้าของเท่านั้น)",
+        description:
+          "ลบรายการลาที่ส่งไปแล้ว (ลบได้เฉพาะสถานะ PENDING และต้องเป็นเจ้าของเท่านั้น)",
       },
     }
   )
   .post(
     "/bulk-delete",
     async ({ body, set, user }) => {
-      const response = await leaveService.bulkDeleteLeaveRequests(user.id, body.ids);
+      const response = await leaveService.bulkDeleteLeaveRequests(
+        user.id,
+        body.ids
+      );
       set.status = 200;
       return response;
     },
@@ -111,7 +120,10 @@ export const leave = new Elysia({
   .post(
     "/bulk-approve",
     async ({ body, set, user }) => {
-      const response = await leaveService.bulkApproveLeaveRequests(user.id, body.ids);
+      const response = await leaveService.bulkApproveLeaveRequests(
+        user.id,
+        body.ids
+      );
       set.status = 200;
       return response;
     },
@@ -127,7 +139,11 @@ export const leave = new Elysia({
   .post(
     "/:id/reject",
     async ({ params: { id }, body, set, user }) => {
-      const response = await leaveService.rejectLeaveRequest(user.id, id, body.reason);
+      const response = await leaveService.rejectLeaveRequest(
+        user.id,
+        id,
+        body.reason
+      );
       set.status = 200;
       return response;
     },
@@ -144,7 +160,11 @@ export const leave = new Elysia({
   .post(
     "/bulk-reject",
     async ({ body, set, user }) => {
-      const response = await leaveService.bulkRejectLeaveRequests(user.id, body.ids, body.reason);
+      const response = await leaveService.bulkRejectLeaveRequests(
+        user.id,
+        body.ids,
+        body.reason
+      );
       set.status = 200;
       return response;
     },
@@ -157,11 +177,14 @@ export const leave = new Elysia({
       },
     }
   )
-  
+
   .get(
     "/mentor/requests",
     async ({ query, set, user }) => {
-      const response = await leaveService.getMentorLeaveRequests(user.id, query);
+      const response = await leaveService.getMentorLeaveRequests(
+        user.id,
+        query
+      );
       set.status = 200;
       return response;
     },
@@ -170,7 +193,8 @@ export const leave = new Elysia({
       query: model.GetMentorLeaveRequestsQuery,
       detail: {
         summary: "รายการคำขอลาสำหรับ Mentor (Mentor Leave Requests)",
-        description: "ดึงรายการคำขอลาของนักศึกษา รองรับการกรองด้วย status และ viewType",
+        description:
+          "ดึงรายการคำขอลาของนักศึกษา รองรับการกรองด้วย status และ viewType",
       },
     }
   )

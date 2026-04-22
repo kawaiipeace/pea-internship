@@ -1,25 +1,10 @@
 "use client";
 import React, { useState, Fragment } from "react";
-import IconCircleCheck from "@/components/icon/icon-circle-check";
-import IconClock from "@/components/icon/icon-clock";
-import IconFile from "@/components/icon/icon-file";
-import IconArrowLeft from "@/components/icon/icon-arrow-left";
 import { Transition, Dialog } from "@headlessui/react";
-
-import IconCamera from "@/components/icon/icon-camera";
-
-import IconArchive from "@/components/icon/icon-archive";
 import EditTimeForm from "@/components/history/edit-time-form";
-import IconCalendarClock from "@/components/icon/icon-calendar-clock";
-import IconBriefcase from "@/components/icon/icon-briefcase";
-import IconMedicalCross from "@/components/icon/icon-medical-cross";
-import IconTrash from "@/components/icon/icon-trash";
-import IconGallery from "@/components/icon/icon-gallery";
 import MonthPicker from "@/components/history/month-picker";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import IconFileText from "@/components/icon/icon-file-text";
-import IconPaperclip from "@/components/icon/icon-paperclip";
 import { useEffect, useCallback } from "react";
 import axiosInstance from "@/api/axios";
 
@@ -141,7 +126,7 @@ const AttendanceHistoryPage = () => {
   const handleViewLeaveFile = async (item: any) => {
     try {
       if (!item.evidenceUrl) return;
-      
+
       Swal.fire({
         title: 'กำลังโหลดไฟล์...',
         allowOutsideClick: false,
@@ -153,7 +138,7 @@ const AttendanceHistoryPage = () => {
       // The evidenceUrl is likely "/leave-documents/..."
       // We need to extract the key. If it starts with "/", remove it.
       const key = item.evidenceUrl.startsWith('/') ? item.evidenceUrl.substring(1) : item.evidenceUrl;
-      
+
       const response = await axiosInstance.get(`/files/${encodeURIComponent(key)}`, {
         responseType: 'blob'
       });
@@ -163,7 +148,7 @@ const AttendanceHistoryPage = () => {
       }
 
       const blobUrl = URL.createObjectURL(response.data);
-      
+
       // Open in new tab
       const newTab = window.open(blobUrl, '_blank');
       if (!newTab) {
@@ -181,7 +166,7 @@ const AttendanceHistoryPage = () => {
           }
         });
       }
-      
+
       Swal.close();
       // Clean up
       setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
@@ -328,7 +313,7 @@ const AttendanceHistoryPage = () => {
 
           return {
             id: log.id,
-            workDate: log.workDate, 
+            workDate: log.workDate,
             date: day,
             month: thaiMonthsFull[monthIndex],
             monthFull: thaiMonthsFull[monthIndex],
@@ -362,10 +347,19 @@ const AttendanceHistoryPage = () => {
         const bkkCurrentTime = bkkNow.getHours() * 100 + bkkNow.getMinutes();
 
         const filteredRecords = mappedRecords.filter((item: any) => {
-          // If it's today and no check-out, hide it until 23:50 (except for LEAVE records)
-          if (item.workDate === bkkTodayStr && item.checkOutTime === "ไม่ลงเวลา" && bkkCurrentTime < 2350 && !item.isLeave) {
+          // เช็คว่าเป็นข้อมูลวันนี้หรือไม่
+          const isToday = item.workDate === bkkTodayStr;
+
+          // ถ้าเป็นสถานะ 'ขาดงาน' (ABSENT) หรือ 'ลา' (LEAVE) ให้แสดงทันทีไม่ต้องรอ 23:50
+          if (item.status === "ขาด" || item.isLeave) {
+            return true;
+          }
+
+          // สำหรับสถานะอื่นๆ (เช่น มาทำงานปกติ) ถ้ายังไม่ลงเวลาออก และยังไม่ถึง 23:50 ให้ซ่อนไว้ก่อน
+          if (isToday && item.checkOutTime === "ไม่ลงเวลา" && bkkCurrentTime < 2350) {
             return false;
           }
+
           return true;
         });
 
@@ -479,9 +473,9 @@ const AttendanceHistoryPage = () => {
         formData.append('checkInTime', item.reqCheckInTime);
         formData.append('checkOutTime', item.reqCheckOutTime);
         formData.append('reason', item.reqReason);
-        
+
         const response = await axiosInstance.put('/check-time/edit', formData);
-        
+
         if (response.data && response.data.success) {
           await Swal.fire({
             title: 'ส่งคำขออีกครั้งสำเร็จ',
@@ -843,7 +837,7 @@ const AttendanceHistoryPage = () => {
             className="flex items-center gap-2 font-bold text-[15px] hover:opacity-80 text-gray-700 dark:text-gray-300 whitespace-nowrap"
           >
             <span className="material-symbols-rounded !text-[20px] sm:!text-[24px] text-[#b40e56]">
-                ios_share
+              ios_share
             </span>
             <span className="hidden sm:inline">ส่งออกตาราง</span>
             <span className="sm:hidden text-sm">ส่งออกตาราง</span>
@@ -1192,7 +1186,7 @@ const AttendanceHistoryPage = () => {
                                     <div className="w-full h-auto flex flex-col pt-1 touch-none">
                                       <div className="flex items-center justify-between mt-1 mb-2">
                                         <div className="text-[16px]  text-gray-800 dark:text-gray-200">
-                                          {selectedHistoryItem.startDate !== selectedHistoryItem.endDate 
+                                          {selectedHistoryItem.startDate !== selectedHistoryItem.endDate
                                             ? `${new Date(selectedHistoryItem.startDate).getDate()} - ${new Date(selectedHistoryItem.endDate).getDate()} ${thaiMonthsFull[new Date(selectedHistoryItem.endDate).getMonth()]} ${new Date(selectedHistoryItem.endDate).getFullYear() + 543}`
                                             : `${selectedHistoryItem.date} ${selectedHistoryItem.month} ${selectedHistoryItem.year}`
                                           }

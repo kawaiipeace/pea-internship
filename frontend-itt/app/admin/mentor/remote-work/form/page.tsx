@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import Swal from 'sweetalert2';
@@ -18,29 +18,38 @@ const RemoteWorkFormPage = () => {
     const searchParams = useSearchParams();
     const taskId = searchParams.get('id');
     const isEditMode = !!taskId;
+
+    // Form State
     const [workDate, setWorkDate] = useState('');
     const [locationName, setLocationName] = useState('');
     const [taskDetail, setTaskDetail] = useState('');
     const [note, setNote] = useState('');
     const [studentIds, setStudentIds] = useState<string[]>([]);
+    const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+    const [showEmptySlot, setShowEmptySlot] = useState(true); // Start with one empty slot
+    
+    // Data State
     const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+    // Handle click outside to close dropdown
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false);
+            if (openDropdownIndex !== null) {
+                const ref = dropdownRefs.current[openDropdownIndex];
+                if (ref && !ref.contains(event.target as Node)) {
+                    setOpenDropdownIndex(null);
+                }
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, []);
+    }, [openDropdownIndex]);
 
     // Fetch initial data on mount
     useEffect(() => {
@@ -105,15 +114,23 @@ const RemoteWorkFormPage = () => {
         loadInitialData();
     }, [isEditMode, taskId]);
 
-    const handleAddStudent = (studentId: string) => {
+    const handleSetStudent = (index: number, studentId: string) => {
         if (!studentId) return;
-        if (!studentIds.includes(studentId)) {
-            setStudentIds([...studentIds, studentId]);
-        }
+        const newStudentIds = [...studentIds];
+        newStudentIds[index] = studentId;
+        setStudentIds(newStudentIds);
+        setOpenDropdownIndex(null);
+        setShowEmptySlot(false);
+        if (errors.studentIds) setErrors(prev => ({ ...prev, studentIds: '' }));
     };
 
-    const handleRemoveStudent = (studentId: string) => {
-        setStudentIds(studentIds.filter(id => id !== studentId));
+    const handleRemoveSlot = (index: number) => {
+        const newStudentIds = [...studentIds];
+        newStudentIds.splice(index, 1);
+        setStudentIds(newStudentIds);
+        if (newStudentIds.length === 0) {
+            setShowEmptySlot(true);
+        }
     };
 
     const handleSubmit = async () => {
@@ -129,6 +146,34 @@ const RemoteWorkFormPage = () => {
             return;
         }
 
+        // 1. Show Confirmation Dialog
+        const result = await Swal.fire({
+            width: '380px',
+            html: `
+                <div class="flex flex-col items-center">
+                    <div class="w-[64px] h-[64px] bg-[#DCFAE6] rounded-full flex items-center justify-center mb-6">
+                        <div class="w-[44px] h-[44px] bg-[#17B26A] rounded-full flex items-center justify-center shadow-sm">
+                            <span class="material-symbols-rounded text-white text-[24px]">check</span>
+                        </div>
+                    </div>
+                    <h2 class="text-[16px] font-bold text-[#000] mb-2">${isEditMode ? 'แก้ไขมอบหมาย' : 'ยืนยันการมอบหมาย'}</h2>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#17B26A',
+            customClass: {
+                popup: 'rounded-[16px] !p-7',
+                confirmButton: 'w-[130px] h-[48px] !bg-[#17B26A] rounded-[8px] text-[16px] text-[#FFFFFF]  !mx-2',
+                cancelButton: 'w-[130px] h-[48px] !bg-white rounded-[8px] text-[16px] border-2 border-black !text-black !mx-2'
+            },
+            reverseButtons: true,
+            buttonsStyling: false,
+        });
+
+        if (!result.isConfirmed) return;
+
         setIsSubmitting(true);
         try {
             const payload = {
@@ -141,27 +186,75 @@ const RemoteWorkFormPage = () => {
 
             if (isEditMode) {
                 await axiosInstance.patch(`/offsite-tasks/${taskId}`, payload);
-                await Swal.fire({
-                    title: 'แก้ไขสำเร็จ!',
-                    text: 'แก้ไขรายการมอบหมายงานนอกสถานที่เรียบร้อยแล้ว',
-                    icon: 'success',
-                    confirmButtonColor: '#A80689',
-                });
             } else {
                 await axiosInstance.post('/offsite-tasks', payload);
-                await Swal.fire({
-                    title: 'มอบหมายสำเร็จ!',
-                    text: 'มอบหมายงานนอกสถานที่ให้เพื่อนนักศึกษาเรียบร้อยแล้ว',
-                    icon: 'success',
-                    confirmButtonColor: '#A80689',
-                });
             }
+
+            setIsSubmitting(false);
+
+            // Show Success Dialog
+            await Swal.fire({
+                width: '380px',
+                html: `
+                    <div class="flex flex-col items-center">
+                        <div class="w-[64px] h-[64px] bg-[#DCFAE6] rounded-full flex items-center justify-center mb-6">
+                            <div class="w-[44px] h-[44px] bg-[#17B26A] rounded-full flex items-center justify-center shadow-sm">
+                                <span class="material-symbols-rounded text-white text-[24px]">check</span>
+                            </div>
+                        </div>
+                        <h2 class="text-[16px] font-bold text-[#000] mb-2">${isEditMode ? 'แก้ไขมอบหมายสำเร็จ' : 'มอบหมายสำเร็จ'}</h2>
+                    </div>
+                `,
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#17B26A',
+                customClass: {
+                    popup: 'rounded-[16px] !p-7',
+                    confirmButton: 'w-[130px] h-[48px] !bg-[#17B26A] rounded-[8px] text-[16px] text-[#FFFFFF]  !mx-2',
+                },
+                buttonsStyling: false,
+            });
+
             router.push('/mentor/remote-work');
         } catch (error) {
             console.error('Error submitting form:', error);
-            Swal.fire('Error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+            Swal.fire({
+                title: 'เกิดข้อผิดพลาด!',
+                text: 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+                confirmButtonColor: '#A80689',
+            });
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        const result = await Swal.fire({
+            width: '380px',
+            html: `
+                <div class="flex flex-col items-center">
+                    <div class="w-[64px] h-[64px] bg-[#FEE4E2] rounded-full flex items-center justify-center mb-6">
+                        <div class="w-[44px] h-[44px] bg-[#D92D20] rounded-full flex items-center justify-center shadow-sm">
+                            <span class="material-symbols-rounded text-white text-[24px]">close</span>
+                        </div>
+                    </div>
+                    <h2 class="text-[16px] font-bold text-[#000] mb-2">${isEditMode ? 'ยกเลิกการแก้ไข' : 'ยกเลิกการมอบหมาย'}</h2>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยัน',
+            cancelButtonText: 'ดำเนินการต่อ',
+            confirmButtonColor: '#D92D20',
+            customClass: {
+                popup: 'rounded-[16px] !p-7',
+                confirmButton: 'w-[130px] h-[48px] !bg-[#D92D20] rounded-[8px] text-[16px] text-[#FFFFFF] !mx-2',
+                cancelButton: 'w-[130px] h-[48px] !bg-white rounded-[8px] text-[16px] font-bold border-2 border-black !text-black !mx-2'
+            },
+            reverseButtons: true,
+            buttonsStyling: false,
+        });
+
+        if (result.isConfirmed) {
+            router.back();
         }
     };
 
@@ -290,95 +383,122 @@ const RemoteWorkFormPage = () => {
                             </div>
                         </div>
 
-                        {/* Custom Dropdown for Student Selection */}
-                        <div className="relative" ref={dropdownRef}>
-                            {/* Dropdown Toggle Box */}
-                            <div
-                                className={`w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border-2 ${errors.studentIds ? 'border-[#D92D20]' : 'border-[#A80689]'} rounded-[8px] flex items-center justify-between cursor-pointer focus:outline-none`}
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span className="text-[14px] text-gray-500">ชื่อนักศึกษา</span>
-                                <span className={`material-symbols-rounded ${errors.studentIds ? 'text-[#D92D20]' : 'text-[#A80689]'} transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
-                            </div>
-                            {errors.studentIds && <p className="text-[#D92D20] text-[12px] mt-0.5 ml-1">{errors.studentIds}</p>}
-
-                            {/* Dropdown Menu */}
-                            {isDropdownOpen && (
-                                <div className="absolute top-[50px] left-0 w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
-                                    {availableStudents.filter(s => !studentIds.includes(s.id)).length === 0 ? (
-                                        <div className="px-4 py-3 text-[14px] text-gray-500 text-center italic">
-                                            {isLoading ? 'กำลังโหลด...' : 'ไม่มีรายชื่อนักศึกษาเพิ่มเติม'}
-                                        </div>
-                                    ) : (
-                                        availableStudents
-                                            .filter(s => !studentIds.includes(s.id))
-                                            .map(student => (
-                                                <div
-                                                    key={student.id}
-                                                    className="px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer transition-all duration-200"
-                                                    onClick={() => {
-                                                        handleAddStudent(student.id);
-                                                        setIsDropdownOpen(false);
-                                                        if (errors.studentIds) setErrors(prev => ({ ...prev, studentIds: '' }));
+                        {/* Student Selection List */}
+                        <div className="space-y-3">
+                            {/* Render existing selections */}
+                            {studentIds.map((id, index) => {
+                                const student = availableStudents.find(s => s.id === id);
+                                return (
+                                    <div key={`selected-${index}`} className="relative" ref={el => { dropdownRefs.current[index] = el; }}>
+                                        {/* Filled Box - White background with purple border */}
+                                        <div 
+                                            className="w-[618px] h-[45px] px-4 bg-white dark:bg-gray-800 border-2 border-[#A80689] rounded-[8px] flex items-center justify-between cursor-pointer shadow-sm"
+                                            onClick={() => setOpenDropdownIndex(openDropdownIndex === index ? null : index)}
+                                        >
+                                            <span className="text-[14px] text-[#333] font-semibold truncate pr-4">
+                                                {student 
+                                                    ? (student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id)
+                                                    : '...'}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveSlot(index);
                                                     }}
+                                                    className="w-7 h-7 flex items-center justify-center text-[#A80689] hover:bg-[#FDF2FE] rounded-full transition-colors"
                                                 >
-                                                    {student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id}
+                                                    <span className="material-symbols-rounded text-[20px]">close</span>
+                                                </button>
+                                                <span className={`material-symbols-rounded text-[#A80689] transition-transform duration-200 ${openDropdownIndex === index ? 'rotate-180' : ''}`}>expand_more</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Dropdown Menu for existing slot */}
+                                        {openDropdownIndex === index && (
+                                            <div className="absolute top-[50px] left-0 w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
+                                                {availableStudents
+                                                    .filter(s => s.id === id || !studentIds.includes(s.id))
+                                                    .map(s => (
+                                                        <div 
+                                                            key={s.id} 
+                                                            className={`px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] transition-all duration-200 cursor-pointer ${s.id === id ? 'bg-[#A80689] text-white' : 'text-[#101828] hover:bg-[#A80689] hover:text-white'}`}
+                                                            onClick={() => handleSetStudent(index, s.id)}
+                                                        >
+                                                            {s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.displayUsername || s.id}
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Render empty slot if active */}
+                            {showEmptySlot && (
+                                <div className="relative" ref={el => { dropdownRefs.current[studentIds.length] = el; }}>
+                                    <div 
+                                        className={`w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border-2 ${errors.studentIds ? 'border-[#D92D20]' : 'border-[#A80689]'} rounded-[8px] flex items-center justify-between cursor-pointer`}
+                                        onClick={() => setOpenDropdownIndex(openDropdownIndex === studentIds.length ? null : studentIds.length)}
+                                    >
+                                        <span className="text-[14px] text-gray-500">ชื่อนักศึกษา</span>
+                                        <span className={`material-symbols-rounded ${errors.studentIds ? 'text-[#D92D20]' : 'text-[#A80689]'} transition-transform duration-200 ${openDropdownIndex === studentIds.length ? 'rotate-180' : ''}`}>expand_more</span>
+                                    </div>
+                                    {errors.studentIds && <p className="text-[#D92D20] text-[12px] mt-0.5 ml-1">{errors.studentIds}</p>}
+
+                                    {openDropdownIndex === studentIds.length && (
+                                        <div className="absolute top-[50px] left-0 w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
+                                            {availableStudents.filter(s => !studentIds.includes(s.id)).length === 0 ? (
+                                                <div className="px-4 py-3 text-[14px] text-gray-500 text-center italic">
+                                                    {isLoading ? 'กำลังโหลด...' : 'ไม่มีรายชื่อนักศึกษาเพิ่มเติม'}
                                                 </div>
-                                            ))
+                                            ) : (
+                                                availableStudents
+                                                    .filter(s => !studentIds.includes(s.id))
+                                                    .map(s => (
+                                                        <div 
+                                                            key={s.id} 
+                                                            className="px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer transition-all duration-200"
+                                                            onClick={() => handleSetStudent(studentIds.length, s.id)}
+                                                        >
+                                                            {s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.displayUsername || s.id}
+                                                        </div>
+                                                    ))
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             )}
-                        </div>
 
-                        {/* Dashed Add Student Box */}
-                        <div
-                            className="w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        >
-                            <span className="material-symbols-rounded text-[#61646C]">add</span>
-                            <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
-                        </div>
-
-                        {/* Selected Students List */}
-                        {studentIds.length > 0 && (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                {studentIds.map(id => {
-                                    const student = availableStudents.find(s => s.id === id);
-                                    return (
-                                        <div key={id} className="bg-[#FDF2FE] border border-[#F9E1F9] rounded-full px-4 py-1.5 flex items-center gap-2">
-                                            <span className="text-[14px] text-[#A80689] font-medium">
-                                                {student
-                                                    ? (student.fname ? `${student.fname} ${student.lname || ''}` : student.name || student.displayUsername || student.id)
-                                                    : 'กำลังโหลด...'}
-                                            </span>
-                                            <button
-                                                onClick={() => handleRemoveStudent(id)}
-                                                className="text-[#A80689] hover:text-red-500"
-                                            >
-                                                <span className="material-symbols-rounded text-[18px]">close</span>
-                                            </button>
-                                        </div>
-                                    );
-                                })}
+                            {/* Dashed Add Student Box */}
+                            <div 
+                                className="w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
+                                onClick={() => {
+                                    setShowEmptySlot(true);
+                                    setOpenDropdownIndex(studentIds.length);
+                                }}
+                            >
+                                <span className="material-symbols-rounded text-[#61646C]">add</span>
+                                <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Footer Buttons */}
                 <div className="mt-8 flex gap-4">
-                    <button
-                        onClick={() => router.back()}
-                        className="flex-1 h-[54px] border border-[#A80689] text-[#A80689] rounded-[8px] text-[16px] font-bold hover:bg-[#FDF2FE] transition-colors"
+                    <button 
+                        onClick={handleCancel}
+                        className="flex-1 h-[54px] border border-[#A80689] text-[#A80689] rounded-[8px] text-[16px]  hover:bg-[#FDF2FE] transition-colors"
                     >
                         ยกเลิก
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className={`flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px] font-bold hover:bg-[#8e0574] transition-colors shadow-md flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px]  hover:bg-[#8e0574] transition-colors shadow-md flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                        {isEditMode ? 'บันทึกการแก้ไข' : 'เพิ่มนักศึกษาปฏิบัติงานนอกสถานที่'}
+                        {isEditMode ? 'แก้ไขนักศึกษาปฏิบัติงานนอกสถานที่' : 'เพิ่มนักศึกษาปฏิบัติงานนอกสถานที่'}
                         {isSubmitting ? (
                             <>
                                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin ml-2"></span>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import  { useState, useEffect, useMemo } from 'react';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
 
@@ -269,8 +269,10 @@ const ApprovalHistoryPage = () => {
     const [loading, setLoading] = useState(true);
 
     const PAGE_SIZE = 5;
-    const [leaveMeta, setLeaveMeta] = useState({ totalPages: 1, totalRecords: 2 });
-    const [timeMeta, setTimeMeta] = useState({ totalPages: 1, totalRecords: 3 });
+    const [leaveMeta, setLeaveMeta] = useState({ totalPages: 1, totalRecords: 0 });
+    const [timeMeta, setTimeMeta] = useState({ totalPages: 1, totalRecords: 0 });
+    const [leaveTotalCount, setLeaveTotalCount] = useState(0);
+    const [timeTotalCount, setTimeTotalCount] = useState(0);
     const [page, setPage] = useState(1);
 
     const records = useMemo(() => {
@@ -288,137 +290,181 @@ const ApprovalHistoryPage = () => {
     }, [activeTab, statusFilter]);
 
     const fetchLeaveRequests = async () => {
-        setLoading(true);
-        setTimeout(() => {
-            const mockLeaveData: LeaveRequest[] = [
-                {
-                    ids: [1],
-                    id: 1,
-                    studentName: 'สมศรี สตรีไทย (เฟิร์น)',
-                    type: 'ลากิจ',
-                    typeBg: 'bg-[#EEEFFF]',
-                    typeText: 'text-[#61646C]',
-                    typeBorder: 'border-[#1A3CFF]',
-                    typeIcon: 'business_center',
-                    typeCircleBg: 'bg-[#1A3CFF]',
-                    submittedDate: '11 มกราคม 2569',
-                    leaveDate: '12 มกราคม 2569',
-                    reason: 'เข้าร่วมกิจกรรมมหาวิทยาลัย ขาดไม่ได้',
-                    profileImg: '/assets/images/profile-1.jpeg',
-                    userId: '1',
-                    fileName: 'หลักฐาน.png',
-                    fileIcon: 'image',
-                    hasFile: true,
-                    attachmentUrl: 'mock.png',
-                    status: 'REJECTED'
-                },
-                {
-                    ids: [2],
-                    id: 2,
-                    studentName: 'สมหมาย สายเสมอ (นาย)',
-                    type: 'ลาป่วย',
-                    typeBg: 'bg-[#FFEFF3]',
-                    typeText: 'text-pink-500',
-                    typeBorder: 'border-[#FF1A7D]',
-                    typeIcon: 'health_cross',
-                    typeCircleBg: 'bg-[#FF1A7D]',
-                    submittedDate: '9 มกราคม 2569',
-                    leaveDate: '10 มกราคม 2569',
-                    reason: 'ท้องเสียเนื่องจากอาหารเป็นพิษ',
-                    profileImg: '/assets/images/profile-2.jpeg',
-                    userId: '2',
-                    fileName: 'หลักฐาน.pdf',
-                    fileIcon: 'pdf',
-                    hasFile: true,
-                    attachmentUrl: 'mock.pdf',
-                    status: 'APPROVED'
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get('/leave/mentor/requests', {
+                params: {
+                    page,
+                    limit: PAGE_SIZE,
+                    status: statusFilter === 'ALL' ? undefined : statusFilter,
+                    viewType: 'MINE'
                 }
-            ];
-            
-            // Filter by status if not ALL
-            const filteredData = statusFilter === 'ALL' 
-                ? mockLeaveData 
-                : mockLeaveData.filter(item => item.status === statusFilter);
+            });
 
-            setLeaveRequests(filteredData);
-            setLeaveMeta({ totalPages: 1, totalRecords: filteredData.length });
+            if (response.data && response.data.data) {
+                const mappedData = response.data.data.map((item: any) => {
+                    // ... (existing mapping code)
+                    const isSick = item.leaveType === 'SICK';
+                    let typeText = 'ลากิจ';
+                    let typeBg = 'bg-[#EEEFFF]';
+                    let typeTextColor = 'text-[#61646C]';
+                    let typeBorder = 'border-[#1A3CFF]';
+                    let typeIcon = 'business_center';
+                    let typeCircleBg = 'bg-[#1A3CFF]';
+
+                    if (isSick) {
+                        typeText = 'ลาป่วย';
+                        typeBg = 'bg-[#FFEFF3]';
+                        typeTextColor = 'text-pink-500';
+                        typeBorder = 'border-[#FF1A7D]';
+                        typeIcon = 'health_cross';
+                        typeCircleBg = 'bg-[#FF1A7D]';
+                    }
+
+                    const startObj = new Date(item.startDate);
+                    const endObj = new Date(item.endDate);
+                    
+                    const getThaiDateStr = (date: Date) => {
+                        return date.toLocaleDateString('th-TH', { 
+                            year: 'numeric', month: 'long', day: 'numeric' 
+                        });
+                    };
+
+                    const dayStr = (date: Date) => {
+                        return new Intl.DateTimeFormat('en-CA', {
+                            timeZone: 'Asia/Bangkok',
+                            day: '2-digit'
+                        }).format(date);
+                    };
+
+                    const leaveDateDisplay = item.startDate === item.endDate
+                        ? getThaiDateStr(startObj)
+                        : `${dayStr(startObj)} - ${getThaiDateStr(endObj)}`;
+
+                    const hasFile = !!item.attachmentUrl;
+                    let fileName = '';
+                    let fileIcon = 'image';
+                    if (hasFile) {
+                        fileName = item.attachmentUrl.split('/').pop() || 'เอกสารแนบ';
+                        const ext = fileName.split('.').pop()?.toLowerCase();
+                        fileIcon = ['jpg', 'jpeg', 'png', 'gif'].includes(ext || '') ? 'image' : 'pdf';
+                    }
+
+                    return {
+                        ids: item.ids,
+                        id: item.ids[0],
+                        studentName: item.studentName,
+                        type: typeText,
+                        typeBg,
+                        typeText: typeTextColor,
+                        typeBorder,
+                        typeIcon,
+                        typeCircleBg,
+                        submittedDate: getThaiDateStr(startObj),
+                        leaveDate: leaveDateDisplay,
+                        reason: item.reason || '-',
+                        profileImg: item.profileImg,
+                        userId: item.userId,
+                        fileName,
+                        fileIcon,
+                        hasFile,
+                        attachmentUrl: item.attachmentUrl,
+                        status: item.status
+                    };
+                });
+                setLeaveRequests(mappedData);
+                if (response.data.meta) {
+                    setLeaveMeta(response.data.meta);
+                    if (statusFilter === 'ALL') {
+                        setLeaveTotalCount(response.data.meta.totalRecords);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching leave requests:', error);
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
 
     const fetchTimeCorrectionRequests = async () => {
-        setLoading(true);
-        setTimeout(() => {
-            const mockTimeData: TimeCorrectionRequest[] = [
-                {
-                    id: 3,
-                    studentName: 'สมใจ ใฝ่ฝัน (ใจฝัน)',
-                    profileImg: '/assets/images/profile-3.jpeg',
-                    createdAt: '16 มกราคม 2569',
-                    workDate: '15 มกราคม 2569',
-                    originalTime: '08:30 - ไม่ลงเวลา',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'ลืมลงเวลาออก',
-                    attachmentUrl: null,
-                    status: 'APPROVED',
-                    type: 'ไม่ลงเวลาออก',
-                    typeBg: 'bg-[#F1F5F9]',
-                    typeText: 'text-[#475569]',
-                    typeBorder: 'border-[#94969C]',
-                    typeIcon: 'hourglass_disabled',
-                    typeCircleBg: 'bg-[#85888E]'
-                },
-                {
-                    id: 4,
-                    studentName: 'สมนึก คึกคะนอง (นิก)',
-                    profileImg: '/assets/images/profile-4.jpeg',
-                    createdAt: '15 มกราคม 2569',
-                    workDate: '14 มกราคม 2569',
-                    originalTime: '10:00 - 16:30',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'ระบบขัดข้องทำให้ลงเวลาไม่ได้',
-                    attachmentUrl: null,
-                    status: 'REJECTED',
-                    type: 'สาย',
-                    typeBg: 'bg-[#FEF3C7]',
-                    typeText: 'text-[#D97706]',
-                    typeBorder: 'border-[#FCD34D]',
-                    typeIcon: 'schedule',
-                    typeCircleBg: 'bg-[#F59E0B]'
-                },
-                {
-                    id: 5,
-                    studentName: 'สมชาย ล่าฝัน (ชาย)',
-                    profileImg: '/assets/images/profile-5.jpeg',
-                    createdAt: '11 มกราคม 2569',
-                    workDate: '10 มกราคม 2569',
-                    originalTime: 'ไม่ลงเวลา - ไม่ลงเวลา',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'เกิดอุบัติเหตุ',
-                    attachmentUrl: null,
-                    status: 'APPROVED',
-                    type: 'ขาด',
-                    typeBg: 'bg-[#FEE2E2]',
-                    typeText: 'text-[#EF4444]',
-                    typeBorder: 'border-[#FECACA]',
-                    typeIcon: 'close',
-                    typeCircleBg: 'bg-[#EF4444]'
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get('/check-time/mentor/corrections', {
+                params: {
+                    page,
+                    limit: PAGE_SIZE,
+                    status: statusFilter === 'ALL' ? undefined : statusFilter,
+                    viewType: 'MINE'
                 }
-            ];
+            });
 
-            // Filter by status if not ALL
-            const filteredData = statusFilter === 'ALL' 
-                ? mockTimeData 
-                : mockTimeData.filter(item => item.status === statusFilter);
+            if (response.data && response.data.data) {
+                const mappedData = response.data.data.map((item: any) => {
+                    // ... (existing mapping code)
+                    let typeText = 'แก้ไขเวลา';
+                    let typeBg = 'bg-[#FFF6D4]';
+                    let typeTextColor = 'text-gray-600';
+                    let typeBorder = 'border-[#FFCA5F]';
+                    let typeIcon = 'manage_history';
+                    let typeCircleBg = 'bg-[#D9692C]';
 
-            setTimeCorrectionRequests(filteredData);
-            setTimeMeta({ totalPages: 1, totalRecords: filteredData.length });
+                    if (item.dailyStatus === 'LATE') {
+                      typeText = 'สาย';
+                      typeBg = 'bg-[#FEF3C7]';
+                      typeTextColor = 'text-[#D97706]';
+                      typeBorder = 'border-[#FCD34D]';
+                      typeIcon = 'schedule';
+                      typeCircleBg = 'bg-[#F59E0B]';
+                    } else if (item.dailyStatus === 'ABSENT') {
+                      typeText = 'ขาด';
+                      typeBg = 'bg-[#FEE2E2]';
+                      typeTextColor = 'text-[#EF4444]';
+                      typeBorder = 'border-[#FECACA]';
+                      typeIcon = 'close';
+                      typeCircleBg = 'bg-[#EF4444]';
+                    } else if (item.dailyStatus === 'MISSING_OUT') {
+                      typeText = 'ไม่ลงเวลาออก';
+                      typeBg = 'bg-[#F1F5F9]';
+                      typeTextColor = 'text-[#475569]';
+                      typeBorder = 'border-[#94969C]';
+                      typeIcon = 'hourglass_disabled';
+                      typeCircleBg = 'bg-[#85888E]';
+                    }
+
+                    return {
+                        ...item,
+                        type: typeText,
+                        typeBg,
+                        typeText: typeTextColor,
+                        typeBorder,
+                        typeIcon,
+                        typeCircleBg
+                    };
+                });
+                setTimeCorrectionRequests(mappedData);
+                if (response.data.meta) {
+                    setTimeMeta(response.data.meta);
+                    if (statusFilter === 'ALL') {
+                        setTimeTotalCount(response.data.meta.totalRecords);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching time corrections:', error);
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
+
+    // Initial fetch to get counts for both tabs
+    useEffect(() => {
+        if (activeTab === 'leave') {
+            fetchTimeCorrectionRequests();
+        } else {
+            fetchLeaveRequests();
+        }
+    }, []);
 
     useEffect(() => {
         if (activeTab === 'leave') {
@@ -432,7 +478,7 @@ const ApprovalHistoryPage = () => {
         {
             key: 'leave' as const,
             title: 'คำขอลา',
-            count: `${leaveMeta.totalRecords} รายการ`,
+            count: `${leaveTotalCount} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#1AB3FF]">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '22px' }}>lab_profile</span>
@@ -446,7 +492,7 @@ const ApprovalHistoryPage = () => {
         {
             key: 'time-edit' as const,
             title: 'คำขอแก้ไขเวลา',
-            count: `${timeMeta.totalRecords} รายการ`,
+            count: `${timeTotalCount} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full bg-[#D9692C] flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>edit_square</span>

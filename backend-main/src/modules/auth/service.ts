@@ -1,9 +1,5 @@
 import { eq } from "drizzle-orm";
-import {
-  BadRequestError,
-  ForbiddenError,
-  InternalServerError,
-} from "@/common/exceptions";
+import { BadRequestError, InternalServerError } from "@/common/exceptions";
 import { db } from "@/db";
 import { studentProfiles, users } from "@/db/schema";
 import { type Auth, auth } from "@/lib/auth";
@@ -109,7 +105,7 @@ export class AuthService {
     const authData = await response.clone().json();
     const userId = authData.user.id;
 
-    const studentProfile = await db
+    await db
       .select({
         internshipStatus: studentProfiles.internshipStatus,
       })
@@ -117,13 +113,11 @@ export class AuthService {
       .where(eq(studentProfiles.userId, userId))
       .limit(1);
 
-    const profile = studentProfile[0];
-
-    if (!profile || profile.internshipStatus !== "ACTIVE") {
-      throw new ForbiddenError(
-        "การเข้าสู่ระบบถูกปฏิเสธ: สถานะการฝึกงานของคุณต้องเป็น ACTIVE เท่านั้น"
-      );
-    }
+    // if (!profile || profile.internshipStatus !== "ACTIVE") {
+    //   throw new ForbiddenError(
+    //     "การเข้าสู่ระบบถูกปฏิเสธ: สถานะการฝึกงานของคุณต้องเป็น ACTIVE เท่านั้น"
+    //   );
+    // }
 
     return response;
   }
