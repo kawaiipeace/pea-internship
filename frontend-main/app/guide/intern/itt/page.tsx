@@ -1,4 +1,55 @@
-﻿import Link from "next/link";
+﻿"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+
+function ZoomImage({ src, alt }: { src: string; alt: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="block w-full cursor-zoom-in focus:outline-none"
+        aria-label={`ขยายภาพ: ${alt}`}
+      >
+        <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className="object-cover rounded-xl border border-gray-200 shadow-sm"
+          />
+        </div>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div className="relative max-w-5xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={src}
+              alt={alt}
+              width={1200}
+              height={800}
+              className="w-full h-auto rounded-xl shadow-2xl object-contain max-h-[85vh]"
+            />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-gray-800 flex items-center justify-center shadow hover:bg-white transition-colors"
+              aria-label="ปิด"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function ApplicantIttPage() {
   return (
@@ -42,10 +93,15 @@ export default function ApplicantIttPage() {
           เมื่อผู้สมัครดำเนินการสมัครครบทุกขั้นตอน และได้รับการอนุมัติเรียบร้อยแล้ว (สถานะผ่านทั้งหมด)
           ระบบจะถือว่าผู้สมัครอยู่ในช่วง <span className="font-medium">รอเริ่มฝึกงาน</span>
         </p>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed mb-8">
           ในขั้นตอนนี้ ภายในระบบ PEA Internship จะมีการแสดงเมนูเพิ่มเติมสำหรับนักศึกษา คือ <span className="font-medium">"ระบบ iTT"</span> บริเวณแถบนำทางด้านบนของเว็บไซต์
           ซึ่งจะแสดงในทุกหน้าของผู้ใช้งานฝั่งนักศึกษา*
         </p>
+
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/itt.png" alt="ระหว่างรอก่อนเริ่มฝึกงาน" />
+          <ZoomImage src="/images/คู่มือ/itt2.png" alt="ระหว่างรอก่อนเริ่มฝึกงาน" />
+        </div>
       </section>
 
       <hr className="border-gray-200 mb-12" />

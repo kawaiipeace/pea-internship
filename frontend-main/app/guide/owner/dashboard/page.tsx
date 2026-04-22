@@ -1,4 +1,55 @@
-﻿import Link from "next/link";
+﻿"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+
+function ZoomImage({ src, alt }: { src: string; alt: string }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="block w-full cursor-zoom-in focus:outline-none"
+                aria-label={`ขยายภาพ: ${alt}`}
+            >
+                <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
+                    <Image
+                        src={src}
+                        alt={alt}
+                        fill
+                        className="object-cover rounded-xl border border-gray-200 shadow-sm"
+                    />
+                </div>
+            </button>
+
+            {open && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+                    onClick={() => setOpen(false)}
+                >
+                    <div className="relative max-w-5xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+                        <Image
+                            src={src}
+                            alt={alt}
+                            width={1200}
+                            height={800}
+                            className="w-full h-auto rounded-xl shadow-2xl object-contain max-h-[85vh]"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-gray-800 flex items-center justify-center shadow hover:bg-white transition-colors"
+                            aria-label="ปิด"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
 
 export default function StaffDashboardPage() {
     return (
@@ -45,18 +96,10 @@ export default function StaffDashboardPage() {
             {/* Dashboard preview images */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                 <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 aspect-video flex items-center justify-center">
-                    <img
-                        src="/guide/dashboard-preview-1.png"
-                        alt="ตัวอย่างหน้าแดชบอร์ด"
-                        className="w-full h-full object-cover"
-                    />
+                    <ZoomImage src="/images/คู่มือ/dashboardowner.png" alt="ตัวอย่างหน้าแดชบอร์ด" />
                 </div>
                 <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 aspect-video flex items-center justify-center">
-                    <img
-                        src="/guide/dashboard-preview-2.png"
-                        alt="ตัวอย่างหน้าแดชบอร์ดส่วนกราฟ"
-                        className="w-full h-full object-cover"
-                    />
+                    <ZoomImage src="/images/คู่มือ/dashboardowner2.png" alt="ตัวอย่างหน้าแดชบอร์ดส่วนกราฟ" />
                 </div>
             </div>
 

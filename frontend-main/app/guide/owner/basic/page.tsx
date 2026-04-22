@@ -1,4 +1,55 @@
-﻿import Link from "next/link";
+﻿"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+
+function ZoomImage({ src, alt }: { src: string; alt: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="block w-full cursor-zoom-in focus:outline-none"
+        aria-label={`ขยายภาพ: ${alt}`}
+      >
+        <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className="object-cover rounded-xl border border-gray-200 shadow-sm"
+          />
+        </div>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div className="relative max-w-5xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={src}
+              alt={alt}
+              width={1200}
+              height={800}
+              className="w-full h-auto rounded-xl shadow-2xl object-contain max-h-[85vh]"
+            />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-gray-800 flex items-center justify-center shadow hover:bg-white transition-colors"
+              aria-label="ปิด"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function StaffBasicPage() {
   return (
@@ -59,6 +110,11 @@ export default function StaffBasicPage() {
           </li>
         </ol>
 
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/login1.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/คู่มือ/login2.png" alt="การเข้าสู่ระบบOwner" />
+        </div>
+
         <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของพนักงาน PEA</h3>
         <p className="text-gray-600 leading-relaxed mb-8">
           ถ้าผู้ใช้เป็นพนักงานการไฟฟ้าของ PEA หลังจากที่กดปุ่ม เข้าสู่ระบบแล้วจะเจอกับหน้าการเข้าสู่ระบบของพนักงาน PEA
@@ -66,13 +122,22 @@ export default function StaffBasicPage() {
           <span className="font-medium">อีเมล (Email)</span> และช่อง <span className="font-medium">รหัสผ่าน (Password)</span>{" "}
           จากนั้นเมื่อกรอกครบและตรวจสอบว่าถูกต้องแล้ว ให้กดปุ่ม <span className="font-medium">เข้าสู่ระบบ (Sign in)</span> เพื่อเข้าใช้งานเว็บไซต์ PEA Internship
         </p>
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/login3.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/คู่มือ/login4.png" alt="การเข้าสู่ระบบOwner" />
+        </div>
 
         <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของผู้สมัครฝึกงาน</h3>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed mb-8">
           ถ้าผู้ใช้เป็นผู้สมัครฝึกงาน หลังจากที่กดปุ่ม เข้าสู่ระบบผู้สมัคร ผู้ใช้จำเป็นต้องสร้างบัญชีขึ้นมาก่อน
           โดยสามารถกดได้ตรงปุ่ม <span className="font-medium">ลงทะเบียน</span> หลังกรอกข้อมูลและสมัครเรียบร้อย ผู้สมัครสามารถนำเบอร์โทรศัพท์
           รหัสผ่านที่สมัครนำมากรอก เมื่อกรอกครบและตรวจสอบว่าถูกต้องแล้ว ให้กดปุ่ม <span className="font-medium">เข้าสู่ระบบ</span> เพื่อเข้าใช้งานเว็บไซต์ PEA Internship
         </p>
+
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/login5.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/คู่มือ/login6.png" alt="การเข้าสู่ระบบOwner" />
+        </div>
       </section>
 
       <hr className="border-gray-200 mb-12" />
@@ -80,13 +145,17 @@ export default function StaffBasicPage() {
       {/* ── การออกจากระบบ ── */}
       <section id="logout" className="scroll-mt-24 mb-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">การออกจากระบบ</h2>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed mb-8">
           การออกจากระบบ เป็นขั้นตอนสำคัญในการรักษาความปลอดภัยของบัญชีผู้ใช้งานและข้อมูลส่วนบุคคล
           เนื่องจากสิ้นการปฏิบัติงานในระบบ PEA Internship ผู้ใช้ควรดำเนินการออกจากระบบทุกครั้ง เพื่อป้องกันการเข้าถึงข้อมูลโดยไม่ได้รับอนุญาต
           โดยเฉพาะอย่างยิ่งเมื่อมีการใช้งานผ่านอุปกรณ์สาธารณะ หรืออุปกรณ์ที่ใช้งานร่วมกับผู้อื่น
           ผู้ใช้สามารถไปที่รูปโปรไฟล์ที่มุมบนสุดด้านขวาของเว็บไซต์ กดเลือกไปที่{" "}
           <span className="font-medium">"ออกจากระบบ"</span> เพื่อออกกลับไปหน้าแรกของเว็บไซต์
         </p>
+
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/logout.png" alt="การออกจากระบบOwner" />
+        </div>
       </section>
 
       <hr className="border-gray-200 mb-12" />
@@ -94,13 +163,17 @@ export default function StaffBasicPage() {
       {/* ── แจ้งปัญหาการใช้งาน ── */}
       <section id="report" className="scroll-mt-24 mb-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">แจ้งปัญหาการใช้งาน</h2>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed mb-8">
           หากผู้ใช้พบปัญหาหรือต้องการที่จะเสนอความคิดเห็นเพิ่มเติม สามารถแจ้งปัญหาการใช้งาน
           โดยกดไปที่รูปโปรไฟล์ที่มุมบนสุดด้านขวาของเว็บไซต์ กดเลือกไปที่{" "}
           <span className="font-medium">"แจ้งปัญหาการใช้งาน"</span>{" "}
           หลังจากนั้น จะเด้งไปหน้ากรอกฟอร์ม doc ผู้ใช้สามารถกรอกตามปัญหาที่พบได้เลย
           เพื่อที่ผู้พัฒนาสามารถแก้ปัญหาได้อย่างถูกจุด
         </p>
+
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/แจ้งปัญหา.png" alt="แจ้งปัญหาการใช้งานOwner" />
+        </div>
       </section>
 
       {/* Navigation footer */}

@@ -1,4 +1,55 @@
-﻿import Link from "next/link";
+﻿"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+
+function ZoomImage({ src, alt }: { src: string; alt: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="block w-full cursor-zoom-in focus:outline-none"
+        aria-label={`ขยายภาพ: ${alt}`}
+      >
+        <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className="object-cover rounded-xl border border-gray-200 shadow-sm"
+          />
+        </div>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div className="relative max-w-5xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={src}
+              alt={alt}
+              width={1200}
+              height={800}
+              className="w-full h-auto rounded-xl shadow-2xl object-contain max-h-[85vh]"
+            />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-gray-800 flex items-center justify-center shadow hover:bg-white transition-colors"
+              aria-label="ปิด"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function ApplicantHowtoPage() {
   return (
@@ -49,9 +100,14 @@ export default function ApplicantHowtoPage() {
         <p className="text-gray-600 leading-relaxed mb-4">
           นอกจากนี้ ระบบยังมีฟังก์ชัน <span className="font-medium">ช่องค้นหา</span> และ <span className="font-medium">กรองข้อมูล</span> เพื่อให้ผู้สมัครสามารถค้นหาตำแหน่งที่ต้องการได้รวดเร็วยิ่งขึ้น เช่น กรองตามสาขาวิชา ประเภทหน่วยงาน หรือช่วงเวลาฝึกงาน
         </p>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed mb-8">
           เมื่อผู้สมัครสนใจตำแหน่งใด สามารถกดปุ่ม <span className="font-medium">"สมัคร"</span> ที่อยู่บนการ์ดตำแหน่งนั้น เพื่อเข้าสู่หน้ากรอกข้อมูลการสมัครในขั้นตอนถัดไป
         </p>
+
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/ปุ่มสมัคร.png" alt="หน้ากรอกข้อมูลการสมัคร" />
+        </div>
+
       </section>
 
       <hr className="border-gray-200 mb-12" />
@@ -76,9 +132,13 @@ export default function ApplicantHowtoPage() {
             </li>
           ))}
         </ul>
-        <p className="text-gray-600 leading-relaxed">
+        <p className="text-gray-600 leading-relaxed mb-8">
           เมื่อกรอกข้อมูลครบถ้วนแล้ว ผู้สมัครสามารถกดปุ่ม <span className="font-medium">"ยืนยัน"</span> เพื่อส่งใบสมัคร หรือกดปุ่ม <span className="font-medium">"ยกเลิก"</span> เพื่อยกเลิกการสมัครและกลับไปยังหน้าตำแหน่งฝึกงาน
         </p>
+
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/กรอกข้อมูล.png" alt="หน้ากรอกข้อมูลการสมัคร" />
+        </div>
       </section>
 
       <hr className="border-gray-200 mb-12" />

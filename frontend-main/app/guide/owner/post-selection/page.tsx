@@ -1,4 +1,55 @@
-﻿import Link from "next/link";
+﻿"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+
+function ZoomImage({ src, alt }: { src: string; alt: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="block w-full cursor-zoom-in focus:outline-none"
+        aria-label={`ขยายภาพ: ${alt}`}
+      >
+        <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            className="object-cover rounded-xl border border-gray-200 shadow-sm"
+          />
+        </div>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div className="relative max-w-5xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={src}
+              alt={alt}
+              width={1200}
+              height={800}
+              className="w-full h-auto rounded-xl shadow-2xl object-contain max-h-[85vh]"
+            />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 text-gray-800 flex items-center justify-center shadow hover:bg-white transition-colors"
+              aria-label="ปิด"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default function StaffPostSelectionPage() {
   return (
@@ -90,7 +141,7 @@ export default function StaffPostSelectionPage() {
           ในกรณีที่นักศึกษามีพฤติกรรมไม่เหมาะสม หรือไม่เป็นไปตามเงื่อนไข Owner สามารถดำเนินการ
           <span className="font-medium"> ยกเลิกการฝึกงาน</span> ผ่านระบบได้
         </p>
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-8">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -99,6 +150,10 @@ export default function StaffPostSelectionPage() {
               การดำเนินการดังกล่าวควรพิจารณาอย่างรอบคอบ และเป็นไปตามระเบียบของหน่วยงาน
             </p>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
+          <ZoomImage src="/images/คู่มือ/postselection.png" alt="การยกเลิกการฝึกงานOwner" />
         </div>
       </section>
 
