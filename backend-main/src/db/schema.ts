@@ -547,6 +547,9 @@ export const leaveRequests = pgTable(
     approvedBy: varchar("approved_by", { length: 50 }),
     approverNote: text("approver_note"),
     approvedAt: timestamp("approved_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => [
     foreignKey({
@@ -1051,6 +1054,8 @@ export const offsiteTasks = pgTable(
     updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    reasonForDeletion: text("reason_for_deletion"),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
   },
   (table) => [
     foreignKey({

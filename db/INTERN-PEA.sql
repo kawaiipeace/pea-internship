@@ -319,6 +319,9 @@ CREATE TABLE -- itt
     approved_by VARCHAR(50),
     approver_note TEXT,
     approved_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES public.users (id),
     FOREIGN KEY (approved_by) REFERENCES public.users (id)
   );
@@ -562,6 +565,8 @@ CREATE TABLE
     note TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    reason_for_deletion TEXT,
     CONSTRAINT offsite_tasks_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.users (id) ON DELETE CASCADE
   );
 
