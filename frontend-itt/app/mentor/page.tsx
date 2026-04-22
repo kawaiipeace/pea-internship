@@ -39,6 +39,7 @@ interface TimeCorrectionRequest {
     reason: string;
     attachmentUrl: string | null;
     status: string;
+    attendanceStatus?: string;
 }
 
 
@@ -602,12 +603,16 @@ const ApprovalRequestPage = () => {
                             : `${getDay(startObj)} - ${getThaiDate(endObj)}`;
 
                         const hasFile = !!item.attachmentUrl;
-                        let fileName = '';
+                        let fileName = 'ดูไฟล์แนบ';
                         let fileIcon = 'image';
                         if (hasFile) {
-                            fileName = item.attachmentUrl.split('/').pop() || 'เอกสารแนบ';
-                            const ext = fileName.split('.').pop()?.toLowerCase();
-                            fileIcon = ['jpg', 'jpeg', 'png', 'gif'].includes(ext || '') ? 'image' : 'pdf';
+                            const extension = item.attachmentUrl.split('.').pop()?.toLowerCase();
+                            if (extension === 'pdf') {
+                                fileIcon = 'pdf';
+                                fileName = `ไฟล์เอกสาร.${extension}`;
+                            } else {
+                                fileName = `รูปภาพหลักฐาน.${extension}`;
+                            }
                         }
 
                         return {
@@ -620,7 +625,7 @@ const ApprovalRequestPage = () => {
                             typeBorder,
                             typeIcon,
                             typeCircleBg,
-                            submittedDate: getThaiDate(startObj), 
+                            submittedDate: getThaiDate(new Date()), 
                             leaveDate: leaveDateDisplay,
                             reason: item.reason || '-',
                             profileImg: item.profileImg || '/assets/images/profile-1.jpeg',

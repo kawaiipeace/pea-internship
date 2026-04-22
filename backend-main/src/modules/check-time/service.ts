@@ -83,9 +83,9 @@ export class CheckTimeService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -956,7 +956,7 @@ export class CheckTimeService {
     mentorUserId: string,
     query: checkSchema.GetMentorCorrectionsQueryType
   ) {
-    const { page = 1, limit = 10, status, viewType } = query;
+    const { page = 1, limit = 10, status, viewType, excludePending } = query;
 
     const mentor = await db.query.users.findFirst({
       where: eq(users.id, mentorUserId),
@@ -1007,6 +1007,10 @@ export class CheckTimeService {
 
     if (status) {
       correctionConditions.push(eq(timeCorrectionRequests.status, status));
+    }
+    
+    if (excludePending === "true") {
+      correctionConditions.push(not(eq(timeCorrectionRequests.status, "PENDING")));
     }
 
     const finalCondition = and(...correctionConditions);
