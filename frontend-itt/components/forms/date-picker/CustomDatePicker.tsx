@@ -4,27 +4,38 @@ import React, { useState, useEffect, useRef } from 'react';
 import ClickAwayListener from 'react-click-away-listener';
 
 interface CustomDatePickerProps {
-    value: string; // YYYY-MM-DD
-    onChange: (date: string) => void;
+    value?: string; // YYYY-MM-DD (Single Mode)
+    onChange?: (date: string) => void; // (Single Mode)
+    multiple?: boolean;
+    selectedDates?: string[]; // (Multiple Mode)
+    onDatesChange?: (dates: string[]) => void; // (Multiple Mode)
     placeholder?: string;
     error?: string;
 }
 
-const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, placeholder, error }) => {
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, multiple, selectedDates = [], onDatesChange, placeholder, error }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [viewDate, setViewDate] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState<Date | null>(value ? new Date(value) : null);
+    const [internalSelectedDate, setInternalSelectedDate] = useState<Date | null>(value ? new Date(value) : null);
+    const [internalMultipleDates, setInternalMultipleDates] = useState<string[]>(selectedDates);
 
     // Sync internal state when external value changes
     useEffect(() => {
-        if (value) {
-            const d = new Date(value);
-            setSelectedDate(d);
-            setViewDate(d);
+        if (!multiple) {
+            if (value) {
+                const d = new Date(value);
+                setInternalSelectedDate(d);
+                setViewDate(d);
+            } else {
+                setInternalSelectedDate(null);
+            }
         } else {
-            setSelectedDate(null);
+            setInternalMultipleDates(selectedDates);
+            if (selectedDates.length > 0 && !isOpen) {
+                setViewDate(new Date(selectedDates[0]));
+            }
         }
-    }, [value]);
+    }, [value, selectedDates, multiple, isOpen]);
 
     const months = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -51,23 +62,46 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, pl
 
     const handleDateSelect = (day: number) => {
         const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-        setSelectedDate(newDate);
+        const year = newDate.getFullYear();
+        const month = String(newDate.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(newDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${dayStr}`;
+
+        if (multiple) {
+            const newDates = internalMultipleDates.includes(dateStr)
+                ? internalMultipleDates.filter(d => d !== dateStr)
+                : [...internalMultipleDates, dateStr];
+            setInternalMultipleDates(newDates);
+        } else {
+            setInternalSelectedDate(newDate);
+        }
     };
 
     const handleOk = () => {
-        if (selectedDate) {
+        if (multiple) {
+            if (onDatesChange) {
+                // Sort dates before returning
+                const sortedDates = [...internalMultipleDates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+                onDatesChange(sortedDates);
+            }
+        } else if (internalSelectedDate) {
             // Format to YYYY-MM-DD for consistency
-            const year = selectedDate.getFullYear();
-            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-            const day = String(selectedDate.getDate()).padStart(2, '0');
-            onChange(`${year}-${month}-${day}`);
+            const year = internalSelectedDate.getFullYear();
+            const month = String(internalSelectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(internalSelectedDate.getDate()).padStart(2, '0');
+            if (onChange) onChange(`${year}-${month}-${day}`);
         }
         setIsOpen(false);
     };
 
     const handleClear = () => {
-        setSelectedDate(null);
-        onChange('');
+        if (multiple) {
+            setInternalMultipleDates([]);
+            if (onDatesChange) onDatesChange([]);
+        } else {
+            setInternalSelectedDate(null);
+            if (onChange) onChange('');
+        }
         setIsOpen(false);
     };
 
@@ -78,6 +112,17 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, pl
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const year = d.getFullYear() + 543; // Buddhist year
         return `${day}/${month}/${year}`;
+    };
+
+    const formatMultipleDatesDisplay = (dates: string[]) => {
+        if (!dates || dates.length === 0) return '';
+        // Sort dates to ensure they appear in order
+        const sortedDates = [...dates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+        const formatted = sortedDates.map(d => formatDateDisplay(d));
+        
+        // If many dates are selected, they might overflow. 
+        // We can join them with a dash or comma as requested.
+        return formatted.join(' - ');
     };
 
     const renderCalendar = () => {
@@ -127,8 +172,11 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, pl
                 onClick={() => setIsOpen(true)}
                 className={`w-full h-[45px] px-4 bg-white dark:bg-gray-900 border ${error ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[8px] text-[14px] flex items-center cursor-pointer focus:outline-none transition-colors`}
             >
-                <span className={value ? 'text-[#101828] dark:text-white' : 'text-[#9ca3af]'}>
-                    {value ? formatDateDisplay(value) : placeholder || 'วว/ดด/ปปปป'}
+                <span className={(multiple ? internalMultipleDates.length > 0 : value) ? 'text-[#101828] dark:text-white' : 'text-[#9ca3af]'}>
+                    {multiple 
+                        ? (internalMultipleDates.length > 0 ? formatMultipleDatesDisplay(internalMultipleDates) : placeholder || 'เลือกวันที่')
+                        : (value ? formatDateDisplay(value) : placeholder || 'วว/ดด/ปปปป')
+                    }
                 </span>
                 
             </div>
@@ -178,7 +226,16 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, pl
                                                 calendarDays.push(<div key={`empty-${i}`} className="h-[30px] w-[36px]"></div>);
                                             }
                                             for (let day = 1; day <= daysInMonth; day++) {
-                                                const isSelected = selectedDate && selectedDate.getDate() === day && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
+                                                const year = viewDate.getFullYear();
+                                                const month = viewDate.getMonth();
+                                                const dayStr = String(day).padStart(2, '0');
+                                                const monthStr = String(month + 1).padStart(2, '0');
+                                                const dateStr = `${year}-${monthStr}-${dayStr}`;
+
+                                                const isSelected = multiple 
+                                                    ? internalMultipleDates.includes(dateStr)
+                                                    : (internalSelectedDate && internalSelectedDate.getDate() === day && internalSelectedDate.getMonth() === month && internalSelectedDate.getFullYear() === year);
+                                                
                                                 const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
                                                 calendarDays.push(
                                                     <div 

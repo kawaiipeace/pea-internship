@@ -194,12 +194,6 @@ const RemoteWorkPage = () => {
                     });
                     const list = staffRes.data || [];
                     setStaffList(list);
-
-                    // Set initial filter to current user
-                    setAssignerFilter({ 
-                        label: `${user.fname} ${user.lname}`, 
-                        value: user.id 
-                    });
                 }
             } catch (error) {
                 console.error('Error fetching initial filter data:', error);
