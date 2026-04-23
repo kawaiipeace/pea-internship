@@ -12,7 +12,8 @@ const swaggerConfig = swagger({
     tags: [
       {
         name: "Authentication(การยืนยันตัวตน)",
-        description: "ระบบยืนยันตัวตน Login, Register และ Session มาตรฐานด้วย BetterAuth, Keycloak",
+        description:
+          "ระบบยืนยันตัวตน Login, Register และ Session มาตรฐานด้วย BetterAuth, Keycloak",
       },
       {
         name: "Users(ข้อมูลผู้ใช้)",

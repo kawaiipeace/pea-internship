@@ -74,7 +74,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   completeAcknowledge: many(completeAcknowledge),
   createdInternshipPositions: many(internshipPositions, {
     relationName: "internshipPositionPositionOwner",
-  })
+  }),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({

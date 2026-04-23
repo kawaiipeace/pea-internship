@@ -142,15 +142,11 @@ export class PositionService {
     }
 
     if (targetUser.departmentId !== positionDepartmentId) {
-      throw new ForbiddenError(
-        "position owner ต้องอยู่กองเดียวกับใบประกาศ"
-      );
+      throw new ForbiddenError("position owner ต้องอยู่กองเดียวกับใบประกาศ");
     }
 
     if (![1, 2].includes(targetUser.roleId)) {
-      throw new ForbiddenError(
-        "position owner ต้องมี role เป็น ADMIN หรือ OWNER"
-      );
+      throw new ForbiddenError("position owner ต้องมี role เป็น ADMIN หรือ OWNER");
     }
   }
 
@@ -312,7 +308,7 @@ export class PositionService {
       return {
         ...position,
         positionOwner: position.positionOwner
-          ? ownerMap.get(position.positionOwner) ?? null
+          ? (ownerMap.get(position.positionOwner) ?? null)
           : null,
         department: dept
           ? {
@@ -349,73 +345,73 @@ export class PositionService {
     };
   }
 
-    /**
-     * POST /position
-     * ผูก departmentId + officeId จาก user
-     * ผูก mentor
-     * บันทึก positionOwner = user ที่ login อยู่
-     */
-    async create(userId: string, data: model.CreatePositionBodyType) {
-      await this.assertUserExists(userId);
-      const { departmentId, officeId } =
-        await this.getUserDepartmentAndOffice(userId);
+  /**
+   * POST /position
+   * ผูก departmentId + officeId จาก user
+   * ผูก mentor
+   * บันทึก positionOwner = user ที่ login อยู่
+   */
+  async create(userId: string, data: model.CreatePositionBodyType) {
+    await this.assertUserExists(userId);
+    const { departmentId, officeId } =
+      await this.getUserDepartmentAndOffice(userId);
 
-      return await db.transaction(async (tx) => {
-        const autoStatus = computeAutoStatus(
-          data.recruitStart ?? null,
-          data.recruitEnd ?? null
+    return await db.transaction(async (tx) => {
+      const autoStatus = computeAutoStatus(
+        data.recruitStart ?? null,
+        data.recruitEnd ?? null
+      );
+
+      if (data.recruitmentStatus === "CLOSE") {
+        throw new ForbiddenError("ไม่สามารถสร้างประกาศที่มีสถานะ CLOSE ได้");
+      }
+
+      const [position] = await tx
+        .insert(internshipPositions)
+        .values({
+          departmentId,
+          officeId,
+          positionOwner: userId,
+
+          name: data.name,
+          location: data.location ?? null,
+          positionCount: data.positionCount ?? null,
+          major: data.major ?? null,
+
+          recruitStart: data.recruitStart ?? null,
+          recruitEnd: data.recruitEnd ?? null,
+          applyStart: data.applyStart ?? null,
+          applyEnd: data.applyEnd ?? null,
+
+          resumeRq: data.resumeRq ?? false,
+          portfolioRq: data.portfolioRq ?? false,
+
+          jobDetails: data.jobDetails ?? null,
+          requirement: data.requirement ?? null,
+          benefits: data.benefits ?? null,
+
+          recruitmentStatus: autoStatus,
+        })
+        .returning();
+
+      if (data.mentorStaffIds && data.mentorStaffIds.length > 0) {
+        await tx.insert(internshipPositionMentors).values(
+          data.mentorStaffIds.map((mentorStaffId) => ({
+            positionId: position.id,
+            mentorStaffId,
+          }))
         );
+      }
 
-        if (data.recruitmentStatus === "CLOSE") {
-          throw new ForbiddenError("ไม่สามารถสร้างประกาศที่มีสถานะ CLOSE ได้");
-        }
+      await staffLogsService.log(
+        tx,
+        userId,
+        `CREATE_POSITION positionId=${position.id} positionOwner=${userId}`
+      );
 
-        const [position] = await tx
-          .insert(internshipPositions)
-          .values({
-            departmentId,
-            officeId,
-            positionOwner: userId,
-
-            name: data.name,
-            location: data.location ?? null,
-            positionCount: data.positionCount ?? null,
-            major: data.major ?? null,
-
-            recruitStart: data.recruitStart ?? null,
-            recruitEnd: data.recruitEnd ?? null,
-            applyStart: data.applyStart ?? null,
-            applyEnd: data.applyEnd ?? null,
-
-            resumeRq: data.resumeRq ?? false,
-            portfolioRq: data.portfolioRq ?? false,
-
-            jobDetails: data.jobDetails ?? null,
-            requirement: data.requirement ?? null,
-            benefits: data.benefits ?? null,
-
-            recruitmentStatus: autoStatus,
-          })
-          .returning();
-
-        if (data.mentorStaffIds && data.mentorStaffIds.length > 0) {
-          await tx.insert(internshipPositionMentors).values(
-            data.mentorStaffIds.map((mentorStaffId) => ({
-              positionId: position.id,
-              mentorStaffId,
-            }))
-          );
-        }
-
-        await staffLogsService.log(
-          tx,
-          userId,
-          `CREATE_POSITION positionId=${position.id} positionOwner=${userId}`
-        );
-
-        return position;
-      });
-    }
+      return position;
+    });
+  }
 
   /**
    * PUT /position/:id
