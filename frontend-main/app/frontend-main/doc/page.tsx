@@ -76,7 +76,7 @@ const techStack: TechStackDoc[] = [
     technology: "TypeScript",
     version: "5.x",
     usedFor: "type safety ทั้ง app, services, และ shared model",
-    whereToMaintain: "tsconfig.json, services/api.ts, types/*.ts",
+    whereToMaintain: "tsconfig.json, services/api/*.ts, types/*.ts",
     maintenanceTips:
       "เพิ่ม/แก้ endpoint ควรแก้ type ไปพร้อมกันเพื่อลด runtime bug",
   },
@@ -92,9 +92,9 @@ const techStack: TechStackDoc[] = [
     technology: "Axios",
     version: "1.x",
     usedFor: "HTTP client สำหรับเรียก backend",
-    whereToMaintain: "services/api.ts",
+    whereToMaintain: "services/api/client.ts (axios instance + interceptors)",
     maintenanceTips:
-      "ควรเรียกผ่าน base /api เพื่อรักษา same-origin cookie flow",
+      "ควรเรียกผ่าน base /api เพื่อรักษา same-origin cookie flow; เพิ่ม endpoint ใหม่ให้ไปไว้ในไฟล์ domain ที่ services/api/*.ts (ไม่ใช่ client.ts)",
   },
   {
     technology: "ESLint",
@@ -709,15 +709,27 @@ const componentFiles: FileDoc[] = [
 const serviceAndTypes: FileDoc[] = [
   {
     file: "services/api.ts",
-    purpose: "API client กลาง + types จำนวนมาก + helper mapping",
-    editWhen: "เพิ่ม endpoint, เปลี่ยน payload/response, แก้ auth storage",
-    notes: "ไฟล์ใหญ่มากและกระทบทั้งแอป ควรแก้แบบระมัดระวัง",
+    purpose: "barrel re-export ของทุก domain ใน services/api/* (backward-compat)",
+    editWhen: "เพิ่ม domain ไฟล์ใหม่ใน services/api/ ต้องมาเพิ่ม export * ที่นี่",
+    notes: "ห้ามใส่ logic หรือ type ลงไฟล์นี้ — เป็น re-export ล้วน ๆ",
+  },
+  {
+    file: "services/api/client.ts",
+    purpose: "axios instance, API_BASE_URL, interceptors (auth token + 401 redirect), authStorage, ApiUser type",
+    editWhen: "แก้ base URL, เพิ่ม/แก้ interceptor, เปลี่ยน auth storage/cookie",
+    notes: "โดนเรียกจากทุก domain ไฟล์ — เปลี่ยน behavior ที่นี่กระทบทั้งแอป",
+  },
+  {
+    file: "services/api/{auth,user,position,application,favorite,notification,...}.ts",
+    purpose: "แต่ละไฟล์ = 1 domain: endpoint functions + types + helper ของ domain นั้น",
+    editWhen: "เพิ่ม endpoint, เปลี่ยน payload/response, เพิ่ม transform helper",
+    notes: "import { api } from './client' แล้วเรียก api.get/post/put/delete; ไฟล์ใหม่ต้องไป export ที่ services/api.ts ด้วย",
   },
   {
     file: "types/job.ts",
     purpose: "type ของงาน/ตัวกรอง/enum ที่ใช้หน้าฝั่งงาน",
     editWhen: "model งานเปลี่ยนหรือเพิ่มฟิลด์",
-    notes: "ควร sync กับ type ใน services/api.ts",
+    notes: "ควร sync กับ type ใน services/api/position.ts",
   },
   {
     file: "types/announcement.ts",
@@ -735,52 +747,64 @@ const serviceAndTypes: FileDoc[] = [
 
 const apiDomains: FileDoc[] = [
   {
-    file: "authApi / authStorage",
-    purpose: "login, logout, get-session, จัดการ cookie และ state ฝั่ง client",
-    editWhen: "แก้ auth flow หรือปัญหา session",
-    notes: "เชื่อมกับ proxy.ts โดยตรง",
+    file: "services/api/client.ts — api (axios) / authStorage / API_BASE_URL / ApiUser",
+    purpose: "axios instance + interceptors + cookie/auth storage + ApiUser type กลาง",
+    editWhen: "แก้ base URL, interceptor, 401 flow, auth cookies",
+    notes: "โดน import จากทุก domain; แก้ที่นี่กระทบทั้งแอป",
   },
   {
-    file: "userApi / studentProfileApi",
-    purpose: "profile, staff list, student info",
+    file: "services/api/auth.ts — authApi",
+    purpose: "login, logout, get-session, Keycloak SSO",
+    editWhen: "แก้ auth flow หรือปัญหา session",
+    notes: "เชื่อมกับ proxy.ts โดยตรง และ cookie ของ Better Auth",
+  },
+  {
+    file: "services/api/user.ts — userApi / studentProfileApi",
+    purpose: "profile, staff list, student info, update profile",
     editWhen: "แก้ข้อมูลผู้ใช้, mentor, profile form",
     notes: "มักกระทบ intern-profile และ owner pages",
   },
   {
-    file: "positionApi",
-    purpose: "ตำแหน่งฝึกงาน, create/update/list",
-    editWhen: "แก้ flow ประกาศหรือรายการงาน",
-    notes: "ใช้หนักทั้ง public, intern, owner",
+    file: "services/api/position.ts — positionApi / mentorCache / positionToJob / positionToAnnouncement",
+    purpose: "ตำแหน่งฝึกงาน: list/create/update + transform ไป Job/Announcement",
+    editWhen: "แก้ flow ประกาศ, รายการงาน, หรือ mapping ไป UI model",
+    notes: "ใช้หนักทั้ง public, intern, owner; transforms อยู่ไฟล์เดียวกัน",
   },
   {
-    file: "applicationApi",
-    purpose: "สมัครงาน, history, status, action ตามขั้นตอน",
-    editWhen: "แก้ workflow สมัครงานหรือสถานะ",
-    notes: "domain หลักที่มีผลกับหลาย role",
+    file: "services/api/application.ts — applicationApi / APP_STATUS_TO_STEP / canApplyForNewJob",
+    purpose: "สมัครงาน, history, status, action, upload เอกสาร",
+    editWhen: "แก้ workflow สมัครงานหรือสถานะ หรือ enum สถานะ",
+    notes: "domain หลักที่มีผลกับหลาย role; sync AppStatusEnum กับ backend เสมอ",
   },
   {
-    file: "favoriteApi",
+    file: "services/api/favorite.ts — favoriteApi",
     purpose: "เพิ่ม/ลบ/ดึงรายการโปรด",
     editWhen: "ปรับ bookmark behavior",
     notes: "สัมพันธ์กับหน้า /favorites และหน้า list งาน",
   },
   {
-    file: "notificationApi",
-    purpose: "ดึงและจัดการแจ้งเตือน",
+    file: "services/api/notification.ts — notificationApi",
+    purpose: "ดึงและจัดการแจ้งเตือน (read/unread/delete)",
     editWhen: "notification flow เปลี่ยน",
     notes: "เกี่ยวข้อง navbar หลาย role",
   },
   {
-    file: "applicationDocumentsApi / applicationStatusActionsApi",
-    purpose: "จัดการเอกสารและ action สถานะการสมัคร",
-    editWhen: "เปลี่ยนกฎเอกสารหรือสถานะขั้นตอน",
-    notes: "ต้อง sync enum กับ backend เสมอ",
+    file: "services/api/application-documents.ts + application-status-actions.ts",
+    purpose: "เอกสารใบสมัคร (list/download/preview) และ log การเปลี่ยนสถานะ",
+    editWhen: "เปลี่ยนกฎเอกสารหรือ audit log",
+    notes: "ValidationStatus และ AppStatusEnum ต้อง sync กับ backend",
   },
   {
-    file: "departmentApi / roleApi / staffLogsApi / institutionTicketApi",
-    purpose: "domain สนับสนุนฝั่ง admin-owner",
+    file: "services/api/institution.ts — institutionApi / institutionTicketApi",
+    purpose: "สถานศึกษา, คณะ, ticket lookup",
+    editWhen: "เพิ่ม/แก้ข้อมูลสถานศึกษาหรือ faculty ในฟอร์มสมัคร",
+    notes: "รองรับ type UNIVERSITY/VOCATIONAL/SCHOOL/OTHERS",
+  },
+  {
+    file: "services/api/{department,doc-type,role,staff-logs,owner-students}.ts",
+    purpose: "domain สนับสนุนฝั่ง admin/owner (กองงาน, ประเภทเอกสาร, role, log, จบฝึกงาน)",
     editWhen: "แก้หน้าบริหารข้อมูลองค์กรและบันทึกการทำงาน",
-    notes: "อยู่ใน backend domain ที่เฉพาะเจาะจง",
+    notes: "ไฟล์เล็ก endpoint เดียว/สองตัว — ดูแลง่าย",
   },
 ];
 
@@ -925,7 +949,8 @@ const scenarios: ScenarioDoc[] = [
     symptoms: "login สำเร็จแต่ redirect ไม่ถูก, หรือวนกลับหน้า login",
     files: [
       "proxy.ts",
-      "services/api.ts",
+      "services/api/client.ts (interceptor 401 redirect + authStorage)",
+      "services/api/auth.ts (login/session/keycloak)",
       "components/IdleTimeoutProvider.tsx",
       "app/login/intern/page.tsx",
       "app/login/owner/page.tsx",
@@ -942,14 +967,16 @@ const scenarios: ScenarioDoc[] = [
     topic: "ข้อมูลจาก API ไม่ขึ้น หรือขึ้นไม่ครบ",
     symptoms: "หน้าโหลดได้แต่ list ว่าง/field หาย/ขึ้น error เงียบ",
     files: [
-      "services/api.ts",
+      "services/api/{domain}.ts (ตาม endpoint ที่ไม่ขึ้น)",
+      "services/api/client.ts (ถ้าทุก endpoint ไม่ขึ้นเลย — ปัญหาอาจอยู่ที่ instance/interceptor)",
       "next.config.ts",
       "app/page.tsx",
       "app/intern-home/page.tsx",
       "app/owner/dashboard/utils/applicationMapper.ts",
     ],
     steps: [
-      "ตรวจ endpoint ใน services/api.ts และ payload/response type",
+      "ระบุ domain ก่อน (auth/position/application/...) แล้วเปิด services/api/{domain}.ts",
+      "ตรวจ endpoint + payload/response type ในไฟล์ domain นั้น",
       "ตรวจ rewrite /api/:path* ใน next.config.ts ว่าชี้ backend ถูก",
       "เช็ก mapping จาก backend model ไป frontend model",
       "เติม fallback state ให้เห็นชัด (empty/error/loading)",
@@ -959,13 +986,14 @@ const scenarios: ScenarioDoc[] = [
     topic: "สถานะการสมัครเพี้ยน",
     symptoms: "step ไม่ตรง, badge ผิด, ย้ายแท็บผิด",
     files: [
-      "services/api.ts",
+      "services/api/application.ts (AppStatusEnum + APP_STATUS_TO_STEP + canApplyForNewJob)",
+      "services/api/application-status-actions.ts (log การเปลี่ยนสถานะ)",
       "app/owner/dashboard/utils/applicationMapper.ts",
       "app/application-status/page.tsx",
       "app/application-history/page.tsx",
     ],
     steps: [
-      "ไล่ enum/status map ที่ต้นทางจาก services/api.ts",
+      "ไล่ enum/status map ที่ต้นทาง: services/api/application.ts (AppStatusEnum, APP_STATUS_TO_STEP)",
       "ตรวจ mapping เฉพาะ owner dashboard ใน applicationMapper.ts",
       "ทดสอบเคสสถานะหลัก (pending, accepted, rejected, cancelled, complete)",
       "ยืนยันข้อความ label ภาษาไทยในแต่ละหน้า",
@@ -1681,8 +1709,9 @@ export default function FrontendMainMaintenanceDocPage() {
                 <p className="font-semibold">ภาพรวมลำดับการทำงานของระบบ</p>
                 <p className="mt-1">
                   Browser Request -&gt; proxy.ts (ตรวจสิทธิ์/redirect) -&gt; app
-                  route page -&gt; services/api.ts -&gt; /api rewrite ใน
-                  next.config.ts -&gt; backend-main
+                  route page -&gt; services/api/&#123;domain&#125;.ts -&gt;
+                  services/api/client.ts (axios + interceptors) -&gt; /api
+                  rewrite ใน next.config.ts -&gt; backend-main
                 </p>
               </div>
             </section>
@@ -1843,7 +1872,7 @@ export default function FrontendMainMaintenanceDocPage() {
                   isLight ? "text-slate-900" : "text-slate-100"
                 }`}
               >
-                10.3 API Domains ใน services/api.ts
+                10.3 API Domains ใน services/api/*.ts
               </h3>
               <DocTable
                 theme={theme}
