@@ -939,7 +939,7 @@ export interface CreatePositionData {
 }
 
 // ข้อมูลสำหรับอัพเดท Position
-export interface UpdatePositionData extends Partial<CreatePositionData> { }
+export type UpdatePositionData = Partial<CreatePositionData>;
 
 // Response เมื่อดึงรายการ Position
 export interface PositionsResponse {

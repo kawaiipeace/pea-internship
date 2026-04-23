@@ -169,6 +169,168 @@ const STATUS_MAP: Record<StatusChartKey, { label: string; color: string }> = {
   INTERNSHIP_CANCELLED: { label: "ยกเลิกฝึกงาน", color: "#FF2D2D" },
 };
 
+function describeArc(
+  cx: number,
+  cy: number,
+  r: number,
+  startAngle: number,
+  endAngle: number,
+): string {
+  const start = {
+    x: cx + r * Math.cos(((startAngle - 90) * Math.PI) / 180),
+    y: cy + r * Math.sin(((startAngle - 90) * Math.PI) / 180),
+  };
+  const end = {
+    x: cx + r * Math.cos(((endAngle - 90) * Math.PI) / 180),
+    y: cy + r * Math.sin(((endAngle - 90) * Math.PI) / 180),
+  };
+  const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
+}
+
+function ChartComponent({
+  data,
+  hovered,
+  onHover,
+  size = 180,
+  strokeWidth = 32,
+  mode = "donut",
+  mounted,
+}: {
+  data: { label: string; value: number; color: string }[];
+  hovered: number | null;
+  onHover: (i: number | null) => void;
+  size?: number;
+  strokeWidth?: number;
+  mode?: "donut" | "pie";
+  mounted: boolean;
+}) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (!mounted || total === 0)
+    return (
+      <div
+        className="rounded-full bg-gray-200"
+        style={{ width: size, height: size }}
+      />
+    );
+
+  const center = size / 2;
+
+  if (mode === "pie") {
+    const pieRadius = size / 2 - 2;
+    const slices = data.reduce<
+      { label: string; value: number; color: string; startAngle: number; endAngle: number; index: number }[]
+    >((acc, d, i) => {
+      const startAngle = acc.length > 0 ? acc[acc.length - 1].endAngle : 0;
+      const endAngle = startAngle + (d.value / total) * 360;
+      return [...acc, { ...d, startAngle, endAngle, index: i }];
+    }, []);
+
+    return (
+      <div
+        className="relative shrink-0"
+        style={{ width: size, height: size }}
+      >
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {slices.map((slice) => (
+            <path
+              key={slice.index}
+              d={describeArc(
+                center,
+                center,
+                pieRadius,
+                slice.startAngle,
+                slice.endAngle - 0.5,
+              )}
+              fill={slice.color}
+              opacity={hovered === null || hovered === slice.index ? 1 : 0.4}
+              style={{ transition: "opacity 0.2s", cursor: "pointer" }}
+              onMouseEnter={() => onHover(slice.index)}
+              onMouseLeave={() => onHover(null)}
+            />
+          ))}
+        </svg>
+        {hovered !== null && data[hovered] && (
+          <div
+            className="absolute z-10 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none whitespace-nowrap"
+            style={{
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <div className="font-semibold">{data[hovered].label}</div>
+            <div>
+              {data[hovered].value} คน (
+              {Math.round((data[hovered].value / total) * 100)}%)
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const segments = data.reduce<
+    { label: string; value: number; color: string; dashArray: number; dashOffset: number; index: number }[]
+  >((acc, d, i) => {
+    const cumulativePercent = acc.reduce((sum, s) => sum + s.dashArray / circumference, 0);
+    const percent = d.value / total;
+    const dashArray = percent * circumference;
+    const dashOffset = -cumulativePercent * circumference;
+    return [...acc, { ...d, dashArray, dashOffset, index: i }];
+  }, []);
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {segments.map((seg) => (
+          <circle
+            key={seg.index}
+            cx={center}
+            cy={center}
+            r={radius}
+            fill="none"
+            stroke={seg.color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${seg.dashArray} ${circumference - seg.dashArray}`}
+            strokeDashoffset={seg.dashOffset}
+            transform={`rotate(-90 ${center} ${center})`}
+            opacity={hovered === null || hovered === seg.index ? 1 : 0.4}
+            style={{ transition: "opacity 0.2s", cursor: "pointer" }}
+            onMouseEnter={() => onHover(seg.index)}
+            onMouseLeave={() => onHover(null)}
+          />
+        ))}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius - strokeWidth / 2 + 2}
+          fill="white"
+        />
+      </svg>
+      {hovered !== null && data[hovered] && (
+        <div
+          className="absolute z-10 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none whitespace-nowrap"
+          style={{
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <div className="font-semibold">{data[hovered].label}</div>
+          <div>
+            {data[hovered].value} คน (
+            {Math.round((data[hovered].value / total) * 100)}%)
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OwnerDashboard() {
   const currentYear = new Date().getFullYear() + 543; // Buddhist Era
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -813,170 +975,6 @@ export default function OwnerDashboard() {
     posPage * posPerPage,
   );
 
-  // Helper: create SVG arc path for pie slices
-  const describeArc = (
-    cx: number,
-    cy: number,
-    r: number,
-    startAngle: number,
-    endAngle: number,
-  ): string => {
-    const start = {
-      x: cx + r * Math.cos(((startAngle - 90) * Math.PI) / 180),
-      y: cy + r * Math.sin(((startAngle - 90) * Math.PI) / 180),
-    };
-    const end = {
-      x: cx + r * Math.cos(((endAngle - 90) * Math.PI) / 180),
-      y: cy + r * Math.sin(((endAngle - 90) * Math.PI) / 180),
-    };
-    const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
-    return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
-  };
-
-  // SVG Chart component — supports both donut (stroke-based) and full pie (path-based)
-  const ChartComponent = ({
-    data,
-    hovered,
-    onHover,
-    size = 180,
-    strokeWidth = 32,
-    mode = "donut",
-  }: {
-    data: { label: string; value: number; color: string }[];
-    hovered: number | null;
-    onHover: (i: number | null) => void;
-    size?: number;
-    strokeWidth?: number;
-    mode?: "donut" | "pie";
-  }) => {
-    const total = data.reduce((s, d) => s + d.value, 0);
-    if (!mounted || total === 0)
-      return (
-        <div
-          className="rounded-full bg-gray-200"
-          style={{ width: size, height: size }}
-        />
-      );
-
-    const center = size / 2;
-
-    if (mode === "pie") {
-      // Full filled pie chart using path arcs
-      const pieRadius = size / 2 - 2;
-      let currentAngle = 0;
-      const slices = data.map((d, i) => {
-        const sliceAngle = (d.value / total) * 360;
-        const startAngle = currentAngle;
-        const endAngle = currentAngle + sliceAngle;
-        currentAngle = endAngle;
-        return { ...d, startAngle, endAngle, index: i };
-      });
-
-      return (
-        <div
-          className="relative shrink-0"
-          style={{ width: size, height: size }}
-        >
-          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-            {slices.map((slice) => (
-              <path
-                key={slice.index}
-                d={describeArc(
-                  center,
-                  center,
-                  pieRadius,
-                  slice.startAngle,
-                  slice.endAngle - 0.5,
-                )}
-                fill={slice.color}
-                opacity={hovered === null || hovered === slice.index ? 1 : 0.4}
-                style={{ transition: "opacity 0.2s", cursor: "pointer" }}
-                onMouseEnter={() => onHover(slice.index)}
-                onMouseLeave={() => onHover(null)}
-              />
-            ))}
-          </svg>
-          {hovered !== null && data[hovered] && (
-            <div
-              className="absolute z-10 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none whitespace-nowrap"
-              style={{
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-              }}
-            >
-              <div className="font-semibold">{data[hovered].label}</div>
-              <div>
-                {data[hovered].value} คน (
-                {Math.round((data[hovered].value / total) * 100)}%)
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Donut mode (stroke-based circles)
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
-
-    let cumulativePercent = 0;
-    const segments = data.map((d, i) => {
-      const percent = d.value / total;
-      const dashArray = percent * circumference;
-      const dashOffset = -cumulativePercent * circumference;
-      cumulativePercent += percent;
-      return { ...d, dashArray, dashOffset, index: i };
-    });
-
-    return (
-      <div className="relative shrink-0" style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {segments.map((seg) => (
-            <circle
-              key={seg.index}
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              stroke={seg.color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${seg.dashArray} ${circumference - seg.dashArray}`}
-              strokeDashoffset={seg.dashOffset}
-              transform={`rotate(-90 ${center} ${center})`}
-              opacity={hovered === null || hovered === seg.index ? 1 : 0.4}
-              style={{ transition: "opacity 0.2s", cursor: "pointer" }}
-              onMouseEnter={() => onHover(seg.index)}
-              onMouseLeave={() => onHover(null)}
-            />
-          ))}
-          <circle
-            cx={center}
-            cy={center}
-            r={radius - strokeWidth / 2 + 2}
-            fill="white"
-          />
-        </svg>
-        {hovered !== null && data[hovered] && (
-          <div
-            className="absolute z-10 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg pointer-events-none whitespace-nowrap"
-            style={{
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <div className="font-semibold">{data[hovered].label}</div>
-            <div>
-              {data[hovered].value} คน (
-              {Math.round((data[hovered].value / total) * 100)}%)
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const statusTotal = statusData.reduce((s, d) => s + d.value, 0);
   const educationTotal = educationData.reduce((s, d) => s + d.value, 0);
   const getPercent = (value: number, total: number) => {
@@ -1139,6 +1137,7 @@ export default function OwnerDashboard() {
                 size={180}
                 strokeWidth={32}
                 mode="donut"
+                mounted={mounted}
               />
               <div className="space-y-2 flex-1">
                 {statusData.map((d, i) => (
@@ -1177,6 +1176,7 @@ export default function OwnerDashboard() {
                 onHover={setHoveredEdu}
                 size={180}
                 mode="pie"
+                mounted={mounted}
               />
               <div className="space-y-2 flex-1">
                 {educationData.map((d, i) => (
@@ -1833,7 +1833,7 @@ export default function OwnerDashboard() {
                   1,
                   posPage - Math.floor(maxVisiblePages / 2),
                 );
-                let endPage = Math.min(
+                const endPage = Math.min(
                   totalPosPages,
                   startPage + maxVisiblePages - 1,
                 );
