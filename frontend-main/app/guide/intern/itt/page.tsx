@@ -99,8 +99,8 @@ export default function ApplicantIttPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/itt.png" alt="ระหว่างรอก่อนเริ่มฝึกงาน" />
-          <ZoomImage src="/images/คู่มือ/itt2.png" alt="ระหว่างรอก่อนเริ่มฝึกงาน" />
+          <ZoomImage src="/images/guideline/itt.png" alt="ระหว่างรอก่อนเริ่มฝึกงาน" />
+          <ZoomImage src="/images/guideline/itt2.png" alt="ระหว่างรอก่อนเริ่มฝึกงาน" />
         </div>
       </section>
 
