@@ -141,7 +141,7 @@ export class AuthService {
     const api = auth.api as Auth["api"];
     const callbackURL =
       Bun.env.KEYCLOAK_CALLBACK_URL ??
-      "http://localhost:2702/login/owner/callback";
+      "http://localhost:2700/login/owner/callback";
 
     return await api.signInSocial({
       headers: headers,
