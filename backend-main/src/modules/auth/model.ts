@@ -5,7 +5,7 @@ export const RegisterInternBody = t.Object({
   lname: t.String({ minLength: 1, error: "กรุณาระบุนามสกุล" }),
   phoneNumber: t.String({ minLength: 9, error: "เบอร์โทรศัพท์ไม่ถูกต้อง" }),
   email: t.String({ format: "email", error: "รูปแบบอีเมลไม่ถูกต้อง" }),
-  password: t.String({ minLength: 6, error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" }),
+  password: t.String({ minLength: 8, error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" }),
   gender: t.Union(
     [t.Literal("MALE"), t.Literal("FEMALE"), t.Literal("OTHER")],
     { error: "เพศต้องเป็น MALE, FEMALE หรือ OTHER เท่านั้น" }
@@ -18,7 +18,7 @@ export const RegisterInternBody = t.Object({
 
 export const LoginInternBody = t.Object({
   phoneNumber: t.String({ minLength: 9, error: "เบอร์โทรศัพท์ไม่ถูกต้อง" }),
-  password: t.String({ minLength: 6, error: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" }),
+  password: t.String({ minLength: 8, error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" }),
 });
 
 export type RegisterInternBodyType = typeof RegisterInternBody.static;

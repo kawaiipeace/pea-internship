@@ -97,6 +97,19 @@ function ApplicationStatusContent() {
   const [resumeName, setResumeName] = useState<string>("");
   const [portfolioName, setPortfolioName] = useState<string>("");
   const [hasApplication, setHasApplication] = useState(false);
+  const [isRejected, setIsRejected] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState<string>("");
+  const [isCourtesySubmitted, setIsCourtesySubmitted] = useState(false);
+  const [courtesyDocName, setCourtesyDocName] = useState<string>("");
+  const [documentStatus, _setDocumentStatus] = useState<
+    "รอการดำเนินการ" | "รอการตรวจสอบ" | "เอกสารผ่าน" | "เอกสารไม่ผ่าน"
+  >(getInitialDocumentStatus());
+  const setDocumentStatus = (
+    status: "รอการดำเนินการ" | "รอการตรวจสอบ" | "เอกสารผ่าน" | "เอกสารไม่ผ่าน",
+  ) => {
+    _setDocumentStatus(status);
+  };
+  const [documentError, setDocumentError] = useState<string>("");
 
   // Load application data from API on mount
   useEffect(() => {
@@ -327,23 +340,8 @@ function ApplicationStatusContent() {
   const [showConfirmSuccessModal, setShowConfirmSuccessModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCancelSuccessModal, setShowCancelSuccessModal] = useState(false);
-  const [isRejected, setIsRejected] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState<string>("");
   const [signatureOption, setSignatureOption] = useState<string>("");
   const [courtesyDocument, setCourtesyDocument] = useState<File | null>(null);
-  const [isCourtesySubmitted, setIsCourtesySubmitted] = useState(false);
-  const [courtesyDocName, setCourtesyDocName] = useState<string>("");
-  const [documentStatus, _setDocumentStatus] = useState<
-    "รอการดำเนินการ" | "รอการตรวจสอบ" | "เอกสารผ่าน" | "เอกสารไม่ผ่าน"
-  >(getInitialDocumentStatus());
-
-  // Wrapper to update document status in component state.
-  const setDocumentStatus = (
-    status: "รอการดำเนินการ" | "รอการตรวจสอบ" | "เอกสารผ่าน" | "เอกสารไม่ผ่าน",
-  ) => {
-    _setDocumentStatus(status);
-  };
-  const [documentError, setDocumentError] = useState<string>("");
   const [isReuploadReady, setIsReuploadReady] = useState(false);
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string>("");

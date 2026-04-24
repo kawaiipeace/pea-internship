@@ -127,8 +127,8 @@ export default function StaffHowtoPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/howtoowner.png" alt="การออกจากระบบOwner" />
-          <ZoomImage src="/images/คู่มือ/howtoowner2.png" alt="การออกจากระบบOwner" />
+          <ZoomImage src="/images/guideline/howtoowner.png" alt="การออกจากระบบOwner" />
+          <ZoomImage src="/images/guideline/howtoowner2.png" alt="การออกจากระบบOwner" />
         </div>
       </section>
 
@@ -170,8 +170,8 @@ export default function StaffHowtoPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/editowner.png" alt="การแก้ไขประกาศรับสมัครOwner" />
-          <ZoomImage src="/images/คู่มือ/editowner2.png" alt="การแก้ไขประกาศรับสมัครOwner" />
+          <ZoomImage src="/images/guideline/editowner.png" alt="การแก้ไขประกาศรับสมัครOwner" />
+          <ZoomImage src="/images/guideline/editowner2.png" alt="การแก้ไขประกาศรับสมัครOwner" />
         </div>
       </section>
 

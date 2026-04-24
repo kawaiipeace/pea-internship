@@ -111,8 +111,8 @@ export default function ApplicantStatusPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/status.png" alt="การติดตามสถานะการสมัคร" />
-                    <ZoomImage src="/images/คู่มือ/status2.png" alt="การติดตามสถานะการสมัคร" />
+                    <ZoomImage src="/images/guideline/status.png" alt="การติดตามสถานะการสมัคร" />
+                    <ZoomImage src="/images/guideline/status2.png" alt="การติดตามสถานะการสมัคร" />
                 </div>
             </section>
 
@@ -143,8 +143,8 @@ export default function ApplicantStatusPage() {
                 </ul>
 
                  <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/status3.png" alt="การติดตามสถานะการสมัคร" />
-                    <ZoomImage src="/images/คู่มือ/status4.png" alt="การแจ้งเตือนภายในเว็บไซต์" />
+                    <ZoomImage src="/images/guideline/status3.png" alt="การติดตามสถานะการสมัคร" />
+                    <ZoomImage src="/images/guideline/status4.png" alt="การแจ้งเตือนภายในเว็บไซต์" />
                 </div>
             </section>
 

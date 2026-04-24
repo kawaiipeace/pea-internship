@@ -1124,7 +1124,7 @@ function AcceptedStatusPage() {
               "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์",
               "รอ HR ตรวจสอบ",
             ];
-            let currentStepIndex =
+            const currentStepIndex =
               completedSteps >= totalSteps ? totalSteps - 1 : completedSteps;
             const isAllCompleted = completedSteps >= totalSteps;
             const nextStepLabel =

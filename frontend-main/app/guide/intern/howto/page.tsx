@@ -105,7 +105,7 @@ export default function ApplicantHowtoPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/ปุ่มสมัคร.png" alt="หน้ากรอกข้อมูลการสมัคร" />
+          <ZoomImage src="/images/guideline/regisbutton.png" alt="หน้ากรอกข้อมูลการสมัคร" />
         </div>
 
       </section>
@@ -137,7 +137,7 @@ export default function ApplicantHowtoPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/กรอกข้อมูล.png" alt="หน้ากรอกข้อมูลการสมัคร" />
+          <ZoomImage src="/images/guideline/howtointern.png" alt="หน้ากรอกข้อมูลการสมัคร" />
         </div>
       </section>
 

@@ -2513,7 +2513,7 @@ function ApplicationsContent() {
                 "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์",
                 "รอ HR ตรวจสอบ",
               ];
-              let currentStepIndex = Math.min(completedSteps, totalSteps - 1);
+              const currentStepIndex = Math.min(completedSteps, totalSteps - 1);
               const nextStepLabel =
                 currentStepIndex + 1 < totalSteps
                   ? currentStepLabel[currentStepIndex + 1]

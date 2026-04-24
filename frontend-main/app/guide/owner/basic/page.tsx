@@ -111,8 +111,8 @@ export default function StaffBasicPage() {
         </ol>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/login1.png" alt="การเข้าสู่ระบบOwner" />
-          <ZoomImage src="/images/คู่มือ/login2.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/guideline/login1.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/guideline/login2.png" alt="การเข้าสู่ระบบOwner" />
         </div>
 
         <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของพนักงาน PEA</h3>
@@ -123,8 +123,8 @@ export default function StaffBasicPage() {
           จากนั้นเมื่อกรอกครบและตรวจสอบว่าถูกต้องแล้ว ให้กดปุ่ม <span className="font-medium">เข้าสู่ระบบ (Sign in)</span> เพื่อเข้าใช้งานเว็บไซต์ PEA Internship
         </p>
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/login3.png" alt="การเข้าสู่ระบบOwner" />
-          <ZoomImage src="/images/คู่มือ/login4.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/guideline/login3.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/guideline/login4.png" alt="การเข้าสู่ระบบOwner" />
         </div>
 
         <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของผู้สมัครฝึกงาน</h3>
@@ -135,8 +135,8 @@ export default function StaffBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/login5.png" alt="การเข้าสู่ระบบOwner" />
-          <ZoomImage src="/images/คู่มือ/login6.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/guideline/login5.png" alt="การเข้าสู่ระบบOwner" />
+          <ZoomImage src="/images/guideline/login6.png" alt="การเข้าสู่ระบบOwner" />
         </div>
       </section>
 
@@ -154,7 +154,7 @@ export default function StaffBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/logout.png" alt="การออกจากระบบOwner" />
+          <ZoomImage src="/images/guideline/logout.png" alt="การออกจากระบบOwner" />
         </div>
       </section>
 
@@ -172,7 +172,7 @@ export default function StaffBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/แจ้งปัญหา.png" alt="แจ้งปัญหาการใช้งานOwner" />
+          <ZoomImage src="/images/guideline/report.png" alt="แจ้งปัญหาการใช้งานOwner" />
         </div>
       </section>
 

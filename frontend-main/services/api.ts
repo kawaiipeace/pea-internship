@@ -2,7 +2,7 @@ import axios from "axios";
 
 // In production (Vercel), use relative URL so requests go through Next.js rewrite proxy
 // This makes all API calls same-origin, solving cross-domain cookie issues
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` || "/api";
 
 // สร้าง axios instance
 const api = axios.create({
@@ -939,7 +939,7 @@ export interface CreatePositionData {
 }
 
 // ข้อมูลสำหรับอัพเดท Position
-export interface UpdatePositionData extends Partial<CreatePositionData> { }
+export type UpdatePositionData = Partial<CreatePositionData>;
 
 // Response เมื่อดึงรายการ Position
 export interface PositionsResponse {

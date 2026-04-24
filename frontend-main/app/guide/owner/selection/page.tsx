@@ -105,8 +105,8 @@ export default function StaffSelectionPage() {
         </ul>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/selection.png" alt="การจัดการผู้สมัครOwner" />
-          <ZoomImage src="/images/คู่มือ/selection2.png" alt="การจัดการผู้สมัครOwner" />
+          <ZoomImage src="/images/guideline/selection.png" alt="การจัดการผู้สมัครOwner" />
+          <ZoomImage src="/images/guideline/selection2.png" alt="การจัดการผู้สมัครOwner" />
         </div>
       </section>
 

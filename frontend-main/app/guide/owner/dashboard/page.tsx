@@ -96,10 +96,10 @@ export default function StaffDashboardPage() {
             {/* Dashboard preview images */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                 <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 aspect-video flex items-center justify-center">
-                    <ZoomImage src="/images/คู่มือ/dashboardowner.png" alt="ตัวอย่างหน้าแดชบอร์ด" />
+                    <ZoomImage src="/images/guideline/dashboardowner.png" alt="ตัวอย่างหน้าแดชบอร์ด" />
                 </div>
                 <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 aspect-video flex items-center justify-center">
-                    <ZoomImage src="/images/คู่มือ/dashboardowner2.png" alt="ตัวอย่างหน้าแดชบอร์ดส่วนกราฟ" />
+                    <ZoomImage src="/images/guideline/dashboardowner2.png" alt="ตัวอย่างหน้าแดชบอร์ดส่วนกราฟ" />
                 </div>
             </div>
 

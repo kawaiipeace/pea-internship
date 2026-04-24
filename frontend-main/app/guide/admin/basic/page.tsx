@@ -119,8 +119,8 @@ export default function AdminBasicPage() {
                 </ol>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/login1.png" alt="การเข้าสู่ระบบadmin" />
-                    <ZoomImage src="/images/คู่มือ/login2.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/login1.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/login2.png" alt="การเข้าสู่ระบบadmin" />
                 </div>
 
                 <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของพนักงาน PEA</h3>
@@ -134,8 +134,8 @@ export default function AdminBasicPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/login3.png" alt="การเข้าสู่ระบบadmin" />
-                    <ZoomImage src="/images/คู่มือ/login4.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/login3.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/login4.png" alt="การเข้าสู่ระบบadmin" />
                 </div>
 
                 <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของผู้สมัครฝึกงาน</h3>
@@ -147,8 +147,8 @@ export default function AdminBasicPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/login5.png" alt="การเข้าสู่ระบบadmin" />
-                    <ZoomImage src="/images/คู่มือ/login6.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/login5.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/login6.png" alt="การเข้าสู่ระบบadmin" />
                 </div>
             </section>
 
@@ -166,7 +166,7 @@ export default function AdminBasicPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/logout.png" alt="การออกจากระบบadmin" />
+                    <ZoomImage src="/images/guideline/logout.png" alt="การออกจากระบบadmin" />
                 </div>
             </section>
 
@@ -184,7 +184,7 @@ export default function AdminBasicPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/แจ้งปัญหา.png" alt="แจ้งปัญหาการใช้งานadmin" />
+                    <ZoomImage src="/images/guideline/report.png" alt="แจ้งปัญหาการใช้งานadmin" />
                 </div>
             </section>
 

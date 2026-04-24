@@ -304,7 +304,7 @@ export default function InternProfilePage() {
             }
 
             // faculty เป็น string ตรงๆ จาก backend (ไม่ใช่ object)
-            let facultyName = studentProfile?.faculty || "-";
+            const facultyName = studentProfile?.faculty || "-";
             let institutionName = "-";
             let educationLabel = "-";
             let isHighSchool = false;
@@ -432,7 +432,7 @@ export default function InternProfilePage() {
             setEducationType("university");
 
             // faculty เป็น string ตรงๆ
-            let fallbackFacultyName = studentProfile?.faculty || "-";
+            const fallbackFacultyName = studentProfile?.faculty || "-";
             let fallbackInstitutionName = "-";
             let fallbackEducationLabel = "-";
             let fallbackIsHighSchool = false;

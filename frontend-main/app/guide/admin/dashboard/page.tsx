@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/dashboardadmin.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/dashboardadmin.png" alt="การเข้าสู่ระบบadmin" />
                 </div>
             </section>
 
@@ -128,8 +128,8 @@ export default function AdminDashboardPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/dashboardadmin2.png" alt="การเข้าสู่ระบบadmin" />
-                    <ZoomImage src="/images/คู่มือ/dashboardadmin3.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/dashboardadmin2.png" alt="การเข้าสู่ระบบadmin" />
+                    <ZoomImage src="/images/guideline/dashboardadmin3.png" alt="การเข้าสู่ระบบadmin" />
                 </div>
             </section>
 

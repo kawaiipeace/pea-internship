@@ -34,6 +34,19 @@ type TechStackDoc = {
 
 type ThemeMode = "light" | "dark";
 
+type ApiEndpointDoc = {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  path: string;
+  purpose: string;
+  usedInPages: string[];
+};
+
+type ApiDomainDoc = {
+  domain: string;
+  description: string;
+  endpoints: ApiEndpointDoc[];
+};
+
 const quickStartSteps = [
   "เริ่มจากอ่านหัวข้อ 1-4 เพื่อเข้าใจภาพรวมระบบก่อน",
   "ถ้าจะแก้หน้าใดหน้าหนึ่ง ให้ไปที่หัวข้อ 5-9 (Route-by-Route)",
@@ -771,6 +784,141 @@ const apiDomains: FileDoc[] = [
   },
 ];
 
+const apiEndpointDomains: ApiDomainDoc[] = [
+  {
+    domain: "authApi — Authentication",
+    description: "จัดการล็อกอิน, ล็อกเอาท์, ตรวจสอบ session และ SSO (Keycloak)",
+    endpoints: [
+      { method: "POST", path: "/auth/sign-up/intern", purpose: "สมัครสมาชิกนักศึกษาใหม่", usedInPages: ["/register"] },
+      { method: "POST", path: "/auth/sign-in/intern", purpose: "เข้าสู่ระบบสำหรับนักศึกษา (email + password)", usedInPages: ["/login/intern"] },
+      { method: "POST", path: "/auth/sign-out", purpose: "ออกจากระบบ (ล้าง session/token)", usedInPages: ["ทุกหน้าที่มีปุ่ม logout"] },
+      { method: "GET", path: "/auth/get-session", purpose: "ตรวจสอบ session ปัจจุบัน — ดึงข้อมูล user จาก cookie", usedInPages: ["/login/owner/callback", "proxy.ts"] },
+      { method: "GET", path: "/auth/sign-in/keycloak", purpose: "Redirect ไปหน้า SSO login ของ Keycloak (สำหรับ owner/admin)", usedInPages: ["/login/owner", "/login/admin"] },
+    ],
+  },
+  {
+    domain: "userApi — User & Profile",
+    description: "ดึงและแก้ไขข้อมูลผู้ใช้ โปรไฟล์นักศึกษา และรายการพนักงาน",
+    endpoints: [
+      { method: "GET", path: "/user/profile", purpose: "ดึงโปรไฟล์เต็มของผู้ใช้ปัจจุบัน รวม studentProfile", usedInPages: ["/intern-profile"] },
+      { method: "PUT", path: "/user/update", purpose: "แก้ไขข้อมูลผู้ใช้ (ชื่อ, นามสกุล, email, เบอร์โทร)", usedInPages: ["/intern-profile/edit"] },
+      { method: "PUT", path: "/user/student-profile", purpose: "แก้ไขโปรไฟล์นักศึกษา (ชั่วโมง, คณะ, สาขา, วันฝึก)", usedInPages: ["/intern-profile/edit"] },
+      { method: "PUT", path: "/user/staff/{staffProfileId}/phone", purpose: "แก้ไขเบอร์โทรพนักงาน (admin/owner เท่านั้น)", usedInPages: ["/owner/profile"] },
+      { method: "GET", path: "/user/staff", purpose: "ดึงรายการพนักงาน กรองด้วย departmentId ได้", usedInPages: ["/owner/announcements/create", "/owner/announcements/[id]/edit"] },
+      { method: "GET", path: "/user/student", purpose: "ดึงรายการนักศึกษาทั้งหมด (admin/owner เท่านั้น)", usedInPages: ["/admin/dashboard", "/owner/dashboard"] },
+    ],
+  },
+  {
+    domain: "positionApi — Positions / ตำแหน่งฝึกงาน",
+    description: "จัดการประกาศตำแหน่งฝึกงาน ทั้งการสร้าง, ดู, แก้ไข และลบ",
+    endpoints: [
+      { method: "GET", path: "/position", purpose: "ดึงรายการตำแหน่งทั้งหมด (ค้นหา/กรองได้, pagination)", usedInPages: ["/", "/intern-home", "/owner/announcements", "/owner/dashboard", "/admin/dashboard"] },
+      { method: "GET", path: "/position/{id}", purpose: "ดึงรายละเอียดตำแหน่งรายตัว", usedInPages: ["/jobs/[id]", "/intern-home/job-detail", "/owner/announcements/[id]", "/owner/announcements/[id]/edit"] },
+      { method: "POST", path: "/position", purpose: "สร้างประกาศตำแหน่งฝึกงานใหม่", usedInPages: ["/owner/announcements/create"] },
+      { method: "PUT", path: "/position/{id}", purpose: "แก้ไขประกาศตำแหน่ง (ชื่อ, วันรับสมัคร, สาขา ฯลฯ)", usedInPages: ["/owner/announcements/[id]/edit"] },
+      { method: "DELETE", path: "/position/{id}", purpose: "ลบประกาศตำแหน่ง", usedInPages: ["/owner/announcements/[id]"] },
+    ],
+  },
+  {
+    domain: "favoriteApi — Favorites / รายการโปรด",
+    description: "เพิ่ม/ลบ/ดึงตำแหน่งที่นักศึกษา bookmark ไว้",
+    endpoints: [
+      { method: "GET", path: "/favorite", purpose: "ดึงรายการตำแหน่งที่บันทึกไว้ทั้งหมด (pagination)", usedInPages: ["/", "/intern-home", "/favorites"] },
+      { method: "POST", path: "/favorite", purpose: "เพิ่มตำแหน่งในรายการโปรด (ส่ง positionId)", usedInPages: ["/", "/intern-home", "/favorites"] },
+      { method: "DELETE", path: "/favorite/{positionId}", purpose: "ลบตำแหน่งออกจากรายการโปรด", usedInPages: ["/", "/intern-home", "/favorites"] },
+    ],
+  },
+  {
+    domain: "applicationApi — Applications / การสมัคร",
+    description: "Core workflow ทั้งหมดของการสมัครฝึกงาน ตั้งแต่สมัคร, อัปโหลดเอกสาร ไปจนถึง owner ตัดสินใจรับ/ปฏิเสธ",
+    endpoints: [
+      { method: "GET", path: "/applications/history/me", purpose: "ดึงประวัติการสมัครทั้งหมดของนักศึกษาปัจจุบัน", usedInPages: ["/application-history", "/application-status", "/application-history/job-detail"] },
+      { method: "GET", path: "/student/application-complete-modal", purpose: "ตรวจสอบว่าต้องแสดง modal แจ้งการสมัครเสร็จสิ้นหรือไม่", usedInPages: ["/intern-home"] },
+      { method: "POST", path: "/student/application-complete-modal/acknowledge", purpose: "บันทึกว่าผู้ใช้รับรู้ modal แล้ว", usedInPages: ["/intern-home"] },
+      { method: "POST", path: "/applications", purpose: "สร้างการสมัครใหม่ (ส่ง positionId)", usedInPages: ["/intern-home/job-detail"] },
+      { method: "POST", path: "/applications/positions/{positionId}/information", purpose: "ส่งข้อมูลทักษะ, ความคาดหวัง และวันที่ต้องการฝึก", usedInPages: ["/application-status"] },
+      { method: "POST", path: "/applications/{id}/documents/transcript", purpose: "อัปโหลดไฟล์ transcript (multipart/form-data)", usedInPages: ["/application-status/document-list"] },
+      { method: "POST", path: "/applications/{id}/documents/resume", purpose: "อัปโหลดไฟล์ resume", usedInPages: ["/application-status/document-list"] },
+      { method: "POST", path: "/applications/{id}/documents/portfolio", purpose: "อัปโหลดไฟล์ portfolio", usedInPages: ["/application-status/document-list"] },
+      { method: "POST", path: "/applications/{id}/documents/request-letter", purpose: "อัปโหลดหนังสือขอความอนุเคราะห์", usedInPages: ["/application-status/document-list"] },
+      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลด/ดูตัวอย่างไฟล์เอกสารจาก MinIO (ส่ง fileKey)", usedInPages: ["/application-status/document-list", "/admin/applications"] },
+      { method: "PUT", path: "/applications/{id}/cancel", purpose: "ยกเลิกการสมัครโดยนักศึกษา", usedInPages: ["/application-status"] },
+      { method: "GET", path: "/applications/history", purpose: "ดึงประวัติการสมัครทั้งหมด กรองตาม positionId/status ได้ (admin/owner)", usedInPages: ["/owner/dashboard", "/owner/dashboard/applications", "/owner/dashboard/pending", "/owner/dashboard/accepted", "/owner/dashboard/rejected", "/owner/dashboard/cancelled", "/admin/applications", "/admin/dashboard"] },
+      { method: "GET", path: "/applications/history/{studentUserId}", purpose: "ดึงประวัติการสมัครของนักศึกษาคนใดคนหนึ่ง", usedInPages: ["/admin/dashboard/[id]", "/owner/dashboard/[id]"] },
+      { method: "PUT", path: "/applications/{id}/interview/approve", purpose: "อนุมัติเข้าสัมภาษณ์ — เปลี่ยนสถานะเป็น PENDING_CONFIRMATION (owner)", usedInPages: ["/owner/dashboard/[id]"] },
+      { method: "PUT", path: "/applications/{id}/confirm/accept", purpose: "ยืนยันรับนักศึกษาเข้าฝึกงาน (owner)", usedInPages: ["/owner/dashboard/accepted"] },
+      { method: "PUT", path: "/applications/{id}/interview/reject", purpose: "ปฏิเสธการสมัคร พร้อมระบุเหตุผล (owner)", usedInPages: ["/owner/dashboard/[id]"] },
+      { method: "PUT", path: "/applications/{id}/documents/{docType}/review", purpose: "ตรวจสอบเอกสาร (admin) — ผล VERIFIED หรือ INVALID", usedInPages: ["/admin/applications"] },
+      { method: "PUT", path: "/applications/{applicationId}/information", purpose: "แก้ไขข้อมูลการสมัคร (ชั่วโมง/วันที่ฝึก)", usedInPages: ["/application-status"] },
+    ],
+  },
+  {
+    domain: "notificationApi — Notifications / การแจ้งเตือน",
+    description: "ดึงและจัดการการแจ้งเตือนของผู้ใช้ทุก role ผ่าน Navbar",
+    endpoints: [
+      { method: "GET", path: "/notifications", purpose: "ดึงรายการแจ้งเตือน กรองและ paginate ได้", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+      { method: "PUT", path: "/notifications/{id}/read", purpose: "ทำเครื่องหมายอ่านแล้ว/ยังไม่อ่าน", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+      { method: "PUT", path: "/notifications/read-all", purpose: "อ่านการแจ้งเตือนทั้งหมดพร้อมกัน", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+      { method: "DELETE", path: "/notifications/delete/{id}", purpose: "ลบการแจ้งเตือนรายการ", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+    ],
+  },
+  {
+    domain: "applicationDocumentsApi — Application Documents",
+    description: "ดึงและจัดการเอกสารของการสมัครทั้งหมด (ใช้โดย admin เป็นหลัก)",
+    endpoints: [
+      { method: "GET", path: "/application-documents", purpose: "ดึงเอกสารทั้งหมดในระบบ กรองตามสถานะ VERIFIED/INVALID/PENDING ได้", usedInPages: ["/admin/applications"] },
+      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลดไฟล์จาก MinIO storage โดยส่ง fileKey", usedInPages: ["/admin/applications", "/application-status/document-list"] },
+    ],
+  },
+  {
+    domain: "applicationStatusActionsApi — Status History",
+    description: "ดึงประวัติการเปลี่ยนสถานะของการสมัคร (ใช้แสดง timeline)",
+    endpoints: [
+      { method: "GET", path: "/application-status-actions/{applicationStatusId}", purpose: "ดึงประวัติการเปลี่ยนสถานะของ application — ใช้แสดง timeline ว่าใครทำอะไรเมื่อไร", usedInPages: ["/owner/dashboard/[id]", "/admin/dashboard/[id]"] },
+      { method: "GET", path: "/application-status-actions/me", purpose: "ดึง action ของผู้ใช้ปัจจุบัน", usedInPages: ["(ใช้ภายใน)"] },
+    ],
+  },
+  {
+    domain: "ownerStudentsApi — Owner Student Management",
+    description: "จัดการสถานะการฝึกงานของนักศึกษาที่ได้รับการตอบรับแล้ว",
+    endpoints: [
+      { method: "PUT", path: "/owner/students/{studentUserId}/internship-status", purpose: "จบการฝึกงาน (COMPLETE) หรือยกเลิกกลางคัน (CANCEL)", usedInPages: ["/owner/dashboard/accepted/cancel/[id]"] },
+    ],
+  },
+  {
+    domain: "institutionApi — Institutions & Faculties / สถานศึกษา",
+    description: "ดึงข้อมูลสถานศึกษาและคณะสำหรับฟอร์มสมัครและแก้โปรไฟล์",
+    endpoints: [
+      { method: "GET", path: "/institution", purpose: "ค้นหาสถานศึกษา (pagination, กรองตามประเภท)", usedInPages: ["/register", "/intern-profile/edit"] },
+      { method: "POST", path: "/institution", purpose: "เพิ่มสถานศึกษาใหม่ (เมื่อค้นหาไม่พบ)", usedInPages: ["/register"] },
+      { method: "GET", path: "/faculty", purpose: "ดึงรายการคณะทั้งหมด กรองด้วย institutionId ได้", usedInPages: ["/register", "/intern-profile/edit"] },
+      { method: "GET", path: "/institution_ticket/{id}", purpose: "ดึงข้อมูลสถานศึกษาโดย ID", usedInPages: ["/intern-profile"] },
+    ],
+  },
+  {
+    domain: "docTypeApi — Document Types / ประเภทเอกสาร",
+    description: "ดึงรายการประเภทเอกสารที่ระบบกำหนดให้นักศึกษาต้องส่ง",
+    endpoints: [
+      { method: "GET", path: "/doc-types", purpose: "ดึงประเภทเอกสารทั้งหมด (transcript, resume, portfolio, request-letter)", usedInPages: ["/application-status", "/application-status/document-list"] },
+    ],
+  },
+  {
+    domain: "departmentApi — Departments / แผนก",
+    description: "ดึงข้อมูลแผนกภายในองค์กรสำหรับฟอร์มสร้าง/แก้ประกาศ",
+    endpoints: [
+      { method: "GET", path: "/dept", purpose: "ดึงรายการแผนกทั้งหมด (pagination)", usedInPages: ["/owner/announcements/create", "/owner/announcements/[id]/edit", "/admin/dashboard"] },
+    ],
+  },
+  {
+    domain: "staffLogsApi — Staff Logs / บันทึกกิจกรรม",
+    description: "บันทึกและดึง log การทำงานของพนักงาน (audit trail)",
+    endpoints: [
+      { method: "POST", path: "/staff-logs", purpose: "บันทึก log กิจกรรมของพนักงาน", usedInPages: ["/owner/dashboard/[id]", "owner pages"] },
+      { method: "GET", path: "/staff-logs", purpose: "ดึง log กิจกรรม (pagination, filterable)", usedInPages: ["/admin/dashboard"] },
+    ],
+  },
+];
+
 const scenarios: ScenarioDoc[] = [
   {
     topic: "Login แล้วเด้งผิดหน้า หรือเข้า role ไม่ได้",
@@ -864,6 +1012,7 @@ const sectionNavigation = [
   { id: "section-10", label: "10) Components, Services, Types" },
   { id: "section-11", label: "11) Playbook" },
   { id: "section-12", label: "12) Release Checklist" },
+  { id: "section-13", label: "13) API Reference ละเอียด" },
 ];
 
 const sectionCardClassName =
@@ -1134,6 +1283,96 @@ function TechStackRows({
             }`}
           >
             {item.maintenanceTips}
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function MethodBadge({
+  method,
+  isLight,
+}: {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  isLight: boolean;
+}) {
+  const lightColors: Record<string, string> = {
+    GET: "bg-sky-100 text-sky-700 border-sky-200",
+    POST: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    PUT: "bg-amber-100 text-amber-700 border-amber-200",
+    DELETE: "bg-red-100 text-red-700 border-red-200",
+  };
+  const darkColors: Record<string, string> = {
+    GET: "bg-sky-900/50 text-sky-300 border-sky-700/50",
+    POST: "bg-emerald-900/50 text-emerald-300 border-emerald-700/50",
+    PUT: "bg-amber-900/50 text-amber-300 border-amber-700/50",
+    DELETE: "bg-red-900/50 text-red-300 border-red-700/50",
+  };
+  return (
+    <span
+      className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? lightColors[method] : darkColors[method]}`}
+    >
+      {method}
+    </span>
+  );
+}
+
+function ApiEndpointRows({
+  items,
+  theme,
+}: {
+  items: ApiEndpointDoc[];
+  theme: ThemeMode;
+}) {
+  const isLight = theme === "light";
+  return (
+    <>
+      {items.map((item, index) => (
+        <tr
+          key={`${item.method}-${item.path}`}
+          className={`align-top transition-colors ${
+            isLight
+              ? index % 2 === 0
+                ? "bg-white"
+                : "bg-slate-50/70"
+              : index % 2 === 0
+                ? "bg-slate-900"
+                : "bg-slate-800/70"
+          } ${isLight ? "hover:bg-sky-50/60" : "hover:bg-slate-700/50"}`}
+        >
+          <td
+            className={`whitespace-nowrap border-b px-3 py-3 ${isLight ? "border-slate-100" : "border-slate-700"}`}
+          >
+            <MethodBadge method={item.method} isLight={isLight} />
+          </td>
+          <td
+            className={`whitespace-nowrap border-b px-3 py-3 font-mono text-xs ${isLight ? "border-slate-100 text-slate-800" : "border-slate-700 text-slate-200"}`}
+          >
+            {item.path}
+          </td>
+          <td
+            className={`border-b px-3 py-3 text-sm ${isLight ? "border-slate-100 text-slate-700" : "border-slate-700 text-slate-300"}`}
+          >
+            {item.purpose}
+          </td>
+          <td
+            className={`border-b px-3 py-3 ${isLight ? "border-slate-100" : "border-slate-700"}`}
+          >
+            <div className="flex flex-wrap gap-1">
+              {item.usedInPages.map((page) => (
+                <span
+                  key={`${item.method}-${item.path}-${page}`}
+                  className={`rounded-full border px-2 py-0.5 font-mono text-xs ${
+                    isLight
+                      ? "border-slate-300 bg-white text-slate-600"
+                      : "border-slate-600 bg-slate-900 text-slate-400"
+                  }`}
+                >
+                  {page}
+                </span>
+              ))}
+            </div>
           </td>
         </tr>
       ))}
@@ -1722,6 +1961,49 @@ export default function FrontendMainMaintenanceDocPage() {
                 </p>
                 <pre className="overflow-x-auto text-xs md:text-sm">{`pnpm lint
 pnpm build`}</pre>
+              </div>
+            </section>
+
+            <section id="section-13" className={sectionCardClass}>
+              <SectionTitle theme={theme}>
+                13) API Reference ละเอียด (ทุก endpoint)
+              </SectionTitle>
+              <p
+                className={`mt-2 text-sm ${isLight ? "text-slate-600" : "text-slate-300"}`}
+              >
+                รายการ API endpoint ทั้งหมดในระบบ พร้อมบอกว่าแต่ละ endpoint
+                คืออะไรและเชื่อมกับหน้าไหนบ้าง สี badge บอก HTTP method:
+                <span className="ml-2 inline-flex flex-wrap gap-1.5 align-middle">
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-sky-200 bg-sky-100 text-sky-700" : "border-sky-700/50 bg-sky-900/50 text-sky-300"}`}>GET</span>
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-emerald-200 bg-emerald-100 text-emerald-700" : "border-emerald-700/50 bg-emerald-900/50 text-emerald-300"}`}>POST</span>
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-amber-200 bg-amber-100 text-amber-700" : "border-amber-700/50 bg-amber-900/50 text-amber-300"}`}>PUT</span>
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-red-200 bg-red-100 text-red-700" : "border-red-700/50 bg-red-900/50 text-red-300"}`}>DELETE</span>
+                </span>
+              </p>
+
+              <div className="mt-6 space-y-8">
+                {apiEndpointDomains.map((domain) => (
+                  <div key={domain.domain}>
+                    <div className="mb-3">
+                      <h3
+                        className={`text-base font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}
+                      >
+                        {domain.domain}
+                      </h3>
+                      <p
+                        className={`mt-0.5 text-sm ${isLight ? "text-slate-500" : "text-slate-400"}`}
+                      >
+                        {domain.description}
+                      </p>
+                    </div>
+                    <DocTable
+                      theme={theme}
+                      headers={["Method", "Path", "คำอธิบาย", "หน้าที่เชื่อม"]}
+                    >
+                      <ApiEndpointRows items={domain.endpoints} theme={theme} />
+                    </DocTable>
+                  </div>
+                ))}
               </div>
             </section>
           </div>
