@@ -41,9 +41,13 @@ type ApiEndpointDoc = {
   usedInPages: string[];
 };
 
-type ApiDomainDoc = {
+type ApiModuleDoc = {
+  file: string;
   domain: string;
   description: string;
+  types: string[];
+  functions: string[];
+  notes: string;
   endpoints: ApiEndpointDoc[];
 };
 
@@ -808,21 +812,38 @@ const apiDomains: FileDoc[] = [
   },
 ];
 
-const apiEndpointDomains: ApiDomainDoc[] = [
+const apiModuleDocs: ApiModuleDoc[] = [
   {
+    file: "client.ts",
+    domain: "Base Client — axios instance & authStorage",
+    description: "axios instance กลาง, API_BASE_URL, interceptors (auth token + 401 redirect) และ authStorage สำหรับอ่าน/เขียน user session",
+    types: ["ApiUser"],
+    functions: ["api (axios instance)", "authStorage.getUser()", "authStorage.setUser()", "authStorage.removeUser()"],
+    notes: "import 'api' จากไฟล์นี้ในทุก domain file — แก้ interceptor ที่นี่กระทบทั้งแอป",
+    endpoints: [],
+  },
+  {
+    file: "auth.ts",
     domain: "authApi — Authentication",
     description: "จัดการล็อกอิน, ล็อกเอาท์, ตรวจสอบ session และ SSO (Keycloak)",
+    types: ["RegisterInternData", "LoginData", "AuthResponse"],
+    functions: ["authApi.registerIntern()", "authApi.loginIntern()", "authApi.logout()", "authApi.getSession()", "authApi.getKeycloakLoginUrl()"],
+    notes: "เชื่อมกับ proxy.ts และ Better Auth cookie — แก้ auth flow แก้ที่นี่",
     endpoints: [
       { method: "POST", path: "/auth/sign-up/intern", purpose: "สมัครสมาชิกนักศึกษาใหม่", usedInPages: ["/register"] },
-      { method: "POST", path: "/auth/sign-in/intern", purpose: "เข้าสู่ระบบสำหรับนักศึกษา (email + password)", usedInPages: ["/login/intern"] },
+      { method: "POST", path: "/auth/sign-in/intern", purpose: "เข้าสู่ระบบสำหรับนักศึกษา (phone + password)", usedInPages: ["/login/intern"] },
       { method: "POST", path: "/auth/sign-out", purpose: "ออกจากระบบ (ล้าง session/token)", usedInPages: ["ทุกหน้าที่มีปุ่ม logout"] },
       { method: "GET", path: "/auth/get-session", purpose: "ตรวจสอบ session ปัจจุบัน — ดึงข้อมูล user จาก cookie", usedInPages: ["/login/owner/callback", "proxy.ts"] },
-      { method: "GET", path: "/auth/sign-in/keycloak", purpose: "Redirect ไปหน้า SSO login ของ Keycloak (สำหรับ owner/admin)", usedInPages: ["/login/owner", "/login/admin"] },
+      { method: "GET", path: "/auth/sign-in/keycloak", purpose: "Redirect ไปหน้า SSO login ของ Keycloak (owner/admin)", usedInPages: ["/login/owner", "/login/admin"] },
     ],
   },
   {
+    file: "user.ts",
     domain: "userApi — User & Profile",
     description: "ดึงและแก้ไขข้อมูลผู้ใช้ โปรไฟล์นักศึกษา และรายการพนักงาน",
+    types: ["StudentProfile", "UserProfile", "StaffUser"],
+    functions: ["userApi.getProfile()", "userApi.updateUser()", "userApi.updateStudentProfile()", "userApi.updateStaffPhone()", "userApi.getStaffList()", "userApi.getStudentList()", "studentProfileApi.getMyProfile()", "extractStudentProfile()", "canApplyForNewJob()"],
+    notes: "canApplyForNewJob() ตรวจสอบว่านักศึกษาสมัครใหม่ได้หรือไม่ ก่อนเรียก applicationApi",
     endpoints: [
       { method: "GET", path: "/user/profile", purpose: "ดึงโปรไฟล์เต็มของผู้ใช้ปัจจุบัน รวม studentProfile", usedInPages: ["/intern-profile"] },
       { method: "PUT", path: "/user/update", purpose: "แก้ไขข้อมูลผู้ใช้ (ชื่อ, นามสกุล, email, เบอร์โทร)", usedInPages: ["/intern-profile/edit"] },
@@ -833,8 +854,12 @@ const apiEndpointDomains: ApiDomainDoc[] = [
     ],
   },
   {
+    file: "position.ts",
     domain: "positionApi — Positions / ตำแหน่งฝึกงาน",
-    description: "จัดการประกาศตำแหน่งฝึกงาน ทั้งการสร้าง, ดู, แก้ไข และลบ",
+    description: "จัดการประกาศตำแหน่งฝึกงาน ทั้งการสร้าง, ดู, แก้ไข, ลบ พร้อม transform helpers แปลง API response เป็น UI model",
+    types: ["Position", "CreatePositionData", "UpdatePositionData"],
+    functions: ["positionApi.getPositions()", "positionApi.getPositionById()", "positionApi.createPosition()", "positionApi.updatePosition()", "positionApi.deletePosition()", "positionToJob()", "positionToJobWithStaff()", "positionToAnnouncement()", "positionsToJobs()"],
+    notes: "mentorCache ลด API call ซ้ำ — positionToJob/Announcement ใช้ทั่ว intern/owner pages; APP_STATUS_TO_STEP map สถานะ → step index",
     endpoints: [
       { method: "GET", path: "/position", purpose: "ดึงรายการตำแหน่งทั้งหมด (ค้นหา/กรองได้, pagination)", usedInPages: ["/", "/intern-home", "/owner/announcements", "/owner/dashboard", "/admin/dashboard"] },
       { method: "GET", path: "/position/{id}", purpose: "ดึงรายละเอียดตำแหน่งรายตัว", usedInPages: ["/jobs/[id]", "/intern-home/job-detail", "/owner/announcements/[id]", "/owner/announcements/[id]/edit"] },
@@ -844,17 +869,12 @@ const apiEndpointDomains: ApiDomainDoc[] = [
     ],
   },
   {
-    domain: "favoriteApi — Favorites / รายการโปรด",
-    description: "เพิ่ม/ลบ/ดึงตำแหน่งที่นักศึกษา bookmark ไว้",
-    endpoints: [
-      { method: "GET", path: "/favorite", purpose: "ดึงรายการตำแหน่งที่บันทึกไว้ทั้งหมด (pagination)", usedInPages: ["/", "/intern-home", "/favorites"] },
-      { method: "POST", path: "/favorite", purpose: "เพิ่มตำแหน่งในรายการโปรด (ส่ง positionId)", usedInPages: ["/", "/intern-home", "/favorites"] },
-      { method: "DELETE", path: "/favorite/{positionId}", purpose: "ลบตำแหน่งออกจากรายการโปรด", usedInPages: ["/", "/intern-home", "/favorites"] },
-    ],
-  },
-  {
+    file: "application.ts",
     domain: "applicationApi — Applications / การสมัคร",
     description: "Core workflow ทั้งหมดของการสมัครฝึกงาน ตั้งแต่สมัคร, อัปโหลดเอกสาร ไปจนถึง owner ตัดสินใจรับ/ปฏิเสธ",
+    types: ["AppStatusEnum", "MyApplicationData", "CompleteModalResponse"],
+    functions: ["applicationApi.apply()", "applicationApi.getMyApplications()", "applicationApi.getApplicationById()", "applicationApi.getApplicationsByPosition()", "applicationApi.updateStatus()", "applicationApi.uploadDocument()"],
+    notes: "AppStatusEnum ต้อง sync กับ backend เสมอ — domain หลักที่กระทบหลาย role",
     endpoints: [
       { method: "GET", path: "/applications/history/me", purpose: "ดึงประวัติการสมัครทั้งหมดของนักศึกษาปัจจุบัน", usedInPages: ["/application-history", "/application-status", "/application-history/job-detail"] },
       { method: "GET", path: "/student/application-complete-modal", purpose: "ตรวจสอบว่าต้องแสดง modal แจ้งการสมัครเสร็จสิ้นหรือไม่", usedInPages: ["/intern-home"] },
@@ -865,7 +885,7 @@ const apiEndpointDomains: ApiDomainDoc[] = [
       { method: "POST", path: "/applications/{id}/documents/resume", purpose: "อัปโหลดไฟล์ resume", usedInPages: ["/application-status/document-list"] },
       { method: "POST", path: "/applications/{id}/documents/portfolio", purpose: "อัปโหลดไฟล์ portfolio", usedInPages: ["/application-status/document-list"] },
       { method: "POST", path: "/applications/{id}/documents/request-letter", purpose: "อัปโหลดหนังสือขอความอนุเคราะห์", usedInPages: ["/application-status/document-list"] },
-      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลด/ดูตัวอย่างไฟล์เอกสารจาก MinIO (ส่ง fileKey)", usedInPages: ["/application-status/document-list", "/admin/applications"] },
+      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลด/ดูตัวอย่างไฟล์จาก MinIO (ส่ง fileKey)", usedInPages: ["/application-status/document-list", "/admin/applications"] },
       { method: "PUT", path: "/applications/{id}/cancel", purpose: "ยกเลิกการสมัครโดยนักศึกษา", usedInPages: ["/application-status"] },
       { method: "GET", path: "/applications/history", purpose: "ดึงประวัติการสมัครทั้งหมด กรองตาม positionId/status ได้ (admin/owner)", usedInPages: ["/owner/dashboard", "/owner/dashboard/applications", "/owner/dashboard/pending", "/owner/dashboard/accepted", "/owner/dashboard/rejected", "/owner/dashboard/cancelled", "/admin/applications", "/admin/dashboard"] },
       { method: "GET", path: "/applications/history/{studentUserId}", purpose: "ดึงประวัติการสมัครของนักศึกษาคนใดคนหนึ่ง", usedInPages: ["/admin/dashboard/[id]", "/owner/dashboard/[id]"] },
@@ -877,8 +897,49 @@ const apiEndpointDomains: ApiDomainDoc[] = [
     ],
   },
   {
+    file: "application-documents.ts",
+    domain: "applicationDocumentsApi — Application Documents",
+    description: "ดึงและจัดการเอกสารของการสมัครทั้งหมด (ใช้โดย admin เป็นหลัก)",
+    types: ["ApplicationDocumentItem", "ValidationStatus"],
+    functions: ["applicationDocumentsApi.getDocuments()", "applicationDocumentsApi.getDownloadUrl()", "applicationDocumentsApi.getPreviewUrl()", "applicationDocumentsApi.validateDocument()"],
+    notes: "ValidationStatus (PENDING/APPROVED/REJECTED) ต้อง sync กับ backend — ใช้ใน /application-status",
+    endpoints: [
+      { method: "GET", path: "/application-documents", purpose: "ดึงเอกสารทั้งหมดในระบบ กรองตามสถานะ VERIFIED/INVALID/PENDING ได้", usedInPages: ["/admin/applications"] },
+      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลดไฟล์จาก MinIO storage โดยส่ง fileKey", usedInPages: ["/admin/applications", "/application-status/document-list"] },
+    ],
+  },
+  {
+    file: "application-status-actions.ts",
+    domain: "applicationStatusActionsApi — Status History",
+    description: "ดึงประวัติการเปลี่ยนสถานะของการสมัคร (ใช้แสดง timeline)",
+    types: ["ApplicationStatusAction"],
+    functions: ["applicationStatusActionsApi.getActions()", "applicationStatusActionsApi.getActionsByApplication()"],
+    notes: "read-only ไม่มี mutation — ใช้แสดง timeline ว่าใครทำอะไรเมื่อไร",
+    endpoints: [
+      { method: "GET", path: "/application-status-actions/{applicationStatusId}", purpose: "ดึงประวัติการเปลี่ยนสถานะของ application", usedInPages: ["/owner/dashboard/[id]", "/admin/dashboard/[id]"] },
+      { method: "GET", path: "/application-status-actions/me", purpose: "ดึง action ของผู้ใช้ปัจจุบัน", usedInPages: ["(ใช้ภายใน)"] },
+    ],
+  },
+  {
+    file: "favorite.ts",
+    domain: "favoriteApi — Favorites / รายการโปรด",
+    description: "เพิ่ม/ลบ/ดึงตำแหน่งที่นักศึกษา bookmark ไว้",
+    types: ["FavoriteItem", "FavoritesResponse"],
+    functions: ["favoriteApi.getFavorites()", "favoriteApi.addFavorite()", "favoriteApi.removeFavorite()", "favoriteApi.isFavorite()"],
+    notes: "ใช้ใน /favorites และ job-card ทุกหน้า — ตรวจ isFavorite() ก่อน add/remove เสมอ",
+    endpoints: [
+      { method: "GET", path: "/favorite", purpose: "ดึงรายการตำแหน่งที่บันทึกไว้ทั้งหมด (pagination)", usedInPages: ["/", "/intern-home", "/favorites"] },
+      { method: "POST", path: "/favorite", purpose: "เพิ่มตำแหน่งในรายการโปรด (ส่ง positionId)", usedInPages: ["/", "/intern-home", "/favorites"] },
+      { method: "DELETE", path: "/favorite/{positionId}", purpose: "ลบตำแหน่งออกจากรายการโปรด", usedInPages: ["/", "/intern-home", "/favorites"] },
+    ],
+  },
+  {
+    file: "notification.ts",
     domain: "notificationApi — Notifications / การแจ้งเตือน",
     description: "ดึงและจัดการการแจ้งเตือนของผู้ใช้ทุก role ผ่าน Navbar",
+    types: ["NotificationItem"],
+    functions: ["notificationApi.getNotifications()", "notificationApi.markAsRead()", "notificationApi.markAllAsRead()", "notificationApi.deleteNotification()"],
+    notes: "เชื่อมกับ Navbar bell icon ของทุก role — unread count อยู่ใน NotificationItem.isRead",
     endpoints: [
       { method: "GET", path: "/notifications", purpose: "ดึงรายการแจ้งเตือน กรองและ paginate ได้", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
       { method: "PUT", path: "/notifications/{id}/read", purpose: "ทำเครื่องหมายอ่านแล้ว/ยังไม่อ่าน", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
@@ -887,31 +948,12 @@ const apiEndpointDomains: ApiDomainDoc[] = [
     ],
   },
   {
-    domain: "applicationDocumentsApi — Application Documents",
-    description: "ดึงและจัดการเอกสารของการสมัครทั้งหมด (ใช้โดย admin เป็นหลัก)",
-    endpoints: [
-      { method: "GET", path: "/application-documents", purpose: "ดึงเอกสารทั้งหมดในระบบ กรองตามสถานะ VERIFIED/INVALID/PENDING ได้", usedInPages: ["/admin/applications"] },
-      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลดไฟล์จาก MinIO storage โดยส่ง fileKey", usedInPages: ["/admin/applications", "/application-status/document-list"] },
-    ],
-  },
-  {
-    domain: "applicationStatusActionsApi — Status History",
-    description: "ดึงประวัติการเปลี่ยนสถานะของการสมัคร (ใช้แสดง timeline)",
-    endpoints: [
-      { method: "GET", path: "/application-status-actions/{applicationStatusId}", purpose: "ดึงประวัติการเปลี่ยนสถานะของ application — ใช้แสดง timeline ว่าใครทำอะไรเมื่อไร", usedInPages: ["/owner/dashboard/[id]", "/admin/dashboard/[id]"] },
-      { method: "GET", path: "/application-status-actions/me", purpose: "ดึง action ของผู้ใช้ปัจจุบัน", usedInPages: ["(ใช้ภายใน)"] },
-    ],
-  },
-  {
-    domain: "ownerStudentsApi — Owner Student Management",
-    description: "จัดการสถานะการฝึกงานของนักศึกษาที่ได้รับการตอบรับแล้ว",
-    endpoints: [
-      { method: "PUT", path: "/owner/students/{studentUserId}/internship-status", purpose: "จบการฝึกงาน (COMPLETE) หรือยกเลิกกลางคัน (CANCEL)", usedInPages: ["/owner/dashboard/accepted/cancel/[id]"] },
-    ],
-  },
-  {
+    file: "institution.ts",
     domain: "institutionApi — Institutions & Faculties / สถานศึกษา",
     description: "ดึงข้อมูลสถานศึกษาและคณะสำหรับฟอร์มสมัครและแก้โปรไฟล์",
+    types: ["Institution", "Faculty"],
+    functions: ["institutionApi.getInstitutions()", "institutionApi.getFaculties()", "institutionApi.getInstitutionByTicket()"],
+    notes: "รองรับ type UNIVERSITY / VOCATIONAL / SCHOOL / OTHERS — ใช้ใน /register และ /intern-profile/edit",
     endpoints: [
       { method: "GET", path: "/institution", purpose: "ค้นหาสถานศึกษา (pagination, กรองตามประเภท)", usedInPages: ["/register", "/intern-profile/edit"] },
       { method: "POST", path: "/institution", purpose: "เพิ่มสถานศึกษาใหม่ (เมื่อค้นหาไม่พบ)", usedInPages: ["/register"] },
@@ -920,22 +962,54 @@ const apiEndpointDomains: ApiDomainDoc[] = [
     ],
   },
   {
-    domain: "docTypeApi — Document Types / ประเภทเอกสาร",
-    description: "ดึงรายการประเภทเอกสารที่ระบบกำหนดให้นักศึกษาต้องส่ง",
-    endpoints: [
-      { method: "GET", path: "/doc-types", purpose: "ดึงประเภทเอกสารทั้งหมด (transcript, resume, portfolio, request-letter)", usedInPages: ["/application-status", "/application-status/document-list"] },
-    ],
-  },
-  {
+    file: "department.ts",
     domain: "departmentApi — Departments / แผนก",
     description: "ดึงข้อมูลแผนกภายในองค์กรสำหรับฟอร์มสร้าง/แก้ประกาศ",
+    types: ["Department", "DepartmentsResponse"],
+    functions: ["departmentApi.getDepartments()", "departmentApi.getDepartmentById()"],
+    notes: "ใช้ใน /owner/announcements/create และ dropdown filter ฝั่ง owner",
     endpoints: [
       { method: "GET", path: "/dept", purpose: "ดึงรายการแผนกทั้งหมด (pagination)", usedInPages: ["/owner/announcements/create", "/owner/announcements/[id]/edit", "/admin/dashboard"] },
     ],
   },
   {
+    file: "doc-type.ts",
+    domain: "docTypeApi — Document Types / ประเภทเอกสาร",
+    description: "ดึงรายการประเภทเอกสารที่ระบบกำหนดให้นักศึกษาต้องส่ง",
+    types: ["DocType"],
+    functions: ["docTypeApi.getDocTypes()", "docTypeApi.getDocTypeById()"],
+    notes: "ใช้ตอน config เอกสารที่ต้องการในแต่ละตำแหน่ง — ดูแลง่าย ไม่มี mutation",
+    endpoints: [
+      { method: "GET", path: "/doc-types", purpose: "ดึงประเภทเอกสารทั้งหมด (transcript, resume, portfolio, request-letter)", usedInPages: ["/application-status", "/application-status/document-list"] },
+    ],
+  },
+  {
+    file: "owner-students.ts",
+    domain: "ownerStudentsApi — Owner Student Management",
+    description: "จัดการสถานะการฝึกงานของนักศึกษาที่ได้รับการตอบรับแล้ว",
+    types: ["EndInternshipStatus"],
+    functions: ["ownerStudentsApi.getStudents()", "ownerStudentsApi.endInternship()", "ownerStudentsApi.getEndInternshipStatus()"],
+    notes: "ใช้ใน /owner/dashboard — endpoint นี้เปลี่ยนสถานะสุดท้ายก่อนปิด cycle ฝึกงาน",
+    endpoints: [
+      { method: "PUT", path: "/owner/students/{studentUserId}/internship-status", purpose: "จบการฝึกงาน (COMPLETE) หรือยกเลิกกลางคัน (CANCEL)", usedInPages: ["/owner/dashboard/accepted/cancel/[id]"] },
+    ],
+  },
+  {
+    file: "role.ts",
+    domain: "roleApi — Roles / สิทธิ์ผู้ใช้",
+    description: "ดึงและจัดการ role ของผู้ใช้ในระบบ (admin เท่านั้น)",
+    types: ["Role"],
+    functions: ["roleApi.getRoles()", "roleApi.getRoleById()", "roleApi.assignRole()"],
+    notes: "role กำหนดสิทธิ์การเข้าถึง route และ API — ใช้ใน admin pages",
+    endpoints: [],
+  },
+  {
+    file: "staff-logs.ts",
     domain: "staffLogsApi — Staff Logs / บันทึกกิจกรรม",
     description: "บันทึกและดึง log การทำงานของพนักงาน (audit trail)",
+    types: ["StaffLog", "StaffLogsResponse"],
+    functions: ["staffLogsApi.getLogs()", "staffLogsApi.getLogsByStaff()", "staffLogsApi.getLogsByApplication()"],
+    notes: "read-only สำหรับ query — ใช้ใน /admin/logs และ dashboard การตรวจสอบ",
     endpoints: [
       { method: "POST", path: "/staff-logs", purpose: "บันทึก log กิจกรรมของพนักงาน", usedInPages: ["/owner/dashboard/[id]", "owner pages"] },
       { method: "GET", path: "/staff-logs", purpose: "ดึง log กิจกรรม (pagination, filterable)", usedInPages: ["/admin/dashboard"] },
@@ -1880,6 +1954,7 @@ export default function FrontendMainMaintenanceDocPage() {
               >
                 <FileRows items={apiDomains} theme={theme} />
               </DocTable>
+
             </section>
 
             <section id="section-11" className={sectionCardClass}>
@@ -1995,14 +2070,11 @@ pnpm build`}</pre>
 
             <section id="section-13" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                13) API Reference ละเอียด (ทุก endpoint)
+                13) API Reference — services/api/ (ทุก module)
               </SectionTitle>
-              <p
-                className={`mt-2 text-sm ${isLight ? "text-slate-600" : "text-slate-300"}`}
-              >
-                รายการ API endpoint ทั้งหมดในระบบ พร้อมบอกว่าแต่ละ endpoint
-                คืออะไรและเชื่อมกับหน้าไหนบ้าง สี badge บอก HTTP method:
-                <span className="ml-2 inline-flex flex-wrap gap-1.5 align-middle">
+              <p className={`mt-2 text-sm ${isLight ? "text-slate-600" : "text-slate-300"}`}>
+                แต่ละ card = 1 ไฟล์ใน <code className={`font-mono text-xs px-1 py-0.5 rounded ${isLight ? "bg-slate-200 text-slate-700" : "bg-slate-700 text-slate-300"}`}>services/api/</code> แสดง types, functions ที่ export และทุก endpoint พร้อมหน้าที่เชื่อม — สีบอก HTTP method:{" "}
+                <span className="inline-flex flex-wrap gap-1.5 align-middle">
                   <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-sky-200 bg-sky-100 text-sky-700" : "border-sky-700/50 bg-sky-900/50 text-sky-300"}`}>GET</span>
                   <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-emerald-200 bg-emerald-100 text-emerald-700" : "border-emerald-700/50 bg-emerald-900/50 text-emerald-300"}`}>POST</span>
                   <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-amber-200 bg-amber-100 text-amber-700" : "border-amber-700/50 bg-amber-900/50 text-amber-300"}`}>PUT</span>
@@ -2010,27 +2082,71 @@ pnpm build`}</pre>
                 </span>
               </p>
 
-              <div className="mt-6 space-y-8">
-                {apiEndpointDomains.map((domain) => (
-                  <div key={domain.domain}>
-                    <div className="mb-3">
-                      <h3
-                        className={`text-base font-bold ${isLight ? "text-slate-900" : "text-slate-100"}`}
-                      >
-                        {domain.domain}
-                      </h3>
-                      <p
-                        className={`mt-0.5 text-sm ${isLight ? "text-slate-500" : "text-slate-400"}`}
-                      >
-                        {domain.description}
-                      </p>
+              <div className="mt-6 space-y-6">
+                {apiModuleDocs.map((mod) => (
+                  <div
+                    key={mod.file}
+                    className={`rounded-xl border ${isLight ? "border-slate-200 bg-slate-50" : "border-slate-700 bg-slate-800/50"}`}
+                  >
+                    {/* Card header */}
+                    <div className={`flex flex-wrap items-baseline gap-3 px-5 py-4 border-b ${isLight ? "border-slate-200" : "border-slate-700"}`}>
+                      <code className={`text-sm font-mono font-bold px-2 py-0.5 rounded ${isLight ? "bg-slate-800 text-slate-100" : "bg-slate-950 text-slate-200"}`}>
+                        {mod.file}
+                      </code>
+                      <span className={`text-base font-semibold ${isLight ? "text-slate-900" : "text-slate-100"}`}>
+                        {mod.domain}
+                      </span>
+                      <span className={`text-sm ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                        — {mod.description}
+                      </span>
                     </div>
-                    <DocTable
-                      theme={theme}
-                      headers={["Method", "Path", "คำอธิบาย", "หน้าที่เชื่อม"]}
-                    >
-                      <ApiEndpointRows items={domain.endpoints} theme={theme} />
-                    </DocTable>
+
+                    {/* Types & Functions */}
+                    <div className={`grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2 border-b ${isLight ? "border-slate-200" : "border-slate-700"}`}>
+                      <div>
+                        <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${isLight ? "text-slate-500" : "text-slate-400"}`}>Types ที่ export</p>
+                        {mod.types.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {mod.types.map((t: string) => (
+                              <code key={t} className={`text-xs font-mono px-2 py-0.5 rounded ${isLight ? "bg-violet-100 text-violet-800" : "bg-violet-900/40 text-violet-300"}`}>
+                                {t}
+                              </code>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className={`text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>— (infrastructure only)</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${isLight ? "text-slate-500" : "text-slate-400"}`}>Functions ที่ export</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {mod.functions.map((fn: string) => (
+                            <code key={fn} className={`text-xs font-mono px-2 py-0.5 rounded ${isLight ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-emerald-900/30 text-emerald-300 border border-emerald-800/40"}`}>
+                              {fn}
+                            </code>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Endpoints */}
+                    {mod.endpoints.length > 0 ? (
+                      <div className="px-5 py-4">
+                        <p className={`mb-3 text-xs font-semibold uppercase tracking-wide ${isLight ? "text-slate-500" : "text-slate-400"}`}>Endpoints</p>
+                        <DocTable theme={theme} headers={["Method", "Path", "คำอธิบาย", "หน้าที่เชื่อม"]}>
+                          <ApiEndpointRows items={mod.endpoints} theme={theme} />
+                        </DocTable>
+                      </div>
+                    ) : (
+                      <div className={`px-5 py-3 text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>
+                        ไฟล์นี้เป็น infrastructure — ไม่มี endpoint ตรง ๆ (ใช้ผ่าน domain files อื่น)
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    <div className={`px-5 py-3 rounded-b-xl text-xs border-t ${isLight ? "border-slate-200 bg-amber-50 text-amber-800" : "border-slate-700 bg-amber-900/20 text-amber-300"}`}>
+                      <span className="font-semibold">หมายเหตุ: </span>{mod.notes}
+                    </div>
                   </div>
                 ))}
               </div>
