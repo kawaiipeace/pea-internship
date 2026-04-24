@@ -209,6 +209,27 @@ export const user = new Elysia({ prefix: "/user", tags: ["Users(ข้อมู�
     }
   )
   .post(
+    "/internship/extend",
+    async ({ body, user, set }) => {
+      const result = await userService.extendInternship({
+        studentId: body.studentId,
+        hours: body.hours,
+        mentorId: user.id,
+        reason: body.reason,
+      });
+      set.status = 200;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.ADMIN, ROLE_IDS.MENTOR],
+      body: t.Object({
+        studentId: t.String(),
+        hours: t.Number(),
+        reason: t.Optional(t.String()),
+      }),
+    }
+  )
+  .post(
     "/internship/complete",
     async ({ body, user, set }) => {
       const result = await userService.completeInternship(
