@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { BadRequestError, InternalServerError } from "@/common/exceptions";
 import { db } from "@/db";
-import { studentProfiles, users, userFcmTokens } from "@/db/schema";
+import { studentProfiles, userFcmTokens, users } from "@/db/schema";
 import { type Auth, auth } from "@/lib/auth";
 import type * as model from "./model";
 

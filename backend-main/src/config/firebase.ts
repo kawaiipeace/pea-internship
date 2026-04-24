@@ -1,7 +1,7 @@
+import { eq } from "drizzle-orm";
 import admin from "firebase-admin";
 import { db } from "@/db";
 import { userFcmTokens } from "@/db/schema";
-import { eq } from "drizzle-orm";
 
 interface FirebaseError extends Error {
   code?: string;
@@ -65,21 +65,23 @@ export const sendNotification = async ({
   try {
     const response: string = await messaging.send(message);
     return response;
-  } catch (error: unknown) { 
-    const fcmError = error as FirebaseError; 
+  } catch (error: unknown) {
+    const fcmError = error as FirebaseError;
 
     if (
-      fcmError.code === 'messaging/registration-token-not-registered' ||
-      fcmError.code === 'messaging/invalid-registration-token'
+      fcmError.code === "messaging/registration-token-not-registered" ||
+      fcmError.code === "messaging/invalid-registration-token"
     ) {
-      console.warn(`[FCM] Token is no longer valid. Deleting from DB: ${token}`);
+      console.warn(
+        `[FCM] Token is no longer valid. Deleting from DB: ${token}`
+      );
       await db.delete(userFcmTokens).where(eq(userFcmTokens.token, token));
     }
 
     console.error("FCM Error:", fcmError.message);
     return null;
   }
-}
+};
 
 export const sendMulticastNotification = async (
   tokens: string[],
@@ -95,7 +97,10 @@ export const sendMulticastNotification = async (
     const response = await messaging.sendEachForMulticast(message);
     return response;
   } catch (error: unknown) {
-    console.error("Multicast Error:", error instanceof Error ? error.message : error);
+    console.error(
+      "Multicast Error:",
+      error instanceof Error ? error.message : error
+    );
     return null;
   }
 };
