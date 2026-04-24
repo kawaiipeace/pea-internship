@@ -1,13 +1,16 @@
-import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, or, isNull, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { BadRequestError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
+  applicationStatuses,
   departments,
   internshipPositionMentors,
   internshipPositions,
+  notifications,
   offices,
   staffProfiles,
+  studentProfiles,
   users,
 } from "@/db/schema";
 import { StaffLogsService } from "@/modules/staff-logs/service";
@@ -150,7 +153,9 @@ export class PositionService {
     } = query as model.GetPositionsQueryType & { office?: number };
 
     const offset = (page - 1) * limit;
-    const filters: SQL[] = [];
+    const filters: SQL[] = [
+      isNull(internshipPositions.deletedAt),
+    ];
 
     if (department !== undefined) {
       filters.push(eq(internshipPositions.departmentId, department));
@@ -408,7 +413,12 @@ export class PositionService {
           positionOwner: internshipPositions.positionOwner,
         })
         .from(internshipPositions)
-        .where(eq(internshipPositions.id, id));
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            isNull(internshipPositions.deletedAt)
+          )
+        );
 
       if (!existing) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
       if (existing.departmentId !== departmentId) {
@@ -511,7 +521,8 @@ export class PositionService {
         .where(
           and(
             eq(internshipPositions.id, id),
-            eq(internshipPositions.departmentId, departmentId)
+            eq(internshipPositions.departmentId, departmentId),
+            isNull(internshipPositions.deletedAt)
           )
         )
         .returning();
@@ -559,7 +570,12 @@ export class PositionService {
           acceptedCount: internshipPositions.acceptedCount,
         })
         .from(internshipPositions)
-        .where(eq(internshipPositions.id, id));
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            isNull(internshipPositions.deletedAt)
+          )
+        );
 
       if (!pos) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
 
@@ -568,20 +584,72 @@ export class PositionService {
       }
 
       if ((pos.acceptedCount ?? 0) > 0) {
-        throw new BadRequestError("ไม่สามารถลบประกาศได้ เนื่องจากมีผู้ได้รับคัดเลือกแล้ว");
+        throw new BadRequestError(
+          "ไม่สามารถลบประกาศได้ เนื่องจากมีผู้ได้รับคัดเลือกแล้ว"
+        );
       }
 
       await tx
-        .delete(internshipPositions)
-        .where(eq(internshipPositions.id, id));
+        .update(internshipPositions)
+        .set({
+          deletedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            isNull(internshipPositions.deletedAt)
+          )
+        );
+
+      const affectedApplications = await tx
+        .select({
+          userId: applicationStatuses.userId,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.positionId, id));
+
+      await tx
+        .update(applicationStatuses)
+        .set({
+          applicationStatus: "ABORT",
+          isActive: false,
+          statusNote: "ใบประกาศฝึกงานถูกลบโดยเจ้าหน้าที่",
+          updatedAt: new Date(),
+        })
+        .where(eq(applicationStatuses.positionId, id));
+
+      if (affectedApplications.length > 0) {
+        const userIds = affectedApplications.map((a) => a.userId);
+
+        await tx
+          .update(studentProfiles)
+          .set({
+            internshipStatus: "IDLE",
+          })
+          .where(or(...userIds.map((uid) => eq(studentProfiles.userId, uid))));
+
+        await tx.insert(notifications).values(
+          userIds.map((uid) => ({
+            userId: uid,
+            title: "ใบสมัครถูกยกเลิก",
+            message:
+              "ใบสมัครของคุณถูกยกเลิก เนื่องจากใบประกาศฝึกงานนี้ถูกลบโดยเจ้าหน้าที่",
+          }))
+        );
+      }
 
       await staffLogsService.log(
         tx,
         userId,
-        `DELETE_POSITION positionId=${id}`
+        `SOFT_DELETE_POSITION positionId=${id} AND_ABORT_APPLICATIONS`
       );
 
-      return { success: true, message: "ลบใบประกาศเรียบร้อยแล้ว" };
+      return {
+        success: true,
+        message:
+          "ลบใบประกาศเรียบร้อยแล้ว และเปลี่ยนสถานะใบสมัครเป็น ABORT",
+      };
     });
   }
 }

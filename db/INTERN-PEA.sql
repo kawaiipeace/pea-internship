@@ -357,6 +357,7 @@ CREATE TABLE -- intern
     position_owner VARCHAR(50) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     CONSTRAINT internship_positions_position_owner_fkey FOREIGN KEY (position_owner) REFERENCES public.users (id) ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT internship_positions_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.offices (id) ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT internship_positions_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments (dept_sap) ON UPDATE CASCADE ON DELETE RESTRICT
@@ -366,6 +367,7 @@ CREATE INDEX idx_internship_positions_office_id ON public.internship_positions (
 CREATE INDEX idx_internship_positions_department_id ON public.internship_positions (department_id);
 CREATE INDEX idx_internship_positions_recruitment_status ON public.internship_positions (recruitment_status);
 CREATE INDEX idx_internship_positions_position_owner ON public.internship_positions (position_owner);
+CREATE INDEX idx_internship_positions_not_deleted ON public.internship_positions (id) WHERE deleted_at IS NULL;
 
 -- Department's position_owner change trigger
 CREATE OR REPLACE FUNCTION public.trg_clear_position_owner_when_user_department_changes()

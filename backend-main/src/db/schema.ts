@@ -590,6 +590,7 @@ export const internshipPositions = pgTable(
     updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
   },
   (table) => [
     foreignKey({
@@ -622,6 +623,7 @@ export const internshipPositions = pgTable(
       table.recruitmentStatus
     ),
     index("idx_internship_positions_position_owner").on(table.positionOwner),
+    index("idx_internship_positions_deleted_at").on(table.deletedAt),
   ]
 );
 
