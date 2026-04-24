@@ -1052,6 +1052,7 @@ export class CheckTimeService {
         lname: users.lname,
         username: users.displayUsername,
         image: studentProfiles.image,
+        approverNote: timeCorrectionRequests.approverNote,
       })
       .from(timeCorrectionRequests)
       .innerJoin(
@@ -1104,6 +1105,7 @@ export class CheckTimeService {
         attachmentUrl: record.attachmentUrl,
         status: record.status,
         attendanceStatus: attendanceStatus,
+        approverNote: record.approverNote,
       };
     });
 

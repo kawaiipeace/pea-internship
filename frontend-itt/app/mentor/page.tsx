@@ -337,7 +337,7 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
                 )}
                 {attendanceStatusBadge && attendanceStatusBadge}
             </div>
-            <p className="text-xs text-gray-400">วันที่ส่งคำขอ : {submittedDate}</p>
+            <p className="text-[14px] text-[#85888E]">วันที่ส่งคำขอ : {submittedDate}</p>
         </div>
     </div>
     );
@@ -380,16 +380,16 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
             <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                 calendar_today
             </span>
-            <span>วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
+            <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
         </div>
 
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-xs text-gray-400 mb-0.5">เหตุผลการลา</p>
-            <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการลา</p>
+            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-            <span className="text-gray-400">ไฟล์แนบ :</span>
+            <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี) :</span>
             {request.hasFile ? (
                 <div 
                     onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
@@ -399,6 +399,8 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
                         <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
+                    ) : request.fileIcon === 'picture_as_pdf' ? (
+                        <span className="material-symbols-outlined text-[#000000]" style={{ fontSize: '18px' }}>picture_as_pdf</span>
                     ) : (
                         <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -441,7 +443,7 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
         const cfg = map[attendanceStatus];
         if (!cfg) return null;
         return (
-            <span className={`inline-flex items-center gap-1.5 text-[11px] pl-1 pr-3 py-1 rounded-full border font-bold ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+            <span className={`inline-flex items-center gap-1.5 text-[14px] pl-1 pr-3 py-1 rounded-full border font-bold ${cfg.bg} ${cfg.text} ${cfg.border}`}>
                 <span className={`w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0 ${cfg.iconBg}`}>
                     <span className="material-symbols-rounded text-white" style={{ fontSize: '12px' }}>{cfg.icon}</span>
                 </span>
@@ -465,18 +467,18 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
                 <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                     calendar_today
                 </span>
-                <span>วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
+                <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
             </div>
 
             {/* Time Row */}
             <div className="flex flex-col sm:flex-row gap-3 mb-2">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                     <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#E4E7EC]">
                         <span className="material-symbols-outlined text-black" style={{ fontSize: '16px' }}>schedule</span>
                     </span>
                     <span>เวลาเดิม : <span className="font-semibold text-gray-800 dark:text-white-light">{request.originalTime}</span></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                     <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#A9EFC5]">
                         <span className="material-symbols-outlined text-[#074D31]" style={{ fontSize: '16px' }}>manage_history</span>
                     </span>
@@ -485,19 +487,19 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
             </div>
 
             {/* Work Hours */}
-            <p className="text-sm text-gray-500 mb-3">
+            <p className="text-[16px] text-gray-500 mb-3">
                 ชั่วโมงทำงานที่แก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.hoursWorked} ชั่วโมง</span>
             </p>
 
             {/* Reason Box */}
             <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-                <p className="text-xs text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
-                <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+                <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
+                <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
             </div>
 
             {/* File Attachment */}
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-                <span className="text-gray-400">ไฟล์แนบ :</span>
+                <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี) :</span>
                 {request.attachmentUrl ? (
                     <div 
                         onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
@@ -514,6 +516,24 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
         </div>
     );
 };
+
+const EmptyState = ({ tabType }: { tabType: 'leave' | 'time-edit' }) => (
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="w-[280px] h-auto mb-6">
+            <img 
+                src="/mentor_approve.png" 
+                alt="No requests" 
+                className="w-full h-full object-contain" 
+            />
+        </div>
+        <h3 className="text-[24px] text-[#61646C] dark:text-white-light mb-2 leading-tight">
+            ไม่มีรายการคำขออนุมัติ{tabType === 'leave' ? 'ลา' : 'แก้ไขเวลา'}ในขณะนี้
+        </h3>
+        <p className="text-[16px] text-[#61646C] dark:text-gray-400">
+            คุณจัดการคำขอทั้งหมดครบถ้วนแล้ว หรือยังไมมีคำขอใหม่ส่งเข้ามาในตอนนี้
+        </p>
+    </div>
+);
 
 // ---- Main Page ----
 
@@ -608,7 +628,7 @@ const ApprovalRequestPage = () => {
                         if (hasFile) {
                             const extension = item.attachmentUrl.split('.').pop()?.toLowerCase();
                             if (extension === 'pdf') {
-                                fileIcon = 'pdf';
+                                fileIcon = 'picture_as_pdf';
                                 fileName = `ไฟล์เอกสาร.${extension}`;
                             } else {
                                 fileName = `รูปภาพหลักฐาน.${extension}`;
@@ -625,7 +645,7 @@ const ApprovalRequestPage = () => {
                             typeBorder,
                             typeIcon,
                             typeCircleBg,
-                            submittedDate: getThaiDate(new Date()), 
+                            submittedDate: getThaiDate(new Date(item.createdAt)), 
                             leaveDate: leaveDateDisplay,
                             reason: item.reason || '-',
                             profileImg: item.profileImg || '/assets/images/profile-1.jpeg',
@@ -825,26 +845,21 @@ const ApprovalRequestPage = () => {
 
             {/* Request List */}
             <div className="space-y-4">
-                {activeTab === 'leave' ? (
-                    loading ? (
-                        <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
-                    ) : records.length === 0 ? (
-                        <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอลาในขณะนี้</p>
-                    ) : (
-                        records.map((r) => (
-                            <LeaveCard key={(r as any).id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
-                        ))
-                    )
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="w-10 h-10 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin mb-4" />
+                        <p className="text-[14px] text-gray-500">กำลังโหลดข้อมูล...</p>
+                    </div>
+                ) : records.length === 0 ? (
+                    <EmptyState tabType={activeTab} />
                 ) : (
-                    loading ? (
-                        <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
-                    ) : records.length === 0 ? (
-                        <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอแก้ไขเวลาในขณะนี้</p>
-                    ) : (
-                        records.map((r) => (
+                    records.map((r) => (
+                        activeTab === 'leave' ? (
+                            <LeaveCard key={(r as any).id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
+                        ) : (
                             <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', [(r as any).id])} onApprove={() => openApproveConfirm([(r as any).id])} />
-                        ))
-                    )
+                        )
+                    ))
                 )}
             </div>
 

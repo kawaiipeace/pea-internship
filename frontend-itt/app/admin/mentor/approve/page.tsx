@@ -593,7 +593,7 @@ const ApprovalRequestPage = () => {
                             typeBorder,
                             typeIcon,
                             typeCircleBg,
-                            submittedDate: getThaiDate(startObj),
+                            submittedDate: getThaiDate(new Date(item.createdAt)),
                             leaveDate: leaveDateDisplay,
                             reason: item.reason || '-',
                             profileImg: item.profileImg || '/assets/images/profile-1.jpeg',

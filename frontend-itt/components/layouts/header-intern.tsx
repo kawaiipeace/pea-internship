@@ -194,13 +194,23 @@ const Header = () => {
 
     return (
         <header className={`z-40 ${themeConfig.semidark && themeConfig.menu === 'horizontal' ? 'dark' : ''}`}>
+            <style dangerouslySetInnerHTML={{ __html: `
+                .dropdown ul li a:hover {
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
+                }
+                .dropdown ul li button:hover {
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
+                }
+            ` }} />
             <div className="shadow-sm">
                 <div className="relative flex w-full items-center bg-white px-5 py-2.5 dark:bg-black">
                     {/* Show hamburger + logo in header always on mobile, and only when sidebar is closed on desktop */}
                     <div className={`flex items-center gap-3 ltr:mr-4 rtl:ml-4 ${themeConfig.sidebar ? 'flex' : 'lg:hidden'}`}>
                         <button
                             type="button"
-                            className="collapse-icon flex flex-none rounded-full p-2 hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
+                            className="collapse-icon flex flex-none rounded-full p-2 hover:bg-[#FDF2FD] hover:text-[#9A0D8A] dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-[#9A0D8A]"
                             onClick={() => dispatch(toggleSidebar())}
                         >
                             <IconMenu className="h-5 w-5 text-[#6B7280]" />
@@ -216,7 +226,7 @@ const Header = () => {
                             <Dropdown
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
+                                btnClassName="relative block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-[#9A0D8A] hover:bg-[#FDF2FD] dark:hover:bg-dark/60"
                                 button={
                                     <span>
                                         <IconBellBing />
@@ -294,9 +304,9 @@ const Header = () => {
                                 button={
                                     <div className="relative group block h-9 w-9">
                                         {user?.roleId === 3 ? (
-                                            <ImageWithAuth userId={user?.id} className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
+                                            <ImageWithAuth userId={user?.id} className="h-9 w-9 rounded-full object-cover" />
                                         ) : (
-                                            <img className="h-9 w-9 rounded-full object-cover saturate-50 group-hover:saturate-100" src="/assets/images/user-profile.jpeg" alt="userProfile" />
+                                            <img className="h-9 w-9 rounded-full object-cover" src="/assets/images/user-profile.jpeg" alt="userProfile" />
                                         )}
                                     </div>
                                 }
@@ -312,16 +322,18 @@ const Header = () => {
                                             <div className="ltr:pl-4 rtl:pr-4">
                                                 <h4 className="text-base whitespace-nowrap">
                                                     {fullName}
-                                                    <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">Intern</span>
+                                                    <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">
+                                                        {user?.roleId === 1 ? 'Admin' : user?.roleId === 2 ? 'Mentor' : 'Intern'}
+                                                    </span>
                                                 </h4>
-                                                <button type="button" className="text-black/60 hover:text-primary dark:text-dark-light/60 dark:hover:text-white whitespace-nowrap">
+                                                <button type="button" className="text-black/60 hover:text-[#9A0D8A] dark:text-dark-light/60 dark:hover:text-white whitespace-nowrap">
                                                     {email}
                                                 </button>
                                             </div>
                                         </div>
                                     </li>
                                     <li>
-                                        <Link href="/intern/users/profile" className="dark:hover:text-white">
+                                        <Link href="/intern/users/profile" className="hover:bg-[#FDF2FD] hover:!text-[#9A0D8A] dark:hover:text-white">
                                             <IconUser className="h-4.5 w-4.5 shrink-0 ltr:mr-2 rtl:ml-2" />
                                             Profile
                                         </Link>
@@ -329,7 +341,7 @@ const Header = () => {
 
 
                                     <li className="border-t border-white-light dark:border-white-light/10">
-                                        <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-white-light/10" onClick={handleLogout}>
+                                        <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-[#FDF2FD] hover:text-[#9A0D8A]" onClick={handleLogout}>
                                             <IconLogout className="h-4.5 w-4.5 shrink-0 rotate-90 ltr:mr-2 rtl:ml-2" />
                                             Sign Out
                                         </button>

@@ -129,12 +129,22 @@ const Header = () => {
 
     return (
         <header className={`z-40 ${themeConfig.semidark && themeConfig.menu === 'horizontal' ? 'dark' : ''}`}>
+            <style dangerouslySetInnerHTML={{ __html: `
+                .dropdown ul li a:hover {
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
+                }
+                .dropdown ul li button:hover {
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
+                }
+            ` }} />
             <div className="shadow-sm">
                 <div className="relative flex w-full items-center bg-white px-5 py-2.5 dark:bg-black">
                     <div className={`flex items-center gap-3 ltr:mr-4 rtl:ml-4 ${themeConfig.sidebar ? 'flex' : 'lg:hidden'}`}>
                         <button
                             type="button"
-                            className="collapse-icon flex flex-none rounded-full p-2 hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
+                            className="collapse-icon flex flex-none rounded-full p-2 hover:bg-[#FDF2FD] hover:text-[#9A0D8A] dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-[#9A0D8A]"
                             onClick={() => dispatch(toggleSidebar())}
                         >
                             <IconMenu className="h-5 w-5 text-[#6B7280]" />
@@ -163,7 +173,7 @@ const Header = () => {
                             <Dropdown
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative block p-2 rounded-full hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
+                                btnClassName="relative block p-2 rounded-full hover:bg-[#FDF2FD] hover:text-[#9A0D8A] dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-[#9A0D8A]"
                                 button={
                                     <span>
                                         <img src="/admin-icon/notifications_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" alt="notification" className="h-8 w-8" />
@@ -233,9 +243,9 @@ const Header = () => {
                             <Dropdown
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative group block p-2 rounded-full hover:bg-white-light/90 dark:hover:bg-dark/60"
+                                btnClassName="relative group block p-2 rounded-full dark:hover:bg-dark/60"
                                 button={
-                                    <span className="flex items-center hover:text-primary">
+                                    <span className="flex items-center">
                                         <img src="/admin-icon/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" alt="profile" className="h-8 w-8" />
                                     </span>
                                 }
@@ -253,14 +263,14 @@ const Header = () => {
                                         </div>
                                     </li>
                                     <li>
-                                        <Link href="/admin/profile" className="dark:hover:text-white">
+                                        <Link href="/admin/profile" className="hover:bg-[#FDF2FD] hover:!text-[#9A0D8A] dark:hover:text-white">
                                             <IconUser className="h-4.5 w-4.5 shrink-0 ltr:mr-2 rtl:ml-2" />
                                             Profile
                                         </Link>
                                     </li>
 
                                     <li className="border-t border-white-light dark:border-white-light/10">
-                                        <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-white-light/10" onClick={handleLogout}>
+                                        <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-[#FDF2FD] hover:text-[#9A0D8A]" onClick={handleLogout}>
                                             <IconLogout className="h-4.5 w-4.5 shrink-0 rotate-90 ltr:mr-2 rtl:ml-2" />
                                             Sign Out
                                         </button>

@@ -92,22 +92,22 @@ const Sidebar = () => {
         <div className={semidark ? 'dark' : ''}>
             <style dangerouslySetInnerHTML={{ __html: `
                 .sidebar ul li.nav-item a.active {
-                    background-color: #FFF5FD !important;
-                    color: #A80689 !important;
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
                 }
                 .sidebar ul li.nav-item a.active svg {
-                    color: #A80689 !important;
+                    color: #9A0D8A !important;
                 }
                 /* Hide the dash/bullet in sub-menu */
                 .sidebar ul li.nav-item ul li a:before {
                     display: none !important;
                 }
                 .sidebar ul li.nav-item a:hover {
-                    color: #A80689 !important;
-                    background-color: #FFF5FD !important;
+                    color: #9A0D8A !important;
+                    background-color: #FDF2FD !important;
                 }
                 .sidebar ul li.nav-item a:hover svg {
-                    color: #A80689 !important;
+                    color: #9A0D8A !important;
                 }
             ` }} />
             <nav
@@ -327,15 +327,15 @@ const Sidebar = () => {
                                             <li className="menu nav-item">
                                                 <button
                                                     type="button"
-                                                    className={`${currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history' ? '!bg-[#FFF5FD] !text-[#A80689]' : ''} nav-link group w-full`}
+                                                    className={`${currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history' ? '!bg-[#FDF2FD] !text-[#9A0D8A]' : ''} nav-link group w-full`}
                                                     onClick={() => toggleMenu('mentor-approval')}
                                                 >
                                                     <div className="flex items-center">
-                                                        <IconSquareCheck className={`h-9 w-9 ${(currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history') ? '!text-[#A80689]' : ''} group-hover:!text-[#A80689]`} />
-                                                        <span className={`${(currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history') ? '!text-[#A80689]' : 'text-black dark:text-[#506690]'} ltr:pl-3 rtl:pr-3 dark:group-hover:text-white-dark`}>{t('การอนุมัติ')}</span>
+                                                        <IconSquareCheck className={`h-9 w-9 ${(currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history') ? '!text-[#9A0D8A]' : ''} group-hover:!text-[#9A0D8A]`} />
+                                                        <span className={`${(currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history') ? '!text-[#9A0D8A]' : 'text-black dark:text-[#506690]'} ltr:pl-3 rtl:pr-3 dark:group-hover:text-white-dark`}>{t('การอนุมัติ')}</span>
                                                     </div>
 
-                                                    <div className={(currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history') ? 'text-[#A80689]' : (currentMenu !== 'mentor-approval' ? '-rotate-90 rtl:rotate-90' : '')}>
+                                                    <div className={(currentMenu === 'mentor-approval' || pathname === '/mentor' || pathname === '/mentor/approve/history') ? 'text-[#9A0D8A]' : (currentMenu !== 'mentor-approval' ? '-rotate-90 rtl:rotate-90' : '')}>
                                                         <IconCaretDown />
                                                     </div>
                                                 </button>
@@ -343,29 +343,29 @@ const Sidebar = () => {
                                                 <AnimateHeight duration={300} height={currentMenu === 'mentor-approval' ? 'auto' : 0}>
                                                     <ul className="sub-menu text-gray-500">
                                                         <li>
-                                                            <Link href="/mentor" className={`${pathname === '/mentor' ? '!text-[#A80689]' : ''}`}>{t('อนุมัติการลาและแก้ไขเวลา')}</Link>
+                                                            <Link href="/mentor" className={`${pathname === '/mentor' ? '!text-[#9A0D8A]' : ''}`}>{t('อนุมัติการลาและแก้ไขเวลา')}</Link>
                                                         </li>
                                                         <li>
-                                                            <Link href="/mentor/approve/history" className={`${pathname === '/mentor/approve/history' ? '!text-[#A80689]' : ''}`}>{t('ประวัติการอนุมัติ')}</Link>
+                                                            <Link href="/mentor/approve/history" className={`${pathname === '/mentor/approve/history' ? '!text-[#9A0D8A]' : ''}`}>{t('ประวัติการอนุมัติ')}</Link>
                                                         </li>
                                                     </ul>
                                                 </AnimateHeight>
                                             </li>
 
                                             <li className="nav-item">
-                                                <Link href="/mentor/students" className={`${pathname.startsWith('/mentor/students') ? '!bg-[#FFF5FD] !text-[#A80689]' : ''} nav-link group`}>
+                                                <Link href="/mentor/students" className={`${pathname.startsWith('/mentor/students') ? '!bg-[#FDF2FD] !text-[#9A0D8A]' : ''} nav-link group`}>
                                                     <div className="flex items-center">
-                                                        <IconUser className={`h-9 w-9 ${pathname.startsWith('/mentor/students') ? '!text-[#A80689]' : ''} group-hover:!text-[#A80689]`} />
-                                                        <span className={`ltr:pl-3 rtl:pr-3 ${pathname.startsWith('/mentor/students') ? '!text-[#A80689]' : 'text-black dark:text-[#506690]'} dark:group-hover:text-white-dark`}>{t('นักศึกษาในดูแล')}</span>
+                                                        <IconUser className={`h-9 w-9 ${pathname.startsWith('/mentor/students') ? '!text-[#9A0D8A]' : ''} group-hover:!text-[#9A0D8A]`} />
+                                                        <span className={`ltr:pl-3 rtl:pr-3 ${pathname.startsWith('/mentor/students') ? '!text-[#9A0D8A]' : 'text-black dark:text-[#506690]'} dark:group-hover:text-white-dark`}>{t('นักศึกษาในดูแล')}</span>
                                                     </div>
                                                 </Link>
                                             </li>
 
                                             <li className="nav-item">
-                                                <Link href="/mentor/remote-work" className={`${pathname === '/mentor/remote-work' ? '!bg-[#FFF5FD] !text-[#A80689]' : ''} nav-link group`}>
+                                                <Link href="/mentor/remote-work" className={`${pathname === '/mentor/remote-work' ? '!bg-[#FDF2FD] !text-[#9A0D8A]' : ''} nav-link group`}>
                                                     <div className="flex items-center">
-                                                        <IconClipboardText className={`h-9 w-9 ${pathname === '/mentor/remote-work' ? '!text-[#A80689]' : ''} group-hover:!text-[#A80689]`} />
-                                                        <span className={`ltr:pl-3 rtl:pr-3 ${pathname === '/mentor/remote-work' ? '!text-[#A80689]' : 'text-black dark:text-[#506690]'} dark:group-hover:text-white-dark`}>{t('ปฏิบัติงานนอกสถานที่')}</span>
+                                                        <IconClipboardText className={`h-9 w-9 ${pathname === '/mentor/remote-work' ? '!text-[#9A0D8A]' : ''} group-hover:!text-[#9A0D8A]`} />
+                                                        <span className={`ltr:pl-3 rtl:pr-3 ${pathname === '/mentor/remote-work' ? '!text-[#9A0D8A]' : 'text-black dark:text-[#506690]'} dark:group-hover:text-white-dark`}>{t('ปฏิบัติงานนอกสถานที่')}</span>
                                                     </div>
                                                 </Link>
                                             </li>

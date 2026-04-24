@@ -25,6 +25,7 @@ interface LeaveRequest {
     hasFile: boolean;
     attachmentUrl?: string;
     status: string;
+    approverNote?: string | null;
 }
 
 interface TimeCorrectionRequest {
@@ -45,6 +46,7 @@ interface TimeCorrectionRequest {
     typeBorder: string;
     typeIcon: string;
     typeCircleBg: string;
+    approverNote?: string | null;
 }
 
 // ---- Helper Methods ----
@@ -99,14 +101,14 @@ const StatusBadge = ({ status, activeTab }: { status: string, activeTab: 'leave'
     
     if (isApproved) {
         return (
-            <span className="px-3 py-1 bg-[#E6F8ED] text-[#074D31] rounded-full text-xs font-semibold whitespace-nowrap">
+            <span className="px-3 py-1 bg-[#E6F8ED] text-[#074D31] rounded-full text-[14px] font-semibold whitespace-nowrap">
                 {textPrefix}{textSuffix}
             </span>
         );
     }
     
     return (
-        <span className="px-3 py-1 bg-red-50 text-red-500 rounded-full text-xs font-semibold whitespace-nowrap">
+        <span className="px-3 py-1 bg-red-50 text-red-500 rounded-full text-[14px] font-semibold whitespace-nowrap">
             {textPrefix}{textSuffix}
         </span>
     );
@@ -133,7 +135,7 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
                         {type}
                     </span>
                 </div>
-                <p className="text-xs text-gray-400">วันที่ส่งคำขอ : {submittedDate}</p>
+                <p className="text-[14px] text-[#85888E]">วันที่ส่งคำขอ : {submittedDate}</p>
             </div>
         </div>
         <StatusBadge status={status} activeTab={activeTab} />
@@ -150,16 +152,16 @@ const LeaveHistoryCard = ({ request }: { request: LeaveRequest }) => (
             <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                 calendar_today
             </span>
-            <span>วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
+            <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
         </div>
 
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-xs text-gray-400 mb-0.5">เหตุผลการลา</p>
-            <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการลา</p>
+            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-            <span className="text-gray-400">ไฟล์แนบ :</span>
+            <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี):</span>
             {request.hasFile ? (
                 <div 
                     onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
@@ -169,6 +171,8 @@ const LeaveHistoryCard = ({ request }: { request: LeaveRequest }) => (
                         <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
+                    ) : request.fileIcon === 'picture_as_pdf' ? (
+                        <span className="material-symbols-outlined text-[#000000]" style={{ fontSize: '18px' }}>picture_as_pdf</span>
                     ) : (
                         <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -184,6 +188,15 @@ const LeaveHistoryCard = ({ request }: { request: LeaveRequest }) => (
                 </div>
             )}
         </div>
+
+        {request.status === 'REJECTED' && request.approverNote && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white-dark/10">
+                <p className="text-[16px] text-red-500 mb-1.5 font-semibold">เหตุผลที่ไม่อนุมัติ</p>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl px-4 py-3">
+                    <p className="text-[16px] text-red-600 dark:text-red-400 font-medium">{request.approverNote}</p>
+                </div>
+            </div>
+        )}
     </div>
 );
 
@@ -209,18 +222,18 @@ const TimeEditHistoryCard = ({ request }: { request: TimeCorrectionRequest }) =>
             <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                 calendar_today
             </span>
-            <span>วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
+            <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
         </div>
 
         {/* Time Row */}
         <div className="flex flex-col sm:flex-row gap-3 mb-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+            <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                 <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#E4E7EC]">
                     <span className="material-symbols-outlined text-black" style={{ fontSize: '16px' }}>schedule</span>
                 </span>
                 <span>เวลาเดิม : <span className="font-semibold text-gray-800 dark:text-white-light">{request.originalTime}</span></span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+            <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                 <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#A9EFC5]">
                     <span className="material-symbols-outlined text-[#074D31]" style={{ fontSize: '16px' }}>manage_history</span>
                 </span>
@@ -229,19 +242,19 @@ const TimeEditHistoryCard = ({ request }: { request: TimeCorrectionRequest }) =>
         </div>
 
         {/* Work Hours */}
-        <p className="text-sm text-gray-500 mb-3">
+        <p className="text-[16px] text-gray-500 mb-3">
             ชั่วโมงทำงานที่แก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.hoursWorked} ชั่วโมง</span>
         </p>
 
         {/* Reason Box */}
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-xs text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
-            <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
+            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
         </div>
 
         {/* File Attachment */}
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-            <span className="text-gray-400">ไฟล์แนบ :</span>
+            <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี):</span>
             {request.attachmentUrl ? (
                 <div 
                     onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
@@ -253,8 +266,17 @@ const TimeEditHistoryCard = ({ request }: { request: TimeCorrectionRequest }) =>
                 <div className="flex items-center bg-gray-50 border border-gray-200 dark:bg-black/10 dark:border-white-dark/10 px-3 py-1.5 rounded-lg">
                     <span className="text-xs text-gray-500">- ไม่มีไฟล์แนบ -</span>
                 </div>
-            )}
+            )}  
         </div>
+
+        {request.status === 'REJECTED' && request.approverNote && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white-dark/10">
+                <p className="text-[16px] text-red-500 mb-1.5 font-semibold">เหตุผลที่ไม่อนุมัติ</p>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl px-4 py-3">
+                    <p className="text-[16px] text-red-600 dark:text-red-400 font-medium">{request.approverNote}</p>
+                </div>
+            </div>
+        )}
     </div>
 );
 
@@ -313,7 +335,7 @@ const ApprovalHistoryPage = () => {
                     if (item.file) {
                         const extension = item.file.split('.').pop()?.toLowerCase();
                         if (extension === 'pdf') {
-                            fileIcon = 'pdf';
+                            fileIcon = 'Picture As Pdf';
                             fileName = `ไฟล์เอกสาร.${extension}`;
                         } else {
                             fileName = `รูปภาพหลักฐาน.${extension}`;
@@ -328,9 +350,9 @@ const ApprovalHistoryPage = () => {
                         typeBg: isSick ? 'bg-[#FFEFF3]' : 'bg-[#EEEFFF]',
                         typeText: isSick ? 'text-pink-500' : 'text-[#61646C]',
                         typeBorder: isSick ? 'border-[#FF1A7D]' : 'border-[#1A3CFF]',
-                        typeIcon: isSick ? 'local_hospital' : 'business_center',
+                        typeIcon: isSick ? 'health_cross' : 'business_center',
                         typeCircleBg: isSick ? 'bg-[#FF1A7D]' : 'bg-[#1A3CFF]',
-                        submittedDate: item.approvedAt ? getThaiDate(item.approvedAt) : 'ไม่ระบุ',
+                        submittedDate: item.createdAt ? getThaiDate(item.createdAt) : 'ไม่ระบุ',
                         leaveDate: item.leaveDate ? getThaiDate(item.leaveDate) : 'ไม่ระบุ',
                         reason: item.reason || '-',
                         profileImg: item.studentImage,
@@ -339,7 +361,8 @@ const ApprovalHistoryPage = () => {
                         fileIcon: fileIcon,
                         hasFile: !!item.file,
                         attachmentUrl: item.file,
-                        status: item.status
+                        status: item.status,
+                        approverNote: item.approverNote
                     };
                 });
                 
@@ -406,7 +429,8 @@ const ApprovalHistoryPage = () => {
                         typeText: typeConfig.text,
                         typeBorder: typeConfig.border,
                         typeIcon: typeConfig.icon,
-                        typeCircleBg: typeConfig.iconBg
+                        typeCircleBg: typeConfig.iconBg,
+                        approverNote: item.approverNote
                     };
                 });
 

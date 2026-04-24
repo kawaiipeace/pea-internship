@@ -424,6 +424,7 @@ export class LeaveService {
     const historyData = await db
       .select({
         id: leaveRequests.id,
+        createdAt: leaveRequests.createdAt,
         leaveDatetime: leaveRequests.leaveDatetime,
         leaveRequestType: leaveRequests.leaveRequestType,
         status: leaveRequests.status,
@@ -442,12 +443,13 @@ export class LeaveService {
         eq(studentProfiles.userId, leaveRequests.userId)
       )
       .where(finalCondition)
-      .orderBy(desc(leaveRequests.leaveDatetime));
+      .orderBy(desc(leaveRequests.createdAt));
 
     const rawRecords = historyData.map((record) => {
       return {
         id: record.id,
         userId: record.userId,
+        createdAt: record.createdAt,
         leaveDate: record.leaveDatetime,
         leaveType: record.leaveRequestType,
         status: record.status,
@@ -722,6 +724,7 @@ export class LeaveService {
         status: leaveRequests.status,
         reason: leaveRequests.reason,
         file: leaveRequests.file,
+        createdAt: leaveRequests.createdAt,
         studentName: sql<string>`concat(${users.fname}, ' ', ${users.lname})`,
         studentImage: studentProfiles.image,
         userId: leaveRequests.userId,
