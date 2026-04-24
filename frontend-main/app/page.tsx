@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/ui/Navbar";
+import NavbarPublic from "@/components/ui/NavbarPublic";
 import SearchSection from "@/components/ui/SearchSection";
 import JobCard, { Job } from "@/components/ui/JobCard";
 import JobDetailPanel from "@/components/ui/JobDetailPanel";
@@ -180,7 +180,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        <NavbarPublic />
         <VideoLoading message="กำลังโหลดตำแหน่งฝึกงาน..." />
       </div>
     );
@@ -189,7 +189,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <Navbar />
+      <NavbarPublic />
 
       {/* Search Section */}
       <SearchSection
