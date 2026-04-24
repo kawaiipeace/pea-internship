@@ -1,28 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import {
-  highSchools,
-  vocationalSchools,
-  highVocationalSchools,
-  universities,
-} from "../../app/data/institutions";
 
-// Institution categories
 const institutionCategories = [
   { id: "all", label: "ทั้งหมด", count: 4 },
-  { id: "high_school", label: "มัธยมศึกษาตอนปลาย", schools: highSchools },
-  {
-    id: "vocational",
-    label: "ประกาศนียบัตรวิชาชีพ (ปวช.)",
-    schools: vocationalSchools,
-  },
-  {
-    id: "high_vocational",
-    label: "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)",
-    schools: highVocationalSchools,
-  },
-  { id: "university", label: "มหาวิทยาลัย", schools: universities },
+  { id: "high_school", label: "มัธยมศึกษาตอนปลาย" },
+  { id: "vocational", label: "ประกาศนียบัตรวิชาชีพ (ปวช.)" },
+  { id: "high_vocational", label: "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)" },
+  { id: "university", label: "มหาวิทยาลัย" },
 ];
 
 interface OwnerSearchSectionProps {
@@ -42,7 +27,6 @@ export default function OwnerSearchSection({
   const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>(
     [],
   );
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [institutionSearch, setInstitutionSearch] = useState("");
   const institutionDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -79,25 +63,6 @@ export default function OwnerSearchSection({
     } else {
       setSelectedInstitutions([...newSelection, categoryId]);
     }
-  };
-
-  // Handle individual school selection
-  const handleSchoolSelect = (school: string) => {
-    const newSelection = selectedInstitutions.filter((s) => s !== "all");
-    if (newSelection.includes(school)) {
-      const filtered = newSelection.filter((s) => s !== school);
-      setSelectedInstitutions(filtered);
-    } else {
-      setSelectedInstitutions([...newSelection, school]);
-    }
-  };
-
-  // Get filtered schools based on search
-  const getFilteredSchools = (schools: string[]) => {
-    if (!institutionSearch) return schools;
-    return schools.filter((school) =>
-      school.toLowerCase().includes(institutionSearch.toLowerCase()),
-    );
   };
 
   // Get display text for institution dropdown
@@ -279,110 +244,31 @@ export default function OwnerSearchSection({
                   {institutionCategories
                     .filter((cat) => cat.id !== "all")
                     .map((category) => (
-                      <div key={category.id}>
-                        {/* Category header */}
-                        <div className="flex items-center justify-between px-2 py-2.5">
-                          <div
-                            className="flex items-center gap-3 cursor-pointer flex-1"
-                            onClick={() => handleCategorySelect(category.id)}
-                          >
-                            <div
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedInstitutions.includes(category.id) ? "bg-primary-600 border-primary-600" : "border-gray-300"}`}
+                      <div
+                        key={category.id}
+                        className="flex items-center gap-3 px-2 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg"
+                        onClick={() => handleCategorySelect(category.id)}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedInstitutions.includes(category.id) ? "bg-primary-600 border-primary-600" : "border-gray-300"}`}
+                        >
+                          {selectedInstitutions.includes(category.id) && (
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
                             >
-                              {selectedInstitutions.includes(category.id) && (
-                                <svg
-                                  className="w-3 h-3 text-white"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={3}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                            <span className="text-gray-700">
-                              {category.label}
-                            </span>
-                          </div>
-                          {category.schools && (
-                            <button
-                              onClick={() =>
-                                setExpandedCategory(
-                                  expandedCategory === category.id
-                                    ? null
-                                    : category.id,
-                                )
-                              }
-                              className="text-primary-600 hover:text-primary-700 p-1"
-                            >
-                              <svg
-                                className={`w-5 h-5 transition-transform ${expandedCategory === category.id ? "rotate-180" : ""}`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            </button>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
                           )}
                         </div>
-
-                        {/* Schools list */}
-                        {category.schools &&
-                          expandedCategory === category.id && (
-                            <div className="ml-6 space-y-1">
-                              {getFilteredSchools(category.schools)
-                                .slice(0, 10)
-                                .map((school, idx) => (
-                                  <div
-                                    key={`${category.id}-${idx}`}
-                                    className="flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-gray-50 rounded-lg"
-                                    onClick={() => handleSchoolSelect(school)}
-                                  >
-                                    <div
-                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedInstitutions.includes(school) ? "bg-primary-600 border-primary-600" : "border-gray-300"}`}
-                                    >
-                                      {selectedInstitutions.includes(
-                                        school,
-                                      ) && (
-                                        <svg
-                                          className="w-3 h-3 text-white"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={3}
-                                            d="M5 13l4 4L19 7"
-                                          />
-                                        </svg>
-                                      )}
-                                    </div>
-                                    <span className="text-gray-600 text-sm">
-                                      {school}
-                                    </span>
-                                  </div>
-                                ))}
-                              {getFilteredSchools(category.schools).length ===
-                                0 && (
-                                <p className="text-xs text-gray-400 px-2 py-2">
-                                  ไม่พบผลลัพธ์
-                                </p>
-                              )}
-                            </div>
-                          )}
+                        <span className="text-gray-700">{category.label}</span>
                       </div>
                     ))}
                 </div>
@@ -533,102 +419,31 @@ export default function OwnerSearchSection({
                   {institutionCategories
                     .filter((cat) => cat.id !== "all")
                     .map((category) => (
-                      <div key={category.id}>
-                        <div className="flex items-center justify-between px-2 py-2.5">
-                          <div
-                            className="flex items-center gap-3 cursor-pointer flex-1"
-                            onClick={() => handleCategorySelect(category.id)}
-                          >
-                            <div
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedInstitutions.includes(category.id) ? "bg-primary-600 border-primary-600" : "border-gray-300"}`}
+                      <div
+                        key={category.id}
+                        className="flex items-center gap-3 px-2 py-2.5 cursor-pointer hover:bg-gray-50 rounded-lg"
+                        onClick={() => handleCategorySelect(category.id)}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedInstitutions.includes(category.id) ? "bg-primary-600 border-primary-600" : "border-gray-300"}`}
+                        >
+                          {selectedInstitutions.includes(category.id) && (
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
                             >
-                              {selectedInstitutions.includes(category.id) && (
-                                <svg
-                                  className="w-3 h-3 text-white"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={3}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                            <span className="text-gray-700">
-                              {category.label}
-                            </span>
-                          </div>
-                          {category.schools && (
-                            <button
-                              onClick={() =>
-                                setExpandedCategory(
-                                  expandedCategory === category.id
-                                    ? null
-                                    : category.id,
-                                )
-                              }
-                              className="text-primary-600 hover:text-primary-700 p-1"
-                            >
-                              <svg
-                                className={`w-5 h-5 transition-transform ${expandedCategory === category.id ? "rotate-180" : ""}`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            </button>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
                           )}
                         </div>
-
-                        {category.schools &&
-                          expandedCategory === category.id && (
-                            <div className="ml-6 space-y-1">
-                              {getFilteredSchools(category.schools)
-                                .slice(0, 10)
-                                .map((school, idx) => (
-                                  <div
-                                    key={`${category.id}-${idx}`}
-                                    className="flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-gray-50 rounded-lg"
-                                    onClick={() => handleSchoolSelect(school)}
-                                  >
-                                    <div
-                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedInstitutions.includes(school) ? "bg-primary-600 border-primary-600" : "border-gray-300"}`}
-                                    >
-                                      {selectedInstitutions.includes(
-                                        school,
-                                      ) && (
-                                        <svg
-                                          className="w-3 h-3 text-white"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={3}
-                                            d="M5 13l4 4L19 7"
-                                          />
-                                        </svg>
-                                      )}
-                                    </div>
-                                    <span className="text-gray-600 text-sm">
-                                      {school}
-                                    </span>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
+                        <span className="text-gray-700">{category.label}</span>
                       </div>
                     ))}
                 </div>

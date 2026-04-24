@@ -17,13 +17,6 @@ type RouteDoc = {
   risk: string;
 };
 
-type ScenarioDoc = {
-  topic: string;
-  symptoms: string;
-  files: string[];
-  steps: string[];
-};
-
 type TechStackDoc = {
   technology: string;
   version: string;
@@ -50,14 +43,6 @@ type ApiModuleDoc = {
   notes: string;
   endpoints: ApiEndpointDoc[];
 };
-
-const quickStartSteps = [
-  "เริ่มจากอ่านหัวข้อ 1-4 เพื่อเข้าใจภาพรวมระบบก่อน",
-  "ถ้าจะแก้หน้าใดหน้าหนึ่ง ให้ไปที่หัวข้อ 5-9 (Route-by-Route)",
-  "ถ้าจะแก้พฤติกรรม shared UI หรือ API ให้ไปที่หัวข้อ 10",
-  "ถ้าเป็นปัญหา runtime/auth/redirect ให้ดูหัวข้อ 11 (Playbook)",
-  "ก่อน merge ให้เทียบกับหัวข้อ 12 (Release Checklist)",
-];
 
 const techStack: TechStackDoc[] = [
   {
@@ -121,7 +106,7 @@ const techStack: TechStackDoc[] = [
     whereToMaintain:
       "Dockerfile, dockerfile.dev, docker-compose.yml (root repo)",
     maintenanceTips:
-      "ถ้า build image ไม่ผ่าน ให้ตรวจ .dockerignore และ dependency install ขั้นตอนแรก",
+      "ถ้า build image ไม่ผ่าน ให้ตรวจ Dockerfile และ dependency install ขั้นตอนแรก",
   },
 ];
 
@@ -131,13 +116,6 @@ const rootFiles: FileDoc[] = [
     purpose: "แม่แบบตัวแปรแวดล้อมสำหรับ dev/deploy",
     editWhen: "เพิ่มหรือลด env variable ที่แอปต้องใช้",
     notes: "ห้ามใส่ secret จริงในไฟล์นี้",
-  },
-  {
-    file: ".dockerignore",
-    purpose: "กำหนดไฟล์ที่ไม่ต้อง copy เข้า image",
-    editWhen: "ต้องการลดขนาด image หรือกันไฟล์ไม่จำเป็นเข้า Docker build",
-    notes:
-      "ตอนนี้ ignore README.md ด้วย ถ้าอยากให้ image มีเอกสารต้องแก้ที่ไฟล์นี้",
   },
   {
     file: ".gitignore",
@@ -245,12 +223,7 @@ const appSystemFiles: FileDoc[] = [
     editWhen: "ปรับสีหลัก/ฟอนต์/global behavior",
     notes: "ถ้าทั้งเว็บสีหรือ spacing เพี้ยน ให้เริ่มที่ไฟล์นี้",
   },
-  {
-    file: "app/data/institutions.ts",
-    purpose: "แหล่งข้อมูลรายชื่อสถานศึกษาฝั่ง frontend",
-    editWhen: "ปรับรายการสถานศึกษา หรือ logic map ตามระดับการศึกษา",
-    notes: "ไฟล์นี้ยาวมาก ควรระวัง merge conflict",
-  },
+  
   {
     file: "app/data/relatedFieldOptions.ts",
     purpose: "ตัวเลือกสาขา/related fields สำหรับฟอร์ม",
@@ -306,6 +279,41 @@ const publicRoutes: RouteDoc[] = [
     purpose: "หน้าเครดิตทีมพัฒนา",
     editWhen: "อัปเดตรายชื่อทีม/visual effects",
     risk: "มี animation สูง ควรเช็ก performance หลังแก้",
+  },
+  {
+    url: "/itt",
+    file: "app/itt/page.tsx",
+    purpose: "หน้าแนะนำระบบ ITT",
+    editWhen: "แก้เนื้อหาหรือ flow แนะนำระบบ",
+    risk: "เสี่ยงต่ำทาง logic",
+  },
+  {
+    url: "/guide",
+    file: "app/guide/page.tsx",
+    purpose: "หน้า landing สำหรับคู่มือการใช้งาน (แยก admin/intern/owner)",
+    editWhen: "ปรับ layout หรือ routing คู่มือ",
+    risk: "เสี่ยงต่ำ แต่ link ต้องตรงกับ sub-route",
+  },
+  {
+    url: "/guide/admin",
+    file: "app/guide/admin/page.tsx",
+    purpose: "คู่มือสำหรับ admin (basic, dashboard, howto)",
+    editWhen: "เพิ่มหรืออัปเดตคู่มือ admin",
+    risk: "เสี่ยงต่ำ — content page",
+  },
+  {
+    url: "/guide/intern",
+    file: "app/guide/intern/page.tsx",
+    purpose: "คู่มือสำหรับ intern (basic, howto, status, itt)",
+    editWhen: "เพิ่มหรืออัปเดตคู่มือ intern",
+    risk: "เสี่ยงต่ำ — content page",
+  },
+  {
+    url: "/guide/owner",
+    file: "app/guide/owner/page.tsx",
+    purpose: "คู่มือสำหรับ owner (basic, dashboard, howto, selection, post-selection)",
+    editWhen: "เพิ่มหรืออัปเดตคู่มือ owner",
+    risk: "เสี่ยงต่ำ — content page",
   },
 ];
 
@@ -411,13 +419,7 @@ const internRoutes: RouteDoc[] = [
     editWhen: "แก้สถานะ/ลำดับเวลา/การแสดงผลรายการ",
     risk: "มีการ map status หลายแบบ",
   },
-  {
-    url: "/application-history/evaluation-result",
-    file: "app/application-history/evaluation-result/page.tsx",
-    purpose: "ผลการประเมินของการสมัคร",
-    editWhen: "ปรับการแสดงผลคะแนน/ผลลัพธ์",
-    risk: "ควบคุมกรณีไม่มีข้อมูลให้ดี",
-  },
+ 
   {
     url: "/application-history/job-detail",
     file: "app/application-history/job-detail/page.tsx",
@@ -488,13 +490,6 @@ const ownerRoutes: RouteDoc[] = [
     risk: "ต้อง sync payload กับ positionApi",
   },
   {
-    url: "/owner/announcements/[id]",
-    file: "app/owner/announcements/[id]/page.tsx",
-    purpose: "รายละเอียดประกาศแบบรายตัว",
-    editWhen: "เพิ่มข้อมูลเชิงลึกของประกาศ",
-    risk: "ต้อง handle กรณี id ไม่ถูกต้อง",
-  },
-  {
     url: "/owner/announcements/[id]/edit",
     file: "app/owner/announcements/[id]/edit/page.tsx",
     purpose: "หน้าแก้ไขประกาศ",
@@ -521,13 +516,6 @@ const ownerRoutes: RouteDoc[] = [
     purpose: "รายการสถานะรอดำเนินการ",
     editWhen: "แก้การคัดกรองสถานะ pending",
     risk: "ต้องคุม mapping status ให้ตรง backend",
-  },
-  {
-    url: "/owner/dashboard/near-start",
-    file: "app/owner/dashboard/near-start/page.tsx",
-    purpose: "รายการผู้ที่ใกล้เริ่มฝึก",
-    editWhen: "ปรับนิยาม near-start และ date filter",
-    risk: "เสี่ยงจาก timezone/date boundary",
   },
   {
     url: "/owner/dashboard/accepted",
@@ -601,16 +589,10 @@ const componentFiles: FileDoc[] = [
     notes: "ถ้า import หา component ไม่เจอ ให้เช็กไฟล์นี้",
   },
   {
-    file: "components/ui/Navbar.tsx",
-    purpose: "navbar สำหรับหน้า public หลัก",
-    editWhen: "ปรับเมนู public หรือปุ่ม login",
-    notes: "เกี่ยวข้องปุ่ม Keycloak redirect",
-  },
-  {
     file: "components/ui/NavbarPublic.tsx",
-    purpose: "navbar variant สำหรับ public pages",
-    editWhen: "ต้องการแยกพฤติกรรม navbar ของหน้า public เฉพาะ",
-    notes: "ระวังความซ้ำกับ Navbar.tsx",
+    purpose: "navbar สำหรับหน้า public — รองรับทั้ง guest และ intern ที่ login แล้ว",
+    editWhen: "ปรับเมนู public, ปุ่ม login, หรือ behavior เมื่อ login ด้วย isLoggedIn/userRole props",
+    notes: "รับ props isLoggedIn?: boolean และ userRole?: 'intern'|'admin'|'owner' — ถ้าไม่ส่ง props จะแสดงเป็น guest (not logged in)",
   },
   {
     file: "components/ui/NavbarIntern.tsx",
@@ -862,10 +844,10 @@ const apiModuleDocs: ApiModuleDoc[] = [
     notes: "mentorCache ลด API call ซ้ำ — positionToJob/Announcement ใช้ทั่ว intern/owner pages; APP_STATUS_TO_STEP map สถานะ → step index",
     endpoints: [
       { method: "GET", path: "/position", purpose: "ดึงรายการตำแหน่งทั้งหมด (ค้นหา/กรองได้, pagination)", usedInPages: ["/", "/intern-home", "/owner/announcements", "/owner/dashboard", "/admin/dashboard"] },
-      { method: "GET", path: "/position/{id}", purpose: "ดึงรายละเอียดตำแหน่งรายตัว", usedInPages: ["/jobs/[id]", "/intern-home/job-detail", "/owner/announcements/[id]", "/owner/announcements/[id]/edit"] },
+      { method: "GET", path: "/position/{id}", purpose: "ดึงรายละเอียดตำแหน่งรายตัว", usedInPages: ["/jobs/[id]", "/intern-home/job-detail", "/owner/announcements/[id]/edit"] },
       { method: "POST", path: "/position", purpose: "สร้างประกาศตำแหน่งฝึกงานใหม่", usedInPages: ["/owner/announcements/create"] },
       { method: "PUT", path: "/position/{id}", purpose: "แก้ไขประกาศตำแหน่ง (ชื่อ, วันรับสมัคร, สาขา ฯลฯ)", usedInPages: ["/owner/announcements/[id]/edit"] },
-      { method: "DELETE", path: "/position/{id}", purpose: "ลบประกาศตำแหน่ง", usedInPages: ["/owner/announcements/[id]"] },
+      { method: "DELETE", path: "/position/{id}", purpose: "ลบประกาศตำแหน่ง", usedInPages: ["/owner/announcements/[id]/edit"] },
     ],
   },
   {
@@ -1017,104 +999,17 @@ const apiModuleDocs: ApiModuleDoc[] = [
   },
 ];
 
-const scenarios: ScenarioDoc[] = [
-  {
-    topic: "Login แล้วเด้งผิดหน้า หรือเข้า role ไม่ได้",
-    symptoms: "login สำเร็จแต่ redirect ไม่ถูก, หรือวนกลับหน้า login",
-    files: [
-      "proxy.ts",
-      "services/api/client.ts (interceptor 401 redirect + authStorage)",
-      "services/api/auth.ts (login/session/keycloak)",
-      "components/IdleTimeoutProvider.tsx",
-      "app/login/intern/page.tsx",
-      "app/login/owner/page.tsx",
-      "app/login/owner/callback/page.tsx",
-    ],
-    steps: [
-      "ตรวจ cookie better-auth.session_token และ user_role ใน browser",
-      "ตรวจเงื่อนไข route group และ role redirect ใน proxy.ts",
-      "ทดสอบ flow intern/owner/admin แยกกันทีละ role",
-      "ตรวจว่าฝั่ง client เรียก API ผ่าน /api rewrite",
-    ],
-  },
-  {
-    topic: "ข้อมูลจาก API ไม่ขึ้น หรือขึ้นไม่ครบ",
-    symptoms: "หน้าโหลดได้แต่ list ว่าง/field หาย/ขึ้น error เงียบ",
-    files: [
-      "services/api/{domain}.ts (ตาม endpoint ที่ไม่ขึ้น)",
-      "services/api/client.ts (ถ้าทุก endpoint ไม่ขึ้นเลย — ปัญหาอาจอยู่ที่ instance/interceptor)",
-      "next.config.ts",
-      "app/page.tsx",
-      "app/intern-home/page.tsx",
-      "app/owner/dashboard/utils/applicationMapper.ts",
-    ],
-    steps: [
-      "ระบุ domain ก่อน (auth/position/application/...) แล้วเปิด services/api/{domain}.ts",
-      "ตรวจ endpoint + payload/response type ในไฟล์ domain นั้น",
-      "ตรวจ rewrite /api/:path* ใน next.config.ts ว่าชี้ backend ถูก",
-      "เช็ก mapping จาก backend model ไป frontend model",
-      "เติม fallback state ให้เห็นชัด (empty/error/loading)",
-    ],
-  },
-  {
-    topic: "สถานะการสมัครเพี้ยน",
-    symptoms: "step ไม่ตรง, badge ผิด, ย้ายแท็บผิด",
-    files: [
-      "services/api/application.ts (AppStatusEnum + APP_STATUS_TO_STEP + canApplyForNewJob)",
-      "services/api/application-status-actions.ts (log การเปลี่ยนสถานะ)",
-      "app/owner/dashboard/utils/applicationMapper.ts",
-      "app/application-status/page.tsx",
-      "app/application-history/page.tsx",
-    ],
-    steps: [
-      "ไล่ enum/status map ที่ต้นทาง: services/api/application.ts (AppStatusEnum, APP_STATUS_TO_STEP)",
-      "ตรวจ mapping เฉพาะ owner dashboard ใน applicationMapper.ts",
-      "ทดสอบเคสสถานะหลัก (pending, accepted, rejected, cancelled, complete)",
-      "ยืนยันข้อความ label ภาษาไทยในแต่ละหน้า",
-    ],
-  },
-  {
-    topic: "เพิ่มหน้าใหม่และกำหนดสิทธิ์เข้าถึง",
-    symptoms: "หน้าใหม่ 404 หรือเข้าถึงได้ผิด role",
-    files: [
-      "app/<new-route>/page.tsx",
-      "proxy.ts",
-      "components/ui/*Navbar*.tsx",
-    ],
-    steps: [
-      "สร้างไฟล์ route ตาม App Router convention",
-      "เพิ่ม route เข้า public/auth/protected ใน proxy.ts ให้ถูกกลุ่ม",
-      "เพิ่มเมนูใน navbar ที่เกี่ยวข้อง",
-      "ทดสอบการเข้าหน้าใหม่ทั้งก่อนและหลัง login",
-    ],
-  },
-];
-
-const releaseChecklist = [
-  "รัน pnpm lint แล้วไม่มี error",
-  "รัน pnpm build ผ่านและ route สำคัญไม่หาย",
-  "เทสต์ manual ขั้นต่ำ: public + intern + owner + admin",
-  "กรณีแก้ auth/redirect ต้องทดสอบ callback และ forceLogin query",
-  "กรณีแก้ status mapping ต้องทดสอบทุกสถานะหลัก",
-  "ตรวจว่าการเรียก API ใช้ /api (same-origin) ไม่ยิง cross-domain ตรง",
-  "ถ้าแก้ shared component ให้ตรวจทุกหน้าที่ import component นั้น",
-  "อัปเดตหน้านี้ถ้าเปลี่ยนโครงสร้างไฟล์หรือ flow หลัก",
-];
-
 const sectionNavigation = [
-  { id: "section-1", label: "1) วิธีใช้เอกสารนี้" },
-  { id: "section-2", label: "2) Tech Stack" },
-  { id: "section-3", label: "3) Root Files" },
-  { id: "section-4", label: "4) App System Files" },
-  { id: "section-5", label: "5) Public Routes" },
-  { id: "section-6", label: "6) Auth Routes" },
-  { id: "section-7", label: "7) Intern Routes" },
-  { id: "section-8", label: "8) Admin Routes" },
-  { id: "section-9", label: "9) Owner Routes" },
-  { id: "section-10", label: "10) Components, Services, Types" },
-  { id: "section-11", label: "11) Playbook" },
-  { id: "section-12", label: "12) Release Checklist" },
-  { id: "section-13", label: "13) API Reference ละเอียด" },
+  { id: "section-2", label: "1) Tech Stack" },
+  { id: "section-3", label: "2) Root Files" },
+  { id: "section-4", label: "3) App System Files" },
+  { id: "section-5", label: "4) Public Routes" },
+  { id: "section-6", label: "5) Auth Routes" },
+  { id: "section-7", label: "6) Intern Routes" },
+  { id: "section-8", label: "7) Admin Routes" },
+  { id: "section-9", label: "8) Owner Routes" },
+  { id: "section-10", label: "9) Components, Services, Types" },
+  { id: "section-13", label: "10) API Reference ละเอียด" },
 ];
 
 const sectionCardClassName =
@@ -1760,39 +1655,9 @@ export default function FrontendMainMaintenanceDocPage() {
               ))}
             </div>
 
-            <section id="section-1" className={sectionCardClass}>
-              <SectionTitle theme={theme}>
-                1) วิธีใช้เอกสารนี้ (สำหรับคนที่เพิ่งเข้ามาดูแล)
-              </SectionTitle>
-              <ol
-                className={`mt-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed ${
-                  isLight ? "text-slate-700" : "text-slate-300"
-                }`}
-              >
-                {quickStartSteps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-              <div
-                className={`mt-5 rounded-xl border p-4 text-sm ${
-                  isLight
-                    ? "border-sky-200 bg-sky-50 text-sky-900"
-                    : "border-sky-900/50 bg-sky-950/40 text-sky-200"
-                }`}
-              >
-                <p className="font-semibold">ภาพรวมลำดับการทำงานของระบบ</p>
-                <p className="mt-1">
-                  Browser Request -&gt; proxy.ts (ตรวจสิทธิ์/redirect) -&gt; app
-                  route page -&gt; services/api/&#123;domain&#125;.ts -&gt;
-                  services/api/client.ts (axios + interceptors) -&gt; /api
-                  rewrite ใน next.config.ts -&gt; backend-main
-                </p>
-              </div>
-            </section>
-
             <section id="section-2" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                2) Tech Stack ของโปรเจกต์
+                1) Tech Stack ของโปรเจกต์
               </SectionTitle>
               <p
                 className={`mt-2 text-sm ${
@@ -1818,7 +1683,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-3" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                3) Root Files (อธิบายทีละไฟล์)
+                2) Root Files (อธิบายทีละไฟล์)
               </SectionTitle>
               <p
                 className={`mt-2 text-sm ${
@@ -1838,7 +1703,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-4" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                4) App System Files (ไม่ใช่ route แต่สำคัญ)
+                3) App System Files (ไม่ใช่ route แต่สำคัญ)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1850,7 +1715,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-5" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                5) Public Routes (ไฟล์ต่อไฟล์)
+                4) Public Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1862,7 +1727,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-6" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                6) Auth Routes (ไฟล์ต่อไฟล์)
+                5) Auth Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1874,7 +1739,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-7" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                7) Intern Routes (ไฟล์ต่อไฟล์)
+                6) Intern Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1886,7 +1751,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-8" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                8) Admin Routes (ไฟล์ต่อไฟล์)
+                7) Admin Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1898,7 +1763,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-9" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                9) Owner Routes (ไฟล์ต่อไฟล์)
+                8) Owner Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1910,7 +1775,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-10" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                10) Components, Services และ Types (รายไฟล์)
+                9) Components, Services และ Types (รายไฟล์)
               </SectionTitle>
 
               <h3
@@ -1918,7 +1783,7 @@ export default function FrontendMainMaintenanceDocPage() {
                   isLight ? "text-slate-900" : "text-slate-100"
                 }`}
               >
-                10.1 Components
+                9.1 Components
               </h3>
               <DocTable
                 theme={theme}
@@ -1932,7 +1797,7 @@ export default function FrontendMainMaintenanceDocPage() {
                   isLight ? "text-slate-900" : "text-slate-100"
                 }`}
               >
-                10.2 Services และ Types
+                9.2 Services และ Types
               </h3>
               <DocTable
                 theme={theme}
@@ -1946,7 +1811,7 @@ export default function FrontendMainMaintenanceDocPage() {
                   isLight ? "text-slate-900" : "text-slate-100"
                 }`}
               >
-                10.3 API Domains ใน services/api/*.ts
+                9.3 API Domains ใน services/api/*.ts
               </h3>
               <DocTable
                 theme={theme}
@@ -1957,120 +1822,11 @@ export default function FrontendMainMaintenanceDocPage() {
 
             </section>
 
-            <section id="section-11" className={sectionCardClass}>
-              <SectionTitle theme={theme}>
-                11) Playbook แก้ปัญหา (อาการ -&gt; ไฟล์ -&gt; ขั้นตอน)
-              </SectionTitle>
-
-              <div className="mt-5 grid gap-4">
-                {scenarios.map((scenario) => (
-                  <article
-                    key={scenario.topic}
-                    className={`rounded-xl border p-4 shadow-sm ${
-                      isLight
-                        ? "border-slate-200 bg-slate-50 shadow-slate-200/60"
-                        : "border-slate-700 bg-slate-800/50 shadow-black/20"
-                    }`}
-                  >
-                    <h3
-                      className={`text-base font-bold ${
-                        isLight ? "text-slate-900" : "text-slate-100"
-                      }`}
-                    >
-                      {scenario.topic}
-                    </h3>
-                    <p
-                      className={`mt-1 text-sm ${
-                        isLight ? "text-slate-700" : "text-slate-300"
-                      }`}
-                    >
-                      <span
-                        className={`font-semibold ${
-                          isLight ? "text-slate-900" : "text-slate-100"
-                        }`}
-                      >
-                        อาการ:
-                      </span>{" "}
-                      {scenario.symptoms}
-                    </p>
-
-                    <p
-                      className={`mt-3 text-sm font-semibold ${
-                        isLight ? "text-slate-900" : "text-slate-100"
-                      }`}
-                    >
-                      ไฟล์ที่ควรเช็กก่อน
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {scenario.files.map((file) => (
-                        <span
-                          key={`${scenario.topic}-${file}`}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                            isLight
-                              ? "border-slate-300 bg-white text-slate-700"
-                              : "border-slate-600 bg-slate-900 text-slate-300"
-                          }`}
-                        >
-                          {file}
-                        </span>
-                      ))}
-                    </div>
-
-                    <ol
-                      className={`mt-3 list-decimal space-y-1 pl-5 text-sm ${
-                        isLight ? "text-slate-700" : "text-slate-300"
-                      }`}
-                    >
-                      {scenario.steps.map((step) => (
-                        <li key={`${scenario.topic}-${step}`}>{step}</li>
-                      ))}
-                    </ol>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section id="section-12" className={sectionCardClass}>
-              <SectionTitle theme={theme}>
-                12) Release Checklist (ก่อน merge/deploy)
-              </SectionTitle>
-              <ul
-                className={`mt-4 space-y-2 text-sm ${
-                  isLight ? "text-slate-700" : "text-slate-300"
-                }`}
-              >
-                {releaseChecklist.map((item) => (
-                  <li
-                    key={item}
-                    className={`rounded-lg border px-3 py-2 transition-colors ${
-                      isLight
-                        ? "border-slate-200 bg-slate-50 hover:bg-sky-50/70"
-                        : "border-slate-700 bg-slate-800/60 hover:bg-slate-700/60"
-                    }`}
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
-              <div
-                className={`mt-5 rounded-xl border p-4 ${
-                  isLight
-                    ? "border-slate-200 bg-slate-900 text-slate-100"
-                    : "border-slate-600 bg-slate-950 text-slate-100"
-                }`}
-              >
-                <p className="mb-2 text-sm font-semibold">
-                  คำสั่งแนะนำก่อนส่งงาน
-                </p>
-                <pre className="overflow-x-auto text-xs md:text-sm">{`pnpm lint
-pnpm build`}</pre>
-              </div>
-            </section>
+            
 
             <section id="section-13" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                13) API Reference — services/api/ (ทุก module)
+                10) API Reference — services/api/ (ทุก module)
               </SectionTitle>
               <p className={`mt-2 text-sm ${isLight ? "text-slate-600" : "text-slate-300"}`}>
                 แต่ละ card = 1 ไฟล์ใน <code className={`font-mono text-xs px-1 py-0.5 rounded ${isLight ? "bg-slate-200 text-slate-700" : "bg-slate-700 text-slate-300"}`}>services/api/</code> แสดง types, functions ที่ export และทุก endpoint พร้อมหน้าที่เชื่อม — สีบอก HTTP method:{" "}
