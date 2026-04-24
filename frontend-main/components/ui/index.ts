@@ -1,10 +1,9 @@
 // Export all UI components
-export { default as Navbar } from './Navbar';
+export { default as NavbarPublic } from './NavbarPublic';
 
 export { default as OwnerNavbar } from './OwnerNavbar';
 export { default as AdminNavbar } from './AdminNavbar';
 export { default as NavbarIntern } from './NavbarIntern';
-export { default as NavbarPublic } from './NavbarPublic';
 export { default as SearchSection } from './SearchSection';
 export { default as OwnerSearchSection } from './OwnerSearchSection';
 export { default as JobCard } from './JobCard';
