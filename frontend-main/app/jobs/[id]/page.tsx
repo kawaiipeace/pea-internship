@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/components/ui/Navbar";
+import NavbarPublic from "@/components/ui/NavbarPublic";
 import VideoLoading from "@/components/ui/VideoLoading";
 import LoginModal from "@/components/ui/LoginModal";
 import { Job } from "@/components/ui/JobCard";
@@ -83,7 +83,7 @@ export default function JobDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        <NavbarPublic />
         <VideoLoading message="กำลังโหลดข้อมูล..." />
       </div>
     );
@@ -92,7 +92,7 @@ export default function JobDetailPage() {
   if (!job) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        <NavbarPublic />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-gray-500">ไม่พบตำแหน่งงานที่ต้องการ</p>
         </main>
@@ -106,7 +106,7 @@ export default function JobDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <NavbarPublic />
 
       <main className="max-w-4xl mx-auto px-4 py-6 pb-24 lg:pb-8">
         {/* Breadcrumb - Hidden on mobile */}
@@ -226,7 +226,10 @@ export default function JobDetailPage() {
                     />
                   </svg>
                   <span>
-                    รอบที่เปิดรับสมัคร: {job.startDate} - {job.endDate}
+                    รอบที่เปิดรับสมัคร:{" "}
+                    {job.startDate && job.startDate !== "-" && job.endDate && job.endDate !== "-"
+                      ? `${job.startDate} - ${job.endDate}`
+                      : "ไม่กำหนดระยะเวลา"}
                   </span>
                 </div>
               </div>
@@ -368,7 +371,10 @@ export default function JobDetailPage() {
                 />
               </svg>
               <span>
-                รอบที่เปิดรับสมัคร: {job.startDate} - {job.endDate}
+                รอบที่เปิดรับสมัคร:{" "}
+                {job.startDate && job.startDate !== "-" && job.endDate && job.endDate !== "-"
+                  ? `${job.startDate} - ${job.endDate}`
+                  : "ไม่กำหนดระยะเวลา"}
               </span>
             </div>
           </div>

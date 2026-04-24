@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Navbar from "@/components/ui/Navbar";
+import NavbarPublic from "@/components/ui/NavbarPublic";
 
 export default function PEAInfoPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <Navbar />
+      <NavbarPublic />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

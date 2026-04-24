@@ -114,8 +114,8 @@ export default function ApplicantBasicPage() {
 
         {/* รูปประกอบการเข้าสู่ระบบ */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/login1.png" alt="หน้าเข้าสู่ระบบพนักงาน PEA" />
-          <ZoomImage src="/images/คู่มือ/login2.png" alt="หน้าเข้าสู่ระบบผู้สมัครฝึกงาน" />
+          <ZoomImage src="/images/guideline/login1.png" alt="หน้าเข้าสู่ระบบพนักงาน PEA" />
+          <ZoomImage src="/images/guideline/login2.png" alt="หน้าเข้าสู่ระบบผู้สมัครฝึกงาน" />
         </div>
 
         <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของพนักงาน PEA</h3>
@@ -126,8 +126,8 @@ export default function ApplicantBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/login3.png" alt="หน้าเข้าสู่ระบบพนักงาน PEA" />
-          <ZoomImage src="/images/คู่มือ/login4.png" alt="หน้าเข้าสู่ระบบผู้สมัครฝึกงาน" />
+          <ZoomImage src="/images/guideline/login3.png" alt="หน้าเข้าสู่ระบบพนักงาน PEA" />
+          <ZoomImage src="/images/guideline/login4.png" alt="หน้าเข้าสู่ระบบผู้สมัครฝึกงาน" />
         </div>
 
         <h3 className="text-lg font-bold text-gray-900 mb-3">หน้าเข้าสู่ระบบของผู้สมัครฝึกงาน</h3>
@@ -139,8 +139,8 @@ export default function ApplicantBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/login5.png" alt="หน้าเข้าสู่ระบบพนักงาน PEA" />
-          <ZoomImage src="/images/คู่มือ/login6.png" alt="หน้าเข้าสู่ระบบผู้สมัครฝึกงาน" />
+          <ZoomImage src="/images/guideline/login5.png" alt="หน้าเข้าสู่ระบบพนักงาน PEA" />
+          <ZoomImage src="/images/guideline/login6.png" alt="หน้าเข้าสู่ระบบผู้สมัครฝึกงาน" />
         </div>
 
       </section>
@@ -158,8 +158,8 @@ export default function ApplicantBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/ข้อมูลผู้ใช้.png" alt="ข้อมูลผู้ใช้งาน" />
-          <ZoomImage src="/images/คู่มือ/ข้อมูลผู้ใช้2.png" alt="ข้อมูลผู้ใช้งาน" />
+          <ZoomImage src="/images/guideline/intern1.png" alt="ข้อมูลผู้ใช้งาน" />
+          <ZoomImage src="/images/guideline/intern2.png" alt="ข้อมูลผู้ใช้งาน" />
         </div>
 
       </section>
@@ -177,7 +177,7 @@ export default function ApplicantBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/logout.png" alt="หน้าออกจากระบบ" />
+          <ZoomImage src="/images/guideline/logout.png" alt="หน้าออกจากระบบ" />
         </div>
 
       </section>
@@ -194,7 +194,7 @@ export default function ApplicantBasicPage() {
         </p>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/แจ้งปัญหา.png" alt="หน้าแจ้งปัญหาการใช้งาน" />
+          <ZoomImage src="/images/guideline/report.png" alt="หน้าแจ้งปัญหาการใช้งาน" />
         </div>
 
       </section>

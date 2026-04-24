@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/ui/Navbar";
+import NavbarPublic from "@/components/ui/NavbarPublic";
 import {
   authApi,
   RegisterInternData,
@@ -743,7 +743,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <Navbar />
+      <NavbarPublic />
 
       {/* Main Content */}
       <main className="flex items-center justify-center px-4 py-12">

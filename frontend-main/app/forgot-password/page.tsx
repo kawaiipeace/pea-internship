@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components";
+import NavbarPublic from "@/components/ui/NavbarPublic";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <Navbar />
+      <NavbarPublic />
 
       {/* Main Content */}
       <main className="flex items-center justify-center px-4 py-12">

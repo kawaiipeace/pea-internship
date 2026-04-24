@@ -97,7 +97,7 @@ export default function AdminHowtoPage() {
                 </p>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/howtoadmin.png" alt="ระบบสำหรับแอดมิน" />
+                    <ZoomImage src="/images/guideline/howtoadmin.png" alt="ระบบสำหรับแอดมิน" />
                 </div>
             </section>
 
@@ -165,8 +165,8 @@ export default function AdminHowtoPage() {
                     </div>
 
                     <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                        <ZoomImage src="/images/คู่มือ/howtoadmin2.png" alt="ระบบสำหรับแอดมิน" />
-                        <ZoomImage src="/images/คู่มือ/howtoadmin3.png" alt="ระบบสำหรับแอดมิน" />
+                        <ZoomImage src="/images/guideline/howtoadmin2.png" alt="ระบบสำหรับแอดมิน" />
+                        <ZoomImage src="/images/guideline/howtoadmin3.png" alt="ระบบสำหรับแอดมิน" />
                     </div>
                 </div>
             </section>
@@ -207,8 +207,8 @@ export default function AdminHowtoPage() {
                 </div>
 
                 <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-                    <ZoomImage src="/images/คู่มือ/howtoadmin4.png" alt="ระบบสำหรับแอดมิน" />
-                    <ZoomImage src="/images/คู่มือ/howtoadmin5.png" alt="ระบบสำหรับแอดมิน" />
+                    <ZoomImage src="/images/guideline/howtoadmin4.png" alt="ระบบสำหรับแอดมิน" />
+                    <ZoomImage src="/images/guideline/howtoadmin5.png" alt="ระบบสำหรับแอดมิน" />
                 </div>
             </section>
 

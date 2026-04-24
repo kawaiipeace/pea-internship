@@ -153,7 +153,7 @@ export default function StaffPostSelectionPage() {
         </div>
 
         <div className="grid grid-cols-2 place-items-center gap-4 mb-8">
-          <ZoomImage src="/images/คู่มือ/postselection.png" alt="การยกเลิกการฝึกงานOwner" />
+          <ZoomImage src="/images/guideline/postselection.png" alt="การยกเลิกการฝึกงานOwner" />
         </div>
       </section>
 

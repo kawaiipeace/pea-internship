@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavbarIntern } from "@/components";
-import Navbar from "@/components/ui/Navbar";
+import NavbarPublic from "@/components/ui/NavbarPublic";
 import { authStorage } from "@/services/api";
 
 // Image Viewer Modal Component
@@ -325,7 +325,7 @@ export default function FAQsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {isLoggedIn ? <NavbarIntern /> : <Navbar />}
+      {isLoggedIn ? <NavbarIntern /> : <NavbarPublic />}
 
       <main className="max-w-4xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}

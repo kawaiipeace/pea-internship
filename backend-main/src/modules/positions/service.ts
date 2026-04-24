@@ -3,7 +3,6 @@ import { NotFoundError } from "elysia";
 import { BadRequestError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
 import {
-  applicationStatuses,
   departments,
   internshipPositionMentors,
   internshipPositions,
@@ -84,9 +83,6 @@ export class PositionService {
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
   }
 
-  /**
-   * ผู้ใช้ต้องมี department_id
-   */
   private async getUserDepartmentAndOffice(userId: string): Promise<{
     departmentId: number;
     officeId: number;
@@ -111,12 +107,6 @@ export class PositionService {
     return { departmentId: row.departmentId, officeId: row.officeId };
   }
 
-  /**
-   * ตรวจสอบว่า user ที่จะถูกตั้งเป็น positionOwner:
-   * - มีอยู่จริง
-   * - อยู่ department เดียวกับ position
-   * - มี role เป็น ADMIN(1) หรือ OWNER(2)
-   */
   private async assertAssignablePositionOwner(
     tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
     positionOwnerUserId: string,
@@ -150,11 +140,6 @@ export class PositionService {
     }
   }
 
-  /**
-   * GET /position
-   * filter ได้ด้วย search, department, office
-   * แสดง mentor
-   */
   async findAll(query: model.GetPositionsQueryType) {
     const {
       page = 1,
@@ -345,12 +330,6 @@ export class PositionService {
     };
   }
 
-  /**
-   * POST /position
-   * ผูก departmentId + officeId จาก user
-   * ผูก mentor
-   * บันทึก positionOwner = user ที่ login อยู่
-   */
   async create(userId: string, data: model.CreatePositionBodyType) {
     await this.assertUserExists(userId);
     const { departmentId, officeId } =
@@ -413,10 +392,6 @@ export class PositionService {
     });
   }
 
-  /**
-   * PUT /position/:id
-   * แก้ได้เฉพาะ position ใน department ของตัวเอง
-   */
   async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
     await this.assertUserExists(userId);
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
@@ -508,8 +483,9 @@ export class PositionService {
 
       if ("name" in data) updateData.name = data.name;
       if ("location" in data) updateData.location = data.location;
-      if ("positionCount" in data)
+      if ("positionCount" in data) {
         updateData.positionCount = data.positionCount;
+      }
       if ("major" in data) updateData.major = data.major;
 
       if ("recruitStart" in data) updateData.recruitStart = data.recruitStart;
@@ -571,9 +547,6 @@ export class PositionService {
     });
   }
 
-  /**
-   * DELETE /position/:id
-   */
   async delete(userId: string, id: number) {
     await this.assertUserExists(userId);
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
@@ -583,25 +556,19 @@ export class PositionService {
         .select({
           id: internshipPositions.id,
           departmentId: internshipPositions.departmentId,
+          acceptedCount: internshipPositions.acceptedCount,
         })
         .from(internshipPositions)
         .where(eq(internshipPositions.id, id));
 
       if (!pos) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
+
       if (pos.departmentId !== departmentId) {
         throw new ForbiddenError("ไม่มีสิทธิ์ลบใบประกาศของกองอื่น");
       }
 
-      const [hasApplication] = await tx
-        .select({ id: applicationStatuses.id })
-        .from(applicationStatuses)
-        .where(eq(applicationStatuses.positionId, id))
-        .limit(1);
-
-      if (hasApplication) {
-        throw new BadRequestError(
-          "เนื่องจากประกาศนี้มีผู้สมัครอยู่ในระบบแล้วจึงไม่สามารถลบประกาศนี้ได้"
-        );
+      if ((pos.acceptedCount ?? 0) > 0) {
+        throw new BadRequestError("ไม่สามารถลบประกาศได้ เนื่องจากมีผู้ได้รับคัดเลือกแล้ว");
       }
 
       await tx
