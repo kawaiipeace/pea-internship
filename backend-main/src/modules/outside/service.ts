@@ -343,7 +343,7 @@ export class OffsiteTaskService {
         students: t.students.map((s) => ({
           id: s.student.id,
           name: `${s.student.fname} ${s.student.lname}`,
-          image: s.student.displayUsername,
+          nickname: s.student.displayUsername,
         })),
       })),
       meta: {
