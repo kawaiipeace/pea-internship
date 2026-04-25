@@ -17,9 +17,11 @@ interface OffsiteTask {
     workDate: string;
     createdAt: string;
     locationName: string;
+    taskDetail: string;
     assignedBy: string;
     isOwner: boolean;
     students: Student[];
+    updatedAt?: string;
 }
 
 interface Staff {
@@ -374,6 +376,13 @@ const RemoteWorkPage = () => {
                                                     </div>
                                                 )}
                                             </div>
+                                        </div>
+                                        <div className="text-[12px] text-[#344054] dark:text-gray-400 mt-2">
+                                            {item.updatedAt && new Date(item.updatedAt).getTime() > new Date(item.createdAt).getTime() ? (
+                                                <>วันที่ทำการมอบหมาย : {formatFullThaiDate(item.updatedAt)} <span className="text-[#A80689] font-medium">(แก้ไข)</span></>
+                                            ) : (
+                                                <>วันที่ทำการมอบหมาย : {formatFullThaiDate(item.createdAt)}</>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

@@ -149,6 +149,8 @@ export class OffsiteTaskService {
         note: st.task.note,
         positionName: positionName,
         assignedBy: `${st.task.assignedByUser.fname} ${st.task.assignedByUser.lname}`,
+        createdAt: st.task.createdAt,
+        updatedAt: st.task.updatedAt,
       }))
       .sort(
         (a, b) =>
@@ -339,6 +341,7 @@ export class OffsiteTaskService {
         assignedBy: t.assignedByUser
           ? `${t.assignedByUser.fname} ${t.assignedByUser.lname}`
           : "ไม่ระบุ",
+        updatedAt: t.updatedAt,
         isOwner: t.assignedByUser?.id === mentorId,
         students: t.students.map((s) => ({
           id: s.student.id,
