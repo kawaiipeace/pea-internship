@@ -2,23 +2,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 interface MonthPickerProps {
-    currentMonth: number;
-    currentYear: number;
-    onSelect: (month: number, year: number) => void;
+    currentMonth: number | null;
+    currentYear: number | null;
+    onSelect: (month: number | null, year: number | null) => void;
+    placeholder?: string;
 }
 
-const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, onSelect }) => {
+const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, onSelect, placeholder = 'เลือกเดือน' }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [pickerYear, setPickerYear] = useState(currentYear);
-    const [tempMonth, setTempMonth] = useState(currentMonth);
+    const [pickerYear, setPickerYear] = useState(currentYear || (new Date().getFullYear() + 543));
+    const [tempMonth, setTempMonth] = useState<number | null>(currentMonth);
     const popupRef = useRef<HTMLDivElement>(null);
 
     const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const thaiMonthsFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const monthLabels = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
     useEffect(() => {
         if (isOpen) {
-            setPickerYear(currentYear);
+            setPickerYear(currentYear || (new Date().getFullYear() + 543));
             setTempMonth(currentMonth);
         }
     }, [isOpen, currentYear, currentMonth]);
@@ -36,13 +38,15 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
     }, [isOpen]);
 
     const handleOk = () => {
-        onSelect(tempMonth, pickerYear);
+        if (tempMonth !== null) {
+            onSelect(tempMonth, pickerYear);
+        }
         setIsOpen(false);
     };
 
     const handleClear = () => {
-        setTempMonth(currentMonth);
-        setPickerYear(currentYear);
+        onSelect(null, null);
+        setIsOpen(false);
     };
 
     const today = new Date();
@@ -51,30 +55,51 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
 
     return (
         <div className="relative" ref={popupRef}>
-            {/* Trigger */}
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-1 font-semibold text-xs sm:text-sm text-gray-800 dark:text-gray-200 cursor-pointer mx-2 sm:mx-4"
-            >
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>{thaiMonthsShort[currentMonth]} {currentYear}</span>
-            </button>
+            {/* Trigger Styled as Input */}
+            <div className="relative w-full sm:w-[260px] h-[36px] shrink-0">
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="w-full h-full px-[12px] bg-white dark:bg-gray-900 border border-[#CECFD2] dark:border-gray-700 rounded-[5px] outline-none text-[14px] flex items-center justify-between cursor-pointer group"
+                >
+                    <span className={`truncate ${currentMonth !== null ? 'text-[#101828] dark:text-white' : 'text-[#61646C]'}`}>
+                        {currentMonth !== null && currentYear !== null 
+                            ? `${thaiMonthsFull[currentMonth]} ${currentYear}` 
+                            : placeholder
+                        }
+                    </span>
+                    <div className="flex items-center gap-1">
+                        {currentMonth !== null && (
+                            <div 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClear();
+                                }}
+                                className="p-1 text-[#9CA3AF] hover:text-danger rounded-full transition-colors"
+                            >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                            </div>
+                        )}
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                </button>
+            </div>
 
             {/* Popup */}
             {isOpen && (
-                <div className="absolute top-full mt-2 -right-8 z-[100] bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 w-[260px]">
+                <div className="absolute top-full mt-2 right-0 z-[100] bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 w-[260px]">
                     {/* Year navigation */}
                     <div className="flex items-center justify-between mb-4">
                         <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-1 text-gray-600 dark:text-gray-400 hover:text-primary">
                             <svg className="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
-                        <span className="font-bold text-sm text-gray-800 dark:text-gray-200">{pickerYear - 543}</span>
+                        <span className="font-bold text-sm text-gray-800 dark:text-gray-200">{pickerYear}</span>
                         <button type="button" onClick={() => setPickerYear(pickerYear + 1)} className="p-1 text-gray-600 dark:text-gray-400 hover:text-primary">
                             <svg className="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"></path></svg>
                         </button>
@@ -83,7 +108,6 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
                     {/* Month grid 3x4 */}
                     <div className="grid grid-cols-3 gap-2 mb-4">
                         {monthLabels.map((label, index) => {
-                            const isSelected = tempMonth === index && pickerYear === currentYear;
                             const isCurrent = todayMonth === index && todayYear === pickerYear;
                             return (
                                 <button

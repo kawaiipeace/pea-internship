@@ -7,9 +7,11 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { useEffect, useCallback } from "react";
 import axiosInstance from "@/api/axios";
+import useAuthStore from "@/store/authStore";
 
 const AttendanceHistoryPage = () => {
   const router = useRouter();
+  const { user } = useAuthStore();
 
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -104,14 +106,14 @@ const AttendanceHistoryPage = () => {
       </div>
     );
   };
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(
-    new Date().getFullYear() + 543,
-  );
+  const [currentMonth, setCurrentMonth] = useState<number | null>(null);
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const handleMonthSelect = (month: number, year: number) => {
+  const handleMonthSelect = (month: number | null, year: number | null) => {
     setCurrentMonth(month);
     setCurrentYear(year);
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handlePrevMonth = () => {
@@ -234,10 +236,6 @@ const AttendanceHistoryPage = () => {
   const fetchHistory = useCallback(async () => {
     try {
       setIsLoading(true);
-      // BE Year to AD Year (BE = AD + 543)
-      const adYear = currentYear - 543;
-      const monthForApi = currentMonth + 1; // API expects 1-12
-
       // Map UI filter label to Backend StatusFilter
       let filterStatusArg = "";
       if (selectedFilter === "เข้างานปกติ") filterStatusArg = "PRESENT";
@@ -246,15 +244,18 @@ const AttendanceHistoryPage = () => {
       else if (selectedFilter === "ขาด") filterStatusArg = "ABSENT";
       else if (selectedFilter === "ไม่ลงเวลาออก") filterStatusArg = "MISSING_OUT";
 
-      const response = await axiosInstance.get(`/check-time/history`, {
-        params: {
-          year: adYear,
-          month: monthForApi,
-          page: pagination.page,
-          limit: 10,
-          filterStatus: filterStatusArg || undefined
-        }
-      });
+      const params: any = {
+        page: pagination.page,
+        limit: 10,
+        filterStatus: filterStatusArg || undefined
+      };
+
+      if (currentMonth !== null && currentYear !== null) {
+        params.year = currentYear - 543;
+        params.month = currentMonth + 1;
+      }
+
+      const response = await axiosInstance.get(`/check-time/history`, { params });
 
       if (response.data) {
         const { summary, records, pagination: paginationData } = response.data;
@@ -399,7 +400,52 @@ const AttendanceHistoryPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentMonth, currentYear, pagination.page, selectedFilter]);
+  }, [pagination.page, selectedFilter, currentMonth, currentYear]);
+
+  const handleExport = () => {
+    if (!historyItems || historyItems.length === 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "ไม่มีข้อมูลสำหรับการส่งออก",
+        confirmButtonText: "ตกลง",
+        buttonsStyling: false,
+        customClass: {
+          popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+          title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+          confirmButton: 'bg-[#A80689] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+        }
+      });
+      return;
+    }
+
+    const BOM = "\uFEFF";
+    const header = "วันที่,ชื่อ-นามสกุล,สถานะ,เวลาเข้า,เวลาออก,สถานที่,ชั่วโมงทำงาน,ประเภทการลา,เหตุผลการลา\n";
+    
+    const studentName = user ? `${user.fname} ${user.lname}` : "Student";
+    
+    const rows = historyItems.map(item => {
+      return `"${item.labelMobile}","${studentName}","${item.status}","${item.checkInTime}","${item.checkOutTime}","${item.location || "-"}","${item.workingHours || "-"}","${item.leaveType || "-"}","${item.leaveReason || "-"}"`;
+    }).join("\n");
+
+    const summarySection = `\nสรุปข้อมูล\nเข้างานปกติ,${summaryCounts.present}\nสาย,${summaryCounts.late}\nลา,${summaryCounts.leave}\nขาด,${summaryCounts.absent}\nไม่ลงเวลาออก,${summaryCounts.missingOut}\n`;
+
+    const csvContent = BOM + header + rows + summarySection;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    const monthLabel = currentMonth !== null ? thaiMonthsFull[currentMonth] : "ทั้งหมด";
+    const yearLabel = currentYear !== null ? currentYear : "";
+    
+    const fileName = `${studentName}_ประวัติการลงเวลา_${monthLabel}_${yearLabel}.csv`.replace(/\s+/g, "_");
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     fetchHistory();
@@ -647,56 +693,19 @@ const AttendanceHistoryPage = () => {
               รายงานการลงเวลาปฏิบัติงาน ประจำเดือน
             </p>
           </div>
-          <div className="flex items-center justify-between bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 sm:px-3 sm:py-1.5 shrink-0 shadow-sm">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              className="text-gray-700 dark:text-gray-300 hover:text-primary p-0.5 sm:p-1"
-            >
-              <svg
-                className="w-3.5 h-3.5 stroke-[2.5]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                ></path>
-              </svg>
-            </button>
-            <MonthPicker
-              currentMonth={currentMonth}
-              currentYear={currentYear}
-              onSelect={handleMonthSelect}
-            />
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              className="text-gray-700 dark:text-gray-300 hover:text-primary p-0.5 sm:p-1"
-            >
-              <svg
-                className="w-3.5 h-3.5 stroke-[2.5]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 5l7 7-7 7"
-                ></path>
-              </svg>
-            </button>
-          </div>
+          <MonthPicker
+            currentMonth={currentMonth}
+            currentYear={currentYear}
+            onSelect={handleMonthSelect}
+            placeholder="เลือกช่วงเวลาที่ต้องการดู..."
+          />
         </div>
 
         {/* Summary Section */}
         <div className="shrink-0 flex flex-col gap-[16px]">
           <div className="flex items-center justify-between">
             <h2 className="text-[16px] font-bold text-[#000000]">
-              สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})
+              สรุปการลงเวลา {currentMonth !== null ? `(${thaiMonthsFull[currentMonth]})` : ''}
             </h2>
             {selectedFilter && (
               <button
@@ -831,8 +840,23 @@ const AttendanceHistoryPage = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500 border border-dashed border-gray-300 rounded-xl mt-4">
-                ไม่พบข้อมูลสำหรับสถานะ "{selectedFilter}"
+              <div className="flex flex-col items-center justify-center py-12 mt-4">
+                <div className="mb-4 flex items-center justify-center">
+                  <img 
+                    src="/history.png" 
+                    alt="No history data" 
+                    className="w-[178px] h-[158px] object-contain"
+                  />
+                </div>
+                <div className="text-center space-y-5">
+                                <h3 className="text-[20px]  text-[#61646C] dark:text-white">
+                                    ยังไม่มีรายการ
+                                </h3>
+                                <div className="text-[16px] sm:text-[16px] text-[#61646C] dark:text-gray-400 space-y-1">
+                                    <p>ยังไม่มีรายการประวัติ</p>
+                                    <p>เมื่อมีการบันทึกข้อมูล รายการจะปรากฏที่นี่</p>
+                                </div>
+                            </div>
               </div>
             )}
           </div>
@@ -842,6 +866,7 @@ const AttendanceHistoryPage = () => {
         <div className="flex flex-row items-center justify-between gap-4 shrink-0 pb-8 mt-auto pt-4">
           <button
             type="button"
+            onClick={handleExport}
             className="flex items-center gap-2 font-bold text-[15px] hover:opacity-80 text-gray-700 dark:text-gray-300 whitespace-nowrap"
           >
             <span className="material-symbols-rounded !text-[20px] sm:!text-[24px] text-[#b40e56]">

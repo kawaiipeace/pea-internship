@@ -351,13 +351,16 @@ const RemoteWorkPage = () => {
                                             <span className="font-bold mr-1">สถานที่ :</span> {item.locationName}
                                         </h3>
                                         <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
+                                            <span className="font-bold mr-1">รายละเอียดงาน :</span> {item.taskDetail}
+                                        </h3>
+                                        <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
                                             <span className="font-bold mr-1">ผู้มอบหมาย :</span> {item.assignedBy}
                                         </h3>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-[16px] font-bold text-[#344054] dark:text-gray-100">นักศึกษาที่ได้รับมอบหมาย :</span>
                                             <div className="flex -space-x-2">
-                                                {(item.students || []).slice(0, 4).map((student: Student, idx: number) => (
-                                                    <div key={idx} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800 bg-gray-200" title={student.name}>
+                                                {(item.students || []).slice(0, 4).map((student: Student) => (
+                                                    <div key={student.id} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800 bg-gray-200" title={student.name}>
                                                         <ImageWithAuth
                                                             userId={student.id}
                                                             className="w-full h-full object-cover"
@@ -403,48 +406,14 @@ const RemoteWorkPage = () => {
                             </div>
                         ))
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-[#121212]">
-                            {/* Illustration */}
-                            <div className="relative w-[280px] h-[200px] mb-6 flex items-center justify-center">
-                                {/* Base Shadow */}
-                                <div className="absolute bottom-4 w-[120px] h-[30px] bg-[#F2F4F7] dark:bg-gray-800 rounded-[100%] blur-sm"></div>
-
-                                {/* Calendar Body */}
-                                <div className="relative w-[100px] h-[110px] bg-white dark:bg-gray-900 border-[6px] border-[#D0D5DD] dark:border-gray-700 rounded-[14px] shadow-sm flex flex-col overflow-hidden">
-                                    <div className="h-4 bg-[#D0D5DD] dark:bg-gray-700 w-full"></div>
-                                    <div className="flex-1 p-2 flex flex-col gap-2">
-                                        <div className="h-1.5 w-full bg-[#EAECF0] dark:bg-gray-800 rounded-full"></div>
-                                        <div className="h-1.5 w-10 bg-[#EAECF0] dark:bg-gray-800 rounded-full"></div>
-                                        <div className="mt-2 h-8 w-8 bg-[#F2F4F7] dark:bg-gray-800 rounded-md self-center flex items-center justify-center">
-                                            <span className="material-symbols-rounded !text-[16px] text-[#98A2B3]">public</span>
-                                        </div>
-                                    </div>
-                                    {/* Calendar Rings */}
-                                    <div className="absolute -top-1 left-4 w-1.5 h-3 bg-[#98A2B3] rounded-full"></div>
-                                    <div className="absolute -top-1 right-4 w-1.5 h-3 bg-[#98A2B3] rounded-full"></div>
-                                </div>
-
-                                {/* Checklist Attachment Overlay */}
-                                <div className="absolute top-1/2 left-1/2 translate-x-4 translate-y-2 w-[75px] h-[90px] bg-white dark:bg-gray-900 border-[4px] border-[#EAECF0] dark:border-gray-800 rounded-[10px] shadow-md flex flex-col p-2 gap-2">
-                                    <div className="h-1.5 w-8 bg-[#D0D5DD] dark:bg-gray-700 rounded-full"></div>
-                                    <div className="flex flex-col gap-1.5 mt-1">
-                                        {[1, 2, 3].map(i => (
-                                            <div key={i} className="flex items-center gap-1.5">
-                                                <div className="w-2.5 h-2.5 bg-[#EAECF0] dark:bg-gray-800 rounded-[2px]"></div>
-                                                <div className="h-1 w-full bg-[#F2F4F7] dark:bg-gray-800 rounded-full"></div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {/* Globe Overlay on Checklist */}
-                                    <div className="absolute -bottom-1 -left-1 w-7 h-7 bg-[#F2F4F7] dark:bg-gray-800 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900 shadow-sm">
-                                        <span className="material-symbols-rounded !text-[14px] text-[#98A2B3]">public</span>
-                                    </div>
-                                </div>
-
-                                {/* X Mark Overlay */}
-                                <div className="absolute bottom-6 right-16 w-10 h-10 flex items-center justify-center opacity-30">
-                                    <span className="material-symbols-rounded !text-[44px] text-[#98A2B3] rotate-45">add</span>
-                                </div>
+                        <div className="flex flex-col items-center justify-center py-16">
+                            {/* Illustration Image */}
+                            <div className="mb-6 flex items-center justify-center">
+                                <img 
+                                    src="/romotework.png" 
+                                    alt="No remote work schedule" 
+                                    className="w-[178px] h-[158px] object-contain"
+                                />
                             </div>
 
                             <div className="text-center space-y-5">
