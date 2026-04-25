@@ -471,16 +471,18 @@ const RemoteWorkFormPage = () => {
                             )}
 
                             {/* Dashed Add Student Box */}
-                            <div 
-                                className="w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
-                                onClick={() => {
-                                    setShowEmptySlot(true);
-                                    setOpenDropdownIndex(studentIds.length);
-                                }}
-                            >
-                                <span className="material-symbols-rounded text-[#61646C]">add</span>
-                                <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
-                            </div>
+                            {studentIds.length < availableStudents.length && !showEmptySlot && (
+                                <div 
+                                    className="w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
+                                    onClick={() => {
+                                        setShowEmptySlot(true);
+                                        setOpenDropdownIndex(studentIds.length);
+                                    }}
+                                >
+                                    <span className="material-symbols-rounded text-[#61646C]">add</span>
+                                    <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

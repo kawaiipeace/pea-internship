@@ -267,8 +267,7 @@ const RemoteWorkFormPage = () => {
         <div className="min-h-screen bg-gray-50 dark:bg-black py-4 px-4">
             {/* Main Form Container */}
             <div
-                className="mx-auto w-[700px] bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-[15px] shadow-sm flex flex-col p-10 overflow-visible"
-
+                className="mx-auto w-full max-w-[700px] bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-[15px] shadow-sm flex flex-col p-6 sm:p-10 overflow-visible"
             >
                 {/* Header */}
                 <div className="mb-8">
@@ -293,7 +292,7 @@ const RemoteWorkFormPage = () => {
                                 <p className="text-[14px] text-[#61646C] dark:text-gray-400 ">ระบุวันที่และเวลาให้ชัดเจน</p>
                             </div>
                         </div>
-                        <div className="w-[348px]">
+                        <div className="w-full sm:w-[348px]">
                             <CustomDatePicker
                                 range={!isEditMode}
                                 value={isEditMode ? workDates[0] : undefined}
@@ -332,7 +331,7 @@ const RemoteWorkFormPage = () => {
                                     setLocationName(e.target.value);
                                     if (errors.locationName) setErrors(prev => ({ ...prev, locationName: '' }));
                                 }}
-                                className={`w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border ${errors.locationName ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[5px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors `}
+                                className={`w-full max-w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border ${errors.locationName ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[5px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors `}
                             />
                             {errors.locationName && <p className="text-[#D92D20] text-[12px] mt-0.5">{errors.locationName}</p>}
                         </div>
@@ -357,7 +356,7 @@ const RemoteWorkFormPage = () => {
                                     setTaskDetail(e.target.value);
                                     if (errors.taskDetail) setErrors(prev => ({ ...prev, taskDetail: '' }));
                                 }}
-                                className={`w-[618px] h-[100px] p-4 bg-white dark:bg-gray-900 border ${errors.taskDetail ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[5px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors resize-none`}
+                                className={`w-full max-w-[618px] h-[100px] p-4 bg-white dark:bg-gray-900 border ${errors.taskDetail ? 'border-[#D92D20]' : 'border-[#E4E7EC]'} dark:border-gray-700 rounded-[5px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors resize-none`}
                             ></textarea>
                             {errors.taskDetail && <p className="text-[#D92D20] text-[12px] mt-0.5">{errors.taskDetail}</p>}
                         </div>
@@ -378,7 +377,7 @@ const RemoteWorkFormPage = () => {
                             placeholder="รายละเอียดของงานเพิ่มเติม"
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
-                            className="w-[618px] h-[100px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
+                            className="w-full max-w-[618px] h-[100px] p-4 bg-white dark:bg-gray-900 border border-[#E4E7EC] dark:border-gray-700 rounded-[8px] text-[14px] focus:outline-none focus:border-[#A80689] transition-colors resize-none"
                         ></textarea>
                     </div>
 
@@ -403,7 +402,7 @@ const RemoteWorkFormPage = () => {
                                     <div key={`selected-${index}`} className="relative" ref={el => { dropdownRefs.current[index] = el; }}>
                                         {/* Filled Box - White background with purple border */}
                                         <div 
-                                            className="w-[618px] h-[45px] px-4 bg-white dark:bg-gray-800 border-2 border-[#A80689] rounded-[8px] flex items-center justify-between cursor-pointer shadow-sm"
+                                            className="w-full max-w-[618px] h-[45px] px-4 bg-white dark:bg-gray-800 border-2 border-[#A80689] rounded-[8px] flex items-center justify-between cursor-pointer shadow-sm"
                                             onClick={() => setOpenDropdownIndex(openDropdownIndex === index ? null : index)}
                                         >
                                             <span className="text-[14px] text-[#333] font-semibold truncate pr-4">
@@ -430,7 +429,7 @@ const RemoteWorkFormPage = () => {
 
                                         {/* Dropdown Menu for existing slot */}
                                         {openDropdownIndex === index && (
-                                            <div className="absolute top-[50px] left-0 w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
+                                            <div className="absolute top-[50px] left-0 w-full max-w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
                                                 {availableStudents
                                                     .filter(s => s.id === id || !studentIds.includes(s.id))
                                                     .map(s => (
@@ -456,7 +455,7 @@ const RemoteWorkFormPage = () => {
                             {showEmptySlot && (
                                 <div className="relative" ref={el => { dropdownRefs.current[studentIds.length] = el; }}>
                                     <div 
-                                        className={`w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border-2 ${errors.studentIds ? 'border-[#D92D20]' : 'border-[#A80689]'} rounded-[8px] flex items-center justify-between cursor-pointer`}
+                                        className={`w-full max-w-[618px] h-[45px] px-4 bg-white dark:bg-gray-900 border-2 ${errors.studentIds ? 'border-[#D92D20]' : 'border-[#A80689]'} rounded-[8px] flex items-center justify-between cursor-pointer`}
                                         onClick={() => setOpenDropdownIndex(openDropdownIndex === studentIds.length ? null : studentIds.length)}
                                     >
                                         <span className="text-[14px] text-gray-500">ชื่อนักศึกษา</span>
@@ -465,7 +464,7 @@ const RemoteWorkFormPage = () => {
                                     {errors.studentIds && <p className="text-[#D92D20] text-[12px] mt-0.5 ml-1">{errors.studentIds}</p>}
 
                                     {openDropdownIndex === studentIds.length && (
-                                        <div className="absolute top-[50px] left-0 w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
+                                        <div className="absolute top-[50px] left-0 w-full max-w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
                                             {availableStudents.filter(s => !studentIds.includes(s.id)).length === 0 ? (
                                                 <div className="px-4 py-3 text-[14px] text-gray-500 text-center italic">
                                                     {isLoading ? 'กำลังโหลด...' : 'ไม่มีรายชื่อนักศึกษาเพิ่มเติม'}
@@ -493,39 +492,38 @@ const RemoteWorkFormPage = () => {
                             )}
 
                             {/* Dashed Add Student Box */}
-                            <div 
-                                className="w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
-                                onClick={() => {
-                                    setShowEmptySlot(true);
-                                    setOpenDropdownIndex(studentIds.length);
-                                }}
-                            >
-                                <span className="material-symbols-rounded text-[#61646C]">add</span>
-                                <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
-                            </div>
+                            {studentIds.length < availableStudents.length && !showEmptySlot && (
+                                <div 
+                                    className="w-full max-w-[618px] h-[45px] border-2 border-dashed border-[#61646C] dark:border-gray-700 rounded-[8px] flex items-center justify-center gap-2 cursor-pointer hover:border-[#A80689] hover:bg-[#FDF2FE] transition-all mt-2"
+                                    onClick={() => {
+                                        setShowEmptySlot(true);
+                                        setOpenDropdownIndex(studentIds.length);
+                                    }}
+                                >
+                                    <span className="material-symbols-rounded text-[#61646C]">add</span>
+                                    <span className="text-[#61646C] text-[16px]">เพิ่มนักศึกษา</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {/* Footer Buttons */}
-                <div className="mt-8 flex gap-4">
+                <div className="mt-8 flex flex-col sm:flex-row gap-4">
                     <button 
                         onClick={handleCancel}
-                        className="flex-1 h-[54px] border border-[#A80689] text-[#A80689] rounded-[8px] text-[16px]  hover:bg-[#FDF2FE] transition-colors"
+                        className="w-full sm:flex-1 h-[54px] border border-[#A80689] text-[#A80689] rounded-[8px] text-[16px] font-bold hover:bg-[#FDF2FE] transition-colors"
                     >
                         ยกเลิก
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className={`flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px]  hover:bg-[#8e0574] transition-colors shadow-md flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`w-full sm:flex-1 h-[54px] bg-[#A80689] text-white rounded-[8px] text-[16px] font-bold hover:bg-[#8e0574] transition-colors shadow-md flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                        {isEditMode ? 'แก้ไขนักศึกษาปฏิบัติงานนอกสถานที่' : 'เพิ่มนักศึกษาปฏิบัติงานนอกสถานที่'}
+                        {isEditMode ? 'แก้ไขข้อมูล' : 'ยืนยันการมอบหมาย'}
                         {isSubmitting ? (
-                            <>
-                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin ml-2"></span>
-                                กำลังบันทึก...
-                            </>
+                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin ml-2"></span>
                         ) : null}
                     </button>
                 </div>

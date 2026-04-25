@@ -56,7 +56,7 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
     return (
         <div className="relative" ref={popupRef}>
             {/* Trigger Styled as Input */}
-            <div className="relative w-full sm:w-[260px] h-[36px] shrink-0">
+            <div className="relative w-full sm:w-[260px] h-[38px] sm:h-[36px] shrink-0">
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
@@ -93,7 +93,7 @@ const MonthPicker: React.FC<MonthPickerProps> = ({ currentMonth, currentYear, on
 
             {/* Popup */}
             {isOpen && (
-                <div className="absolute top-full mt-2 right-0 z-[100] bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 w-[260px]">
+                <div className="absolute top-full mt-2 right-0 sm:right-0 z-[100] bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 w-full sm:w-[260px] min-w-[260px]">
                     {/* Year navigation */}
                     <div className="flex items-center justify-between mb-4">
                         <button type="button" onClick={() => setPickerYear(pickerYear - 1)} className="p-1 text-gray-600 dark:text-gray-400 hover:text-primary">

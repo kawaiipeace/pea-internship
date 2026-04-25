@@ -208,17 +208,17 @@ const RemoteWorkPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-black p-6 -m-6 pb-20">
+        <div className="min-h-screen bg-white dark:bg-black p-4 sm:p-6 -m-4 sm:-m-6 pb-20">
             {/* Main Container */}
             <div className="mx-auto w-full max-w-[892px] flex flex-col gap-6">
                 
                 {/* Header Section */}
-                <div className="flex justify-between items-start pt-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start pt-4 gap-4">
                     <div>
-                        <h1 className="text-[24px] font-bold text-black dark:text-white mb-1">
+                        <h1 className="text-[20px] sm:text-[24px] font-bold text-black dark:text-white mb-1">
                             ปฏิบัติงานนอกสถานที่
                         </h1>
-                        <p className="text-[16px] text-[#61646C] dark:text-gray-400">
+                        <p className="text-[14px] sm:text-[16px] text-[#61646C] dark:text-gray-400">
                             กำหนดการวันที่นักศึกษาต้องไปปฏิบัติงานนอกสถานที่
                         </p>
                     </div>
@@ -233,14 +233,13 @@ const RemoteWorkPage = () => {
                 </div>
 
                 {/* Section Header & Add Button */}
-                <div className="flex justify-between items-center mt-2">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 gap-4">
                     <h2 className="text-[16px] font-bold text-black dark:text-white">
                         รายการประวัติการลงเวลา
                     </h2>
                     <button 
                         onClick={() => router.push('/mentor/remote-work/form')}
-                        style={{ width: '236px', height: '44px', borderRadius: '5px' }}
-                        className="bg-[#A80689] hover:bg-[#8e0574] text-white  flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 shrink-0"
+                        className="w-full sm:w-[236px] h-[44px] bg-[#A80689] hover:bg-[#8e0574] text-white rounded-[5px] flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 shrink-0"
                     >
                         <span className="material-symbols-rounded !text-[24px]">add</span>
                         เพิ่มวันทำงานนอกสถานที่
@@ -251,10 +250,10 @@ const RemoteWorkPage = () => {
                 <div className="flex flex-wrap gap-3 items-center">
                     
                     {/* Work Date Dropdown */}
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                         <button 
                             onClick={() => setIsWorkDateDropdownOpen(!isWorkDateDropdownOpen)}
-                            className={`flex items-center gap-4 bg-white dark:bg-gray-800 border ${activeSortField === 'workDate' ? 'border-[#A80689]' : 'border-gray-200 dark:border-gray-700'} rounded-lg px-3 py-2 text-[12px] font-medium text-[#333] shadow-sm min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors`}
+                            className={`flex items-center gap-4 bg-white dark:bg-gray-800 border ${activeSortField === 'workDate' ? 'border-[#A80689]' : 'border-gray-200 dark:border-gray-700'} rounded-lg px-3 py-2.5 sm:py-2 text-[12px] font-medium text-[#333] shadow-sm w-full sm:min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors`}
                         >
                             วันที่ปฏิบัติงาน {activeSortField === 'workDate' ? ` : ${dateSortOrder === 'desc' ? 'มากไปน้อย' : 'น้อยไปมาก'}` : ''}
                             <span className={`material-symbols-rounded !text-[18px] transition-transform ${isWorkDateDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
@@ -292,10 +291,10 @@ const RemoteWorkPage = () => {
                     </div>
 
                     {/* Assigned Date Dropdown */}
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                         <button 
                             onClick={() => setIsAssignedDateDropdownOpen(!isAssignedDateDropdownOpen)}
-                            className={`flex items-center gap-4 bg-white dark:bg-gray-800 border ${activeSortField === 'assignedDate' ? 'border-[#A80689]' : 'border-gray-200 dark:border-gray-700'} rounded-lg px-3 py-2 text-[12px] font-medium text-[#333] shadow-sm min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors`}
+                            className={`flex items-center gap-4 bg-white dark:bg-gray-800 border ${activeSortField === 'assignedDate' ? 'border-[#A80689]' : 'border-gray-200 dark:border-gray-700'} rounded-lg px-3 py-2.5 sm:py-2 text-[12px] font-medium text-[#333] shadow-sm w-full sm:min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors`}
                         >
                             วันที่มอบหมาย {activeSortField === 'assignedDate' ? ` : ${assignedDateSortOrder === 'desc' ? 'มากไปน้อย' : 'น้อยไปมาก'}` : ''}
                             <span className={`material-symbols-rounded !text-[18px] transition-transform ${isAssignedDateDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
@@ -333,10 +332,10 @@ const RemoteWorkPage = () => {
                     </div>
 
                     {/* Assigner Dropdown */}
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                         <button 
                             onClick={() => setIsAssignerDropdownOpen(!isAssignerDropdownOpen)}
-                            className={`flex items-center gap-4 bg-white dark:bg-gray-800 border ${assignerFilter.value !== 'all' ? 'border-[#A80689]' : 'border-gray-200 dark:border-gray-700'} rounded-lg px-3 py-2 text-[12px] font-medium text-[#333] shadow-sm min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors`}
+                            className={`flex items-center gap-4 bg-white dark:bg-gray-800 border ${assignerFilter.value !== 'all' ? 'border-[#A80689]' : 'border-gray-200 dark:border-gray-700'} rounded-lg px-3 py-2.5 sm:py-2 text-[12px] font-medium text-[#333] shadow-sm w-full sm:min-w-[150px] justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors`}
                         >
                             ผู้มอบหมาย : {assignerFilter.label}
                             <span className={`material-symbols-rounded !text-[18px] transition-transform ${isAssignerDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
@@ -397,13 +396,20 @@ const RemoteWorkPage = () => {
                         </div>
                     ) : (tasks || []).length > 0 ? (
                         (tasks || []).map((item) => (
-                            <div key={item.id} className="w-full min-h-[120px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-[15px] p-4 flex gap-4 items-center shadow-sm hover:shadow-md transition-shadow relative">
+                            <div 
+                                key={item.id} 
+                                onClick={() => router.push(`/mentor/remote-work/${item.id}`)}
+                                className="w-full bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-[15px] p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-stretch shadow-sm hover:shadow-md transition-shadow relative cursor-pointer group/card"
+                            >
                                 {/* Date Badge */}
-                                <div className="w-[80px] h-[80px] bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-xl flex flex-col items-center justify-center shrink-0">
-                                    <span className="text-[16px] font-bold text-black dark:text-white leading-tight text-center px-2">
-                                        {formatThaiDate(item.workDate).split(' ')[0]} {formatThaiDate(item.workDate).split(' ')[1]}
+                                <div className="w-full sm:w-[110px] h-auto sm:h-auto bg-[#FDF2FE] dark:bg-[#251025] border border-[#F9E1F9] dark:border-[#3d1a3d] rounded-xl flex flex-row sm:flex-col items-center justify-center shrink-0 gap-3 sm:gap-0 p-2.5 sm:py-4">
+                                    <span className="text-[18px] sm:text-[20px] font-medium text-[#0C111D] dark:text-white leading-tight text-center">
+                                        {formatThaiDate(item.workDate).split(' ')[0]}
                                     </span>
-                                    <span className="text-[16px] font-bold text-black dark:text-white leading-tight">
+                                    <span className="text-[16px] sm:text-[20px] font-medium text-[#0C111D] dark:text-white leading-tight text-center">
+                                        {formatThaiDate(item.workDate).split(' ')[1]}
+                                    </span>
+                                    <span className="text-[16px] sm:text-[20px] font-medium text-[#0C111D] dark:text-white leading-tight text-center mt-0 sm:mt-1">
                                         {formatThaiDate(item.workDate).split(' ')[2]}
                                     </span>
                                 </div>
@@ -454,27 +460,32 @@ const RemoteWorkPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Actions Right Side - Aligned with the first line (Location) */}
-                                <div className="flex items-center gap-0 ml-4 self-start mt-1">
+                                {/* Actions Right Side - Aligned with the first line (Location) on desktop, bottom on mobile */}
+                                <div className="flex items-center gap-2 sm:gap-0 sm:ml-4 sm:self-start mt-3 sm:mt-1 w-full sm:w-auto justify-end sm:justify-start border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100 dark:border-gray-800">
                                     {item.isOwner && (
-                                        <>
+                                        <div className="flex items-center gap-1">
                                             <button 
-                                                onClick={() => router.push(`/mentor/remote-work/form?id=${item.id}`)}
-                                                className="p-1 text-gray-500 hover:text-[#A80689] transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    router.push(`/mentor/remote-work/form?id=${item.id}`);
+                                                }}
+                                                className="p-2 text-gray-500 hover:text-[#A80689] transition-colors rounded-full hover:bg-gray-50 dark:hover:bg-gray-800"
                                             >
                                                 <span className="material-symbols-rounded !text-[20px]">edit_square</span>
                                             </button>
                                             <button 
-                                                onClick={() => handleDeleteTask(item.id)}
-                                                className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteTask(item.id);
+                                                }}
+                                                className="p-2 text-gray-500 hover:text-red-500 transition-colors rounded-full hover:bg-gray-50 dark:hover:bg-gray-800"
                                             >
                                                 <span className="material-symbols-rounded !text-[20px]">delete</span>
                                             </button>
-                                        </>
+                                        </div>
                                     )}
                                     <button 
-                                        onClick={() => router.push(`/mentor/remote-work/${item.id}`)}
-                                        className="ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-4 py-2 rounded-[5px] text-[12px]  hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hover:text-[#A80689]"
+                                        className="ml-auto sm:ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-5 sm:px-4 py-2 rounded-[8px] sm:rounded-[5px] text-[13px] sm:text-[12px] font-bold sm:font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group-hover/card:text-[#A80689]"
                                     >
                                         ดูรายละเอียด
                                     </button>

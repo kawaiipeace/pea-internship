@@ -109,14 +109,14 @@ const RemoteWorkDetailPage = () => {
     if (!task) return null;
 
     return (
-        <div className="h-full bg-gray-50 dark:bg-black py-4 px-4">
+        <div className="min-h-screen bg-gray-50 dark:bg-black py-4 px-4 sm:p-6 lg:p-8">
             {/* Redesigned Card Container */}
-            <div className="mx-auto w-[892px] max-w-[900px] bg-white dark:bg-[#121212] border border-[#EEEEEE] dark:border-gray-800 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden relative">
+            <div className="mx-auto w-full max-w-[892px] bg-white dark:bg-[#121212] border border-[#EEEEEE] dark:border-gray-800 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden relative">
                 
                 {/* Header Section: Date and Actions */}
-                <div className="p-8 pb-0 flex flex-col gap-1">
+                <div className="p-6 sm:p-8 pb-0 flex flex-col gap-1">
                     <div className="flex justify-end">
-                        <span className="text-[12px] text-[#344054] dark:text-gray-400">
+                        <span className="text-[12px] text-[#344054] dark:text-gray-400 text-right">
                             วันที่ทำการมอบหมาย : {formatFullThaiDate(task.createdAt)}
                         </span>
                     </div>
@@ -154,7 +154,7 @@ const RemoteWorkDetailPage = () => {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="p-10 pt-0">
+                <div className="p-6 sm:p-10 pt-0">
                     <hr className="mb-4 border-[#CECFD2] h-[1px] dark:border-gray-800" />
                     
                     {/* Date Badge */}
@@ -170,17 +170,17 @@ const RemoteWorkDetailPage = () => {
                     </h1>
 
                     {/* Task Details */}
-                    <div className="space-y-2 mb-6">
-                        <div className="flex text-[16px] leading-relaxed">
-                            <span className="text-[#85888E] dark:text-gray-400 min-w-[170px]">รายละเอียดการปฏิบัติงาน :</span>
+                    <div className="space-y-4 sm:space-y-2 mb-6">
+                        <div className="flex flex-col sm:flex-row text-[16px] leading-relaxed gap-1 sm:gap-0">
+                            <span className="text-[#85888E] dark:text-gray-400 sm:min-w-[170px]">รายละเอียดการปฏิบัติงาน :</span>
                             <span className="text-[#000000] dark:text-gray-100 font-medium">{task.taskDetail}</span>
                         </div>
-                        <div className="flex text-[16px]">
-                            <span className="text-[#85888E] dark:text-gray-400 min-w-[170px]">หมายเหตุ :</span>
+                        <div className="flex flex-col sm:flex-row text-[16px] gap-1 sm:gap-0">
+                            <span className="text-[#85888E] dark:text-gray-400 sm:min-w-[170px]">หมายเหตุ :</span>
                             <span className="text-[#000000] dark:text-gray-100 font-medium">{task.note || '-'}</span>
                         </div>
-                        <div className="flex text-[16px]">
-                            <span className="text-[#85888E] dark:text-gray-400 min-w-[170px]">ผู้มอบหมาย :</span>
+                        <div className="flex flex-col sm:flex-row text-[16px] gap-1 sm:gap-0">
+                            <span className="text-[#85888E] dark:text-gray-400 sm:min-w-[170px]">ผู้มอบหมาย :</span>
                             <span className="text-[#000000] dark:text-gray-100 font-medium">
                                 {task.assignedBy} {task.assignedByEmployeeId && `<${task.assignedByEmployeeId}>`}
                             </span>
