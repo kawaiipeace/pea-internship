@@ -37,6 +37,7 @@ export const internshipStatusEnum = pgEnum("internship_status_enum", [
   "ACCEPT",
   "AWAITING",
   "ACTIVE",
+  "EXTENDED",
   "COMPLETE",
   "CANCEL",
 ]);

@@ -3,7 +3,7 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import '../styles/tailwind.css';
 import { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
-import FCMHandler from '@/components/FCMHandler';
+// import FCMHandler from '@/components/FCMHandler';
 
 
 
@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 />
             </head>
             <body className={googleSans.variable}>
-                <FCMHandler />
+                {/* <FCMHandler /> */}
                 <ProviderComponent>{children}</ProviderComponent>
             </body>
         </html>
