@@ -18,6 +18,7 @@ interface OffsiteTask {
     workDate: string;
     createdAt: string;
     locationName: string;
+    taskDetail: string;
     assignedBy: string;
     isOwner: boolean;
     students: Student[];
@@ -436,6 +437,9 @@ const RemoteWorkPage = () => {
                                     <div className="space-y-1 mt-1">
                                         <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
                                             <span className="font-bold mr-1">สถานที่ :</span> {item.locationName}
+                                        </h3>
+                                        <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
+                                            <span className="font-bold mr-1">รายละเอียดงาน :</span> {item.taskDetail}
                                         </h3>
                                         <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
                                             <span className="font-bold mr-1">ผู้มอบหมาย :</span> {item.assignedBy}

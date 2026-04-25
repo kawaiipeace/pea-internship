@@ -317,7 +317,7 @@ export class OffsiteTaskService {
         students: {
           with: {
             student: {
-              columns: { id: true, fname: true, lname: true },
+              columns: { id: true, displayUsername: true, fname: true, lname: true },
               with: {
                 studentProfiles: {
                   columns: { image: true },
@@ -335,6 +335,7 @@ export class OffsiteTaskService {
         workDate: t.workDate,
         createdAt: t.createdAt,
         locationName: t.locationName,
+        taskDetail: t.taskDetail,
         assignedBy: t.assignedByUser
           ? `${t.assignedByUser.fname} ${t.assignedByUser.lname}`
           : "ไม่ระบุ",
@@ -342,7 +343,7 @@ export class OffsiteTaskService {
         students: t.students.map((s) => ({
           id: s.student.id,
           name: `${s.student.fname} ${s.student.lname}`,
-          image: s.student.studentProfiles[0]?.image || null,
+          image: s.student.displayUsername,
         })),
       })),
       meta: {
