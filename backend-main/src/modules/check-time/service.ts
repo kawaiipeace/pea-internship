@@ -100,13 +100,27 @@ export class CheckTimeService {
     const inTime = new Date(1970, 0, 1, inHour, inMin);
     const outTime = new Date(1970, 0, 1, outHour, outMin);
 
-    let totalMs = outTime.getTime() - inTime.getTime();
-    if (totalMs < 0) totalMs = 0;
+    const lunchStart = new Date(1970, 0, 1, 12, 0);
+    const lunchEnd = new Date(1970, 0, 1, 13, 0);
+
+    let totalMs = 0;
+    if (inTime < lunchStart) {
+      const morningEnd = outTime < lunchStart ? outTime : lunchStart;
+      totalMs += Math.max(0, morningEnd.getTime() - inTime.getTime());
+    }
+    if (outTime > lunchEnd) {
+      const afternoonStart = inTime > lunchEnd ? inTime : lunchEnd;
+      totalMs += Math.max(0, outTime.getTime() - afternoonStart.getTime());
+    }
 
     let hours = totalMs / (1000 * 60 * 60);
 
-    if (hours >= 4) {
-      hours -= 1;
+    // Consistency check: If checked in within grace period and stayed past lunch, credit full 7 hours
+    // This matches the logic in the 'out' method for standard working days (e.g., 08:30 - 16:30)
+    if (inHour < 8 || (inHour === 8 && inMin <= 45)) {
+      if (outHour >= 16) {
+        hours = 7;
+      }
     }
 
     if (hours > 7) hours = 7;
@@ -791,12 +805,16 @@ export class CheckTimeService {
 
       const isMissingOut = existingLog.checkInId && !existingLog.checkOutId;
       const currentStatus = existingLog.dailyStatus;
+      
+      // Allow editing if it's MISSING_OUT, ABSENT, LATE, or even PRESENT/LEAVE (if they need to fix details)
+      // The mentor will still need to approve it.
       const allowedToEdit =
-        isMissingOut || currentStatus === "ABSENT" || currentStatus === "LATE";
+        isMissingOut || 
+        ["ABSENT", "LATE", "PRESENT", "LEAVE"].includes(currentStatus);
 
       if (!allowedToEdit) {
         throw new ConflictError(
-          "ไม่อนุญาตให้แก้ไขเวลา (ทำได้เฉพาะกรณี ขาดงาน, มาสาย หรือ ลืมเช็คเอาท์)"
+          "ไม่อนุญาตให้แก้ไขเวลา (ทำได้เฉพาะกรณี ขาดงาน, มาสาย, ลืมเช็คเอาท์ หรือแก้ไขข้อมูลที่ผิดพลาด)"
         );
       }
 
@@ -1151,7 +1169,7 @@ export class CheckTimeService {
           typeCheck: "IN",
           isOnsite: true,
           location: "แก้ไขเวลาโดยพี่เลี้ยง",
-          note: "แก้ไขเวลาออกงาน",
+          note: "แก้ไขเวลาเข้างาน",
         })
         .returning();
 
