@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
@@ -97,7 +97,10 @@ export class OffsiteTaskService {
 
   async getTasksByMentor(mentorId: string) {
     const tasks = await db.query.offsiteTasks.findMany({
-      where: eq(offsiteTasks.assignedBy, mentorId),
+      where: and(
+        eq(offsiteTasks.assignedBy, mentorId),
+        isNull(offsiteTasks.deletedAt)
+      ),
       orderBy: [desc(offsiteTasks.workDate)],
       with: {
         students: {
@@ -131,6 +134,7 @@ export class OffsiteTaskService {
       where: eq(offsiteTaskStudents.studentId, studentId),
       with: {
         task: {
+          where: isNull(offsiteTasks.deletedAt),
           with: {
             assignedByUser: {
               columns: { fname: true, lname: true },
@@ -141,16 +145,17 @@ export class OffsiteTaskService {
     });
 
     return assignedTasks
+      .filter((st) => st.task)
       .map((st) => ({
-        taskId: st.task.id,
-        workDate: st.task.workDate,
-        locationName: st.task.locationName,
-        taskDetail: st.task.taskDetail,
-        note: st.task.note,
+        taskId: st.task!.id,
+        workDate: st.task!.workDate,
+        locationName: st.task!.locationName,
+        taskDetail: st.task!.taskDetail,
+        note: st.task!.note,
         positionName: positionName,
-        assignedBy: `${st.task.assignedByUser.fname} ${st.task.assignedByUser.lname}`,
-        createdAt: st.task.createdAt,
-        updatedAt: st.task.updatedAt,
+        assignedBy: `${st.task!.assignedByUser.fname} ${st.task!.assignedByUser.lname}`,
+        createdAt: st.task!.createdAt,
+        updatedAt: st.task!.updatedAt,
       }))
       .sort(
         (a, b) =>
@@ -165,8 +170,12 @@ export class OffsiteTaskService {
   ) {
     return await db.transaction(async (tx) => {
       const existingTask = await tx.query.offsiteTasks.findFirst({
-        where: (tasks, { and, eq }) =>
-          and(eq(tasks.id, taskId), eq(tasks.assignedBy, mentorId)),
+        where: (tasks, { and, eq, isNull }) =>
+          and(
+            eq(tasks.id, taskId),
+            eq(tasks.assignedBy, mentorId),
+            isNull(tasks.deletedAt)
+          ),
       });
 
       if (!existingTask) {
@@ -203,11 +212,16 @@ export class OffsiteTaskService {
       return { success: true, message: "แก้ไขข้อมูลงานนอกสถานที่สำเร็จ" };
     });
   }
+
   async deleteTask(taskId: number, mentorId: string) {
     return await db.transaction(async (tx) => {
       const existingTask = await tx.query.offsiteTasks.findFirst({
-        where: (tasks, { and, eq }) =>
-          and(eq(tasks.id, taskId), eq(tasks.assignedBy, mentorId)),
+        where: (tasks, { and, eq, isNull }) =>
+          and(
+            eq(tasks.id, taskId),
+            eq(tasks.assignedBy, mentorId),
+            isNull(tasks.deletedAt)
+          ),
       });
 
       if (!existingTask) {
@@ -215,10 +229,9 @@ export class OffsiteTaskService {
       }
 
       await tx
-        .delete(offsiteTaskStudents)
-        .where(eq(offsiteTaskStudents.taskId, taskId));
-
-      await tx.delete(offsiteTasks).where(eq(offsiteTasks.id, taskId));
+        .update(offsiteTasks)
+        .set({ deletedAt: new Date() })
+        .where(eq(offsiteTasks.id, taskId));
 
       return { success: true, message: "ลบงานนอกสถานที่สำเร็จ" };
     });
@@ -233,11 +246,11 @@ export class OffsiteTaskService {
       columns: { departmentId: true },
     });
 
-    if (!currentUser || !currentUser.departmentId) {
+    if (!currentUser?.departmentId) {
       throw new BadRequestError("ไม่พบข้อมูลแผนกของคุณ");
     }
 
-    const conditions = [];
+    const conditions = [isNull(offsiteTasks.deletedAt)];
 
     if (query.targetMentorId) {
       const targetMentor = await db.query.users.findFirst({
@@ -319,7 +332,12 @@ export class OffsiteTaskService {
         students: {
           with: {
             student: {
-              columns: { id: true, displayUsername: true, fname: true, lname: true },
+              columns: {
+                id: true,
+                displayUsername: true,
+                fname: true,
+                lname: true,
+              },
               with: {
                 studentProfiles: {
                   columns: { image: true },
@@ -367,7 +385,7 @@ export class OffsiteTaskService {
     if (!currentUser) throw new BadRequestError("ไม่พบข้อมูลผู้ใช้");
 
     const task = await db.query.offsiteTasks.findFirst({
-      where: eq(offsiteTasks.id, taskId),
+      where: and(eq(offsiteTasks.id, taskId), isNull(offsiteTasks.deletedAt)),
       with: {
         assignedByUser: {
           columns: { id: true, fname: true, lname: true, departmentId: true },

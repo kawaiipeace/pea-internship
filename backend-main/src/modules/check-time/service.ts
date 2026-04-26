@@ -131,7 +131,7 @@ export class CheckTimeService {
         with: { department: { with: { office: true } } },
       });
 
-      if (!activeApp || !activeApp.department?.office) {
+      if (!activeApp?.department?.office) {
         throw new NotFoundError("ไม่พบข้อมูลสำนักงานที่คุณกำลังฝึกงานอยู่");
       }
 
@@ -295,7 +295,7 @@ export class CheckTimeService {
         ),
       });
 
-      if (!existingLog || !existingLog.checkInId) {
+      if (!existingLog?.checkInId) {
         throw new ConflictError(
           "ไม่สามารถออกงานได้ เนื่องจากคุณยังไม่ได้บันทึกเวลาเข้างานในวันนี้"
         );
@@ -313,7 +313,7 @@ export class CheckTimeService {
         with: { department: { with: { office: true } } },
       });
 
-      if (!activeApp || !activeApp.department?.office)
+      if (!activeApp?.department?.office)
         throw new NotFoundError("ไม่พบข้อมูลสำนักงาน");
 
       const officeLat = activeApp.department.office.latitude;
@@ -963,7 +963,7 @@ export class CheckTimeService {
       with: { staffProfiles: true },
     });
 
-    if (!mentor || !mentor.staffProfiles) {
+    if (!mentor?.staffProfiles) {
       throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
     }
 
@@ -1008,9 +1008,11 @@ export class CheckTimeService {
     if (status) {
       correctionConditions.push(eq(timeCorrectionRequests.status, status));
     }
-    
+
     if (excludePending === "true") {
-      correctionConditions.push(not(eq(timeCorrectionRequests.status, "PENDING")));
+      correctionConditions.push(
+        not(eq(timeCorrectionRequests.status, "PENDING"))
+      );
     }
 
     const finalCondition = and(...correctionConditions);

@@ -526,7 +526,7 @@ export class UserService {
       .where(eq(studentProfiles.userId, userId))
       .limit(1);
 
-    if (!profile || !profile.image) {
+    if (!profile?.image) {
       throw new NotFoundError("ผู้ใช้งานยังไม่ได้ตั้งรูปโปรไฟล์");
     }
 
@@ -578,7 +578,7 @@ export class UserService {
         .where(eq(applicationInformations.applicationStatusId, currentApp.id))
         .limit(1);
 
-      if (!appInfo || !appInfo.endDate) {
+      if (!appInfo?.endDate) {
         throw new Error("ไม่พบข้อมูลวันสิ้นสุดการฝึกงานเดิม");
       }
 

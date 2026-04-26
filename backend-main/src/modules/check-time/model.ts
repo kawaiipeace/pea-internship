@@ -91,7 +91,8 @@ export const GetMentorCorrectionsQuery = t.Object({
   ),
   excludePending: t.Optional(
     t.String({
-      description: "ให้เท่ากับ 'true' หากต้องการกรองเอา PENDING ออกจากรายการ (สำหรับหน้าประวัติ)",
+      description:
+        "ให้เท่ากับ 'true' หากต้องการกรองเอา PENDING ออกจากรายการ (สำหรับหน้าประวัติ)",
     })
   ),
 });

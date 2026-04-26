@@ -50,7 +50,7 @@ export class MentorService {
       with: { staffProfiles: true },
     });
 
-    if (!mentor || !mentor.staffProfiles) {
+    if (!mentor?.staffProfiles) {
       throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
     }
 

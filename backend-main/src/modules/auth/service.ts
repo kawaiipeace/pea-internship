@@ -98,7 +98,7 @@ export class AuthService {
       asResponse: true,
     });
 
-    if (!response || !response.ok) {
+    if (!response?.ok) {
       throw new BadRequestError("Invalid phone number or password");
     }
 

@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   aliasedTable,
   and,
@@ -7,6 +7,7 @@ import {
   eq,
   gte,
   inArray,
+  isNull,
   lte,
   sql,
 } from "drizzle-orm";
@@ -172,7 +173,8 @@ export class LeaveService {
         where: and(
           eq(leaveRequests.userId, userId),
           inArray(leaveRequests.leaveDatetime, targetDatetimes),
-          inArray(leaveRequests.status, ["PENDING", "APPROVED"])
+          inArray(leaveRequests.status, ["PENDING", "APPROVED"]),
+          isNull(leaveRequests.deletedAt)
         ),
       });
 
@@ -221,7 +223,10 @@ export class LeaveService {
 
     return await db.transaction(async (tx) => {
       const requests = await tx.query.leaveRequests.findMany({
-        where: inArray(leaveRequests.id, ids),
+        where: and(
+          inArray(leaveRequests.id, ids),
+          isNull(leaveRequests.deletedAt)
+        ),
       });
 
       if (requests.length === 0) {
@@ -306,7 +311,8 @@ export class LeaveService {
     const baseCondition = and(
       eq(leaveRequests.userId, userId),
       gte(leaveRequests.leaveDatetime, startOfMonth),
-      lte(leaveRequests.leaveDatetime, endOfMonth)
+      lte(leaveRequests.leaveDatetime, endOfMonth),
+      isNull(leaveRequests.deletedAt)
     );
 
     const allRecordsForSummary = await db.query.leaveRequests.findMany({
@@ -385,7 +391,7 @@ export class LeaveService {
       with: { staffProfiles: true },
     });
 
-    if (!mentor || !mentor.staffProfiles) {
+    if (!mentor?.staffProfiles) {
       throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
     }
 
@@ -413,7 +419,10 @@ export class LeaveService {
       };
     }
 
-    const leaveConditions = [inArray(leaveRequests.userId, studentUserIds)];
+    const leaveConditions = [
+      inArray(leaveRequests.userId, studentUserIds),
+      isNull(leaveRequests.deletedAt),
+    ];
 
     if (status) {
       leaveConditions.push(eq(leaveRequests.status, status));
@@ -504,7 +513,10 @@ export class LeaveService {
 
     return await db.transaction(async (tx) => {
       const requests = await tx.query.leaveRequests.findMany({
-        where: inArray(leaveRequests.id, ids),
+        where: and(
+          inArray(leaveRequests.id, ids),
+          isNull(leaveRequests.deletedAt)
+        ),
       });
 
       if (requests.length === 0) throw new NotFoundError("ไม่พบคำขอลา");
@@ -547,7 +559,8 @@ export class LeaveService {
     const requests = await db.query.leaveRequests.findMany({
       where: and(
         inArray(leaveRequests.id, ids),
-        eq(leaveRequests.userId, userId)
+        eq(leaveRequests.userId, userId),
+        isNull(leaveRequests.deletedAt)
       ),
     });
 
@@ -563,26 +576,10 @@ export class LeaveService {
     }
 
     return await db.transaction(async (tx) => {
-      for (const request of requests) {
-        if (request.file) {
-          try {
-            const s3Key = request.file.startsWith("/")
-              ? request.file.slice(1)
-              : request.file;
-
-            await s3Client.send(
-              new DeleteObjectCommand({
-                Bucket: BUCKET_NAME,
-                Key: s3Key,
-              })
-            );
-          } catch (error) {
-            console.error("ลบไฟล์ใน S3 ล้มเหลว:", error);
-          }
-        }
-      }
-
-      await tx.delete(leaveRequests).where(inArray(leaveRequests.id, ids));
+      await tx
+        .update(leaveRequests)
+        .set({ deletedAt: new Date() })
+        .where(inArray(leaveRequests.id, ids));
 
       return { success: true, message: "ยกเลิกคำขอลาเรียบร้อยแล้ว" };
     });
@@ -594,7 +591,8 @@ export class LeaveService {
     const requests = await db.query.leaveRequests.findMany({
       where: and(
         inArray(leaveRequests.id, ids),
-        eq(leaveRequests.userId, userId)
+        eq(leaveRequests.userId, userId),
+        isNull(leaveRequests.deletedAt)
       ),
     });
 
@@ -643,6 +641,7 @@ export class LeaveService {
       .where(
         and(
           eq(leaveRequests.id, leaveId),
+          isNull(leaveRequests.deletedAt),
           // ถ้าไม่ใช่ Admin (1) ต้องอยู่แผนกเดียวกัน
           mentor.roleId !== 1
             ? eq(users.departmentId, mentor.departmentId!)
@@ -739,6 +738,7 @@ export class LeaveService {
       .leftJoin(approver, eq(leaveRequests.approvedBy, approver.id)) // Join หาคนอนุมัติ
       .where(
         and(
+          isNull(leaveRequests.deletedAt),
           mentor.roleId !== 1
             ? eq(users.departmentId, mentor.departmentId!)
             : undefined,
@@ -763,6 +763,7 @@ export class LeaveService {
       .innerJoin(users, eq(leaveRequests.userId, users.id))
       .where(
         and(
+          isNull(leaveRequests.deletedAt),
           mentor.roleId !== 1
             ? eq(users.departmentId, mentor.departmentId!)
             : undefined,
