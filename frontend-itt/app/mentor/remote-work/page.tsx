@@ -428,27 +428,11 @@ const RemoteWorkPage = () => {
                                         <h3 className="text-[16px] text-[#344054] dark:text-gray-100 flex items-center">
                                             <span className="font-bold mr-1">ผู้มอบหมาย :</span> {item.assignedBy}
                                         </h3>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center gap-1 mt-1">
                                             <span className="text-[16px] font-bold text-[#344054] dark:text-gray-100">นักศึกษาที่ได้รับมอบหมาย :</span>
-                                            <div className="flex -space-x-2">
-                                                {(item.students || []).slice(0, 4).map((student: Student) => (
-                                                    <div key={student.id}>
-                                                        {student.nickname || student.name}
-                                                    </div>
-                                                    // <div key={idx} className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 overflow-hidden ring-1 ring-gray-100 dark:ring-gray-800 bg-gray-200" title={student.name}>
-                                                    //     <ImageWithAuth 
-                                                    //         userId={student.id} 
-                                                    //         className="w-full h-full object-cover" 
-                                                    //         fallbackSrc="/assets/images/user-profile.jpeg"
-                                                    //     />
-                                                    // </div>
-                                                ))}
-                                                {(item.students || []).length > 4 && (
-                                                    <div className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-900 bg-[#FDF2FE] flex items-center justify-center text-[10px] font-bold text-[#A80689] ring-1 ring-gray-100 dark:ring-gray-800">
-                                                        +{item.students.length - 4}
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <span className="text-[16px] text-[#344054] dark:text-gray-100">
+                                                {(item.students || []).map(student => student.nickname || student.name).join(', ')}
+                                            </span>
                                         </div>
                                         <div className="text-[12px] text-[#344054] dark:text-gray-400 mt-0.5">
                                             {item.updatedAt && new Date(item.updatedAt).getTime() > new Date(item.createdAt).getTime() ? (
@@ -473,15 +457,7 @@ const RemoteWorkPage = () => {
                                             >
                                                 <span className="material-symbols-rounded !text-[20px]">edit_square</span>
                                             </button>
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeleteTask(item.id);
-                                                }}
-                                                className="p-2 text-gray-500 hover:text-red-500 transition-colors rounded-full hover:bg-gray-50 dark:hover:bg-gray-800"
-                                            >
-                                                <span className="material-symbols-rounded !text-[20px]">delete</span>
-                                            </button>
+                                            
                                         </div>
                                     )}
                                     <button 

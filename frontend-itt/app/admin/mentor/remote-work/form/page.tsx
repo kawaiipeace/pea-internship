@@ -90,6 +90,9 @@ const RemoteWorkFormPage = () => {
 
                     const taskStudentIds = task.students.map((s: any) => s.id);
                     setStudentIds(taskStudentIds);
+                    if (taskStudentIds.length > 0) {
+                        setShowEmptySlot(false);
+                    }
 
                     // Ensure task students are in availableStudents for name display
                     setAvailableStudents(prev => {
