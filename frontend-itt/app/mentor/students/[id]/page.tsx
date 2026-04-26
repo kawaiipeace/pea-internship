@@ -458,6 +458,16 @@ const StudentDetailPage = () => {
         });
     };
 
+    const getDisplayHours = (row: any) => {
+        if (row.status === 'ABSENT' || row.status === 'LEAVE') return 0;
+        if (row.checkInTime && row.checkOutTime && row.checkInTime !== '--:--' && row.checkOutTime !== '--:--') {
+            if (row.checkInTime <= '08:45' && row.checkOutTime >= '13:00') {
+                return 7;
+            }
+        }
+        return Math.round(parseFloat(row.hours || 0));
+    };
+
     if (isLoading && !studentData) {
         return <div className="p-6 text-center text-gray-500">กำลังโหลดข้อมูล...</div>;
     }
@@ -503,7 +513,7 @@ const StudentDetailPage = () => {
 
             const timeStr = row.status === 'ABSENT' || row.status === 'LEAVE' ? '-' : `${row.checkInTime || '-'} - ${row.checkOutTime || '-'}`;
             const noteStr = row.note ? `"${row.note.replace(/"/g, '""')}"` : '-';
-            const hoursStr = parseFloat(row.hours || 0);
+            const hoursStr = getDisplayHours(row);
 
             const csvRow = [
                 `"${dateStr}"`,
@@ -603,8 +613,8 @@ const StudentDetailPage = () => {
                         <h2 className="text-[#111827] font-bold text-[18px]">ความคืบหน้าในการฝึกงาน</h2>
                         <div className="flex flex-col gap-5">
                             <div className="flex items-baseline justify-end gap-1">
-                                <span className="text-[32px] font-bold text-[#A80689]">{Math.floor(progress.accumulatedHours || 0)}</span>
-                                <span className="text-[16px] text-[#61646C] font-medium">/ {Math.floor(progress.totalHoursGoal || 0)} ชั่วโมง</span>
+                                <span className="text-[32px] font-bold text-[#A80689]">{Math.round(progress.accumulatedHours || 0)}</span>
+                                <span className="text-[16px] text-[#61646C] font-medium">/ {Math.round(progress.totalHoursGoal || 0)} ชั่วโมง</span>
                             </div>
                             <div className="w-full bg-[#F2F4F7] rounded-full h-3 overflow-hidden">
                                 <div
@@ -708,7 +718,7 @@ const StudentDetailPage = () => {
                                     <td className="py-4 px-6 text-center text-[16px] text-[#475467]">
                                         {row.status === 'ABSENT' || row.status === 'LEAVE' ? '-' : `${row.checkInTime} - ${row.checkOutTime}`}
                                     </td>
-                                    <td className="py-4 px-6 text-center text-[16px] text-[#475467] font-bold">{parseFloat(row.hours || 0)} ชม.</td>
+                                    <td className="py-4 px-6 text-center text-[16px] text-[#475467] font-bold">{getDisplayHours(row)} ชม.</td>
                                     <td className="py-4 px-6">
                                         <div className="flex justify-center">
                                             {row.evidenceUrl ? (
