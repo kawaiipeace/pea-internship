@@ -6,7 +6,7 @@ import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
 import Swal from 'sweetalert2';
 
-const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: any) => {
+const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSuccess }: any) => {
     const defaultMissing = Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0));
     const [hours, setHours] = useState<string>(defaultMissing.toString());
 
@@ -159,27 +159,46 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId }: an
                         ยกเลิก
                     </button>
                     <button
-                        onClick={() => {
-                            Swal.fire({
-                                width: '380px',
-                                html: `
-                                    <div class="flex flex-col items-center pt-4">
-                                        <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
-                                            <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
-                                                <span class="material-symbols-outlined text-white text-[20px] select-none" style="font-size: 36px">check</span>
+                        onClick={async () => {
+                            try {
+                                Swal.fire({
+                                    title: 'กำลังบันทึกข้อมูล...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => Swal.showLoading()
+                                });
+
+                                await axiosInstance.post('/user/internship/extend', {
+                                    studentId: studentId,
+                                    hours: parsedHours,
+                                    reason: 'ชดเชยเวลาฝึกงานที่ยังไม่ครบ'
+                                });
+
+                                Swal.fire({
+                                    width: '380px',
+                                    html: `
+                                        <div class="flex flex-col items-center pt-4">
+                                            <div class="w-[76px] h-[76px] rounded-full bg-[#DCFAE6] flex items-center justify-center mb-6">
+                                                <div class="w-[56px] h-[56px] rounded-full bg-[#0EBA67] flex items-center justify-center shadow-sm">
+                                                    <span class="material-symbols-outlined text-white text-[20px] select-none" style="font-size: 36px">check</span>
+                                                </div>
                                             </div>
+                                            <h2 class="text-[20px] font-bold text-gray-800 mb-2">ยืนยันการชดเชยแล้ว</h2>
                                         </div>
-                                        <h2 class="text-[20px] font-bold text-gray-800 mb-2">ยืนยันการชดเชยแล้ว</h2>
-                                    </div>
-                                `,
-                                showConfirmButton: false,
-                                timer: 2000,
-                                timerProgressBar: false,
-                                customClass: {
-                                    popup: 'rounded-[20px] !p-8',
-                                }
-                            });
-                            onClose();
+                                    `,
+                                    showConfirmButton: false,
+                                    timer: 2000,
+                                    timerProgressBar: false,
+                                    customClass: {
+                                        popup: 'rounded-[20px] !p-8',
+                                    }
+                                });
+
+                                if (onSuccess) onSuccess();
+                                onClose();
+                            } catch (error) {
+                                console.error('Error extending internship:', error);
+                                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกการชดเชยได้', 'error');
+                            }
                         }}
                         className="px-6 py-2.5 bg-[#0EBA67] rounded-xl text-white text-[14px] font-bold hover:bg-[#0da45a] transition-colors shadow-sm"
                     >
@@ -320,8 +339,16 @@ const StudentDetailPage = () => {
                 cancelBtn?.addEventListener('click', () => Swal.close());
                 confirmBtn?.addEventListener('click', async () => {
                     try {
-                        // Optional: You could add the actual API call here if needed
-                        // await axiosInstance.patch(`/mentor/students/${studentId}/status`, { status: 'COMPLETE' });
+                        Swal.fire({
+                            title: 'กำลังบันทึกข้อมูล...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+
+                        await axiosInstance.post('/user/internship/complete', { 
+                            studentId: studentId,
+                            note: 'ผ่านการฝึกงานเรียบร้อยแล้ว'
+                        });
                         
                         Swal.fire({
                             width: '400px',
@@ -442,6 +469,15 @@ const StudentDetailPage = () => {
     const { profile, progress, summary } = studentData;
     const progressPercent = progress.totalHoursGoal > 0 ? (progress.accumulatedHours / progress.totalHoursGoal) * 100 : 0;
 
+    const isPassAvailable = (() => {
+        if (!profile?.period?.endDate) return false;
+        const end = new Date(profile.period.endDate);
+        end.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today >= end;
+    })();
+
     const handleExportExcel = () => {
         const BOM = '\uFEFF';
         let csvContent = BOM + 'วันที่,สถานะ,เวลาเข้า - ออกงาน,ชั่วโมงทำงาน,หมายเหตุ\n';
@@ -467,7 +503,7 @@ const StudentDetailPage = () => {
 
             const timeStr = row.status === 'ABSENT' || row.status === 'LEAVE' ? '-' : `${row.checkInTime || '-'} - ${row.checkOutTime || '-'}`;
             const noteStr = row.note ? `"${row.note.replace(/"/g, '""')}"` : '-';
-            const hoursStr = row.hours || '0';
+            const hoursStr = parseFloat(row.hours || 0);
 
             const csvRow = [
                 `"${dateStr}"`,
@@ -567,8 +603,8 @@ const StudentDetailPage = () => {
                         <h2 className="text-[#111827] font-bold text-[18px]">ความคืบหน้าในการฝึกงาน</h2>
                         <div className="flex flex-col gap-5">
                             <div className="flex items-baseline justify-end gap-1">
-                                <span className="text-[32px] font-bold text-[#A80689]">{progress.accumulatedHours}</span>
-                                <span className="text-[16px] text-[#61646C] font-medium">/ {progress.totalHoursGoal} ชั่วโมง</span>
+                                <span className="text-[32px] font-bold text-[#A80689]">{Math.floor(progress.accumulatedHours || 0)}</span>
+                                <span className="text-[16px] text-[#61646C] font-medium">/ {Math.floor(progress.totalHoursGoal || 0)} ชั่วโมง</span>
                             </div>
                             <div className="w-full bg-[#F2F4F7] rounded-full h-3 overflow-hidden">
                                 <div
@@ -608,7 +644,12 @@ const StudentDetailPage = () => {
                         <button 
                             type="button"
                             onClick={handlePassInternship}
-                            className="w-full py-3 bg-[#74D1A6] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#067647] transition-colors shadow-sm text-[18px]"
+                            disabled={!isPassAvailable}
+                            className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[18px] text-white ${
+                                isPassAvailable 
+                                    ? 'bg-[#74D1A6] hover:bg-[#067647]' 
+                                    : 'bg-[#98A2B3] cursor-not-allowed'
+                            }`}
                         >
                             <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
                             ผ่านการฝึกงาน
@@ -667,7 +708,7 @@ const StudentDetailPage = () => {
                                     <td className="py-4 px-6 text-center text-[16px] text-[#475467]">
                                         {row.status === 'ABSENT' || row.status === 'LEAVE' ? '-' : `${row.checkInTime} - ${row.checkOutTime}`}
                                     </td>
-                                    <td className="py-4 px-6 text-center text-[16px] text-[#475467] font-bold">{row.hours} ชม.</td>
+                                    <td className="py-4 px-6 text-center text-[16px] text-[#475467] font-bold">{parseFloat(row.hours || 0)} ชม.</td>
                                     <td className="py-4 px-6">
                                         <div className="flex justify-center">
                                             {row.evidenceUrl ? (
@@ -808,6 +849,7 @@ const StudentDetailPage = () => {
                 profile={profile}
                 progress={progress}
                 studentId={studentId}
+                onSuccess={fetchDetail}
             />
         </div>
     );
