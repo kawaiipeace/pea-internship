@@ -117,11 +117,13 @@ const AttendanceHistoryPage = () => {
   };
 
   const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
+    if (currentMonth !== null && currentYear !== null) {
+      if (currentMonth === 0) {
+        setCurrentMonth(11);
+        setCurrentYear(currentYear - 1);
+      } else {
+        setCurrentMonth(currentMonth - 1);
+      }
     }
   };
 
@@ -225,11 +227,13 @@ const AttendanceHistoryPage = () => {
   };
 
   const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
+    if (currentMonth !== null && currentYear !== null) {
+      if (currentMonth === 11) {
+        setCurrentMonth(0);
+        setCurrentYear(currentYear + 1);
+      } else {
+        setCurrentMonth(currentMonth + 1);
+      }
     }
   };
 
@@ -617,44 +621,44 @@ const AttendanceHistoryPage = () => {
 
     if (type === "success" || status === "เข้างานปกติ") {
       icon = (
-        <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm">
-          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white sm:translate-x-[0.5px] -translate-x-[0.2px] sm:-translate-y-[0.5px] -translate-y-[0.2px]">
+        <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px]">
             check
           </span>
         </div>
       );
       colorClass =
-        "px-2 py-0.5 bg-[#e7faef] text-[#079455] border border-[#079455] rounded-full flex items-center text-[11px] font-bold";
+        "px-2 py-1 bg-[#e7faef] text-[#079455] border border-[#079455] rounded-full flex items-center gap-1.5 text-[11px] font-bold";
     } else if (type === "warning" || status === "สาย") {
       icon = (
-        <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
-          <span className="material-symbols-rounded !text-[12px] leading-none sm:translate-x-[0.5px] translate-x-[0.2px] sm:-translate-y-[0.5px] -translate-y-[0.5px]">
+        <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px]">
             schedule
           </span>
         </div>
       );
       colorClass =
-        "px-2 py-0.5 bg-[#fdf4d6] text-[#FDB022] border border-[#FDB022] rounded-full flex items-center text-[11px] font-bold";
+        "px-2 py-1 bg-[#fdf4d6] text-[#FDB022] border border-[#FDB022] rounded-full flex items-center gap-1.5 text-[11px] font-bold";
     } else if (type === "info" || status === "ลา") {
       icon = (
-        <div className="w-4 h-4 rounded-full bg-[#1AB3FF] flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm overflow-hidden">
-          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none sm:translate-x-[0.5px] -translate-x-[0.3px] sm:-translate-y-[0.5px] translate-y-[0.2px]">
+        <div className="w-4 h-4 rounded-full bg-[#1AB3FF] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px]">
             lab_profile
           </span>
         </div>
       );
       colorClass =
-        "px-2 py-0.5 bg-[#eef8ff] text-[#1AB3FF] border border-[#1AB3FF] rounded-full flex items-center text-[11px] font-bold";
+        "px-2 py-1 bg-[#eef8ff] text-[#1AB3FF] border border-[#1AB3FF] rounded-full flex items-center gap-1.5 text-[11px] font-bold";
     } else if (type === "danger" || status === "ขาด") {
       icon = (
-        <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 mr-1.5 shadow-sm focus:outline-none">
-          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white sm:translate-x-[0.5px] -translate-x-[0.2px] sm:-translate-y-[0.5px] translate-y-0">
+        <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px]">
             close
           </span>
         </div>
       );
       colorClass =
-        "px-2 py-0.5 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full flex items-center text-[11px] font-bold";
+        "px-2 py-1 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full flex items-center gap-1.5 text-[11px] font-bold";
     } else if (type === "default" || status === "ไม่ลงเวลาออก") {
       icon = (
         <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
@@ -686,12 +690,10 @@ const AttendanceHistoryPage = () => {
         {/* Header Section */}
         <div className="flex flex-row items-start justify-between gap-2 sm:gap-4 shrink-0">
           <div>
-            <h1 className="text-[24px] sm:text-2xl font-bold mb-1 text-black dark:text-white">
+            <h1 className="text-[20px] sm:text-2xl font-bold mb-1 text-black dark:text-white">
               ประวัติการลงเวลา
             </h1>
-            <p className="text-gray-500 text-xs sm:text-sm">
-              รายงานการลงเวลาปฏิบัติงาน ประจำเดือน
-            </p>
+            
           </div>
           <MonthPicker
             currentMonth={currentMonth}
@@ -1032,12 +1034,12 @@ const AttendanceHistoryPage = () => {
                                 <div className="text-[14px] text-gray-800 dark:text-gray-200 mb-2">
                                   {selectedHistoryItem.labelMobile}
                                 </div>
-                                <div className="inline-flex items-center px-4 py-1.2 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full text-[13px] font-bold gap-2 w-fit">
-                                  <div className="w-5 h-5 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                    <span className="material-symbols-rounded !text-[14px] flex items-center justify-center leading-none translate-x-[0.5px] translate-y-[0.5px]">
-                                      close
-                                    </span>
-                                  </div>
+                                <div className="inline-flex items-center px-2 py-1 bg-[#FCEDED] text-[#EF4444] border border-[#EF4444] rounded-full text-[11px] font-bold gap-1.5 w-fit">
+                                    <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
+                                      <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none -translate-y-[0.5px]">
+                                        close
+                                      </span>
+                                    </div>
                                   {selectedHistoryItem.status}
                                 </div>
                               </div>
@@ -1047,33 +1049,17 @@ const AttendanceHistoryPage = () => {
                               {/* Content */}
                               <div className="flex flex-col items-center justify-start flex-1 pt-0 pb-4 px-4">
                                 {/* Custom CSS Absent Calendar Illustration */}
-                                <div className="relative w-40 h-40 mb-2 flex items-center justify-center">
-                                  {/* Soft red background circle */}
-                                  <div className="absolute inset-2 bg-[#FFEAEC] dark:bg-red-900/30 rounded-full"></div>
-                                  {/* Base shadow oval */}
-                                  <div className="absolute w-[100px] h-3 bg-[#FCA5A5]/40 rounded-[100%] bottom-6 blur-[3px]"></div>
-
-                                  {/* Calendar Body */}
-                                  <div className="relative w-[100px] h-[110px] bg-white dark:bg-[#202020] rounded-[16px] shadow-sm flex flex-col z-10 overflow-hidden">
-                                    {/* Calendar Header */}
-                                    <div className="h-[32px] bg-[#EF4444] w-full shrink-0"></div>
-
-                                    {/* Calendar Content */}
-                                    <div className="flex flex-1 w-full flex items-center justify-center">
-                                      <span className="material-symbols-rounded !text-[48px] text-[#EF4444]">
-                                        close
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Calendar Rings */}
-                                  <div className="absolute top-[37px] left-[52px] w-[12px] h-[20px] border-[3px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
-                                  <div className="absolute top-[37px] right-[52px] w-[12px] h-[20px] border-[3px] border-[#CBD5E1] dark:border-gray-500 rounded-full bg-[#F8FAFC] dark:bg-gray-800 z-20"></div>
+                                <div className="relative w-full h-auto mb-4 flex items-center justify-center">
+                                  <img 
+                                    src="/close.png" 
+                                    alt="Absent Illustration" 
+                                    className="w-[180px] h-auto object-contain" 
+                                  />
                                 </div>
-                                <div className="text-[14px] text-[#000000] dark:text-gray-200 mb-1">
+                                <div className="text-[16px] text-[#61646C] dark:text-gray-200 mb-1">
                                   ไม่มีการลงเวลาในวันนี้
                                 </div>
-                                <div className="text-[14px] text-[#000000] dark:text-gray-200 text-center">
+                                <div className="text-[14px] text-[#61646C] dark:text-gray-200 text-center">
                                   หากมาทำงานปกติ โปรดส่งคำขอแก้ไขเวลา
                                 </div>
                               </div>
@@ -1145,7 +1131,7 @@ const AttendanceHistoryPage = () => {
                                     <div
                                       className={`mt-2 ${selectedHistoryItem.status === "ไม่ลงเวลาออก"
                                         ? "w-[100px] h-[26px] px-1 bg-[#F3F4F6] text-[#6B7280] border-[#6B7280]"
-                                        : `w-fit px-2 py-0.5 ${selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success"
+                                        : `w-fit px-2 py-1 ${selectedHistoryItem.status === "เข้างานปกติ" || selectedHistoryItem.statusType === "success"
                                           ? "bg-[#E7FAEF] text-[#079455] border-[#079455]"
                                           : selectedHistoryItem.status === "สาย" || selectedHistoryItem.statusType === "warning"
                                             ? "bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]"
@@ -1162,21 +1148,21 @@ const AttendanceHistoryPage = () => {
                                         selectedHistoryItem.statusType ===
                                         "success" ? (
                                         <div className="w-4 h-4 bg-[#079455] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px] -translate-y-[0.5px]">check</span>
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white -translate-y-[0.5px]">check</span>
                                         </div>
                                       ) : selectedHistoryItem.status ===
                                         "สาย" ||
                                         selectedHistoryItem.statusType ===
                                         "warning" ? (
                                         <div className="w-4 h-4 bg-[#FDB022] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">schedule</span>
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none -translate-y-[0.5px]">schedule</span>
                                         </div>
                                       ) : selectedHistoryItem.status ===
                                         "ขาด" ||
                                         selectedHistoryItem.statusType ===
                                         "danger" ? (
                                         <div className="w-4 h-4 bg-[#EF4444] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px] translate-y-[0.5px]">close</span>
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white -translate-y-[0.5px]">close</span>
                                         </div>
                                       ) : selectedHistoryItem.leaveType ===
                                         "ลาป่วย" ? (
@@ -1188,7 +1174,7 @@ const AttendanceHistoryPage = () => {
                                       ) : selectedHistoryItem.status === "ลา" ||
                                         selectedHistoryItem.isLeave ? (
                                         <div className="w-4 h-4 bg-[#1AB3FF] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">lab_profile</span>
+                                          <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none -translate-y-[0.5px]">lab_profile</span>
                                         </div>
                                       ) : (
                                         <div className="w-[18px] h-[18px] rounded-full bg-[#6B7280] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">

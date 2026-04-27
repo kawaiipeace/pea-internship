@@ -14,7 +14,7 @@ import IconCamera from '@/components/icon/icon-camera';
 import IconX from '@/components/icon/icon-x';
 import IconArchive from '@/components/icon/icon-archive';
 import IconPlusCircle from '@/components/icon/icon-plus-circle';
-import IconTrash from '@/components/icon/icon-trash';
+
 import IconFileText from '@/components/icon/icon-file-text';
 import IconBriefcase from '@/components/icon/icon-briefcase';
 import IconMedicalCross from '@/components/icon/icon-medical-cross';
@@ -401,20 +401,24 @@ const LeaveHistoryPage = () => {
     };
 
     const handlePrevMonth = () => {
-        if (currentMonth === 0) {
-            setCurrentMonth(11);
-            setCurrentYear(currentYear - 1);
-        } else {
-            setCurrentMonth(currentMonth - 1);
+        if (currentMonth !== null && currentYear !== null) {
+            if (currentMonth === 0) {
+                setCurrentMonth(11);
+                setCurrentYear(currentYear - 1);
+            } else {
+                setCurrentMonth(currentMonth - 1);
+            }
         }
     };
 
     const handleNextMonth = () => {
-        if (currentMonth === 11) {
-            setCurrentMonth(0);
-            setCurrentYear(currentYear + 1);
-        } else {
-            setCurrentMonth(currentMonth + 1);
+        if (currentMonth !== null && currentYear !== null) {
+            if (currentMonth === 11) {
+                setCurrentMonth(0);
+                setCurrentYear(currentYear + 1);
+            } else {
+                setCurrentMonth(currentMonth + 1);
+            }
         }
     };
 
@@ -450,8 +454,8 @@ const LeaveHistoryPage = () => {
                 {/* Header Section */}
                 <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 shrink-0 px-1 sm:px-0">
                     <div>
-                        <h1 className="text-[24px] sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลา</h1>
-                        <p className="text-gray-500 text-xs sm:text-sm">รายงานการลาปฏิบัติงาน ประจำเดือน</p>
+                        <h1 className="text-[20px] sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลา</h1>
+                        
                     </div>
                     <MonthPicker 
                         currentMonth={currentMonth} 
@@ -545,7 +549,7 @@ const LeaveHistoryPage = () => {
                                             <div className="text-[14px] text-[#000000] whitespace-nowrap">
                                                 {item.date} {item.month} {item.year}
                                             </div>
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1">
                                                 {getStatusBadge(item.statusType, item.status)}
                                                 {item.statusType === 'warning' && (
                                                     <button
@@ -581,7 +585,7 @@ const LeaveHistoryPage = () => {
                                                             });
                                                         }}
                                                     >
-                                                        <IconTrash className="w-4 h-4" />
+                                                        <span className="material-symbols-rounded !text-[18px] translate-y-[1.5px]">delete</span>
                                                     </button>
                                                 )}
                                             </div>
@@ -649,7 +653,7 @@ const LeaveHistoryPage = () => {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-3 ml-auto sm:absolute sm:top-3 sm:right-4">
+                                        <div className="flex items-center gap-1.5 ml-auto sm:absolute sm:top-3 sm:right-4">
                                             {getStatusBadge(item.statusType, item.status)}
                                                 {item.statusType === 'warning' && (
                                                     <button
@@ -685,7 +689,7 @@ const LeaveHistoryPage = () => {
                                                             });
                                                         }}
                                                     >
-                                                        <IconTrash className="w-5 h-5" />
+                                                        <span className="material-symbols-rounded !text-[22px] translate-y-[1.5px]">delete</span>
                                                     </button>
                                                 )}
                                         </div>
@@ -823,7 +827,7 @@ const LeaveHistoryPage = () => {
                                                                     <div className="text-[16px]  text-gray-800 dark:text-gray-200">
                                                                         {selectedHistoryItem.date} {selectedHistoryItem.month} {selectedHistoryItem.year}
                                                                     </div>
-                                                                    <div className="flex items-center gap-2">
+                                                                    <div className="flex items-center gap-1">
                                                                         {getStatusBadge(selectedHistoryItem.statusType, selectedHistoryItem.status)}
                                                                         {selectedHistoryItem.status === 'รอการอนุมัติ' || selectedHistoryItem.status === 'รออนุมัติการลา' ? (
                                                                             <button
@@ -859,7 +863,7 @@ const LeaveHistoryPage = () => {
                                                                                     });
                                                                                 }}
                                                                             >
-                                                                                <IconTrash className="w-[18px] h-[18px]" />
+                                                                                 <span className="material-symbols-rounded !text-[20px] translate-y-[1.5px]">delete</span>
                                                                             </button>
                                                                         ) : null}
                                                                     </div>
