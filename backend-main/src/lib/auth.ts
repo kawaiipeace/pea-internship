@@ -9,7 +9,7 @@ type user = InferSelectModel<typeof schema.users>;
 type session = InferSelectModel<typeof schema.sessions>;
 
 const tempStaffData = new Map<string, string>();
-const ADMIN_EMPLOYEE_IDS = ["430792", "492980", "515042", "700003"];
+const ADMIN_EMPLOYEE_IDS = ["430792", "492980", "515042", "700003" , "503710" , "501103" , "515711" ];
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
