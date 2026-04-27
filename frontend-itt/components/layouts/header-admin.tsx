@@ -248,11 +248,6 @@ const Header = () => {
                                 btnClassName="relative group block p-2 rounded-full dark:hover:bg-dark/60"
                                 button={
                                     <UserAvatar user={user} size="sm" />
-                                    <span className="flex items-center">
-                                        <div className='flex justify-center items-center w-11 h-11 rounded-full text-white font-extrabold text-xl bg-primary'>
-                                            {user?.fname[0]}
-                                        </div>
-                                    </span>
                                 }
                             >
                                 <ul className="w-max min-w-[230px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
