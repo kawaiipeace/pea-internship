@@ -255,7 +255,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                         setShowMonthSelector(false);
                         setShowYearSelector(false);
                     }}>
-                        <div className="bg-white dark:bg-[#121212] w-[348px] h-[350px] rounded-[16px] shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col justify-between">
+                        <div className="bg-white dark:bg-[#121212] w-[348px] h-[358px] rounded-[16px] shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col justify-between">
                             <div className="p-3 w-full flex flex-col items-center">
                                 <div className="w-[252px]">
                                     <div className="flex items-center justify-between mb-3">
@@ -437,6 +437,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                             </div>
                         </div>
                     </ClickAwayListener>
+
                 </div>
             )}
         </div>
