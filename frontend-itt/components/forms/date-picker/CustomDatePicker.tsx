@@ -12,14 +12,30 @@ interface CustomDatePickerProps {
     onDatesChange?: (dates: string[]) => void; // (Multiple/Range Mode)
     placeholder?: string;
     error?: string;
+    minDate?: Date | string | 'today'; // New prop to disable past dates
 }
 
-const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, multiple, range, selectedDates = [], onDatesChange, placeholder, error }) => {
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, multiple, range, selectedDates = [], onDatesChange, placeholder, error, minDate }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [viewDate, setViewDate] = useState(new Date());
     const [internalSelectedDate, setInternalSelectedDate] = useState<Date | null>(value ? new Date(value) : null);
     const [internalMultipleDates, setInternalMultipleDates] = useState<string[]>(selectedDates);
     const [hoverDate, setHoverDate] = useState<string | null>(null);
+
+    // Parse minDate
+    const getMinDate = () => {
+        if (!minDate) return null;
+        if (minDate === 'today') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return today;
+        }
+        const d = new Date(minDate);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+
+    const minDateObj = getMinDate();
 
     // Sync internal state when external value changes
     useEffect(() => {
@@ -65,6 +81,10 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
 
     const handleDateSelect = (day: number) => {
         const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+        
+        // Check if date is disabled
+        if (minDateObj && newDate < minDateObj) return;
+
         const year = newDate.getFullYear();
         const month = String(newDate.getMonth() + 1).padStart(2, '0');
         const dayStr = String(newDate.getDate()).padStart(2, '0');
@@ -244,6 +264,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                                                 calendarDays.push(<div key={`empty-${i}`} className="h-[30px] w-[36px]"></div>);
                                             }
                                             for (let day = 1; day <= daysInMonth; day++) {
+                                                const dayDate = new Date(year, month, day);
                                                 const dayStr = String(day).padStart(2, '0');
                                                 const monthStr = String(month + 1).padStart(2, '0');
                                                 const dateStr = `${year}-${monthStr}-${dayStr}`;
@@ -254,16 +275,17 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                                                 
                                                 const isInRange = isDateInRange(dateStr);
                                                 const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
+                                                const isDisabled = minDateObj && dayDate < minDateObj;
 
                                                 // Range visual logic
                                                 const isRangeStart = range && internalMultipleDates.length >= 1 && internalMultipleDates[0] === dateStr;
                                                 const isRangeEnd = range && internalMultipleDates.length === 2 && internalMultipleDates[1] === dateStr;
                                                 const isHoverEnd = range && internalMultipleDates.length === 1 && hoverDate === dateStr;
 
-                                                let bgClass = 'hover:bg-[#FDF2FE] text-[#101828]';
+                                                let bgClass = isDisabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'hover:bg-[#FDF2FE] text-[#101828]';
                                                 let roundedClass = 'rounded-[4px]';
 
-                                                if (isSelected || isInRange) {
+                                                if (!isDisabled && (isSelected || isInRange)) {
                                                     bgClass = 'bg-[#A80689] text-white font-bold';
                                                     if (range) {
                                                         const start = internalMultipleDates[0];
@@ -293,10 +315,11 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, mu
                                                 calendarDays.push(
                                                     <div 
                                                         key={day}
-                                                        onClick={() => handleDateSelect(day)}
-                                                        onMouseEnter={() => range && setHoverDate(dateStr)}
-                                                        onMouseLeave={() => range && setHoverDate(null)}
-                                                        className={`h-[30px] w-[36px] flex items-center justify-center text-[14px] cursor-pointer transition-all
+                                                        onClick={() => !isDisabled && handleDateSelect(day)}
+                                                        onMouseEnter={() => !isDisabled && range && setHoverDate(dateStr)}
+                                                        onMouseLeave={() => !isDisabled && range && setHoverDate(null)}
+                                                        className={`h-[30px] w-[36px] flex items-center justify-center text-[14px] transition-all
+                                                            ${!isDisabled ? 'cursor-pointer' : ''}
                                                             ${bgClass}
                                                             ${roundedClass}
                                                             ${isToday && !isSelected && !isInRange ? 'border border-[#A80689]/30' : ''}
