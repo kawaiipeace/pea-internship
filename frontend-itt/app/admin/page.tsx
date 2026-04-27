@@ -272,10 +272,10 @@ const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHour
                     </div>
                 </div>
             </td>
-            <td className="px-4 py-4">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{unitName}</span>
+            <td className="px-6 py-4">
+                <span className="text-[16px] font-bold text-[#111827]">{unitName}</span>
             </td>
-            <td className="px-4 py-4">
+            <td className="px-6 py-4">
                 <div className="flex gap-2 justify-center">
                     <AttendanceBadge count={statistics.present} type="มา" />
                     <AttendanceBadge count={statistics.late} type="สาย" />
@@ -283,11 +283,11 @@ const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHour
                     <AttendanceBadge count={statistics.absent} type="ขาด" />
                 </div>
             </td>
-            <td className="px-4 py-4 min-w-[180px]">
+            <td className="px-6 py-4 min-w-[200px]">
                 <HoursBar done={accumulated} total={goal} color={themeColor} note={hoursNote} />
             </td>
-            <td className="px-4 py-4 text-center">
-                <span className="inline-block rounded-xl px-4 py-1.5 text-xs font-bold bg-[#fff7ed] text-[#ea580c] border border-[#ffedd5]">
+            <td className="px-6 py-4 text-center">
+                <span className="inline-block rounded-xl px-5 py-2 text-[14px] font-bold bg-[#FFF7ED] text-[#EA580C] border border-[#FED7AA]">
                     อยู่ระหว่างการฝึกงาน
                 </span>
             </td>
@@ -569,49 +569,48 @@ const AdminDashboardPage = () => {
             </div>
 
             {/* ── Student Table ── */}
-            <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl bg-white">
-                {/* Table Header */}
-                <div className="px-6 py-6">
-                    <h2 className="text-[18px] font-bold text-[#111827]">รายชื่อนักศึกษา</h2>
-                    <p className="text-[14px] font-normal text-[#61646C]">
-                        แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษารายบุคคล
-                        {meta && <span className="ml-2 text-xs text-gray-300">({meta.total} คน)</span>}
-                    </p>
-                </div>
+            {/* ── Student Table Section ── */}
+            <div className="mb-6">
+                <h2 className="text-[24px] font-bold text-[#111827] mb-1">รายชื่อนักศึกษา</h2>
+                <p className="text-[14px] font-normal text-[#61646C]">
+                    แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษารายบุคคล
+                </p>
+            </div>
 
-                {/* Filters */}
-                <div className="flex flex-col gap-4 px-6 pb-6 lg:flex-row">
-                    {/* Search */}
-                    <div className="relative flex-[2.5]">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                            <IconSearch className="h-5 w-5" />
-                        </span>
-                        <input
-                            id="student-search-input"
-                            type="text"
-                            placeholder="พิมพ์ชื่อ ตำแหน่ง มหาวิทยาลัย กอง ชื่อพี่เลี้ยงหรือรหัสพนักงานพี่เลี้ยงที่ต้องการค้นหา..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="form-input w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-[13px] font-medium text-gray-700 placeholder:text-gray-400 focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] dark:text-gray-200"
-                        />
-                    </div>
-                    {/* Time Range */}
-                    <div className="flex-1">
-                        <select
-                            id="time-range-select"
-                            value={timeRange}
-                            onChange={(e) => setTimeRange(e.target.value)}
-                            className={`form-select w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] font-medium focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] ${timeRange ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400'
-                                }`}
-                        >
-                            <option value="">เลือกช่วงเวลาที่ต้องการดู...</option>
-                            <option value="week">สัปดาห์นี้</option>
-                            <option value="month">เดือนนี้</option>
-                            <option value="quarter">ไตรมาสนี้</option>
-                        </select>
-                    </div>
+            {/* Filters */}
+            <div className="flex flex-col gap-4 mb-6 lg:flex-row">
+                {/* Search */}
+                <div className="relative flex-[2.5]">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]">
+                        <IconSearch className="h-5 w-5" />
+                    </span>
+                    <input
+                        id="student-search-input"
+                        type="text"
+                        placeholder="พิมพ์ชื่อ ตำแหน่ง มหาวิทยาลัย กอง ชื่อพี่เลี้ยงหรือรหัสพนักงานพี่เลี้ยงที่ต้องการค้นหา..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="form-input w-full rounded-[10px] border border-[#E5E7EB] bg-white py-3 pl-11 pr-4 text-[14px] font-medium text-gray-700 placeholder:text-[#9CA3AF] focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] dark:text-gray-200 shadow-sm"
+                    />
                 </div>
+                {/* Time Range */}
+                <div className="flex-1">
+                    <select
+                        id="time-range-select"
+                        value={timeRange}
+                        onChange={(e) => setTimeRange(e.target.value)}
+                        className={`form-select w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-medium focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] shadow-sm ${timeRange ? 'text-gray-700 dark:text-gray-200' : 'text-[#9CA3AF]'
+                            }`}
+                    >
+                        <option value="">เลือกช่วงเวลาที่ต้องการดู...</option>
+                        <option value="week">สัปดาห์นี้</option>
+                        <option value="month">เดือนนี้</option>
+                        <option value="quarter">ไตรมาสนี้</option>
+                    </select>
+                </div>
+            </div>
 
+            <div className="panel p-0 border-[#E5E7EB] border-[1px] shadow-sm overflow-hidden rounded-[12px] bg-white">
                 {/* Table */}
                 <div className="overflow-x-auto">
                     <table className="w-full">
