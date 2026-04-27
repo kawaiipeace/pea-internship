@@ -34,6 +34,8 @@ const RemoteWorkFormPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [busyStudentsByDate, setBusyStudentsByDate] = useState<Record<string, {id: string, mentor: string}[]>>({});
+    const fetchedMonths = useRef<Set<string>>(new Set());
     const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Handle click outside to close dropdown
@@ -118,6 +120,75 @@ const RemoteWorkFormPage = () => {
         };
         loadInitialData();
     }, [isEditMode, taskId]);
+
+    // Fetch busy students when dates change
+    useEffect(() => {
+        const fetchBusyStudents = async () => {
+            if (workDates.length === 0) return;
+
+            const monthsToFetch = new Set<string>();
+            workDates.forEach(dateStr => {
+                const date = new Date(dateStr);
+                const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+                if (!fetchedMonths.current.has(key)) {
+                    monthsToFetch.add(key);
+                }
+            });
+
+            if (monthsToFetch.size === 0) return;
+
+            try {
+                const newBusyData = { ...busyStudentsByDate };
+                
+                for (const monthKey of monthsToFetch) {
+                    const [year, month] = monthKey.split('-');
+                    const response = await axiosInstance.get('/offsite-tasks/mentor', {
+                        params: {
+                            viewMode: 'all',
+                            month: parseInt(month),
+                            year: parseInt(year),
+                            limit: 100 // Get many to be sure
+                        }
+                    });
+
+                    const tasks = response.data?.data || [];
+                    tasks.forEach((t: any) => {
+                        // Skip if it's the current task being edited
+                        if (isEditMode && t.id === Number(taskId)) return;
+
+                        const date = t.workDate;
+                        if (!newBusyData[date]) newBusyData[date] = [];
+                        
+                        t.students.forEach((s: any) => {
+                            if (!newBusyData[date].some(existing => existing.id === s.id)) {
+                                newBusyData[date].push({
+                                    id: s.id,
+                                    mentor: t.assignedBy
+                                });
+                            }
+                        });
+                    });
+                    
+                    fetchedMonths.current.add(monthKey);
+                }
+                
+                setBusyStudentsByDate(newBusyData);
+            } catch (error) {
+                console.error('Error fetching busy students:', error);
+            }
+        };
+
+        fetchBusyStudents();
+    }, [workDates, isEditMode, taskId, busyStudentsByDate]);
+
+    const getBusyInfo = (studentId: string) => {
+        for (const date of workDates) {
+            const busyList = busyStudentsByDate[date] || [];
+            const busy = busyList.find(b => b.id === studentId);
+            if (busy) return busy.mentor;
+        }
+        return null;
+    };
 
     const handleSetStudent = (index: number, studentId: string) => {
         if (!studentId) return;
@@ -436,19 +507,29 @@ const RemoteWorkFormPage = () => {
                                             <div className="absolute top-[50px] left-0 w-full max-w-[618px] max-h-[200px] overflow-y-auto bg-[#F8EDF5] border border-[#A80689]/20 rounded-[10px] shadow-lg z-20 py-1 scrollbar-thin scrollbar-thumb-gray-300">
                                                 {availableStudents
                                                     .filter(s => s.id === id || !studentIds.includes(s.id))
-                                                    .map(s => (
-                                                        <div 
-                                                            key={s.id} 
-                                                            className={`px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] transition-all duration-200 cursor-pointer ${s.id === id ? 'bg-[#A80689] text-white' : 'text-[#101828] hover:bg-[#A80689] hover:text-white'}`}
-                                                            onClick={() => handleSetStudent(index, s.id)}
-                                                        >
-                                                            {(() => {
-                                                                const fullName = s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.id;
-                                                                const nickName = s.nickname || s.displayUsername;
-                                                                return nickName ? `${fullName} (${nickName})` : fullName;
-                                                            })()}
-                                                        </div>
-                                                    ))}
+                                                    .map(s => {
+                                                        const busyMentor = getBusyInfo(s.id);
+                                                        const isBusy = !!busyMentor && s.id !== id;
+
+                                                        return (
+                                                            <div 
+                                                                key={s.id} 
+                                                                className={`px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] transition-all duration-200 ${isBusy ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : s.id === id ? 'bg-[#A80689] text-white cursor-pointer' : 'text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer'}`}
+                                                                onClick={() => !isBusy && handleSetStudent(index, s.id)}
+                                                            >
+                                                                <div className="flex justify-between items-center w-full">
+                                                                    <span>
+                                                                        {(() => {
+                                                                            const fullName = s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.id;
+                                                                            const nickName = s.nickname || s.displayUsername;
+                                                                            return nickName ? `${fullName} (${nickName})` : fullName;
+                                                                        })()}
+                                                                    </span>
+                                                                    {isBusy && <span className="text-[10px] bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full ml-2 shrink-0 font-bold">ติดงานกับ {busyMentor}</span>}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                             </div>
                                         )}
                                     </div>
@@ -476,19 +557,29 @@ const RemoteWorkFormPage = () => {
                                             ) : (
                                                 availableStudents
                                                     .filter(s => !studentIds.includes(s.id))
-                                                    .map(s => (
-                                                        <div 
-                                                            key={s.id} 
-                                                            className="px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer transition-all duration-200"
-                                                            onClick={() => handleSetStudent(studentIds.length, s.id)}
-                                                        >
-                                                            {(() => {
-                                                                const fullName = s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.id;
-                                                                const nickName = s.nickname || s.displayUsername;
-                                                                return nickName ? `${fullName} (${nickName})` : fullName;
-                                                            })()}
-                                                        </div>
-                                                    ))
+                                                    .map(s => {
+                                                        const busyMentor = getBusyInfo(s.id);
+                                                        const isBusy = !!busyMentor;
+
+                                                        return (
+                                                            <div 
+                                                                key={s.id} 
+                                                                className={`px-4 py-2.5 mx-1 my-0.5 rounded-[8px] text-[14px] transition-all duration-200 ${isBusy ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : 'text-[#101828] hover:bg-[#A80689] hover:text-white cursor-pointer'}`}
+                                                                onClick={() => !isBusy && handleSetStudent(studentIds.length, s.id)}
+                                                            >
+                                                                <div className="flex justify-between items-center w-full">
+                                                                    <span>
+                                                                        {(() => {
+                                                                            const fullName = s.fname ? `${s.fname} ${s.lname || ''}` : s.name || s.id;
+                                                                            const nickName = s.nickname || s.displayUsername;
+                                                                            return nickName ? `${fullName} (${nickName})` : fullName;
+                                                                        })()}
+                                                                    </span>
+                                                                    {isBusy && <span className="text-[10px] bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full ml-2 shrink-0 font-bold">ติดงานกับ {busyMentor}</span>}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
                                             )}
                                         </div>
                                     )}

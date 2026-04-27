@@ -160,24 +160,34 @@ const RemoteWorkDetailPage = () => {
                         </button>
 
                         {/* Action Buttons */}
-                        {task.isOwner && (
-                            <div className="flex items-center gap-1">
-                                <button 
-                                    onClick={() => router.push(`/mentor/remote-work/form?id=${task.id}`)}
-                                    className="p-2 text-[#61646C] hover:text-[#A80689] transition-colors"
-                                    title="แก้ไข"
-                                >
-                                    <span className="material-symbols-rounded !text-[24px]">edit_square</span>
-                                </button>
-                                <button 
-                                    onClick={handleDelete}
-                                    className="p-2 text-[#61646C] hover:text-red-500 transition-colors"
-                                    title="ลบ"
-                                >
-                                    <span className="material-symbols-rounded !text-[24px]">delete</span>
-                                </button>
-                            </div>
-                        )}
+                        {task.isOwner && (() => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const workDate = new Date(task.workDate);
+                            workDate.setHours(0, 0, 0, 0);
+                            const isPast = workDate < today;
+
+                            return (
+                                <div className="flex items-center gap-1">
+                                    <button 
+                                        onClick={() => !isPast && router.push(`/mentor/remote-work/form?id=${task.id}`)}
+                                        disabled={isPast}
+                                        className={`p-2 transition-colors ${isPast ? 'text-gray-400 cursor-not-allowed opacity-70' : 'text-[#61646C] hover:text-[#A80689]'}`}
+                                        title={isPast ? "ไม่สามารถแก้ไขงานที่ผ่านไปแล้วได้" : "แก้ไข"}
+                                    >
+                                        <span className="material-symbols-rounded !text-[24px]">edit_square</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => !isPast && handleDelete()}
+                                        disabled={isPast}
+                                        className={`p-2 transition-colors ${isPast ? 'text-gray-400 cursor-not-allowed opacity-70' : 'text-[#61646C] hover:text-red-500'}`}
+                                        title={isPast ? "ไม่สามารถลบงานที่ผ่านไปแล้วได้" : "ลบ"}
+                                    >
+                                        <span className="material-symbols-rounded !text-[24px]">delete</span>
+                                    </button>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
 

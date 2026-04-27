@@ -446,20 +446,29 @@ const RemoteWorkPage = () => {
 
                                 {/* Actions Right Side - Aligned with the first line (Location) on desktop, bottom on mobile */}
                                 <div className="flex items-center gap-2 sm:gap-0 sm:ml-4 sm:self-start mt-3 sm:mt-1 w-full sm:w-auto justify-end sm:justify-start border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100 dark:border-gray-800">
-                                    {item.isOwner && (
-                                        <div className="flex items-center gap-1">
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    router.push(`/mentor/remote-work/form?id=${item.id}`);
-                                                }}
-                                                className="p-2 text-gray-500 hover:text-[#A80689] transition-colors rounded-full hover:bg-gray-50 dark:hover:bg-gray-800"
-                                            >
-                                                <span className="material-symbols-rounded !text-[20px]">edit_square</span>
-                                            </button>
-                                            
-                                        </div>
-                                    )}
+                                    {item.isOwner && (() => {
+                                        const today = new Date();
+                                        today.setHours(0, 0, 0, 0);
+                                        const workDate = new Date(item.workDate);
+                                        workDate.setHours(0, 0, 0, 0);
+                                        const isPast = workDate < today;
+
+                                        return (
+                                            <div className="flex items-center gap-1">
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!isPast) router.push(`/mentor/remote-work/form?id=${item.id}`);
+                                                    }}
+                                                    disabled={isPast}
+                                                    className={`p-2 transition-colors rounded-full ${isPast ? 'text-gray-400 cursor-not-allowed opacity-70' : 'text-gray-500 hover:text-[#A80689] hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                                    title={isPast ? "ไม่สามารถแก้ไขงานที่ผ่านไปแล้วได้" : "แก้ไข"}
+                                                >
+                                                    <span className="material-symbols-rounded !text-[20px]">edit_square</span>
+                                                </button>
+                                            </div>
+                                        );
+                                    })()}
                                     <button 
                                         className="ml-auto sm:ml-2 bg-[#E4E7EC] dark:bg-gray-800 text-[#333] dark:text-gray-300 px-5 sm:px-4 py-2 rounded-[8px] sm:rounded-[5px] text-[13px] sm:text-[12px] font-bold sm:font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group-hover/card:text-[#A80689]"
                                     >
