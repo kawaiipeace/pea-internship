@@ -107,6 +107,10 @@ export class MentorService {
     const studentProfileIds = students.map((s) => s.studentProfileId);
     const studentUserIds = students.map((s) => s.userId);
 
+    const todayStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+    }).format(new Date());
+
     const todayLeaves = studentUserIds.length > 0
       ? await db
           .select({
@@ -133,10 +137,6 @@ export class MentorService {
       .select()
       .from(attendanceLogs)
       .where(and(...logConditions));
-
-    const todayStr = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Bangkok",
-    }).format(new Date());
 
     const todayLogs = allLogs.filter((log) => {
       const logDate = log.workDate ? String(log.workDate).substring(0, 10) : "";

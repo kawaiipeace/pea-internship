@@ -154,7 +154,7 @@ const LeaveRequestPage = () => {
   };
 
   return (
-    <div className="-m-6 min-h-screen bg-[#fffbf7] dark:bg-black p-4 sm:p-10">
+    <div className="-m-6 min-h-screen bg-white dark:bg-black p-4 sm:p-10">
       <div className="mx-auto max-w-3xl sm:px-6 lg:px-8">
         <div className="rounded-xl border border-[#CECFD2] bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1b2e4b] sm:p-10">
           <h1 className="mb-6 text-xl font-bold text-gray-800 dark:text-white-light sm:mb-2 sm:text-2xl">
@@ -191,8 +191,6 @@ const LeaveRequestPage = () => {
                     disableMobile: true,
                     closeOnSelect: false,
                     onReady: (_selectedDates, _dateStr, instance) => {
-                      (instance as any)._okClicked = false;
-
                       const calendarContainer = instance.calendarContainer;
                       const btnContainer = document.createElement("div");
                       btnContainer.style.cssText =
@@ -203,8 +201,16 @@ const LeaveRequestPage = () => {
                       clearBtn.type = "button";
                       clearBtn.style.cssText =
                         "flex:1;padding:14px;border-radius:16px;border:1px solid #e5e7eb;background:#fff;color:#4b5563;font-weight:600;font-size:16px;cursor:pointer;transition:all 0.2s;";
-                      clearBtn.addEventListener("mouseover", () => clearBtn.style.background = "#f9fafb");
-                      clearBtn.addEventListener("mouseout", () => clearBtn.style.background = "#fff");
+                      clearBtn.addEventListener("mouseover", () => {
+                        clearBtn.style.background = "#fdf2f8";
+                        clearBtn.style.color = "#A80689";
+                        clearBtn.style.borderColor = "#A80689";
+                      });
+                      clearBtn.addEventListener("mouseout", () => {
+                        clearBtn.style.background = "#fff";
+                        clearBtn.style.color = "#4b5563";
+                        clearBtn.style.borderColor = "#e5e7eb";
+                      });
                       clearBtn.addEventListener("click", () => {
                         instance.clear();
                         setLeaveDate("");
@@ -218,7 +224,6 @@ const LeaveRequestPage = () => {
                       okBtn.addEventListener("mouseover", () => okBtn.style.background = "#8e0e6f");
                       okBtn.addEventListener("mouseout", () => okBtn.style.background = "#A80689");
                       okBtn.addEventListener("click", () => {
-                        (instance as any)._okClicked = true;
                         const dates = instance.selectedDates;
                         if (dates.length === 1) {
                           setLeaveDate([dates[0], dates[0]]);
@@ -233,12 +238,6 @@ const LeaveRequestPage = () => {
                       btnContainer.appendChild(clearBtn);
                       btnContainer.appendChild(okBtn);
                       calendarContainer.appendChild(btnContainer);
-                    },
-                    onClose: (_selectedDates, _dateStr, instance) => {
-                      if (!(instance as any)._okClicked) {
-                        setTimeout(() => instance.open(), 0);
-                      }
-                      (instance as any)._okClicked = false;
                     },
                   }}
                   onChange={([start, end], dateStr, instance) => {

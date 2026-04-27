@@ -483,6 +483,19 @@ const StudentDetailPage = () => {
         return today >= end;
     })();
 
+    const isCompensateAvailable = (() => {
+        if (!profile?.period?.endDate) return false;
+        const end = new Date(profile.period.endDate);
+        end.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const allowedStart = new Date(end);
+        allowedStart.setDate(end.getDate() - 7);
+        
+        return today >= allowedStart;
+    })();
+
     const handleExportExcel = () => {
         const BOM = '\uFEFF';
         let csvContent = BOM + 'วันที่,สถานะ,เวลาเข้า - ออกงาน,ชั่วโมงทำงาน,หมายเหตุ\n';
@@ -671,7 +684,12 @@ const StudentDetailPage = () => {
                                 </button>
                                 <button
                                     onClick={() => setIsCompensateModalOpen(true)}
-                                    className="w-full py-3 bg-[#FFF5FD] text-[#A80689] border border-[#A80689] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 transition-colors shadow-sm text-[18px]"
+                                    disabled={!isCompensateAvailable}
+                                    className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[18px] ${
+                                        isCompensateAvailable 
+                                            ? 'bg-[#FFF5FD] text-[#A80689] border border-[#A80689] hover:bg-pink-50' 
+                                            : 'bg-[#FFF5FD] text-[#98A2B3] border border-[#A80689]/40 cursor-not-allowed'
+                                    }`}
                                 >
                                     ชดเชยวันทำงาน
                                 </button>

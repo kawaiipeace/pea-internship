@@ -36,6 +36,7 @@ import { getTranslation } from '@/i18n';
 import Swal from 'sweetalert2';
 import useAuthStore from '@/store/authStore';
 import ImageWithAuth from '../ImageWithAuth';
+import UserAvatar from '../UserAvatar';
 
 const Header = () => {
     const pathname = usePathname();
@@ -302,23 +303,13 @@ const Header = () => {
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
                                 btnClassName="relative group block"
                                 button={
-                                    <div className="relative group block h-9 w-9">
-                                        {user?.roleId === 3 ? (
-                                            <ImageWithAuth userId={user?.id} className="h-9 w-9 rounded-full object-cover" />
-                                        ) : (
-                                            <img className="h-9 w-9 rounded-full object-cover" src="/assets/images/user-profile.jpeg" alt="userProfile" />
-                                        )}
-                                    </div>
+                                    <UserAvatar user={user} size="sm" />
                                 }
                             >
                                 <ul className="w-max min-w-[230px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
                                     <li>
                                         <div className="flex items-center px-4 py-4">
-                                            {user?.roleId === 3 ? (
-                                                <ImageWithAuth userId={user?.id} className="h-10 w-10 rounded-md object-cover" />
-                                            ) : (
-                                                <img className="h-10 w-10 rounded-md object-cover" src="/assets/images/user-profile.jpeg" alt="userProfile" />
-                                            )}
+                                            <UserAvatar user={user} size="md" className="rounded-md" />
                                             <div className="ltr:pl-4 rtl:pr-4">
                                                 <h4 className="text-base whitespace-nowrap">
                                                     {fullName}
