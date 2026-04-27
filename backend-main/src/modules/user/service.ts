@@ -582,9 +582,19 @@ export class UserService {
         throw new Error("ไม่พบข้อมูลวันสิ้นสุดการฝึกงานเดิม");
       }
 
+      const today = new Date();
+      const currentEndDate = new Date(appInfo.endDate);
+      
+      const allowedStartDate = new Date(currentEndDate);
+      allowedStartDate.setDate(currentEndDate.getDate() - 7);
+
+      if (today < allowedStartDate) {
+        throw new Error("สามารถขอขยายเวลาได้เฉพาะในช่วง 7 วันสุดท้ายของการฝึกงาน หรือหลังจากจบการฝึกงานแล้วเท่านั้น");
+      }
+
       const daysToCompensate = Math.ceil(data.hours / 7);
       const newEndDate = this.calculateEndDateExcludingWeekends(
-        new Date(appInfo.endDate),
+        currentEndDate,
         daysToCompensate
       );
 
@@ -596,6 +606,7 @@ export class UserService {
         })
         .where(eq(applicationInformations.applicationStatusId, currentApp.id));
 
+      // Update สถานะนักศึกษา
       await tx
         .update(studentProfiles)
         .set({
@@ -603,6 +614,7 @@ export class UserService {
         })
         .where(eq(studentProfiles.userId, data.studentId));
 
+      // บันทึกประวัติการขยายเวลา
       await tx.insert(internshipExtensions).values({
         applicationStatusId: currentApp.id,
         requestBy: data.mentorId,

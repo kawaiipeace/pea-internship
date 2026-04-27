@@ -129,7 +129,8 @@ const Header = () => {
 
     return (
         <header className={`z-40 ${themeConfig.semidark && themeConfig.menu === 'horizontal' ? 'dark' : ''}`}>
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .dropdown ul li a:hover {
                     background-color: #FDF2FD !important;
                     color: #9A0D8A !important;
@@ -246,7 +247,9 @@ const Header = () => {
                                 btnClassName="relative group block p-2 rounded-full dark:hover:bg-dark/60"
                                 button={
                                     <span className="flex items-center">
-                                        <img src="/admin-icon/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" alt="profile" className="h-8 w-8" />
+                                        <div className='flex justify-center items-center w-11 h-11 rounded-full text-white font-extrabold text-xl bg-primary'>
+                                            {user?.fname[0]}
+                                        </div>
                                     </span>
                                 }
                             >
