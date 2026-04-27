@@ -460,11 +460,6 @@ const StudentDetailPage = () => {
 
     const getDisplayHours = (row: any) => {
         if (row.status === 'ABSENT' || row.status === 'LEAVE') return 0;
-        if (row.checkInTime && row.checkOutTime && row.checkInTime !== '--:--' && row.checkOutTime !== '--:--') {
-            if (row.checkInTime <= '08:45' && row.checkOutTime >= '13:00') {
-                return 7;
-            }
-        }
         return Math.round(parseFloat(row.hours || 0));
     };
 
@@ -651,25 +646,33 @@ const StudentDetailPage = () => {
                     </div>
 
                     <div className="w-full space-y-3 mt-8">
-                        <button 
-                            type="button"
-                            onClick={handlePassInternship}
-                            disabled={!isPassAvailable}
-                            className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[18px] text-white ${
-                                isPassAvailable 
-                                    ? 'bg-[#74D1A6] hover:bg-[#067647]' 
-                                    : 'bg-[#98A2B3] cursor-not-allowed'
-                            }`}
-                        >
-                            <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
-                            ผ่านการฝึกงาน
-                        </button>
-                        <button
-                            onClick={() => setIsCompensateModalOpen(true)}
-                            className="w-full py-3 bg-[#FFF5FD] text-[#A80689] border border-[#A80689] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 transition-colors shadow-sm text-[18px]"
-                        >
-                            ชดเชยวันทำงาน
-                        </button>
+                        {profile?.internshipStatus === 'COMPLETE' ? (
+                            <div className="w-full py-3 bg-[#DCFAE6] text-[#079455] rounded-xl font-bold flex items-center justify-center text-[18px]">
+                                ผ่านการฝึกงาน
+                            </div>
+                        ) : (
+                            <>
+                                <button 
+                                    type="button"
+                                    onClick={handlePassInternship}
+                                    disabled={!isPassAvailable}
+                                    className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[18px] text-white ${
+                                        isPassAvailable 
+                                            ? 'bg-[#17B26A] hover:bg-[#067647]' 
+                                            : 'bg-[#98A2B3] cursor-not-allowed'
+                                    }`}
+                                >
+                                    <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
+                                    ผ่านการฝึกงาน
+                                </button>
+                                <button
+                                    onClick={() => setIsCompensateModalOpen(true)}
+                                    className="w-full py-3 bg-[#FFF5FD] text-[#A80689] border border-[#A80689] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-50 transition-colors shadow-sm text-[18px]"
+                                >
+                                    ชดเชยวันทำงาน
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
