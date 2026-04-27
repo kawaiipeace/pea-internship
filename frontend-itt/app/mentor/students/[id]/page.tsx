@@ -387,8 +387,8 @@ const StudentDetailPage = () => {
     }, [fetchDetail]);
 
     const renderStatusBadge = (status: string, note: string = '', leaveType?: string) => {
-        if (status === 'LEAVE') {
-            if (leaveType === 'SICK' || note.includes('ป่วย') || note.includes('อาหารเป็นพิษ') || note.includes('แพทย์') || note.includes('โรงพยาบาล')) {
+        if (status === 'LEAVE' || status === 'SICK' || status === 'ABSENCE') {
+            if (status === 'SICK' || leaveType === 'SICK' || note.includes('ป่วย') || note.includes('อาหารเป็นพิษ') || note.includes('แพทย์') || note.includes('โรงพยาบาล')) {
                 return (
                     <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FDF2F8] border border-[#FBCFE8] w-max">
                         <div className="w-8 h-8 flex items-center justify-center bg-[#EC4899] text-white rounded-full shrink-0 shadow-sm">
@@ -649,6 +649,10 @@ const StudentDetailPage = () => {
                         {profile?.internshipStatus === 'COMPLETE' ? (
                             <div className="w-full py-3 bg-[#DCFAE6] text-[#079455] rounded-xl font-bold flex items-center justify-center text-[18px]">
                                 ผ่านการฝึกงาน
+                            </div>
+                        ) : profile?.internshipStatus === 'EXTENDED' ? (
+                            <div className="w-full py-3 bg-[#F2F4F7] text-[#FF6B6B] rounded-xl font-bold flex items-center justify-center text-[18px]">
+                                ชดเชยวันทำงาน {Math.ceil(Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0)) / 7)} วัน
                             </div>
                         ) : (
                             <>
