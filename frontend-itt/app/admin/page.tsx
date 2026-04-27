@@ -95,8 +95,8 @@ const BarRow = ({ label, value, max, color, isOther }: BarRowProps) => {
             <div className="flex-1 rounded-full bg-gray-100 dark:bg-gray-800" style={{ height: '14px' }}>
                 <div
                     className="h-full rounded-full transition-all duration-1000 ease-out"
-                    style={{ 
-                        width: `${pct}%`, 
+                    style={{
+                        width: `${pct}%`,
                         backgroundColor: isOther ? '#d1d5db' : color,
                         boxShadow: isOther ? 'none' : `0 0 12px ${color}66`
                     }}
@@ -164,17 +164,17 @@ interface AttendanceBadgeProps {
     type: 'มา' | 'สาย' | 'ลา' | 'ขาด';
 }
 
-const numberColors: Record<string, string> = {
-    มา: 'text-[#17B26A]',
-    สาย: 'text-[#FDB022]',
-    ลา: 'text-[#1AB3FF]',
-    ขาด: 'text-[#D92D20]',
+const badgeStyles: Record<string, { border: string; text: string }> = {
+    มา: { border: 'border-[#17B26A]', text: 'text-[#17B26A]' },
+    สาย: { border: 'border-[#FDB022]', text: 'text-[#FDB022]' },
+    ลา: { border: 'border-[#1AB3FF]', text: 'text-[#1AB3FF]' },
+    ขาด: { border: 'border-[#D92D20]', text: 'text-[#D92D20]' },
 };
 
 const AttendanceBadge = ({ count, type }: AttendanceBadgeProps) => (
-    <div className="flex h-[58px] w-[58px] flex-col items-center justify-center rounded-xl border-[1.5px] border-gray-400 bg-white shadow-sm dark:border-gray-500 dark:bg-gray-800">
-        <span className={`text-xl font-bold leading-none ${numberColors[type]}`}>{count}</span>
-        <span className="mt-1 text-[13px] font-bold text-gray-600 dark:text-gray-400">{type}</span>
+    <div className={`flex h-[52px] w-[52px] flex-col items-center justify-center rounded-xl border-[1.5px] bg-white shadow-sm dark:bg-gray-800 ${badgeStyles[type].border}`}>
+        <span className={`text-lg font-bold leading-none ${badgeStyles[type].text}`}>{count}</span>
+        <span className="mt-1 text-[11px] font-extrabold text-gray-500 uppercase">{type}</span>
     </div>
 );
 
@@ -187,30 +187,38 @@ interface HoursBarProps {
     icon?: React.ReactNode;
 }
 
-const HoursBar = ({ done, total, color, note, icon }: HoursBarProps) => (
-    <div className="flex flex-col gap-1.5 w-full">
-        <div className="flex justify-center items-center text-sm font-bold">
-            <span style={{ color }}>{done}</span>
-            <span className="text-gray-400 ml-1 font-normal text-xs">/{total} ชั่วโมง</span>
-        </div>
-        <div className="h-3 w-full rounded-full bg-gray-50 dark:bg-gray-700 overflow-hidden border border-gray-200 dark:border-gray-600 p-[1px]">
-            <div 
-                className="h-full rounded-full transition-all duration-1000 ease-out relative" 
-                style={{ 
-                    width: `${Math.min(100, (done / total) * 100)}%`, 
-                    background: `linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 45%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%), #A80689`,
-                    boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.2)'
-                }} 
-            />
-        </div>
-        {note && (
-            <div className="flex items-center justify-center gap-1 mt-0.5">
-                <IconClock className={`h-3 w-3 ${note === 'สิ้นสุดการฝึกงาน' || (note === 'เหลืออีก 7 วัน') ? 'text-red-600' : 'text-gray-400'}`} />
-                <span className="text-[11px] font-bold" style={{ color: note === 'สิ้นสุดการฝึกงาน' || (note === 'เหลืออีก 7 วัน') ? '#dc2626' : '#6b7280' }}>{note}</span>
+const HoursBar = ({ done, total, note }: HoursBarProps) => {
+    const isAlert = note?.includes('สิ้นสุด') || note?.includes('7 วัน');
+    const noteColor = isAlert ? '#B42318' : '#667085';
+    const iconBgColor = isAlert ? '#B42318' : '#94A3B8';
+
+    return (
+        <div className="flex flex-col w-full gap-1">
+            <div className="flex items-baseline justify-center gap-1 mb-0.5">
+                <span className="text-2xl font-bold" style={{ color: '#A80689' }}>{done}</span>
+                <span className="text-[13px] font-medium text-[#667085]">/{total} ชั่วโมง</span>
             </div>
-        )}
-    </div>
-);
+            <div className="h-[16px] w-full rounded-full bg-[#F2F4F7] dark:bg-gray-800 overflow-hidden relative shadow-inner">
+                <div
+                    className="h-full rounded-full transition-all duration-1000 ease-out"
+                    style={{
+                        width: `${Math.min(100, (done / total) * 100)}%`,
+                        background: `linear-gradient(180deg, #D414AD 0%, #A80689 45%, #7A0463 100%)`,
+                        boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3)'
+                    }}
+                />
+            </div>
+            {note && (
+                <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full shrink-0" style={{ backgroundColor: iconBgColor }}>
+                        <IconClock className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-[13px] font-bold" style={{ color: noteColor }}>{note}</span>
+                </div>
+            )}
+        </div>
+    );
+};
 
 // ── Status Tag ────────────────────────────────────────────────────────────────
 const statusStyle: Record<string, string> = {
@@ -224,7 +232,7 @@ const statusLabel: Record<string, string> = {
 };
 
 // ── Student Row ───────────────────────────────────────────────────────────────
-interface StudentRowProps extends StudentData {}
+interface StudentRowProps extends StudentData { }
 
 const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHours }: StudentRowProps) => {
     const nameParts = fullName.split(' (');
@@ -236,13 +244,14 @@ const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHour
 
     const { accumulated, goal, remainingDays } = workHours;
     const pct = goal > 0 ? (accumulated / goal) * 100 : 0;
-    
-    // Theme colors matching the design
-    let themeColor = '#A80689'; 
-    let hoursNote = remainingDays !== undefined ? `เหลืออีก ${remainingDays} วัน` : '';
 
-    if (pct >= 100 || accumulated >= 540) { // Special logic to match the image row 4
+    // Theme colors matching the design
+    const themeColor = '#A80689';
+    let hoursNote = '';
+    if (remainingDays === 0 || (goal > 0 && accumulated >= goal)) {
         hoursNote = 'สิ้นสุดการฝึกงาน';
+    } else if (remainingDays !== undefined) {
+        hoursNote = `เหลืออีก ${remainingDays} วัน`;
     }
 
     return (
@@ -359,7 +368,7 @@ const AdminDashboardPage = () => {
             };
             if (search) params.search = search;
 
-            // Map timeRange to startDate/endDate
+            // Date Range logic
             if (timeRange === 'week') {
                 const d = new Date();
                 const dayOfWeek = d.getDay();
@@ -382,6 +391,14 @@ const AdminDashboardPage = () => {
                 const lastDay = new Date(d.getFullYear(), quarter * 3 + 3, 0);
                 params.startDate = firstDay.toISOString().split('T')[0];
                 params.endDate = lastDay.toISOString().split('T')[0];
+            } else {
+                // DEFAULT: Use global month/year picker
+                const monthStr = (monthIdx + 1).toString().padStart(2, '0');
+                const firstDay = `${year}-${monthStr}-01`;
+                const lastDayNum = new Date(year, monthIdx + 1, 0).getDate();
+                const lastDay = `${year}-${monthStr}-${lastDayNum.toString().padStart(2, '0')}`;
+                params.startDate = firstDay;
+                params.endDate = lastDay;
             }
 
             const res = await axiosInstance.get('/mentor/students', { params });
@@ -393,16 +410,16 @@ const AdminDashboardPage = () => {
         } finally {
             setStudentsLoading(false);
         }
-    }, [search, timeRange, page]);
+    }, [search, timeRange, page, monthIdx, year]);
 
     useEffect(() => {
         fetchStudents();
     }, [fetchStudents]);
 
-    // Reset page when filters change
+    // Reset page when any filter changes
     useEffect(() => {
         setPage(1);
-    }, [search, timeRange]);
+    }, [search, timeRange, monthIdx, year]);
 
     // ── Month navigation ──────────────────────────────────────────────────────
     const prevMonth = () => {
@@ -469,26 +486,26 @@ const AdminDashboardPage = () => {
 
                 <div className="flex items-center gap-3 self-end sm:self-auto">
                     {/* Month Picker */}
-                <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white p-1.5 shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
-                    <button
-                        id="prev-month-btn"
-                        onClick={prevMonth}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-primary transition-colors dark:hover:bg-gray-800"
-                    >
-                        <IconArrowBackward className="h-4 w-4" />
-                    </button>
-                    <span className="min-w-[120px] text-center text-sm font-bold text-gray-700 dark:text-gray-200">
-                        {MONTHS_TH[monthIdx]} {year + BE_OFFSET}
-                    </span>
-                    <button
-                        id="next-month-btn"
-                        onClick={nextMonth}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-primary transition-colors dark:hover:bg-gray-800"
-                    >
-                        <IconArrowForward className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white p-1.5 shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
+                        <button
+                            id="prev-month-btn"
+                            onClick={prevMonth}
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-primary transition-colors dark:hover:bg-gray-800"
+                        >
+                            <IconArrowBackward className="h-4 w-4" />
+                        </button>
+                        <span className="min-w-[120px] text-center text-sm font-bold text-gray-700 dark:text-gray-200">
+                            {MONTHS_TH[monthIdx]} {year + BE_OFFSET}
+                        </span>
+                        <button
+                            id="next-month-btn"
+                            onClick={nextMonth}
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-primary transition-colors dark:hover:bg-gray-800"
+                        >
+                            <IconArrowForward className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
-            </div>
             </div>
 
             {/* ── Stat Cards ── */}
@@ -584,7 +601,8 @@ const AdminDashboardPage = () => {
                             id="time-range-select"
                             value={timeRange}
                             onChange={(e) => setTimeRange(e.target.value)}
-                            className="form-select w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] font-medium text-gray-400 focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726]"
+                            className={`form-select w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] font-medium focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] ${timeRange ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400'
+                                }`}
                         >
                             <option value="">เลือกช่วงเวลาที่ต้องการดู...</option>
                             <option value="week">สัปดาห์นี้</option>
@@ -678,11 +696,10 @@ const AdminDashboardPage = () => {
                                     id={typeof p === 'number' ? `page-btn-${p}` : undefined}
                                     disabled={p === '...'}
                                     onClick={() => typeof p === 'number' && setPage(p)}
-                                    className={`min-w-[40px] rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${
-                                        p === page
-                                            ? 'border-gray-300 bg-gray-200 text-gray-700'
-                                            : 'border-gray-100 text-gray-400 hover:bg-gray-50 disabled:cursor-default dark:border-[#253b5c] dark:hover:bg-[#1b2e4b]'
-                                    }`}
+                                    className={`min-w-[40px] rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${p === page
+                                            ? 'border-gray-300 bg-[#F2F4F7] text-gray-800'
+                                            : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:cursor-default dark:border-[#253b5c] dark:bg-[#0e1726] dark:hover:bg-[#1b2e4b]'
+                                        }`}
                                 >
                                     {p}
                                 </button>

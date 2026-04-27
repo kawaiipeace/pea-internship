@@ -28,6 +28,7 @@ import {
   studentProfiles,
   timeCorrectionRequests,
   users,
+  studentAttendanceSummary,
   departments,
 } from "@/db/schema";
 import type * as model from "./model";
@@ -67,7 +68,14 @@ export class MentorService {
 
     if (search) {
       conditions.push(
-        or(ilike(users.fname, `%${search}%`), ilike(users.lname, `%${search}%`))
+        or(
+          ilike(users.fname, `%${search}%`),
+          ilike(users.lname, `%${search}%`),
+          ilike(internshipPositions.name, `%${search}%`),
+          ilike(departments.deptShort, `%${search}%`),
+          ilike(departments.deptFull, `%${search}%`),
+          ilike(institutions.name, `%${search}%`)
+        )
       );
     }
 
@@ -83,8 +91,11 @@ export class MentorService {
         totalHoursGoal: applicationInformations.hours,
         positionName: internshipPositions.name,
         username: users.displayUsername,
-        departmentName: departments.deptShort,
+        departmentName: sql<string>`COALESCE(${departments.deptSapShort}, ${departments.deptShort}, ${departments.deptFull})`,
         endDate: applicationInformations.endDate,
+        institutionName: institutions.name,
+        globalAccumulatedHours: studentAttendanceSummary.totalAccumulatedHours,
+        globalTotalHoursGoal: studentAttendanceSummary.totalHoursGoal,
       })
       .from(applicationStatuses)
       .innerJoin(users, eq(users.id, applicationStatuses.userId))
@@ -100,6 +111,14 @@ export class MentorService {
       .leftJoin(
         departments,
         eq(departments.deptSap, applicationStatuses.departmentId)
+      )
+      .leftJoin(
+        institutions,
+        eq(institutions.id, studentProfiles.institutionId)
+      )
+      .leftJoin(
+        studentAttendanceSummary,
+        eq(studentAttendanceSummary.studentProfileId, studentProfiles.id)
       )
       .where(and(...conditions));
 
@@ -145,16 +164,14 @@ export class MentorService {
         late = 0,
         leave = 0,
         absent = 0;
-      let accumulatedHours = 0;
+      let accumulatedHours = Number(student.globalAccumulatedHours || 0);
+      const totalHoursGoal = Number(student.globalTotalHoursGoal || 0);
 
       studentLogs.forEach((log) => {
         if (log.dailyStatus === "PRESENT") present++;
         else if (log.dailyStatus === "LATE") late++;
         else if (log.dailyStatus === "LEAVE") leave++;
         else if (log.dailyStatus === "ABSENT") absent++;
-
-        accumulatedHours += Number(log.actualHoursWorked || 0);
-        accumulatedHours += Number(log.approvedLeaveHours || 0);
       });
 
       let todayStatusText = "ยังไม่ลงเวลา";
@@ -171,13 +188,23 @@ export class MentorService {
         todayStatusText = statusMap[todayLog.dailyStatus] || "ยังไม่ลงเวลา";
       }
 
+      const remainingHours = totalHoursGoal - accumulatedHours;
       let remainingDays = 0;
-      if (student.endDate) {
-        const today = new Date();
-        const end = new Date(student.endDate);
-        const diffTime = end.getTime() - today.getTime();
-        remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (remainingDays < 0) remainingDays = 0;
+      if (remainingHours > 0) {
+        const workingDaysLeft = Math.ceil(remainingHours / 7);
+        // We use a simple approximation for calendar days: working days * 1.4 (to account for weekends)
+        // or just use the endDate if it exists and is further in the future.
+        if (student.endDate) {
+          const nowBkk = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+          const today = new Date(nowBkk.getFullYear(), nowBkk.getMonth(), nowBkk.getDate());
+          const endBkk = new Date(new Date(student.endDate).toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+          const end = new Date(endBkk.getFullYear(), endBkk.getMonth(), endBkk.getDate());
+          
+          const diffTime = end.getTime() - today.getTime();
+          remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        } else {
+          remainingDays = Math.ceil(workingDaysLeft * 1.4);
+        }
       }
 
       return {
@@ -275,14 +302,8 @@ export class MentorService {
       throw new NotFoundError("ไม่พบข้อมูลนักศึกษา หรือนักศึกษาไม่ได้อยู่ในสถานะฝึกงาน");
     }
 
-    let remainingDays = 0;
-    if (studentInfo.endDate) {
-      const today = new Date();
-      const end = new Date(studentInfo.endDate);
-      const diffTime = end.getTime() - today.getTime();
-      remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (remainingDays < 0) remainingDays = 0;
-    }
+    const totalHoursGoal = Number(studentInfo.totalHoursGoal || 0);
+    let accumulatedHours = 0;
 
     const allLogsForStats = await db
       .select({
@@ -293,20 +314,38 @@ export class MentorService {
       .from(attendanceLogs)
       .where(eq(attendanceLogs.studentProfileId, studentInfo.studentProfileId));
 
+    allLogsForStats.forEach((log) => {
+      accumulatedHours += Number(log.actualHoursWorked || 0);
+      accumulatedHours += Number(log.approvedLeaveHours || 0);
+    });
+
+    const remainingHours = totalHoursGoal - accumulatedHours;
+    let remainingDays = 0;
+    if (remainingHours > 0) {
+      if (studentInfo.endDate) {
+        const nowBkk = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+        const today = new Date(nowBkk.getFullYear(), nowBkk.getMonth(), nowBkk.getDate());
+        const endBkk = new Date(new Date(studentInfo.endDate).toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+        const end = new Date(endBkk.getFullYear(), endBkk.getMonth(), endBkk.getDate());
+        
+        const diffTime = end.getTime() - today.getTime();
+        remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      } else {
+        remainingDays = Math.ceil((remainingHours / 7) * 1.4);
+      }
+    }
+    if (remainingDays < 0) remainingDays = 0;
+
     let presentCount = 0,
       lateCount = 0,
       leaveCount = 0,
       absentCount = 0;
-    let accumulatedHours = 0;
 
     allLogsForStats.forEach((log) => {
       if (log.dailyStatus === "PRESENT") presentCount++;
       else if (log.dailyStatus === "LATE") lateCount++;
       else if (log.dailyStatus === "LEAVE") leaveCount++;
       else if (log.dailyStatus === "ABSENT") absentCount++;
-
-      accumulatedHours += Number(log.actualHoursWorked || 0);
-      accumulatedHours += Number(log.approvedLeaveHours || 0);
     });
 
     const offset = (page - 1) * limit;
