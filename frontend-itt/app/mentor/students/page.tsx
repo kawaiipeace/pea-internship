@@ -46,8 +46,8 @@ const StudentsPage = () => {
 
             const mappedStudents = rawStudents.map((s: any, index: number) => {
                 const detail = details[index]?.data;
-                const current = Number(s.workHours?.accumulated || 0);
-                const total = Number(s.workHours?.goal || 560);
+                const current = Math.round(Number(s.workHours?.accumulated || 0));
+                const total = Math.round(Number(s.workHours?.goal || 560));
                 const percent = total > 0 ? (current / total) * 100 : 0;
 
                 const endDateRaw = detail?.profile?.period?.endDate;
