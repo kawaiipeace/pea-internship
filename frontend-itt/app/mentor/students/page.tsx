@@ -300,24 +300,31 @@ const StudentsPage = () => {
 
         if (student.internshipStatus === 'COMPLETE') {
             text = 'ผ่านการฝึกงาน';
-            bgColor = 'bg-[#BFF2CB]';
-            textColor = 'text-[#15803D]';
+            bgColor = 'bg-[#DCFAE6]';
+            textColor = 'text-[#079455]';
+        } else if (student.internshipStatus === 'EXTENDED') {
+            const days = Math.ceil(Math.max(0, (student.progress.total - student.progress.current)) / 7);
+            text = `ชดเชยวันทำงาน ${days} วัน`;
+            bgColor = 'bg-[#F2F4F7]';
+            textColor = 'text-[#FF6B6B]';
         } else if (student.statusType === 'ended') {
             if (student.compensationDays > 0) {
                 text = `ชดเชยวันทำงาน ${student.compensationDays} วัน`;
-                bgColor = 'bg-[#F2F2F2]';
-                textColor = 'text-[#D92D20]';
+                bgColor = 'bg-[#F2F4F7]';
+                textColor = 'text-[#FF6B6B]';
             } else {
                 text = 'รออนุมัติการฝึกงาน';
-                bgColor = 'bg-[#F2F2F2]';
+                bgColor = 'bg-[#F2F4F7]';
                 textColor = 'text-[#61646C]';
             }
         } else {
-            return <div className="text-[#9CA3AF] text-[14px]">-</div>;
+            text = 'อยู่ในระหว่างฝึกงาน';
+            bgColor = 'bg-[#FEF6E0]';
+            textColor = 'text-[#D58C47]';
         }
 
         return (
-            <div className={`px-4 py-2 rounded-[4px] ${bgColor} ${textColor} text-[14px] font-bold whitespace-nowrap flex items-center justify-center min-w-[140px]`}>
+            <div className={`px-4 py-2 rounded-[4px] ${bgColor} ${textColor} text-[16px] font-normal whitespace-nowrap flex items-center justify-center min-w-[140px]`}>
                 {text}
             </div>
         );
