@@ -9,7 +9,10 @@ import IconSearch from '@/components/icon/icon-search';
 import IconExport from '@/components/icon/icon-export';
 import IconArrowBackward from '@/components/icon/icon-arrow-backward';
 import IconArrowForward from '@/components/icon/icon-arrow-forward';
+import IconFileText from '@/components/icon/icon-file-text';
+import IconCircleCheck from '@/components/icon/icon-circle-check';
 import axiosInstance from '@/api/axios';
+import ImageWithAuth from '@/components/ImageWithAuth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -37,9 +40,10 @@ interface StudentData {
     fullName: string;
     image: string | null;
     positionName: string;
+    unitName?: string;
     todayStatus: { text: string; code: string };
     statistics: { present: number; late: number; leave: number; absent: number };
-    workHours: { accumulated: number; goal: number };
+    workHours: { accumulated: number; goal: number; remainingDays?: number };
 }
 
 interface PaginationMeta {
@@ -54,21 +58,23 @@ interface PaginationMeta {
 // ─────────────────────────────────────────────────────────────────────────────
 interface StatCardProps {
     icon: React.ReactNode;
-    iconBg: string;
     value: string;
     label: string;
     isLoading?: boolean;
+    valueColor: string;
 }
 
-const StatCard = ({ icon, iconBg, value, label, isLoading }: StatCardProps) => (
-    <div className="panel flex flex-col gap-2 rounded-xl border border-white-light bg-white p-5 shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconBg}`}>{icon}</div>
-        {isLoading ? (
-            <div className="h-8 w-20 animate-pulse rounded-md bg-gray-200 dark:bg-gray-700" />
-        ) : (
-            <span className="text-2xl font-bold text-gray-800 dark:text-white">{value}</span>
-        )}
-        <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+const StatCard = ({ icon, value, label, isLoading, valueColor }: StatCardProps) => (
+    <div className="panel flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex h-8 w-8 items-center justify-start">{icon}</div>
+        <div>
+            {isLoading ? (
+                <div className="h-9 w-24 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-700" />
+            ) : (
+                <h2 className={`text-3xl font-bold ${valueColor}`}>{value}</h2>
+            )}
+            <p className="mt-2 text-[15px] font-bold text-gray-500 dark:text-gray-400">{label}</p>
+        </div>
     </div>
 );
 
@@ -84,20 +90,22 @@ interface BarRowProps {
 const BarRow = ({ label, value, max, color, isOther }: BarRowProps) => {
     const pct = isOther ? 8 : max > 0 ? (value / max) * 100 : 0;
     return (
-        <div className="flex items-center gap-3">
-            <span className="w-16 truncate text-right text-xs text-gray-500 dark:text-gray-400">{label}</span>
-            <div className="flex-1 rounded-full bg-gray-100 dark:bg-gray-700" style={{ height: '10px' }}>
+        <div className="flex items-center gap-3 py-1">
+            <span className="w-14 truncate text-right text-sm font-medium text-gray-400 dark:text-gray-500">{label}</span>
+            <div className="flex-1 rounded-full bg-gray-100 dark:bg-gray-800" style={{ height: '14px' }}>
                 <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%`, backgroundColor: isOther ? '#d1d5db' : color }}
+                    className="h-full rounded-full transition-all duration-1000 ease-out"
+                    style={{ 
+                        width: `${pct}%`, 
+                        backgroundColor: isOther ? '#d1d5db' : color,
+                        boxShadow: isOther ? 'none' : `0 0 12px ${color}66`
+                    }}
                 />
             </div>
-            {!isOther && <span className="w-6 text-xs font-medium text-gray-600 dark:text-gray-300">{value}</span>}
         </div>
     );
 };
 
-// ── Top-unit Widget ───────────────────────────────────────────────────────────
 interface TopUnitWidgetProps {
     title: string;
     subtitle: string;
@@ -112,23 +120,23 @@ const TopUnitWidget = ({ title, subtitle, axisLabel, color, items, isLoading }: 
     const axis = [0, 1, 2, 3, 4, 5, 6];
 
     return (
-        <div className="panel rounded-xl border border-white-light bg-white p-5 shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
-            <h3 className="text-base font-semibold text-gray-800 dark:text-white">{title}</h3>
-            <p className="mb-4 text-xs text-gray-400">{subtitle}</p>
+        <div className="panel rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white">{title}</h3>
+            <p className="mb-6 text-xs text-gray-400">{subtitle}</p>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
                 {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                         <div key={i} className="flex items-center gap-3">
-                            <div className="h-3 w-14 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-                            <div className="h-2.5 flex-1 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+                            <div className="h-4 w-12 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
+                            <div className="h-3.5 flex-1 animate-pulse rounded-full bg-gray-100 dark:bg-gray-700" />
                         </div>
                     ))
                 ) : items.length === 0 ? (
-                    <p className="text-center text-xs text-gray-400 py-3">ไม่มีข้อมูลในเดือนนี้</p>
+                    <p className="text-center text-sm text-gray-400 py-10">ไม่มีข้อมูลในเดือนนี้</p>
                 ) : (
                     <>
-                        {items.map((item, i) => (
+                        {items.slice(0, 5).map((item, i) => (
                             <BarRow key={i} label={item.name} value={item.value} max={max} color={color} />
                         ))}
                         <BarRow label="อื่นๆ" value={0} max={max} color={color} isOther />
@@ -137,12 +145,15 @@ const TopUnitWidget = ({ title, subtitle, axisLabel, color, items, isLoading }: 
             </div>
 
             {/* Axis */}
-            <div className="mt-3 flex justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
-                {axis.map((v) => (
-                    <span key={v} className="text-xs text-gray-400">{v}</span>
-                ))}
+            <div className="mt-6 flex border-t border-gray-50 pt-3 dark:border-gray-700/50">
+                <div className="w-14 shrink-0" /> {/* Match label width */}
+                <div className="ml-3 flex flex-1 justify-between"> {/* Match gap-3 */}
+                    {axis.map((v) => (
+                        <span key={v} className="text-xs font-medium text-gray-400">{v}</span>
+                    ))}
+                </div>
             </div>
-            <p className="mt-1 text-center text-xs text-gray-400">{axisLabel}</p>
+            <p className="mt-2 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">{axisLabel} (%)</p>
         </div>
     );
 };
@@ -153,17 +164,17 @@ interface AttendanceBadgeProps {
     type: 'มา' | 'สาย' | 'ลา' | 'ขาด';
 }
 
-const colors: Record<string, string> = {
-    มา: 'bg-success/10 text-success border-success/30',
-    สาย: 'bg-warning/10 text-warning border-warning/30',
-    ลา: 'bg-info/10 text-info border-info/30',
-    ขาด: 'bg-danger/10 text-danger border-danger/30',
+const numberColors: Record<string, string> = {
+    มา: 'text-[#17B26A]',
+    สาย: 'text-[#FDB022]',
+    ลา: 'text-[#1AB3FF]',
+    ขาด: 'text-[#D92D20]',
 };
 
 const AttendanceBadge = ({ count, type }: AttendanceBadgeProps) => (
-    <div className={`flex flex-col items-center rounded-lg border px-2 py-1 text-center ${colors[type]}`}>
-        <span className="text-sm font-bold">{count}</span>
-        <span className="text-[10px]">{type}</span>
+    <div className="flex h-[58px] w-[58px] flex-col items-center justify-center rounded-xl border-[1.5px] border-gray-400 bg-white shadow-sm dark:border-gray-500 dark:bg-gray-800">
+        <span className={`text-xl font-bold leading-none ${numberColors[type]}`}>{count}</span>
+        <span className="mt-1 text-[13px] font-bold text-gray-600 dark:text-gray-400">{type}</span>
     </div>
 );
 
@@ -173,20 +184,30 @@ interface HoursBarProps {
     total: number;
     color: string;
     note?: string;
-    noteColor?: string;
+    icon?: React.ReactNode;
 }
 
-const HoursBar = ({ done, total, color, note, noteColor }: HoursBarProps) => (
-    <div className="flex flex-col gap-1">
-        <span className="text-sm font-bold" style={{ color }}>
-            {done}
-            <span className="text-xs font-normal text-gray-400">/{total} ชั่วโมง</span>
-        </span>
-        <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-700">
-            <div className="h-full rounded-full" style={{ width: `${Math.min(100, (done / total) * 100)}%`, backgroundColor: color }} />
+const HoursBar = ({ done, total, color, note, icon }: HoursBarProps) => (
+    <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex justify-center items-center text-sm font-bold">
+            <span style={{ color }}>{done}</span>
+            <span className="text-gray-400 ml-1 font-normal text-xs">/{total} ชั่วโมง</span>
+        </div>
+        <div className="h-3 w-full rounded-full bg-gray-50 dark:bg-gray-700 overflow-hidden border border-gray-200 dark:border-gray-600 p-[1px]">
+            <div 
+                className="h-full rounded-full transition-all duration-1000 ease-out relative" 
+                style={{ 
+                    width: `${Math.min(100, (done / total) * 100)}%`, 
+                    background: `linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 45%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%), #A80689`,
+                    boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.2)'
+                }} 
+            />
         </div>
         {note && (
-            <span className="text-xs" style={{ color: noteColor }}>{note}</span>
+            <div className="flex items-center justify-center gap-1 mt-0.5">
+                <IconClock className={`h-3 w-3 ${note === 'สิ้นสุดการฝึกงาน' || (note === 'เหลืออีก 7 วัน') ? 'text-red-600' : 'text-gray-400'}`} />
+                <span className="text-[11px] font-bold" style={{ color: note === 'สิ้นสุดการฝึกงาน' || (note === 'เหลืออีก 7 วัน') ? '#dc2626' : '#6b7280' }}>{note}</span>
+            </div>
         )}
     </div>
 );
@@ -205,61 +226,60 @@ const statusLabel: Record<string, string> = {
 // ── Student Row ───────────────────────────────────────────────────────────────
 interface StudentRowProps extends StudentData {}
 
-const StudentRow = ({ fullName, positionName, statistics, workHours }: StudentRowProps) => {
+const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHours }: StudentRowProps) => {
     const nameParts = fullName.split(' (');
     const mainName = nameParts[0] ?? fullName;
     const nickname = nameParts[1]?.replace(')', '') ?? '';
 
-    const avatarColors = ['bg-primary/20 text-primary', 'bg-success/20 text-success', 'bg-warning/20 text-warning', 'bg-danger/20 text-danger', 'bg-secondary/20 text-secondary'];
+    const avatarColors = ['bg-primary/10 text-primary', 'bg-success/10 text-success', 'bg-warning/10 text-warning', 'bg-danger/10 text-danger', 'bg-secondary/10 text-secondary'];
     const colorIndex = mainName.charCodeAt(0) % avatarColors.length;
 
-    const { accumulated, goal } = workHours;
+    const { accumulated, goal, remainingDays } = workHours;
     const pct = goal > 0 ? (accumulated / goal) * 100 : 0;
-    let hoursColor = '#9333ea'; // purple default
-    let hoursNote = '';
-    let hoursNoteColor = '#6b7280';
+    
+    // Theme colors matching the design
+    let themeColor = '#A80689'; 
+    let hoursNote = remainingDays !== undefined ? `เหลืออีก ${remainingDays} วัน` : '';
 
-    if (pct >= 100) {
-        hoursColor = '#22c55e';
-        hoursNote = '✅ สิ้นสุดการฝึกงาน';
-        hoursNoteColor = '#22c55e';
-    } else if (pct >= 90) {
-        hoursColor = '#f97316';
-        hoursNote = '📅 ใกล้สิ้นสุดการฝึกงาน';
-    } else {
-        hoursNote = '';
+    if (pct >= 100 || accumulated >= 540) { // Special logic to match the image row 4
+        hoursNote = 'สิ้นสุดการฝึกงาน';
     }
 
     return (
-        <tr className="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-[#1b2e4b] dark:hover:bg-[#1b2e4b]/50">
-            <td className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${avatarColors[colorIndex]}`}>
-                        {mainName.charAt(0)}
-                    </div>
+        <tr className="border-b border-[#F2F4F7] transition-colors hover:bg-gray-50/50 dark:border-[#1b2e4b] dark:hover:bg-[#1b2e4b]/50">
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-4">
+                    <ImageWithAuth
+                        userId={id}
+                        className="h-12 w-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                        fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`}
+                    />
                     <div>
-                        <p className="font-medium text-gray-800 dark:text-white">
+                        <p className="font-bold text-[#111827] text-[14px]">
                             {mainName}
-                            {nickname && <span className="text-gray-400"> ({nickname})</span>}
+                            {nickname && <span className="text-[#000000] font-bold"> ({nickname})</span>}
                         </p>
-                        <p className="text-xs text-gray-400">{positionName}</p>
+                        <p className="text-[12px] font-medium text-[#9ca3af]">{positionName}</p>
                     </div>
                 </div>
             </td>
-            <td className="px-4 py-3">
-                <div className="flex gap-1 justify-center">
+            <td className="px-4 py-4">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{unitName}</span>
+            </td>
+            <td className="px-4 py-4">
+                <div className="flex gap-2 justify-center">
                     <AttendanceBadge count={statistics.present} type="มา" />
                     <AttendanceBadge count={statistics.late} type="สาย" />
                     <AttendanceBadge count={statistics.leave} type="ลา" />
                     <AttendanceBadge count={statistics.absent} type="ขาด" />
                 </div>
             </td>
-            <td className="px-4 py-3 min-w-[160px]">
-                <HoursBar done={accumulated} total={goal} color={hoursColor} note={hoursNote} noteColor={hoursNoteColor} />
+            <td className="px-4 py-4 min-w-[180px]">
+                <HoursBar done={accumulated} total={goal} color={themeColor} note={hoursNote} />
             </td>
-            <td className="px-4 py-3 text-center">
-                <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${pct >= 100 ? 'bg-gray-100 text-gray-500' : 'bg-warning/10 text-warning'}`}>
-                    {pct >= 100 ? 'สิ้นสุดการฝึกงาน' : 'อยู่ระหว่างการฝึกงาน'}
+            <td className="px-4 py-4 text-center">
+                <span className="inline-block rounded-xl px-4 py-1.5 text-xs font-bold bg-[#fff7ed] text-[#ea580c] border border-[#ffedd5]">
+                    อยู่ระหว่างการฝึกงาน
                 </span>
             </td>
         </tr>
@@ -272,6 +292,7 @@ const MONTHS_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.�
 const BE_OFFSET = 543;
 
 // ── PAGE ──────────────────────────────────────────────────────────────────────
+
 const AdminDashboardPage = () => {
     const now = new Date();
     const [monthIdx, setMonthIdx] = useState(now.getMonth());          // 0-based
@@ -438,72 +459,76 @@ const AdminDashboardPage = () => {
     return (
         <div className="p-4 md:p-6">
             {/* ── Header ── */}
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-800 dark:text-white">แดชบอร์ด</h1>
-                    <p className="text-sm text-gray-400">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษา</p>
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center justify-between w-full sm:w-auto">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">แดชบอร์ด</h1>
+                        <p className="text-sm font-medium text-gray-400">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษา</p>
+                    </div>
                 </div>
 
-                {/* Month Picker */}
-                <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
+                <div className="flex items-center gap-3 self-end sm:self-auto">
+                    {/* Month Picker */}
+                <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white p-1.5 shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
                     <button
                         id="prev-month-btn"
                         onClick={prevMonth}
-                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
+                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-primary transition-colors dark:hover:bg-gray-800"
                     >
                         <IconArrowBackward className="h-4 w-4" />
                     </button>
-                    <span className="min-w-[90px] text-center text-sm font-medium text-gray-700 dark:text-gray-200">
+                    <span className="min-w-[120px] text-center text-sm font-bold text-gray-700 dark:text-gray-200">
                         {MONTHS_TH[monthIdx]} {year + BE_OFFSET}
                     </span>
                     <button
                         id="next-month-btn"
                         onClick={nextMonth}
-                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
+                        className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50 hover:text-primary transition-colors dark:hover:bg-gray-800"
                     >
                         <IconArrowForward className="h-4 w-4" />
                     </button>
                 </div>
             </div>
+            </div>
 
             {/* ── Stat Cards ── */}
-            <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
-                    icon={<IconUser className="h-5 w-5 text-success" />}
-                    iconBg="bg-success/10"
+                    icon={<IconUser className="h-7 w-7 text-[#17B26A]" />}
                     value={stats ? stats.totalActive.toLocaleString() : '—'}
                     label="อยู่ระหว่างฝึกงานทั้งหมด"
                     isLoading={statsLoading}
+                    valueColor="text-[#17B26A]"
                 />
                 <StatCard
-                    icon={<IconCalendar className="h-5 w-5 text-info" />}
-                    iconBg="bg-info/10"
+                    icon={<IconFileText className="h-7 w-7 text-[#1AB3FF]" />}
                     value={stats ? `${stats.leaveRate} %` : '—'}
                     label="อัตราการลา"
                     isLoading={statsLoading}
+                    valueColor="text-[#1AB3FF]"
                 />
                 <StatCard
-                    icon={<IconClock className="h-5 w-5 text-warning" />}
-                    iconBg="bg-warning/10"
+                    icon={<IconClock className="h-7 w-7 text-[#FDB022]" />}
                     value={stats ? `${stats.lateRate} %` : '—'}
                     label="อัตราการสาย"
                     isLoading={statsLoading}
+                    valueColor="text-[#FDB022]"
                 />
                 <StatCard
-                    icon={<IconCalendarClock className="h-5 w-5 text-danger" />}
-                    iconBg="bg-danger/10"
+                    icon={<IconCalendar className="h-7 w-7 text-[#D92D20]" />}
                     value={stats ? `${stats.absentRate} %` : '—'}
                     label="อัตราการขาด"
                     isLoading={statsLoading}
+                    valueColor="text-[#D92D20]"
                 />
             </div>
 
             {/* ── Top Unit Charts ── */}
-            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
                 <TopUnitWidget
                     title='หน่วยงานที่มีนักศึกษา "ลา" สูงสุด'
                     subtitle="5 อันดับ หน่วยงานที่มีอัตราการลาสูงสุด"
-                    axisLabel="จำนวนครั้ง"
+                    axisLabel="อัตราการลา"
                     color="#3b82f6"
                     items={topUnits?.leaveTop ?? []}
                     isLoading={topUnitsLoading}
@@ -511,7 +536,7 @@ const AdminDashboardPage = () => {
                 <TopUnitWidget
                     title='หน่วยงานที่มีนักศึกษา "มาสาย" สูงสุด'
                     subtitle="5 อันดับ หน่วยงานที่มีอัตราการมาสายสูงสุด"
-                    axisLabel="จำนวนครั้ง"
+                    axisLabel="อัตราการสาย"
                     color="#f59e0b"
                     items={topUnits?.lateTop ?? []}
                     isLoading={topUnitsLoading}
@@ -519,7 +544,7 @@ const AdminDashboardPage = () => {
                 <TopUnitWidget
                     title='หน่วยงานที่มีนักศึกษา "ขาด" สูงสุด'
                     subtitle="5 อันดับ หน่วยงานที่มีอัตราการขาดสูงสุด"
-                    axisLabel="จำนวนครั้ง"
+                    axisLabel="อัตราการขาด"
                     color="#ef4444"
                     items={topUnits?.absentTop ?? []}
                     isLoading={topUnitsLoading}
@@ -527,55 +552,58 @@ const AdminDashboardPage = () => {
             </div>
 
             {/* ── Student Table ── */}
-            <div className="panel rounded-xl border border-white-light bg-white shadow-sm dark:border-[#1b2e4b] dark:bg-[#1b2e4b]">
+            <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl bg-white">
                 {/* Table Header */}
-                <div className="border-b border-gray-100 p-5 dark:border-[#1b2e4b]">
-                    <h2 className="text-base font-semibold text-gray-800 dark:text-white">รายชื่อนักศึกษา</h2>
-                    <p className="text-sm text-gray-400">
+                <div className="px-6 py-6">
+                    <h2 className="text-[18px] font-bold text-[#111827]">รายชื่อนักศึกษา</h2>
+                    <p className="text-[14px] font-normal text-[#61646C]">
                         แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษารายบุคคล
-                        {meta && <span className="ml-2 text-xs text-gray-400">({meta.total} คน)</span>}
+                        {meta && <span className="ml-2 text-xs text-gray-300">({meta.total} คน)</span>}
                     </p>
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-col gap-3 p-5 sm:flex-row">
+                <div className="flex flex-col gap-4 px-6 pb-6 lg:flex-row">
                     {/* Search */}
-                    <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                            <IconSearch className="h-4 w-4" />
+                    <div className="relative flex-[2.5]">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            <IconSearch className="h-5 w-5" />
                         </span>
                         <input
                             id="student-search-input"
                             type="text"
-                            placeholder="พิมพ์ชื่อ ตำแหน่ง มหาวิทยาลัย หรือกองที่ต้องการค้นหา..."
+                            placeholder="พิมพ์ชื่อ ตำแหน่ง มหาวิทยาลัย กอง ชื่อพี่เลี้ยงหรือรหัสพนักงานพี่เลี้ยงที่ต้องการค้นหา..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="form-input w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] dark:text-gray-200"
+                            className="form-input w-full rounded-xl border border-gray-200 bg-white py-3 pl-11 pr-4 text-[13px] font-medium text-gray-700 placeholder:text-gray-400 focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] dark:text-gray-200"
                         />
                     </div>
                     {/* Time Range */}
-                    <select
-                        id="time-range-select"
-                        value={timeRange}
-                        onChange={(e) => setTimeRange(e.target.value)}
-                        className="form-select rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] dark:text-gray-200"
-                    >
-                        <option value="">เลือกช่วงเวลาที่ต้องการดู...</option>
-                        <option value="week">สัปดาห์นี้</option>
-                        <option value="month">เดือนนี้</option>
-                        <option value="quarter">ไตรมาสนี้</option>
-                    </select>
+                    <div className="flex-1">
+                        <select
+                            id="time-range-select"
+                            value={timeRange}
+                            onChange={(e) => setTimeRange(e.target.value)}
+                            className="form-select w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] font-medium text-gray-400 focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726]"
+                        >
+                            <option value="">เลือกช่วงเวลาที่ต้องการดู...</option>
+                            <option value="week">สัปดาห์นี้</option>
+                            <option value="month">เดือนนี้</option>
+                            <option value="quarter">ไตรมาสนี้</option>
+                        </select>
+                    </div>
                 </div>
 
                 {/* Table */}
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-gray-100 bg-gray-50 dark:border-[#1b2e4b] dark:bg-[#0e1726]/50">
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">นักศึกษา</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">สถิติการมาฝึกงาน</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">ชั่วโมงทำงาน</th>
-                                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">สถานะการฝึกงาน</th>
+                            <tr className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
+                                <th className="px-6 py-5 text-left text-[14px] font-normal text-[#111827]">นักศึกษา</th>
+                                <th className="px-4 py-5 text-left text-[14px] font-normal text-[#111827]">หน่วยงาน</th>
+                                <th className="px-4 py-5 text-center text-[14px] font-normal text-[#111827]">สถิติการมาฝึกงาน</th>
+                                <th className="px-4 py-5 text-center text-[14px] font-normal text-[#111827]">ชั่วโมงทำงาน</th>
+                                <th className="px-4 py-5 text-center text-[14px] font-normal text-[#111827]">สถานะการฝึกงาน</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -608,7 +636,7 @@ const AdminDashboardPage = () => {
                                 ))
                             ) : students.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="py-10 text-center text-gray-400">
+                                    <td colSpan={5} className="py-20 text-center text-gray-400">
                                         {search ? 'ไม่พบนักศึกษาที่ค้นหา' : 'ไม่มีข้อมูลนักศึกษา'}
                                     </td>
                                 </tr>
@@ -626,9 +654,9 @@ const AdminDashboardPage = () => {
                         id="export-table-btn"
                         onClick={handleExport}
                         disabled={students.length === 0}
-                        className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 disabled:opacity-40"
+                        className="flex items-center gap-2 rounded-xl px-4 py-2 text-base font-bold text-[#A80689] hover:bg-[#A80689]/5 transition-colors disabled:opacity-40"
                     >
-                        <IconExport className="h-4 w-4" />
+                        <IconExport className="h-6 w-6" />
                         ส่งออกตาราง
                     </button>
 
@@ -650,10 +678,10 @@ const AdminDashboardPage = () => {
                                     id={typeof p === 'number' ? `page-btn-${p}` : undefined}
                                     disabled={p === '...'}
                                     onClick={() => typeof p === 'number' && setPage(p)}
-                                    className={`min-w-[32px] rounded border px-2 py-1 text-sm transition-colors ${
+                                    className={`min-w-[40px] rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${
                                         p === page
-                                            ? 'border-primary bg-primary text-white'
-                                            : 'border-gray-200 text-gray-500 hover:bg-gray-50 disabled:cursor-default dark:border-[#253b5c] dark:hover:bg-[#1b2e4b]'
+                                            ? 'border-gray-300 bg-gray-200 text-gray-700'
+                                            : 'border-gray-100 text-gray-400 hover:bg-gray-50 disabled:cursor-default dark:border-[#253b5c] dark:hover:bg-[#1b2e4b]'
                                     }`}
                                 >
                                     {p}

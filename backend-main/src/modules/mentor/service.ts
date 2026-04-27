@@ -28,6 +28,7 @@ import {
   studentProfiles,
   timeCorrectionRequests,
   users,
+  departments,
 } from "@/db/schema";
 import type * as model from "./model";
 
@@ -82,6 +83,8 @@ export class MentorService {
         totalHoursGoal: applicationInformations.hours,
         positionName: internshipPositions.name,
         username: users.displayUsername,
+        departmentName: departments.deptShort,
+        endDate: applicationInformations.endDate,
       })
       .from(applicationStatuses)
       .innerJoin(users, eq(users.id, applicationStatuses.userId))
@@ -93,6 +96,10 @@ export class MentorService {
       .leftJoin(
         internshipPositions,
         eq(internshipPositions.id, applicationStatuses.positionId)
+      )
+      .leftJoin(
+        departments,
+        eq(departments.deptSap, applicationStatuses.departmentId)
       )
       .where(and(...conditions));
 
@@ -164,12 +171,22 @@ export class MentorService {
         todayStatusText = statusMap[todayLog.dailyStatus] || "ยังไม่ลงเวลา";
       }
 
+      let remainingDays = 0;
+      if (student.endDate) {
+        const today = new Date();
+        const end = new Date(student.endDate);
+        const diffTime = end.getTime() - today.getTime();
+        remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (remainingDays < 0) remainingDays = 0;
+      }
+
       return {
         id: student.userId,
         profileId: student.studentProfileId,
         fullName: `${student.firstName} ${student.lastName} (${student.username})`,
         image: student.image,
         positionName: student.positionName || "ไม่ระบุตำแหน่ง",
+        unitName: student.departmentName || "ไม่ระบุหน่วยงาน",
         todayStatus: {
           text: todayStatusText,
           code: todayStatusCode,
@@ -183,6 +200,7 @@ export class MentorService {
         workHours: {
           accumulated: Number(accumulatedHours.toFixed(2)),
           goal: Number(student.totalHoursGoal || 560),
+          remainingDays,
         },
         evaluation: null,
       };
