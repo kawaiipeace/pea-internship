@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axiosInstance from '@/api/axios';
 import useAuthStore from '@/store/authStore';
-import ImageWithAuth from '../../../../components/ImageWithAuth'; // ปรับ Path ให้ตรงกับที่อยู่ไฟล์จริง
+import ImageWithAuth from '../../../../components/ImageWithAuth';
+import UserAvatar from '../../../../components/UserAvatar';
 import Swal from 'sweetalert2';
 
 const ProfilePage = () => {
@@ -576,10 +577,13 @@ const ProfilePage = () => {
                     <h2 className="text-[16px] font-bold text-[#2a303b] dark:text-white-light mb-4">ข้อมูลพี่เลี้ยง</h2>
                     <div className="flex flex-col gap-4">
                         {mentors.length > 0 ? mentors.map((m, i) => (
-                            <div key={i} className="flex flex-col">
-                                <span className="text-[14px] font-medium text-[#2a303b] dark:text-gray-300">{m.name || '-'}</span>
-                                {m.phoneNumber && <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">{m.phoneNumber}</span>}
-                                {m.email && <span className="text-[13px] text-gray-500 dark:text-gray-400">{m.email}</span>}
+                            <div key={i} className="flex items-center gap-3">
+                                <UserAvatar name={m.name} roleId={2} size="sm" />
+                                <div className="flex flex-col">
+                                    <span className="text-[14px] font-medium text-[#2a303b] dark:text-gray-300">{m.name || '-'}</span>
+                                    {m.phoneNumber && <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">{m.phoneNumber}</span>}
+                                    {m.email && <span className="text-[13px] text-gray-500 dark:text-gray-400">{m.email}</span>}
+                                </div>
                             </div>
                         )) : (
                             <span className="text-[13px] text-gray-400 dark:text-gray-500">-</span>
@@ -817,10 +821,13 @@ const ProfilePage = () => {
                             <h2 className="text-[18px] font-bold text-[#2a303b] dark:text-white-light mb-5">ข้อมูลพี่เลี้ยง</h2>
                             <div className="flex flex-col gap-6">
                                 {mentors.length > 0 ? mentors.map((m, i) => (
-                                    <div key={i} className="flex flex-col gap-1.5">
-                                        <div className="text-[15px] font-medium text-[#2a303b] dark:text-white-light">{m.name || '-'}</div>
-                                        {m.phoneNumber && <div className="text-[14px] text-[#5b6a80] dark:text-[#888ea8]">{m.phoneNumber}</div>}
-                                        {m.email && <div className="text-[14px] text-[#5b6a80] dark:text-[#888ea8]">{m.email}</div>}
+                                    <div key={i} className="flex items-center gap-4">
+                                        <UserAvatar name={m.name} roleId={2} size="md" />
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="text-[15px] font-medium text-[#2a303b] dark:text-white-light">{m.name || '-'}</div>
+                                            {m.phoneNumber && <div className="text-[14px] text-[#5b6a80] dark:text-[#888ea8]">{m.phoneNumber}</div>}
+                                            {m.email && <div className="text-[14px] text-[#5b6a80] dark:text-[#888ea8]">{m.email}</div>}
+                                        </div>
                                     </div>
                                 )) : (
                                     <span className="text-[14px] text-[#5b6a80] dark:text-[#888ea8]">-</span>

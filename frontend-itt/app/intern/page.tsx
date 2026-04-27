@@ -202,7 +202,7 @@ const CheckInPage = () => {
         const h = currentTime.getHours();
         const m = currentTime.getMinutes();
         // Allowed from 16:30 (4:30 PM) onwards
-        return h > 16 || (h === 16 && m >= 30);
+        return h > 16 || (h === 9 && m >= 30);
     };
 
     useEffect(() => {

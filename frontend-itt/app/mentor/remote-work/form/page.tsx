@@ -297,6 +297,7 @@ const RemoteWorkFormPage = () => {
                         </div>
                         <div className="w-full sm:w-[348px]">
                             <CustomDatePicker
+                                minDate="today"
                                 range={!isEditMode}
                                 value={isEditMode ? workDates[0] : undefined}
                                 selectedDates={!isEditMode ? workDates : []}

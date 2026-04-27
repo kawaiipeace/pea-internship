@@ -131,6 +131,23 @@ export class MentorService {
     const totalStudents = (await baseQuery).length;
 
     const studentProfileIds = students.map((s) => s.studentProfileId);
+    const studentUserIds = students.map((s) => s.userId);
+
+    const todayLeaves = studentUserIds.length > 0
+      ? await db
+          .select({
+            userId: leaveRequests.userId,
+            leaveType: leaveRequests.leaveRequestType,
+          })
+          .from(leaveRequests)
+          .where(
+            and(
+              inArray(leaveRequests.userId, studentUserIds),
+              sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
+              eq(leaveRequests.status, "APPROVED")
+            )
+          )
+      : [];
 
     const logConditions = [
       inArray(attendanceLogs.studentProfileId, studentProfileIds),
@@ -186,6 +203,17 @@ export class MentorService {
         };
         todayStatusCode = todayLog.dailyStatus;
         todayStatusText = statusMap[todayLog.dailyStatus] || "ยังไม่ลงเวลา";
+
+        if (todayLog.dailyStatus === "LEAVE") {
+          const studentLeave = todayLeaves.find((l) => l.userId === student.userId);
+          if (studentLeave?.leaveType === "SICK") {
+            todayStatusCode = "SICK";
+            todayStatusText = "ลาป่วย";
+          } else if (studentLeave?.leaveType === "ABSENCE") {
+            todayStatusCode = "ABSENCE";
+            todayStatusText = "ลากิจ";
+          }
+        }
       }
 
       const remainingHours = totalHoursGoal - accumulatedHours;
@@ -373,6 +401,8 @@ export class MentorService {
         checkOutTime: checkOutTable.time,
         checkOutNote: checkOutTable.note,
         leaveReason: leaveRequests.reason,
+        leaveType: leaveRequests.leaveRequestType,
+        leaveFile: leaveRequests.file,
         offsiteLocation: offsiteTasks.locationName,
         offsiteTaskDetail: offsiteTasks.taskDetail,
         correctionReason: timeCorrectionRequests.reason,
@@ -478,8 +508,9 @@ export class MentorService {
         hours:
           Number(log.actualHoursWorked || 0) +
           Number(log.approvedLeaveHours || 0),
-        evidenceUrl: null,
+        evidenceUrl: log.leaveFile || null,
         notes: noteList,
+        leaveType: log.leaveType,
       };
     });
 
