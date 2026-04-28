@@ -584,12 +584,14 @@ export class UserService {
 
       const today = new Date();
       const currentEndDate = new Date(appInfo.endDate);
-      
+
       const allowedStartDate = new Date(currentEndDate);
       allowedStartDate.setDate(currentEndDate.getDate() - 7);
 
       if (today < allowedStartDate) {
-        throw new Error("สามารถขอขยายเวลาได้เฉพาะในช่วง 7 วันสุดท้ายของการฝึกงาน หรือหลังจากจบการฝึกงานแล้วเท่านั้น");
+        throw new Error(
+          "สามารถขอขยายเวลาได้เฉพาะในช่วง 7 วันสุดท้ายของการฝึกงาน หรือหลังจากจบการฝึกงานแล้วเท่านั้น"
+        );
       }
 
       const daysToCompensate = Math.ceil(data.hours / 7);

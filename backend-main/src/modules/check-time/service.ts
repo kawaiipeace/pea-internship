@@ -805,11 +805,11 @@ export class CheckTimeService {
 
       const isMissingOut = existingLog.checkInId && !existingLog.checkOutId;
       const currentStatus = existingLog.dailyStatus;
-      
+
       // Allow editing if it's MISSING_OUT, ABSENT, LATE, or even PRESENT/LEAVE (if they need to fix details)
       // The mentor will still need to approve it.
       const allowedToEdit =
-        isMissingOut || 
+        isMissingOut ||
         ["ABSENT", "LATE", "PRESENT", "LEAVE"].includes(currentStatus);
 
       if (!allowedToEdit) {

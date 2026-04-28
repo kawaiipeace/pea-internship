@@ -19,17 +19,17 @@ import {
   applicationStatuses,
   attendanceLogs,
   checkTimes,
+  departments,
   institutions,
   internshipPositions,
   leaveRequests,
   offsiteTaskStudents,
   offsiteTasks,
   staffProfiles,
+  studentAttendanceSummary,
   studentProfiles,
   timeCorrectionRequests,
   users,
-  studentAttendanceSummary,
-  departments,
 } from "@/db/schema";
 import type * as model from "./model";
 
@@ -133,21 +133,26 @@ export class MentorService {
     const studentProfileIds = students.map((s) => s.studentProfileId);
     const studentUserIds = students.map((s) => s.userId);
 
-    const todayLeaves = studentUserIds.length > 0
-      ? await db
-          .select({
-            userId: leaveRequests.userId,
-            leaveType: leaveRequests.leaveRequestType,
-          })
-          .from(leaveRequests)
-          .where(
-            and(
-              inArray(leaveRequests.userId, studentUserIds),
-              sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
-              eq(leaveRequests.status, "APPROVED")
+    const todayStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+    }).format(new Date());
+
+    const todayLeaves =
+      studentUserIds.length > 0
+        ? await db
+            .select({
+              userId: leaveRequests.userId,
+              leaveType: leaveRequests.leaveRequestType,
+            })
+            .from(leaveRequests)
+            .where(
+              and(
+                inArray(leaveRequests.userId, studentUserIds),
+                sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
+                eq(leaveRequests.status, "APPROVED")
+              )
             )
-          )
-      : [];
+        : [];
 
     const logConditions = [
       inArray(attendanceLogs.studentProfileId, studentProfileIds),
@@ -159,10 +164,6 @@ export class MentorService {
       .select()
       .from(attendanceLogs)
       .where(and(...logConditions));
-
-    const todayStr = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Bangkok",
-    }).format(new Date());
 
     const todayLogs = allLogs.filter((log) => {
       const logDate = log.workDate ? String(log.workDate).substring(0, 10) : "";
@@ -181,7 +182,7 @@ export class MentorService {
         late = 0,
         leave = 0,
         absent = 0;
-      let accumulatedHours = Number(student.globalAccumulatedHours || 0);
+      const accumulatedHours = Number(student.globalAccumulatedHours || 0);
       const totalHoursGoal = Number(student.globalTotalHoursGoal || 0);
 
       studentLogs.forEach((log) => {
@@ -205,7 +206,9 @@ export class MentorService {
         todayStatusText = statusMap[todayLog.dailyStatus] || "ยังไม่ลงเวลา";
 
         if (todayLog.dailyStatus === "LEAVE") {
-          const studentLeave = todayLeaves.find((l) => l.userId === student.userId);
+          const studentLeave = todayLeaves.find(
+            (l) => l.userId === student.userId
+          );
           if (studentLeave?.leaveType === "SICK") {
             todayStatusCode = "SICK";
             todayStatusText = "ลาป่วย";
@@ -223,11 +226,25 @@ export class MentorService {
         // We use a simple approximation for calendar days: working days * 1.4 (to account for weekends)
         // or just use the endDate if it exists and is further in the future.
         if (student.endDate) {
-          const nowBkk = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
-          const today = new Date(nowBkk.getFullYear(), nowBkk.getMonth(), nowBkk.getDate());
-          const endBkk = new Date(new Date(student.endDate).toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
-          const end = new Date(endBkk.getFullYear(), endBkk.getMonth(), endBkk.getDate());
-          
+          const nowBkk = new Date(
+            new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
+          );
+          const today = new Date(
+            nowBkk.getFullYear(),
+            nowBkk.getMonth(),
+            nowBkk.getDate()
+          );
+          const endBkk = new Date(
+            new Date(student.endDate).toLocaleString("en-US", {
+              timeZone: "Asia/Bangkok",
+            })
+          );
+          const end = new Date(
+            endBkk.getFullYear(),
+            endBkk.getMonth(),
+            endBkk.getDate()
+          );
+
           const diffTime = end.getTime() - today.getTime();
           remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         } else {
@@ -351,11 +368,25 @@ export class MentorService {
     let remainingDays = 0;
     if (remainingHours > 0) {
       if (studentInfo.endDate) {
-        const nowBkk = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
-        const today = new Date(nowBkk.getFullYear(), nowBkk.getMonth(), nowBkk.getDate());
-        const endBkk = new Date(new Date(studentInfo.endDate).toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
-        const end = new Date(endBkk.getFullYear(), endBkk.getMonth(), endBkk.getDate());
-        
+        const nowBkk = new Date(
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
+        );
+        const today = new Date(
+          nowBkk.getFullYear(),
+          nowBkk.getMonth(),
+          nowBkk.getDate()
+        );
+        const endBkk = new Date(
+          new Date(studentInfo.endDate).toLocaleString("en-US", {
+            timeZone: "Asia/Bangkok",
+          })
+        );
+        const end = new Date(
+          endBkk.getFullYear(),
+          endBkk.getMonth(),
+          endBkk.getDate()
+        );
+
         const diffTime = end.getTime() - today.getTime();
         remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       } else {
