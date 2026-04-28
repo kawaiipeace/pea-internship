@@ -49,9 +49,12 @@ export default function AdminNavbar() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isClearAllConfirm, setIsClearAllConfirm] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
-  const [displayName, setDisplayName] = useState("");
-  const [displayEmail, setDisplayEmail] = useState("");
-  const [userRoleId, setUserRoleId] = useState<number | null>(null);
+  const [displayName, setDisplayName] = useState(() => {
+    const u = authStorage.getUser();
+    return u ? (`${u.fname || ""} ${u.lname || ""}`.trim() || u.username || "-") : "";
+  });
+  const [displayEmail, setDisplayEmail] = useState(() => authStorage.getUser()?.email || "");
+  const [userRoleId, setUserRoleId] = useState<number | null>(() => authStorage.getUser()?.roleId ?? null);
   const [isSwitchingRole, setIsSwitchingRole] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -89,8 +92,6 @@ export default function AdminNavbar() {
   // Handle role switch (Admin -> Owner)
   const handleSwitchToOwner = () => {
     setIsSwitchingRole(true);
-    // Update user_role cookie to owner
-    document.cookie = `user_role=owner; path=/; max-age=86400`;
     // Short delay for loading animation
     setTimeout(() => {
       router.push("/owner/announcements");
@@ -257,6 +258,15 @@ export default function AdminNavbar() {
                     }`}
                 >
                   แดชบอร์ด
+                </Link>
+                <Link
+                  href="/guide/admin"
+                  className={`font-medium transition-colors ${isActiveLink("/guide/admin")
+                      ? "text-primary-600 hover:text-primary-700"
+                      : "text-gray-600 hover:text-primary-600"
+                    }`}
+                >
+                  คู่มือการใช้งาน
                 </Link>
               </div>
 

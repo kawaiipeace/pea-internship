@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import ThaiDateInput from "@/components/ui/ThaiDateInput";
 import { AnnouncementFormErrors } from "@/types/announcement";
@@ -737,7 +736,6 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div
           className="flex items-center justify-center"
           style={{ minHeight: "calc(100vh - 5rem)" }}
@@ -751,7 +749,6 @@ export default function EditAnnouncementPage({ params }: PageProps) {
   if (!formData) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <main className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center py-12">ไม่พบประกาศ</div>
         </main>
@@ -761,7 +758,6 @@ export default function EditAnnouncementPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <OwnerNavbar />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}

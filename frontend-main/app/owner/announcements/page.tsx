@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import { AnnouncementStats } from "@/types/announcement";
 import {
@@ -422,7 +421,6 @@ export default function AnnouncementsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div
           className="flex items-center justify-center"
           style={{ minHeight: "calc(100vh - 5rem)" }}
@@ -435,7 +433,6 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <OwnerNavbar />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-42">

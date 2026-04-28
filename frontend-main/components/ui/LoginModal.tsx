@@ -135,9 +135,6 @@ export default function LoginModal({
         // Login สำเร็จ
         console.log("Login สำเร็จ");
 
-        // Set user_role cookie สำหรับ middleware
-        document.cookie = `user_role=intern; path=/; max-age=86400`;
-
         onClose();
         if (onLoginSuccess) {
           onLoginSuccess();

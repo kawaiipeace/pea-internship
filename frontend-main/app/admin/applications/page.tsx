@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useState,
@@ -9,7 +9,6 @@ import {
   Suspense,
 } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
   applicationApi,
   departmentApi,
@@ -290,7 +289,6 @@ export default function AdminApplicationsPageWrapper() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-gray-50">
-          <AdminNavbar />
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
             <span className="ml-3 text-gray-500">กำลังโหลด...</span>
@@ -642,7 +640,6 @@ function AdminApplicationsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AdminNavbar />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -655,7 +652,6 @@ function AdminApplicationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminNavbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Title */}
         <h1 className="text-2xl font-bold text-gray-800 mb-1">{pageTitle}</h1>

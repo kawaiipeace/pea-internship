@@ -75,7 +75,6 @@ const BETTER_AUTH_COOKIES = [
   "better-auth.session_token",
   "better-auth.session_data",
   "auth_token",
-  "user_role",
 ];
 
 let currentUserCache: ApiUser | null = null;

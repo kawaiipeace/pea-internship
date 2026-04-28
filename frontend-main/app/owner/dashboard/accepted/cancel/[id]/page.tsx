@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -61,7 +60,6 @@ export default function CancelInternshipPage() {
   if (!application) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <p>ไม่พบข้อมูลใบสมัคร</p>
         </div>
@@ -140,7 +138,6 @@ export default function CancelInternshipPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <OwnerNavbar />
 
       {/* Search Section */}
 

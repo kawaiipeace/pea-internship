@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import {
   positionApi,
@@ -985,7 +984,6 @@ export default function OwnerDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div
           className="flex items-center justify-center"
           style={{ minHeight: "calc(100vh - 5rem)" }}
@@ -998,7 +996,6 @@ export default function OwnerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <OwnerNavbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Title Row */}

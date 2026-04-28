@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import ThaiDateInput from "@/components/ui/ThaiDateInput";
 import { AnnouncementFormErrors } from "@/types/announcement";
@@ -713,7 +712,6 @@ export default function CreateAnnouncementPage() {
   if (loadingUser || loadingDocTypes) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <VideoLoading message="กำลังโหลดข้อมูล..." />
       </div>
     );
@@ -721,7 +719,6 @@ export default function CreateAnnouncementPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <OwnerNavbar />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}

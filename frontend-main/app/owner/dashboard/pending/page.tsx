@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -1787,7 +1786,6 @@ function PendingStatusContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div
           className="flex items-center justify-center"
           style={{ minHeight: "calc(100vh - 5rem)" }}
@@ -1801,7 +1799,6 @@ function PendingStatusContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <OwnerNavbar />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

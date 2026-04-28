@@ -37,27 +37,26 @@ function isPublicPath(pathname: string): boolean {
   );
 }
 
-/** ตรวจสอบว่า user login อยู่หรือไม่ โดยดูจาก user_role cookie (client-set, ไม่ใช่ httpOnly) */
+/** ตรวจสอบว่า user login อยู่หรือไม่ โดยดูจาก session/token cookie */
 function isUserLoggedIn(): boolean {
   if (typeof document === "undefined") return false;
   const cookies = document.cookie;
-  // ตรวจ user_role cookie (set จาก client เสมอ ตอน login)
-  const hasUserRole = cookies.split("; ").some((c) => {
-    const [name, value] = c.split("=");
-    return name === "user_role" && !!value;
-  });
-  // fallback: ตรวจ auth_token cookie ด้วย (ถ้าอ่านได้)
+  // ตรวจ auth_token cookie ด้วย (ถ้าอ่านได้)
   const hasAuthToken = cookies
     .split("; ")
     .some((c) => c.startsWith("auth_token="));
-  // fallback: ตรวจ better-auth session cookie ด้วย
+  // ตรวจ better-auth session cookie ด้วย
   const hasBetterAuth = cookies
     .split("; ")
-    .some((c) => c.startsWith("better-auth.session_token="));
+    .some(
+      (c) =>
+        c.startsWith("better-auth.session_token=") ||
+        c.startsWith("__Secure-better-auth.session_token="),
+    );
 
-  const result = hasUserRole || hasAuthToken || hasBetterAuth;
+  const result = hasAuthToken || hasBetterAuth;
   console.log(
-    `[IdleTimeout] isUserLoggedIn: userRole=${hasUserRole}, authToken=${hasAuthToken}, betterAuth=${hasBetterAuth} → ${result}`,
+    `[IdleTimeout] isUserLoggedIn: authToken=${hasAuthToken}, betterAuth=${hasBetterAuth} → ${result}`,
   );
   return result;
 }
@@ -77,11 +76,9 @@ export default function IdleTimeoutProvider({
 
     console.log("[IdleTimeout] ⏰ หมดเวลา — กำลัง logout...");
 
-    // ตรวจ role ก่อน clear เพื่อ redirect ไปหน้าที่ถูกต้อง
-    const userRole = document.cookie
-      .split("; ")
-      .find((c) => c.startsWith("user_role="))
-      ?.split("=")[1];
+    // ใช้ role จาก user cache ก่อน หากไม่มีใช้ route ปัจจุบันช่วยตัดสินหน้า login
+    const roleId = authStorage.getUser()?.roleId;
+    const currentPath = window.location.pathname;
 
     try {
       await authApi.signOut();
@@ -89,15 +86,13 @@ export default function IdleTimeoutProvider({
       // ignore - อาจ session หมดอายุแล้ว
     } finally {
       authStorage.clearAuth();
-      // ลบ user_role cookie ด้วย
-      document.cookie = "user_role=; path=/; max-age=0";
 
       // redirect ตาม role: owner/admin ไปหน้า owner login, intern ไปหน้า intern login
       const isStaff =
-        userRole === "owner" ||
-        userRole === "admin" ||
-        userRole?.startsWith("/owner") ||
-        userRole?.startsWith("/admin");
+        roleId === 1 ||
+        roleId === 2 ||
+        currentPath.startsWith("/owner") ||
+        currentPath.startsWith("/admin");
 
       const loginPath = isStaff ? "/login/owner" : "/login/intern";
       const loginUrl = new URL(loginPath, window.location.origin);

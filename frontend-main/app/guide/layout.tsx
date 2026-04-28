@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import NavbarPublic from "@/components/ui/NavbarPublic";
 import NavbarIntern from "@/components/ui/NavbarIntern";
+import OwnerNavbar from "@/components/ui/OwnerNavbar";
+import AdminNavbar from "@/components/ui/AdminNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
-import { authStorage } from "@/services/api";
+import { authStorage, userApi } from "@/services/api";
 
 // ─── Navigation tree ───────────────────────────────────────────────
 const sections = [
@@ -250,20 +252,46 @@ function SidebarItem({
 export default function GuideLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [roleId, setRoleId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsLoggedIn(authStorage.isAuthenticated());
-    setMounted(true);
+    const loadRole = async () => {
+      const loggedIn = authStorage.isAuthenticated();
+      setIsLoggedIn(loggedIn);
+      if (loggedIn) {
+        try {
+          const profile = await userApi.getUserProfile();
+          setRoleId(profile.roleId);
+          authStorage.setUser(profile as never);
+        } catch {
+          const stored = authStorage.getUser();
+          setRoleId(stored?.roleId ?? null);
+        }
+      }
+      setMounted(true);
+    };
+    loadRole();
   }, []);
 
   if (!mounted) {
     return <VideoLoading message="กำลังโหลดคู่มือการใช้งาน..." />;
   }
 
+  let Navbar;
+  if (!isLoggedIn) {
+    Navbar = <NavbarPublic />;
+  } else if (roleId === 1 && pathname.startsWith("/guide/admin")) {
+    Navbar = <AdminNavbar />;
+  } else if (roleId === 1 || roleId === 2) {
+    Navbar = <OwnerNavbar />;
+  } else {
+    Navbar = <NavbarIntern />;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {isLoggedIn ? <NavbarIntern /> : <NavbarPublic />}
+      {Navbar}
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="hidden lg:block w-72 xl:w-80 flex-shrink-0 border-r border-gray-200 sticky top-16 self-start h-[calc(100vh-4rem)] overflow-y-auto">

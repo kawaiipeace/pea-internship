@@ -76,8 +76,6 @@ function InternLoginContent() {
         // บันทึก token และข้อมูล user
         authStorage.setToken(response.token);
         authStorage.setUser(response.user);
-        // Set user_role cookie สำหรับ middleware
-        document.cookie = `user_role=intern; path=/; max-age=86400`;
         // Set token cookie สำหรับ iTT SSO (shared on same domain)
         document.cookie = `token=${response.token}; path=/; max-age=86400; SameSite=Lax`;
 
