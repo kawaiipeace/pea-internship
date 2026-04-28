@@ -55,8 +55,12 @@ export class MentorService {
     }
 
     const conditions: (SQL | undefined)[] = [
-      eq(applicationStatuses.isActive, true),
+      or(
+        eq(applicationStatuses.isActive, true),
+        eq(applicationStatuses.applicationStatus, "COMPLETE")
+      ),
     ];
+
 
     if (viewType !== "ALL" && mentor.departmentId) {
       conditions.push(
@@ -277,8 +281,15 @@ export class MentorService {
         eq(applicationInformations.applicationStatusId, applicationStatuses.id)
       )
       .where(
-        and(eq(users.id, studentId), eq(applicationStatuses.isActive, true))
+        and(
+          eq(users.id, studentId),
+          or(
+            eq(applicationStatuses.isActive, true),
+            eq(applicationStatuses.applicationStatus, "COMPLETE")
+          )
+        )
       )
+
       .limit(1);
 
     if (!studentInfo) {
