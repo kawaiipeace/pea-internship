@@ -4,19 +4,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import IconUser from '@/components/icon/icon-user';
 import IconCalendar from '@/components/icon/icon-calendar';
 import IconClock from '@/components/icon/icon-clock';
-import IconCalendarClock from '@/components/icon/icon-calendar-clock';
 import IconSearch from '@/components/icon/icon-search';
 import IconExport from '@/components/icon/icon-export';
 import IconArrowBackward from '@/components/icon/icon-arrow-backward';
 import IconArrowForward from '@/components/icon/icon-arrow-forward';
 import IconFileText from '@/components/icon/icon-file-text';
-import IconCircleCheck from '@/components/icon/icon-circle-check';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
+import { useRouter } from 'next/navigation';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
 interface DashboardStats {
     totalActive: number;
     leaveRate: number;
@@ -53,15 +49,44 @@ interface PaginationMeta {
     totalPages: number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────────────────────────────────────
 interface StatCardProps {
     icon: React.ReactNode;
     value: string;
     label: string;
     isLoading?: boolean;
     valueColor: string;
+}
+
+interface BarRowProps {
+    label: string;
+    value: number;
+    max: number;
+    color: string;
+    isOther?: boolean;
+}
+
+interface TopUnitWidgetProps {
+    title: string;
+    subtitle: string;
+    axisLabel: string;
+    color: string;
+    items: TopUnitItem[];
+    isLoading?: boolean;
+}
+
+interface AttendanceBadgeProps {
+    count: number;
+    type: 'มา' | 'สาย' | 'ลา' | 'ขาด';
+}
+
+interface StudentRowProps extends StudentData { }
+
+interface HoursBarProps {
+    done: number;
+    total: number;
+    color: string;
+    note?: string;
+    icon?: React.ReactNode;
 }
 
 const StatCard = ({ icon, value, label, isLoading, valueColor }: StatCardProps) => (
@@ -77,15 +102,6 @@ const StatCard = ({ icon, value, label, isLoading, valueColor }: StatCardProps) 
         </div>
     </div>
 );
-
-// ── Bar Chart Row ─────────────────────────────────────────────────────────────
-interface BarRowProps {
-    label: string;
-    value: number;
-    max: number;
-    color: string;
-    isOther?: boolean;
-}
 
 const BarRow = ({ label, value, max, color, isOther }: BarRowProps) => {
     const pct = isOther ? 8 : max > 0 ? (value / max) * 100 : 0;
@@ -106,14 +122,6 @@ const BarRow = ({ label, value, max, color, isOther }: BarRowProps) => {
     );
 };
 
-interface TopUnitWidgetProps {
-    title: string;
-    subtitle: string;
-    axisLabel: string;
-    color: string;
-    items: TopUnitItem[];
-    isLoading?: boolean;
-}
 
 const TopUnitWidget = ({ title, subtitle, axisLabel, color, items, isLoading }: TopUnitWidgetProps) => {
     const max = items.length > 0 ? Math.max(...items.map((i) => i.value)) : 0;
@@ -158,11 +166,6 @@ const TopUnitWidget = ({ title, subtitle, axisLabel, color, items, isLoading }: 
     );
 };
 
-// ── Student Badge ─────────────────────────────────────────────────────────────
-interface AttendanceBadgeProps {
-    count: number;
-    type: 'มา' | 'สาย' | 'ลา' | 'ขาด';
-}
 
 const badgeStyles: Record<string, { border: string; text: string }> = {
     มา: { border: 'border-[#17B26A]', text: 'text-[#17B26A]' },
@@ -177,15 +180,6 @@ const AttendanceBadge = ({ count, type }: AttendanceBadgeProps) => (
         <span className="mt-1 text-[11px] font-extrabold text-gray-500 uppercase">{type}</span>
     </div>
 );
-
-// ── Progress Bar ──────────────────────────────────────────────────────────────
-interface HoursBarProps {
-    done: number;
-    total: number;
-    color: string;
-    note?: string;
-    icon?: React.ReactNode;
-}
 
 const HoursBar = ({ done, total, note }: HoursBarProps) => {
     const isAlert = note?.includes('สิ้นสุด') || note?.includes('7 วัน');
@@ -220,32 +214,14 @@ const HoursBar = ({ done, total, note }: HoursBarProps) => {
     );
 };
 
-// ── Status Tag ────────────────────────────────────────────────────────────────
-const statusStyle: Record<string, string> = {
-    ACTIVE: 'bg-warning/10 text-warning',
-    COMPLETE: 'bg-gray-100 text-gray-500',
-};
-
-const statusLabel: Record<string, string> = {
-    ACTIVE: 'อยู่ระหว่างการฝึกงาน',
-    COMPLETE: 'สิ้นสุดการฝึกงาน',
-};
-
-// ── Student Row ───────────────────────────────────────────────────────────────
-interface StudentRowProps extends StudentData { }
-
 const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHours }: StudentRowProps) => {
     const nameParts = fullName.split(' (');
     const mainName = nameParts[0] ?? fullName;
     const nickname = nameParts[1]?.replace(')', '') ?? '';
-
-    const avatarColors = ['bg-primary/10 text-primary', 'bg-success/10 text-success', 'bg-warning/10 text-warning', 'bg-danger/10 text-danger', 'bg-secondary/10 text-secondary'];
-    const colorIndex = mainName.charCodeAt(0) % avatarColors.length;
+    const router = useRouter()
 
     const { accumulated, goal, remainingDays } = workHours;
-    const pct = goal > 0 ? (accumulated / goal) * 100 : 0;
 
-    // Theme colors matching the design
     const themeColor = '#A80689';
     let hoursNote = '';
     if (remainingDays === 0 || (goal > 0 && accumulated >= goal)) {
@@ -255,7 +231,7 @@ const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHour
     }
 
     return (
-        <tr className="border-b border-[#F2F4F7] transition-colors hover:bg-gray-50/50 dark:border-[#1b2e4b] dark:hover:bg-[#1b2e4b]/50">
+        <tr className="border-b border-[#F2F4F7] transition-colors hover:bg-gray-50/50 dark:border-[#1b2e4b] dark:hover:bg-[#1b2e4b]/50" onClick={()=> router.push(`/admin/${id}`)}>
             <td className="px-6 py-4">
                 <div className="flex items-center gap-4">
                     <ImageWithAuth
@@ -295,12 +271,8 @@ const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHour
     );
 };
 
-// ── MONTHS ────────────────────────────────────────────────────────────────────
 const MONTHS_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-// Christian year → Thai Buddhist era offset
 const BE_OFFSET = 543;
-
-// ── PAGE ──────────────────────────────────────────────────────────────────────
 
 const AdminDashboardPage = () => {
     const now = new Date();
