@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NavbarPublic from "@/components/ui/NavbarPublic";
+import { authApi } from "@/services/api";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{
     phone?: string;
     email?: string;
@@ -34,13 +36,26 @@ export default function ForgotPasswordPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ phone: true, email: true });
 
-    if (validateForm()) {
-      // Navigate to reset password page
-      router.push("/reset-password");
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    setErrors({});
+    try {
+      await authApi.requestResetPassword({ phoneNumber: phone, email });
+      sessionStorage.setItem("reset_phone", phone);
+      sessionStorage.setItem("reset_email", email);
+      router.push("/verify-reset-code");
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+      setErrors({ general: message });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -179,9 +194,10 @@ export default function ForgotPasswordPage() {
               </Link>
               <button
                 type="submit"
-                className="flex-1 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors cursor-pointer"
+                disabled={isLoading}
+                className="flex-1 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                ยืนยัน
+                {isLoading ? "กำลังส่ง..." : "ยืนยัน"}
               </button>
             </div>
           </form>
