@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import AdminNavbar from "@/components/ui/AdminNavbar";
 import {
   applicationApi,
   positionApi,
@@ -349,7 +348,6 @@ export default function AdminApplicationDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AdminNavbar />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -363,7 +361,6 @@ export default function AdminApplicationDetailPage() {
   if (!application) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AdminNavbar />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-gray-500">ไม่พบข้อมูลใบสมัคร</p>
           <Link
@@ -459,7 +456,7 @@ export default function AdminApplicationDetailPage() {
       : "เหตุผลที่ยกเลิกฝึกงาน";
 
   // Owner & department from position
-  const owner = position?.owners?.[0] || position?.owner;
+  const owner = position?.positionOwner;
   const departmentName =
     position?.department?.deptFull || position?.department?.deptShort || "-";
   const parsedNote = parseStudentNote(application.studentNote);
@@ -475,7 +472,6 @@ export default function AdminApplicationDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminNavbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <div className="text-sm text-gray-500 mb-6 flex items-center gap-2">

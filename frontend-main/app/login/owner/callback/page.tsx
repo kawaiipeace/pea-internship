@@ -38,15 +38,14 @@ export default function KeycloakCallbackPage() {
         authStorage.setUser(session.user);
 
         // กำหนด role และ redirect ตาม roleId
-        const roleMap: Record<number, { role: string; redirect: string }> = {
-          1: { role: "admin", redirect: "/admin/applications" },
-          2: { role: "owner", redirect: "/owner/announcements" },
+        const roleMap: Record<number, string> = {
+          1: "/admin/applications",
+          2: "/owner/announcements",
         };
-        const { role, redirect } = roleMap[session.user.roleId];
+        const redirect = roleMap[session.user.roleId];
 
         // Set auth cookies สำหรับ middleware
         document.cookie = `auth_token=${session.user.id}; path=/; max-age=86400`;
-        document.cookie = `user_role=${role}; path=/; max-age=86400`;
 
         // Redirect ไปหน้า dashboard ตาม role
         router.push(redirect);

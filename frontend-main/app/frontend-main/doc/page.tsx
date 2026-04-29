@@ -17,13 +17,6 @@ type RouteDoc = {
   risk: string;
 };
 
-type ScenarioDoc = {
-  topic: string;
-  symptoms: string;
-  files: string[];
-  steps: string[];
-};
-
 type TechStackDoc = {
   technology: string;
   version: string;
@@ -34,13 +27,22 @@ type TechStackDoc = {
 
 type ThemeMode = "light" | "dark";
 
-const quickStartSteps = [
-  "เริ่มจากอ่านหัวข้อ 1-4 เพื่อเข้าใจภาพรวมระบบก่อน",
-  "ถ้าจะแก้หน้าใดหน้าหนึ่ง ให้ไปที่หัวข้อ 5-9 (Route-by-Route)",
-  "ถ้าจะแก้พฤติกรรม shared UI หรือ API ให้ไปที่หัวข้อ 10",
-  "ถ้าเป็นปัญหา runtime/auth/redirect ให้ดูหัวข้อ 11 (Playbook)",
-  "ก่อน merge ให้เทียบกับหัวข้อ 12 (Release Checklist)",
-];
+type ApiEndpointDoc = {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  path: string;
+  purpose: string;
+  usedInPages: string[];
+};
+
+type ApiModuleDoc = {
+  file: string;
+  domain: string;
+  description: string;
+  types: string[];
+  functions: string[];
+  notes: string;
+  endpoints: ApiEndpointDoc[];
+};
 
 const techStack: TechStackDoc[] = [
   {
@@ -63,7 +65,7 @@ const techStack: TechStackDoc[] = [
     technology: "TypeScript",
     version: "5.x",
     usedFor: "type safety ทั้ง app, services, และ shared model",
-    whereToMaintain: "tsconfig.json, services/api.ts, types/*.ts",
+    whereToMaintain: "tsconfig.json, services/api/*.ts, types/*.ts",
     maintenanceTips:
       "เพิ่ม/แก้ endpoint ควรแก้ type ไปพร้อมกันเพื่อลด runtime bug",
   },
@@ -79,9 +81,9 @@ const techStack: TechStackDoc[] = [
     technology: "Axios",
     version: "1.x",
     usedFor: "HTTP client สำหรับเรียก backend",
-    whereToMaintain: "services/api.ts",
+    whereToMaintain: "services/api/client.ts (axios instance + interceptors)",
     maintenanceTips:
-      "ควรเรียกผ่าน base /api เพื่อรักษา same-origin cookie flow",
+      "ควรเรียกผ่าน base /api เพื่อรักษา same-origin cookie flow; เพิ่ม endpoint ใหม่ให้ไปไว้ในไฟล์ domain ที่ services/api/*.ts (ไม่ใช่ client.ts)",
   },
   {
     technology: "ESLint",
@@ -104,7 +106,7 @@ const techStack: TechStackDoc[] = [
     whereToMaintain:
       "Dockerfile, dockerfile.dev, docker-compose.yml (root repo)",
     maintenanceTips:
-      "ถ้า build image ไม่ผ่าน ให้ตรวจ .dockerignore และ dependency install ขั้นตอนแรก",
+      "ถ้า build image ไม่ผ่าน ให้ตรวจ Dockerfile และ dependency install ขั้นตอนแรก",
   },
 ];
 
@@ -114,13 +116,6 @@ const rootFiles: FileDoc[] = [
     purpose: "แม่แบบตัวแปรแวดล้อมสำหรับ dev/deploy",
     editWhen: "เพิ่มหรือลด env variable ที่แอปต้องใช้",
     notes: "ห้ามใส่ secret จริงในไฟล์นี้",
-  },
-  {
-    file: ".dockerignore",
-    purpose: "กำหนดไฟล์ที่ไม่ต้อง copy เข้า image",
-    editWhen: "ต้องการลดขนาด image หรือกันไฟล์ไม่จำเป็นเข้า Docker build",
-    notes:
-      "ตอนนี้ ignore README.md ด้วย ถ้าอยากให้ image มีเอกสารต้องแก้ที่ไฟล์นี้",
   },
   {
     file: ".gitignore",
@@ -228,12 +223,7 @@ const appSystemFiles: FileDoc[] = [
     editWhen: "ปรับสีหลัก/ฟอนต์/global behavior",
     notes: "ถ้าทั้งเว็บสีหรือ spacing เพี้ยน ให้เริ่มที่ไฟล์นี้",
   },
-  {
-    file: "app/data/institutions.ts",
-    purpose: "แหล่งข้อมูลรายชื่อสถานศึกษาฝั่ง frontend",
-    editWhen: "ปรับรายการสถานศึกษา หรือ logic map ตามระดับการศึกษา",
-    notes: "ไฟล์นี้ยาวมาก ควรระวัง merge conflict",
-  },
+  
   {
     file: "app/data/relatedFieldOptions.ts",
     purpose: "ตัวเลือกสาขา/related fields สำหรับฟอร์ม",
@@ -289,6 +279,41 @@ const publicRoutes: RouteDoc[] = [
     purpose: "หน้าเครดิตทีมพัฒนา",
     editWhen: "อัปเดตรายชื่อทีม/visual effects",
     risk: "มี animation สูง ควรเช็ก performance หลังแก้",
+  },
+  {
+    url: "/itt",
+    file: "app/itt/page.tsx",
+    purpose: "หน้าแนะนำระบบ ITT",
+    editWhen: "แก้เนื้อหาหรือ flow แนะนำระบบ",
+    risk: "เสี่ยงต่ำทาง logic",
+  },
+  {
+    url: "/guide",
+    file: "app/guide/page.tsx",
+    purpose: "หน้า landing สำหรับคู่มือการใช้งาน (แยก admin/intern/owner)",
+    editWhen: "ปรับ layout หรือ routing คู่มือ",
+    risk: "เสี่ยงต่ำ แต่ link ต้องตรงกับ sub-route",
+  },
+  {
+    url: "/guide/admin",
+    file: "app/guide/admin/page.tsx",
+    purpose: "คู่มือสำหรับ admin (basic, dashboard, howto)",
+    editWhen: "เพิ่มหรืออัปเดตคู่มือ admin",
+    risk: "เสี่ยงต่ำ — content page",
+  },
+  {
+    url: "/guide/intern",
+    file: "app/guide/intern/page.tsx",
+    purpose: "คู่มือสำหรับ intern (basic, howto, status, itt)",
+    editWhen: "เพิ่มหรืออัปเดตคู่มือ intern",
+    risk: "เสี่ยงต่ำ — content page",
+  },
+  {
+    url: "/guide/owner",
+    file: "app/guide/owner/page.tsx",
+    purpose: "คู่มือสำหรับ owner (basic, dashboard, howto, selection, post-selection)",
+    editWhen: "เพิ่มหรืออัปเดตคู่มือ owner",
+    risk: "เสี่ยงต่ำ — content page",
   },
 ];
 
@@ -394,13 +419,7 @@ const internRoutes: RouteDoc[] = [
     editWhen: "แก้สถานะ/ลำดับเวลา/การแสดงผลรายการ",
     risk: "มีการ map status หลายแบบ",
   },
-  {
-    url: "/application-history/evaluation-result",
-    file: "app/application-history/evaluation-result/page.tsx",
-    purpose: "ผลการประเมินของการสมัคร",
-    editWhen: "ปรับการแสดงผลคะแนน/ผลลัพธ์",
-    risk: "ควบคุมกรณีไม่มีข้อมูลให้ดี",
-  },
+ 
   {
     url: "/application-history/job-detail",
     file: "app/application-history/job-detail/page.tsx",
@@ -471,13 +490,6 @@ const ownerRoutes: RouteDoc[] = [
     risk: "ต้อง sync payload กับ positionApi",
   },
   {
-    url: "/owner/announcements/[id]",
-    file: "app/owner/announcements/[id]/page.tsx",
-    purpose: "รายละเอียดประกาศแบบรายตัว",
-    editWhen: "เพิ่มข้อมูลเชิงลึกของประกาศ",
-    risk: "ต้อง handle กรณี id ไม่ถูกต้อง",
-  },
-  {
     url: "/owner/announcements/[id]/edit",
     file: "app/owner/announcements/[id]/edit/page.tsx",
     purpose: "หน้าแก้ไขประกาศ",
@@ -504,13 +516,6 @@ const ownerRoutes: RouteDoc[] = [
     purpose: "รายการสถานะรอดำเนินการ",
     editWhen: "แก้การคัดกรองสถานะ pending",
     risk: "ต้องคุม mapping status ให้ตรง backend",
-  },
-  {
-    url: "/owner/dashboard/near-start",
-    file: "app/owner/dashboard/near-start/page.tsx",
-    purpose: "รายการผู้ที่ใกล้เริ่มฝึก",
-    editWhen: "ปรับนิยาม near-start และ date filter",
-    risk: "เสี่ยงจาก timezone/date boundary",
   },
   {
     url: "/owner/dashboard/accepted",
@@ -584,16 +589,10 @@ const componentFiles: FileDoc[] = [
     notes: "ถ้า import หา component ไม่เจอ ให้เช็กไฟล์นี้",
   },
   {
-    file: "components/ui/Navbar.tsx",
-    purpose: "navbar สำหรับหน้า public หลัก",
-    editWhen: "ปรับเมนู public หรือปุ่ม login",
-    notes: "เกี่ยวข้องปุ่ม Keycloak redirect",
-  },
-  {
     file: "components/ui/NavbarPublic.tsx",
-    purpose: "navbar variant สำหรับ public pages",
-    editWhen: "ต้องการแยกพฤติกรรม navbar ของหน้า public เฉพาะ",
-    notes: "ระวังความซ้ำกับ Navbar.tsx",
+    purpose: "navbar สำหรับหน้า public — รองรับทั้ง guest และ intern ที่ login แล้ว",
+    editWhen: "ปรับเมนู public, ปุ่ม login, หรือ behavior เมื่อ login ด้วย isLoggedIn/userRole props",
+    notes: "รับ props isLoggedIn?: boolean และ userRole?: 'intern'|'admin'|'owner' — ถ้าไม่ส่ง props จะแสดงเป็น guest (not logged in)",
   },
   {
     file: "components/ui/NavbarIntern.tsx",
@@ -696,15 +695,27 @@ const componentFiles: FileDoc[] = [
 const serviceAndTypes: FileDoc[] = [
   {
     file: "services/api.ts",
-    purpose: "API client กลาง + types จำนวนมาก + helper mapping",
-    editWhen: "เพิ่ม endpoint, เปลี่ยน payload/response, แก้ auth storage",
-    notes: "ไฟล์ใหญ่มากและกระทบทั้งแอป ควรแก้แบบระมัดระวัง",
+    purpose: "barrel re-export ของทุก domain ใน services/api/* (backward-compat)",
+    editWhen: "เพิ่ม domain ไฟล์ใหม่ใน services/api/ ต้องมาเพิ่ม export * ที่นี่",
+    notes: "ห้ามใส่ logic หรือ type ลงไฟล์นี้ — เป็น re-export ล้วน ๆ",
+  },
+  {
+    file: "services/api/client.ts",
+    purpose: "axios instance, API_BASE_URL, interceptors (auth token + 401 redirect), authStorage, ApiUser type",
+    editWhen: "แก้ base URL, เพิ่ม/แก้ interceptor, เปลี่ยน auth storage/cookie",
+    notes: "โดนเรียกจากทุก domain ไฟล์ — เปลี่ยน behavior ที่นี่กระทบทั้งแอป",
+  },
+  {
+    file: "services/api/{auth,user,position,application,favorite,notification,...}.ts",
+    purpose: "แต่ละไฟล์ = 1 domain: endpoint functions + types + helper ของ domain นั้น",
+    editWhen: "เพิ่ม endpoint, เปลี่ยน payload/response, เพิ่ม transform helper",
+    notes: "import { api } from './client' แล้วเรียก api.get/post/put/delete; ไฟล์ใหม่ต้องไป export ที่ services/api.ts ด้วย",
   },
   {
     file: "types/job.ts",
     purpose: "type ของงาน/ตัวกรอง/enum ที่ใช้หน้าฝั่งงาน",
     editWhen: "model งานเปลี่ยนหรือเพิ่มฟิลด์",
-    notes: "ควร sync กับ type ใน services/api.ts",
+    notes: "ควร sync กับ type ใน services/api/position.ts",
   },
   {
     file: "types/announcement.ts",
@@ -722,148 +733,283 @@ const serviceAndTypes: FileDoc[] = [
 
 const apiDomains: FileDoc[] = [
   {
-    file: "authApi / authStorage",
-    purpose: "login, logout, get-session, จัดการ cookie และ state ฝั่ง client",
-    editWhen: "แก้ auth flow หรือปัญหา session",
-    notes: "เชื่อมกับ proxy.ts โดยตรง",
+    file: "services/api/client.ts — api (axios) / authStorage / API_BASE_URL / ApiUser",
+    purpose: "axios instance + interceptors + cookie/auth storage + ApiUser type กลาง",
+    editWhen: "แก้ base URL, interceptor, 401 flow, auth cookies",
+    notes: "โดน import จากทุก domain; แก้ที่นี่กระทบทั้งแอป",
   },
   {
-    file: "userApi / studentProfileApi",
-    purpose: "profile, staff list, student info",
+    file: "services/api/auth.ts — authApi",
+    purpose: "login, logout, get-session, Keycloak SSO",
+    editWhen: "แก้ auth flow หรือปัญหา session",
+    notes: "เชื่อมกับ proxy.ts โดยตรง และ cookie ของ Better Auth",
+  },
+  {
+    file: "services/api/user.ts — userApi / studentProfileApi",
+    purpose: "profile, staff list, student info, update profile",
     editWhen: "แก้ข้อมูลผู้ใช้, mentor, profile form",
     notes: "มักกระทบ intern-profile และ owner pages",
   },
   {
-    file: "positionApi",
-    purpose: "ตำแหน่งฝึกงาน, create/update/list",
-    editWhen: "แก้ flow ประกาศหรือรายการงาน",
-    notes: "ใช้หนักทั้ง public, intern, owner",
+    file: "services/api/position.ts — positionApi / mentorCache / positionToJob / positionToAnnouncement",
+    purpose: "ตำแหน่งฝึกงาน: list/create/update + transform ไป Job/Announcement",
+    editWhen: "แก้ flow ประกาศ, รายการงาน, หรือ mapping ไป UI model",
+    notes: "ใช้หนักทั้ง public, intern, owner; transforms อยู่ไฟล์เดียวกัน",
   },
   {
-    file: "applicationApi",
-    purpose: "สมัครงาน, history, status, action ตามขั้นตอน",
-    editWhen: "แก้ workflow สมัครงานหรือสถานะ",
-    notes: "domain หลักที่มีผลกับหลาย role",
+    file: "services/api/application.ts — applicationApi / APP_STATUS_TO_STEP / canApplyForNewJob",
+    purpose: "สมัครงาน, history, status, action, upload เอกสาร",
+    editWhen: "แก้ workflow สมัครงานหรือสถานะ หรือ enum สถานะ",
+    notes: "domain หลักที่มีผลกับหลาย role; sync AppStatusEnum กับ backend เสมอ",
   },
   {
-    file: "favoriteApi",
+    file: "services/api/favorite.ts — favoriteApi",
     purpose: "เพิ่ม/ลบ/ดึงรายการโปรด",
     editWhen: "ปรับ bookmark behavior",
     notes: "สัมพันธ์กับหน้า /favorites และหน้า list งาน",
   },
   {
-    file: "notificationApi",
-    purpose: "ดึงและจัดการแจ้งเตือน",
+    file: "services/api/notification.ts — notificationApi",
+    purpose: "ดึงและจัดการแจ้งเตือน (read/unread/delete)",
     editWhen: "notification flow เปลี่ยน",
     notes: "เกี่ยวข้อง navbar หลาย role",
   },
   {
-    file: "applicationDocumentsApi / applicationStatusActionsApi",
-    purpose: "จัดการเอกสารและ action สถานะการสมัคร",
-    editWhen: "เปลี่ยนกฎเอกสารหรือสถานะขั้นตอน",
-    notes: "ต้อง sync enum กับ backend เสมอ",
+    file: "services/api/application-documents.ts + application-status-actions.ts",
+    purpose: "เอกสารใบสมัคร (list/download/preview) และ log การเปลี่ยนสถานะ",
+    editWhen: "เปลี่ยนกฎเอกสารหรือ audit log",
+    notes: "ValidationStatus และ AppStatusEnum ต้อง sync กับ backend",
   },
   {
-    file: "departmentApi / roleApi / staffLogsApi / institutionTicketApi",
-    purpose: "domain สนับสนุนฝั่ง admin-owner",
+    file: "services/api/institution.ts — institutionApi / institutionTicketApi",
+    purpose: "สถานศึกษา, คณะ, ticket lookup",
+    editWhen: "เพิ่ม/แก้ข้อมูลสถานศึกษาหรือ faculty ในฟอร์มสมัคร",
+    notes: "รองรับ type UNIVERSITY/VOCATIONAL/SCHOOL/OTHERS",
+  },
+  {
+    file: "services/api/{department,doc-type,role,staff-logs,owner-students}.ts",
+    purpose: "domain สนับสนุนฝั่ง admin/owner (กองงาน, ประเภทเอกสาร, role, log, จบฝึกงาน)",
     editWhen: "แก้หน้าบริหารข้อมูลองค์กรและบันทึกการทำงาน",
-    notes: "อยู่ใน backend domain ที่เฉพาะเจาะจง",
+    notes: "ไฟล์เล็ก endpoint เดียว/สองตัว — ดูแลง่าย",
   },
 ];
 
-const scenarios: ScenarioDoc[] = [
+const apiModuleDocs: ApiModuleDoc[] = [
   {
-    topic: "Login แล้วเด้งผิดหน้า หรือเข้า role ไม่ได้",
-    symptoms: "login สำเร็จแต่ redirect ไม่ถูก, หรือวนกลับหน้า login",
-    files: [
-      "proxy.ts",
-      "services/api.ts",
-      "components/IdleTimeoutProvider.tsx",
-      "app/login/intern/page.tsx",
-      "app/login/owner/page.tsx",
-      "app/login/owner/callback/page.tsx",
-    ],
-    steps: [
-      "ตรวจ cookie better-auth.session_token และ user_role ใน browser",
-      "ตรวจเงื่อนไข route group และ role redirect ใน proxy.ts",
-      "ทดสอบ flow intern/owner/admin แยกกันทีละ role",
-      "ตรวจว่าฝั่ง client เรียก API ผ่าน /api rewrite",
+    file: "client.ts",
+    domain: "Base Client — axios instance & authStorage",
+    description: "axios instance กลาง, API_BASE_URL, interceptors (auth token + 401 redirect) และ authStorage สำหรับอ่าน/เขียน user session",
+    types: ["ApiUser"],
+    functions: ["api (axios instance)", "authStorage.getUser()", "authStorage.setUser()", "authStorage.removeUser()"],
+    notes: "import 'api' จากไฟล์นี้ในทุก domain file — แก้ interceptor ที่นี่กระทบทั้งแอป",
+    endpoints: [],
+  },
+  {
+    file: "auth.ts",
+    domain: "authApi — Authentication",
+    description: "จัดการล็อกอิน, ล็อกเอาท์, ตรวจสอบ session และ SSO (Keycloak)",
+    types: ["RegisterInternData", "LoginData", "AuthResponse"],
+    functions: ["authApi.registerIntern()", "authApi.loginIntern()", "authApi.logout()", "authApi.getSession()", "authApi.getKeycloakLoginUrl()"],
+    notes: "เชื่อมกับ proxy.ts และ Better Auth cookie — แก้ auth flow แก้ที่นี่",
+    endpoints: [
+      { method: "POST", path: "/auth/sign-up/intern", purpose: "สมัครสมาชิกนักศึกษาใหม่", usedInPages: ["/register"] },
+      { method: "POST", path: "/auth/sign-in/intern", purpose: "เข้าสู่ระบบสำหรับนักศึกษา (phone + password)", usedInPages: ["/login/intern"] },
+      { method: "POST", path: "/auth/sign-out", purpose: "ออกจากระบบ (ล้าง session/token)", usedInPages: ["ทุกหน้าที่มีปุ่ม logout"] },
+      { method: "GET", path: "/auth/get-session", purpose: "ตรวจสอบ session ปัจจุบัน — ดึงข้อมูล user จาก cookie", usedInPages: ["/login/owner/callback", "proxy.ts"] },
+      { method: "GET", path: "/auth/sign-in/keycloak", purpose: "Redirect ไปหน้า SSO login ของ Keycloak (owner/admin)", usedInPages: ["/login/owner", "/login/admin"] },
     ],
   },
   {
-    topic: "ข้อมูลจาก API ไม่ขึ้น หรือขึ้นไม่ครบ",
-    symptoms: "หน้าโหลดได้แต่ list ว่าง/field หาย/ขึ้น error เงียบ",
-    files: [
-      "services/api.ts",
-      "next.config.ts",
-      "app/page.tsx",
-      "app/intern-home/page.tsx",
-      "app/owner/dashboard/utils/applicationMapper.ts",
-    ],
-    steps: [
-      "ตรวจ endpoint ใน services/api.ts และ payload/response type",
-      "ตรวจ rewrite /api/:path* ใน next.config.ts ว่าชี้ backend ถูก",
-      "เช็ก mapping จาก backend model ไป frontend model",
-      "เติม fallback state ให้เห็นชัด (empty/error/loading)",
-    ],
-  },
-  {
-    topic: "สถานะการสมัครเพี้ยน",
-    symptoms: "step ไม่ตรง, badge ผิด, ย้ายแท็บผิด",
-    files: [
-      "services/api.ts",
-      "app/owner/dashboard/utils/applicationMapper.ts",
-      "app/application-status/page.tsx",
-      "app/application-history/page.tsx",
-    ],
-    steps: [
-      "ไล่ enum/status map ที่ต้นทางจาก services/api.ts",
-      "ตรวจ mapping เฉพาะ owner dashboard ใน applicationMapper.ts",
-      "ทดสอบเคสสถานะหลัก (pending, accepted, rejected, cancelled, complete)",
-      "ยืนยันข้อความ label ภาษาไทยในแต่ละหน้า",
+    file: "user.ts",
+    domain: "userApi — User & Profile",
+    description: "ดึงและแก้ไขข้อมูลผู้ใช้ โปรไฟล์นักศึกษา และรายการพนักงาน",
+    types: ["StudentProfile", "UserProfile", "StaffUser"],
+    functions: ["userApi.getProfile()", "userApi.updateUser()", "userApi.updateStudentProfile()", "userApi.updateStaffPhone()", "userApi.getStaffList()", "userApi.getStudentList()", "studentProfileApi.getMyProfile()", "extractStudentProfile()", "canApplyForNewJob()"],
+    notes: "canApplyForNewJob() ตรวจสอบว่านักศึกษาสมัครใหม่ได้หรือไม่ ก่อนเรียก applicationApi",
+    endpoints: [
+      { method: "GET", path: "/user/profile", purpose: "ดึงโปรไฟล์เต็มของผู้ใช้ปัจจุบัน รวม studentProfile", usedInPages: ["/intern-profile"] },
+      { method: "PUT", path: "/user/update", purpose: "แก้ไขข้อมูลผู้ใช้ (ชื่อ, นามสกุล, email, เบอร์โทร)", usedInPages: ["/intern-profile/edit"] },
+      { method: "PUT", path: "/user/student-profile", purpose: "แก้ไขโปรไฟล์นักศึกษา (ชั่วโมง, คณะ, สาขา, วันฝึก)", usedInPages: ["/intern-profile/edit"] },
+      { method: "PUT", path: "/user/staff/{staffProfileId}/phone", purpose: "แก้ไขเบอร์โทรพนักงาน (admin/owner เท่านั้น)", usedInPages: ["/owner/profile"] },
+      { method: "GET", path: "/user/staff", purpose: "ดึงรายการพนักงาน กรองด้วย departmentId ได้", usedInPages: ["/owner/announcements/create", "/owner/announcements/[id]/edit"] },
+      { method: "GET", path: "/user/student", purpose: "ดึงรายการนักศึกษาทั้งหมด (admin/owner เท่านั้น)", usedInPages: ["/admin/dashboard", "/owner/dashboard"] },
     ],
   },
   {
-    topic: "เพิ่มหน้าใหม่และกำหนดสิทธิ์เข้าถึง",
-    symptoms: "หน้าใหม่ 404 หรือเข้าถึงได้ผิด role",
-    files: [
-      "app/<new-route>/page.tsx",
-      "proxy.ts",
-      "components/ui/*Navbar*.tsx",
-    ],
-    steps: [
-      "สร้างไฟล์ route ตาม App Router convention",
-      "เพิ่ม route เข้า public/auth/protected ใน proxy.ts ให้ถูกกลุ่ม",
-      "เพิ่มเมนูใน navbar ที่เกี่ยวข้อง",
-      "ทดสอบการเข้าหน้าใหม่ทั้งก่อนและหลัง login",
+    file: "position.ts",
+    domain: "positionApi — Positions / ตำแหน่งฝึกงาน",
+    description: "จัดการประกาศตำแหน่งฝึกงาน ทั้งการสร้าง, ดู, แก้ไข, ลบ พร้อม transform helpers แปลง API response เป็น UI model",
+    types: ["Position", "CreatePositionData", "UpdatePositionData"],
+    functions: ["positionApi.getPositions()", "positionApi.getPositionById()", "positionApi.createPosition()", "positionApi.updatePosition()", "positionApi.deletePosition()", "positionToJob()", "positionToJobWithStaff()", "positionToAnnouncement()", "positionsToJobs()"],
+    notes: "mentorCache ลด API call ซ้ำ — positionToJob/Announcement ใช้ทั่ว intern/owner pages; APP_STATUS_TO_STEP map สถานะ → step index",
+    endpoints: [
+      { method: "GET", path: "/position", purpose: "ดึงรายการตำแหน่งทั้งหมด (ค้นหา/กรองได้, pagination)", usedInPages: ["/", "/intern-home", "/owner/announcements", "/owner/dashboard", "/admin/dashboard"] },
+      { method: "GET", path: "/position/{id}", purpose: "ดึงรายละเอียดตำแหน่งรายตัว", usedInPages: ["/jobs/[id]", "/intern-home/job-detail", "/owner/announcements/[id]/edit"] },
+      { method: "POST", path: "/position", purpose: "สร้างประกาศตำแหน่งฝึกงานใหม่", usedInPages: ["/owner/announcements/create"] },
+      { method: "PUT", path: "/position/{id}", purpose: "แก้ไขประกาศตำแหน่ง (ชื่อ, วันรับสมัคร, สาขา ฯลฯ)", usedInPages: ["/owner/announcements/[id]/edit"] },
+      { method: "DELETE", path: "/position/{id}", purpose: "ลบประกาศตำแหน่ง", usedInPages: ["/owner/announcements/[id]/edit"] },
     ],
   },
-];
-
-const releaseChecklist = [
-  "รัน pnpm lint แล้วไม่มี error",
-  "รัน pnpm build ผ่านและ route สำคัญไม่หาย",
-  "เทสต์ manual ขั้นต่ำ: public + intern + owner + admin",
-  "กรณีแก้ auth/redirect ต้องทดสอบ callback และ forceLogin query",
-  "กรณีแก้ status mapping ต้องทดสอบทุกสถานะหลัก",
-  "ตรวจว่าการเรียก API ใช้ /api (same-origin) ไม่ยิง cross-domain ตรง",
-  "ถ้าแก้ shared component ให้ตรวจทุกหน้าที่ import component นั้น",
-  "อัปเดตหน้านี้ถ้าเปลี่ยนโครงสร้างไฟล์หรือ flow หลัก",
+  {
+    file: "application.ts",
+    domain: "applicationApi — Applications / การสมัคร",
+    description: "Core workflow ทั้งหมดของการสมัครฝึกงาน ตั้งแต่สมัคร, อัปโหลดเอกสาร ไปจนถึง owner ตัดสินใจรับ/ปฏิเสธ",
+    types: ["AppStatusEnum", "MyApplicationData", "CompleteModalResponse"],
+    functions: ["applicationApi.apply()", "applicationApi.getMyApplications()", "applicationApi.getApplicationById()", "applicationApi.getApplicationsByPosition()", "applicationApi.updateStatus()", "applicationApi.uploadDocument()"],
+    notes: "AppStatusEnum ต้อง sync กับ backend เสมอ — domain หลักที่กระทบหลาย role",
+    endpoints: [
+      { method: "GET", path: "/applications/history/me", purpose: "ดึงประวัติการสมัครทั้งหมดของนักศึกษาปัจจุบัน", usedInPages: ["/application-history", "/application-status", "/application-history/job-detail"] },
+      { method: "GET", path: "/student/application-complete-modal", purpose: "ตรวจสอบว่าต้องแสดง modal แจ้งการสมัครเสร็จสิ้นหรือไม่", usedInPages: ["/intern-home"] },
+      { method: "POST", path: "/student/application-complete-modal/acknowledge", purpose: "บันทึกว่าผู้ใช้รับรู้ modal แล้ว", usedInPages: ["/intern-home"] },
+      { method: "POST", path: "/applications", purpose: "สร้างการสมัครใหม่ (ส่ง positionId)", usedInPages: ["/intern-home/job-detail"] },
+      { method: "POST", path: "/applications/positions/{positionId}/information", purpose: "ส่งข้อมูลทักษะ, ความคาดหวัง และวันที่ต้องการฝึก", usedInPages: ["/application-status"] },
+      { method: "POST", path: "/applications/{id}/documents/transcript", purpose: "อัปโหลดไฟล์ transcript (multipart/form-data)", usedInPages: ["/application-status/document-list"] },
+      { method: "POST", path: "/applications/{id}/documents/resume", purpose: "อัปโหลดไฟล์ resume", usedInPages: ["/application-status/document-list"] },
+      { method: "POST", path: "/applications/{id}/documents/portfolio", purpose: "อัปโหลดไฟล์ portfolio", usedInPages: ["/application-status/document-list"] },
+      { method: "POST", path: "/applications/{id}/documents/request-letter", purpose: "อัปโหลดหนังสือขอความอนุเคราะห์", usedInPages: ["/application-status/document-list"] },
+      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลด/ดูตัวอย่างไฟล์จาก MinIO (ส่ง fileKey)", usedInPages: ["/application-status/document-list", "/admin/applications"] },
+      { method: "PUT", path: "/applications/{id}/cancel", purpose: "ยกเลิกการสมัครโดยนักศึกษา", usedInPages: ["/application-status"] },
+      { method: "GET", path: "/applications/history", purpose: "ดึงประวัติการสมัครทั้งหมด กรองตาม positionId/status ได้ (admin/owner)", usedInPages: ["/owner/dashboard", "/owner/dashboard/applications", "/owner/dashboard/pending", "/owner/dashboard/accepted", "/owner/dashboard/rejected", "/owner/dashboard/cancelled", "/admin/applications", "/admin/dashboard"] },
+      { method: "GET", path: "/applications/history/{studentUserId}", purpose: "ดึงประวัติการสมัครของนักศึกษาคนใดคนหนึ่ง", usedInPages: ["/admin/dashboard/[id]", "/owner/dashboard/[id]"] },
+      { method: "PUT", path: "/applications/{id}/interview/approve", purpose: "อนุมัติเข้าสัมภาษณ์ — เปลี่ยนสถานะเป็น PENDING_CONFIRMATION (owner)", usedInPages: ["/owner/dashboard/[id]"] },
+      { method: "PUT", path: "/applications/{id}/confirm/accept", purpose: "ยืนยันรับนักศึกษาเข้าฝึกงาน (owner)", usedInPages: ["/owner/dashboard/accepted"] },
+      { method: "PUT", path: "/applications/{id}/interview/reject", purpose: "ปฏิเสธการสมัคร พร้อมระบุเหตุผล (owner)", usedInPages: ["/owner/dashboard/[id]"] },
+      { method: "PUT", path: "/applications/{id}/documents/{docType}/review", purpose: "ตรวจสอบเอกสาร (admin) — ผล VERIFIED หรือ INVALID", usedInPages: ["/admin/applications"] },
+      { method: "PUT", path: "/applications/{applicationId}/information", purpose: "แก้ไขข้อมูลการสมัคร (ชั่วโมง/วันที่ฝึก)", usedInPages: ["/application-status"] },
+    ],
+  },
+  {
+    file: "application-documents.ts",
+    domain: "applicationDocumentsApi — Application Documents",
+    description: "ดึงและจัดการเอกสารของการสมัครทั้งหมด (ใช้โดย admin เป็นหลัก)",
+    types: ["ApplicationDocumentItem", "ValidationStatus"],
+    functions: ["applicationDocumentsApi.getDocuments()", "applicationDocumentsApi.getDownloadUrl()", "applicationDocumentsApi.getPreviewUrl()", "applicationDocumentsApi.validateDocument()"],
+    notes: "ValidationStatus (PENDING/APPROVED/REJECTED) ต้อง sync กับ backend — ใช้ใน /application-status",
+    endpoints: [
+      { method: "GET", path: "/application-documents", purpose: "ดึงเอกสารทั้งหมดในระบบ กรองตามสถานะ VERIFIED/INVALID/PENDING ได้", usedInPages: ["/admin/applications"] },
+      { method: "GET", path: "/application-documents/file", purpose: "ดาวน์โหลดไฟล์จาก MinIO storage โดยส่ง fileKey", usedInPages: ["/admin/applications", "/application-status/document-list"] },
+    ],
+  },
+  {
+    file: "application-status-actions.ts",
+    domain: "applicationStatusActionsApi — Status History",
+    description: "ดึงประวัติการเปลี่ยนสถานะของการสมัคร (ใช้แสดง timeline)",
+    types: ["ApplicationStatusAction"],
+    functions: ["applicationStatusActionsApi.getActions()", "applicationStatusActionsApi.getActionsByApplication()"],
+    notes: "read-only ไม่มี mutation — ใช้แสดง timeline ว่าใครทำอะไรเมื่อไร",
+    endpoints: [
+      { method: "GET", path: "/application-status-actions/{applicationStatusId}", purpose: "ดึงประวัติการเปลี่ยนสถานะของ application", usedInPages: ["/owner/dashboard/[id]", "/admin/dashboard/[id]"] },
+      { method: "GET", path: "/application-status-actions/me", purpose: "ดึง action ของผู้ใช้ปัจจุบัน", usedInPages: ["(ใช้ภายใน)"] },
+    ],
+  },
+  {
+    file: "favorite.ts",
+    domain: "favoriteApi — Favorites / รายการโปรด",
+    description: "เพิ่ม/ลบ/ดึงตำแหน่งที่นักศึกษา bookmark ไว้",
+    types: ["FavoriteItem", "FavoritesResponse"],
+    functions: ["favoriteApi.getFavorites()", "favoriteApi.addFavorite()", "favoriteApi.removeFavorite()", "favoriteApi.isFavorite()"],
+    notes: "ใช้ใน /favorites และ job-card ทุกหน้า — ตรวจ isFavorite() ก่อน add/remove เสมอ",
+    endpoints: [
+      { method: "GET", path: "/favorite", purpose: "ดึงรายการตำแหน่งที่บันทึกไว้ทั้งหมด (pagination)", usedInPages: ["/", "/intern-home", "/favorites"] },
+      { method: "POST", path: "/favorite", purpose: "เพิ่มตำแหน่งในรายการโปรด (ส่ง positionId)", usedInPages: ["/", "/intern-home", "/favorites"] },
+      { method: "DELETE", path: "/favorite/{positionId}", purpose: "ลบตำแหน่งออกจากรายการโปรด", usedInPages: ["/", "/intern-home", "/favorites"] },
+    ],
+  },
+  {
+    file: "notification.ts",
+    domain: "notificationApi — Notifications / การแจ้งเตือน",
+    description: "ดึงและจัดการการแจ้งเตือนของผู้ใช้ทุก role ผ่าน Navbar",
+    types: ["NotificationItem"],
+    functions: ["notificationApi.getNotifications()", "notificationApi.markAsRead()", "notificationApi.markAllAsRead()", "notificationApi.deleteNotification()"],
+    notes: "เชื่อมกับ Navbar bell icon ของทุก role — unread count อยู่ใน NotificationItem.isRead",
+    endpoints: [
+      { method: "GET", path: "/notifications", purpose: "ดึงรายการแจ้งเตือน กรองและ paginate ได้", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+      { method: "PUT", path: "/notifications/{id}/read", purpose: "ทำเครื่องหมายอ่านแล้ว/ยังไม่อ่าน", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+      { method: "PUT", path: "/notifications/read-all", purpose: "อ่านการแจ้งเตือนทั้งหมดพร้อมกัน", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+      { method: "DELETE", path: "/notifications/delete/{id}", purpose: "ลบการแจ้งเตือนรายการ", usedInPages: ["NavbarIntern.tsx", "OwnerNavbar.tsx", "AdminNavbar.tsx"] },
+    ],
+  },
+  {
+    file: "institution.ts",
+    domain: "institutionApi — Institutions & Faculties / สถานศึกษา",
+    description: "ดึงข้อมูลสถานศึกษาและคณะสำหรับฟอร์มสมัครและแก้โปรไฟล์",
+    types: ["Institution", "Faculty"],
+    functions: ["institutionApi.getInstitutions()", "institutionApi.getFaculties()", "institutionApi.getInstitutionByTicket()"],
+    notes: "รองรับ type UNIVERSITY / VOCATIONAL / SCHOOL / OTHERS — ใช้ใน /register และ /intern-profile/edit",
+    endpoints: [
+      { method: "GET", path: "/institution", purpose: "ค้นหาสถานศึกษา (pagination, กรองตามประเภท)", usedInPages: ["/register", "/intern-profile/edit"] },
+      { method: "POST", path: "/institution", purpose: "เพิ่มสถานศึกษาใหม่ (เมื่อค้นหาไม่พบ)", usedInPages: ["/register"] },
+      { method: "GET", path: "/faculty", purpose: "ดึงรายการคณะทั้งหมด กรองด้วย institutionId ได้", usedInPages: ["/register", "/intern-profile/edit"] },
+      { method: "GET", path: "/institution_ticket/{id}", purpose: "ดึงข้อมูลสถานศึกษาโดย ID", usedInPages: ["/intern-profile"] },
+    ],
+  },
+  {
+    file: "department.ts",
+    domain: "departmentApi — Departments / แผนก",
+    description: "ดึงข้อมูลแผนกภายในองค์กรสำหรับฟอร์มสร้าง/แก้ประกาศ",
+    types: ["Department", "DepartmentsResponse"],
+    functions: ["departmentApi.getDepartments()", "departmentApi.getDepartmentById()"],
+    notes: "ใช้ใน /owner/announcements/create และ dropdown filter ฝั่ง owner",
+    endpoints: [
+      { method: "GET", path: "/dept", purpose: "ดึงรายการแผนกทั้งหมด (pagination)", usedInPages: ["/owner/announcements/create", "/owner/announcements/[id]/edit", "/admin/dashboard"] },
+    ],
+  },
+  {
+    file: "doc-type.ts",
+    domain: "docTypeApi — Document Types / ประเภทเอกสาร",
+    description: "ดึงรายการประเภทเอกสารที่ระบบกำหนดให้นักศึกษาต้องส่ง",
+    types: ["DocType"],
+    functions: ["docTypeApi.getDocTypes()", "docTypeApi.getDocTypeById()"],
+    notes: "ใช้ตอน config เอกสารที่ต้องการในแต่ละตำแหน่ง — ดูแลง่าย ไม่มี mutation",
+    endpoints: [
+      { method: "GET", path: "/doc-types", purpose: "ดึงประเภทเอกสารทั้งหมด (transcript, resume, portfolio, request-letter)", usedInPages: ["/application-status", "/application-status/document-list"] },
+    ],
+  },
+  {
+    file: "owner-students.ts",
+    domain: "ownerStudentsApi — Owner Student Management",
+    description: "จัดการสถานะการฝึกงานของนักศึกษาที่ได้รับการตอบรับแล้ว",
+    types: ["EndInternshipStatus"],
+    functions: ["ownerStudentsApi.getStudents()", "ownerStudentsApi.endInternship()", "ownerStudentsApi.getEndInternshipStatus()"],
+    notes: "ใช้ใน /owner/dashboard — endpoint นี้เปลี่ยนสถานะสุดท้ายก่อนปิด cycle ฝึกงาน",
+    endpoints: [
+      { method: "PUT", path: "/owner/students/{studentUserId}/internship-status", purpose: "จบการฝึกงาน (COMPLETE) หรือยกเลิกกลางคัน (CANCEL)", usedInPages: ["/owner/dashboard/accepted/cancel/[id]"] },
+    ],
+  },
+  {
+    file: "role.ts",
+    domain: "roleApi — Roles / สิทธิ์ผู้ใช้",
+    description: "ดึงและจัดการ role ของผู้ใช้ในระบบ (admin เท่านั้น)",
+    types: ["Role"],
+    functions: ["roleApi.getRoles()", "roleApi.getRoleById()", "roleApi.assignRole()"],
+    notes: "role กำหนดสิทธิ์การเข้าถึง route และ API — ใช้ใน admin pages",
+    endpoints: [],
+  },
+  {
+    file: "staff-logs.ts",
+    domain: "staffLogsApi — Staff Logs / บันทึกกิจกรรม",
+    description: "บันทึกและดึง log การทำงานของพนักงาน (audit trail)",
+    types: ["StaffLog", "StaffLogsResponse"],
+    functions: ["staffLogsApi.getLogs()", "staffLogsApi.getLogsByStaff()", "staffLogsApi.getLogsByApplication()"],
+    notes: "read-only สำหรับ query — ใช้ใน /admin/logs และ dashboard การตรวจสอบ",
+    endpoints: [
+      { method: "POST", path: "/staff-logs", purpose: "บันทึก log กิจกรรมของพนักงาน", usedInPages: ["/owner/dashboard/[id]", "owner pages"] },
+      { method: "GET", path: "/staff-logs", purpose: "ดึง log กิจกรรม (pagination, filterable)", usedInPages: ["/admin/dashboard"] },
+    ],
+  },
 ];
 
 const sectionNavigation = [
-  { id: "section-1", label: "1) วิธีใช้เอกสารนี้" },
-  { id: "section-2", label: "2) Tech Stack" },
-  { id: "section-3", label: "3) Root Files" },
-  { id: "section-4", label: "4) App System Files" },
-  { id: "section-5", label: "5) Public Routes" },
-  { id: "section-6", label: "6) Auth Routes" },
-  { id: "section-7", label: "7) Intern Routes" },
-  { id: "section-8", label: "8) Admin Routes" },
-  { id: "section-9", label: "9) Owner Routes" },
-  { id: "section-10", label: "10) Components, Services, Types" },
-  { id: "section-11", label: "11) Playbook" },
-  { id: "section-12", label: "12) Release Checklist" },
+  { id: "section-2", label: "1) Tech Stack" },
+  { id: "section-3", label: "2) Root Files" },
+  { id: "section-4", label: "3) App System Files" },
+  { id: "section-5", label: "4) Public Routes" },
+  { id: "section-6", label: "5) Auth Routes" },
+  { id: "section-7", label: "6) Intern Routes" },
+  { id: "section-8", label: "7) Admin Routes" },
+  { id: "section-9", label: "8) Owner Routes" },
+  { id: "section-10", label: "9) Components, Services, Types" },
+  { id: "section-13", label: "10) API Reference ละเอียด" },
 ];
 
 const sectionCardClassName =
@@ -1134,6 +1280,96 @@ function TechStackRows({
             }`}
           >
             {item.maintenanceTips}
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function MethodBadge({
+  method,
+  isLight,
+}: {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  isLight: boolean;
+}) {
+  const lightColors: Record<string, string> = {
+    GET: "bg-sky-100 text-sky-700 border-sky-200",
+    POST: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    PUT: "bg-amber-100 text-amber-700 border-amber-200",
+    DELETE: "bg-red-100 text-red-700 border-red-200",
+  };
+  const darkColors: Record<string, string> = {
+    GET: "bg-sky-900/50 text-sky-300 border-sky-700/50",
+    POST: "bg-emerald-900/50 text-emerald-300 border-emerald-700/50",
+    PUT: "bg-amber-900/50 text-amber-300 border-amber-700/50",
+    DELETE: "bg-red-900/50 text-red-300 border-red-700/50",
+  };
+  return (
+    <span
+      className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? lightColors[method] : darkColors[method]}`}
+    >
+      {method}
+    </span>
+  );
+}
+
+function ApiEndpointRows({
+  items,
+  theme,
+}: {
+  items: ApiEndpointDoc[];
+  theme: ThemeMode;
+}) {
+  const isLight = theme === "light";
+  return (
+    <>
+      {items.map((item, index) => (
+        <tr
+          key={`${item.method}-${item.path}`}
+          className={`align-top transition-colors ${
+            isLight
+              ? index % 2 === 0
+                ? "bg-white"
+                : "bg-slate-50/70"
+              : index % 2 === 0
+                ? "bg-slate-900"
+                : "bg-slate-800/70"
+          } ${isLight ? "hover:bg-sky-50/60" : "hover:bg-slate-700/50"}`}
+        >
+          <td
+            className={`whitespace-nowrap border-b px-3 py-3 ${isLight ? "border-slate-100" : "border-slate-700"}`}
+          >
+            <MethodBadge method={item.method} isLight={isLight} />
+          </td>
+          <td
+            className={`whitespace-nowrap border-b px-3 py-3 font-mono text-xs ${isLight ? "border-slate-100 text-slate-800" : "border-slate-700 text-slate-200"}`}
+          >
+            {item.path}
+          </td>
+          <td
+            className={`border-b px-3 py-3 text-sm ${isLight ? "border-slate-100 text-slate-700" : "border-slate-700 text-slate-300"}`}
+          >
+            {item.purpose}
+          </td>
+          <td
+            className={`border-b px-3 py-3 ${isLight ? "border-slate-100" : "border-slate-700"}`}
+          >
+            <div className="flex flex-wrap gap-1">
+              {item.usedInPages.map((page) => (
+                <span
+                  key={`${item.method}-${item.path}-${page}`}
+                  className={`rounded-full border px-2 py-0.5 font-mono text-xs ${
+                    isLight
+                      ? "border-slate-300 bg-white text-slate-600"
+                      : "border-slate-600 bg-slate-900 text-slate-400"
+                  }`}
+                >
+                  {page}
+                </span>
+              ))}
+            </div>
           </td>
         </tr>
       ))}
@@ -1419,38 +1655,9 @@ export default function FrontendMainMaintenanceDocPage() {
               ))}
             </div>
 
-            <section id="section-1" className={sectionCardClass}>
-              <SectionTitle theme={theme}>
-                1) วิธีใช้เอกสารนี้ (สำหรับคนที่เพิ่งเข้ามาดูแล)
-              </SectionTitle>
-              <ol
-                className={`mt-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed ${
-                  isLight ? "text-slate-700" : "text-slate-300"
-                }`}
-              >
-                {quickStartSteps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-              <div
-                className={`mt-5 rounded-xl border p-4 text-sm ${
-                  isLight
-                    ? "border-sky-200 bg-sky-50 text-sky-900"
-                    : "border-sky-900/50 bg-sky-950/40 text-sky-200"
-                }`}
-              >
-                <p className="font-semibold">ภาพรวมลำดับการทำงานของระบบ</p>
-                <p className="mt-1">
-                  Browser Request -&gt; proxy.ts (ตรวจสิทธิ์/redirect) -&gt; app
-                  route page -&gt; services/api.ts -&gt; /api rewrite ใน
-                  next.config.ts -&gt; backend-main
-                </p>
-              </div>
-            </section>
-
             <section id="section-2" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                2) Tech Stack ของโปรเจกต์
+                1) Tech Stack ของโปรเจกต์
               </SectionTitle>
               <p
                 className={`mt-2 text-sm ${
@@ -1476,7 +1683,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-3" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                3) Root Files (อธิบายทีละไฟล์)
+                2) Root Files (อธิบายทีละไฟล์)
               </SectionTitle>
               <p
                 className={`mt-2 text-sm ${
@@ -1496,7 +1703,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-4" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                4) App System Files (ไม่ใช่ route แต่สำคัญ)
+                3) App System Files (ไม่ใช่ route แต่สำคัญ)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1508,7 +1715,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-5" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                5) Public Routes (ไฟล์ต่อไฟล์)
+                4) Public Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1520,7 +1727,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-6" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                6) Auth Routes (ไฟล์ต่อไฟล์)
+                5) Auth Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1532,7 +1739,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-7" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                7) Intern Routes (ไฟล์ต่อไฟล์)
+                6) Intern Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1544,7 +1751,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-8" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                8) Admin Routes (ไฟล์ต่อไฟล์)
+                7) Admin Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1556,7 +1763,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-9" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                9) Owner Routes (ไฟล์ต่อไฟล์)
+                8) Owner Routes (ไฟล์ต่อไฟล์)
               </SectionTitle>
               <DocTable
                 theme={theme}
@@ -1568,7 +1775,7 @@ export default function FrontendMainMaintenanceDocPage() {
 
             <section id="section-10" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                10) Components, Services และ Types (รายไฟล์)
+                9) Components, Services และ Types (รายไฟล์)
               </SectionTitle>
 
               <h3
@@ -1576,7 +1783,7 @@ export default function FrontendMainMaintenanceDocPage() {
                   isLight ? "text-slate-900" : "text-slate-100"
                 }`}
               >
-                10.1 Components
+                9.1 Components
               </h3>
               <DocTable
                 theme={theme}
@@ -1590,7 +1797,7 @@ export default function FrontendMainMaintenanceDocPage() {
                   isLight ? "text-slate-900" : "text-slate-100"
                 }`}
               >
-                10.2 Services และ Types
+                9.2 Services และ Types
               </h3>
               <DocTable
                 theme={theme}
@@ -1604,7 +1811,7 @@ export default function FrontendMainMaintenanceDocPage() {
                   isLight ? "text-slate-900" : "text-slate-100"
                 }`}
               >
-                10.3 API Domains ใน services/api.ts
+                9.3 API Domains ใน services/api/*.ts
               </h3>
               <DocTable
                 theme={theme}
@@ -1612,116 +1819,92 @@ export default function FrontendMainMaintenanceDocPage() {
               >
                 <FileRows items={apiDomains} theme={theme} />
               </DocTable>
+
             </section>
 
-            <section id="section-11" className={sectionCardClass}>
+            
+
+            <section id="section-13" className={sectionCardClass}>
               <SectionTitle theme={theme}>
-                11) Playbook แก้ปัญหา (อาการ -&gt; ไฟล์ -&gt; ขั้นตอน)
+                10) API Reference — services/api/ (ทุก module)
               </SectionTitle>
+              <p className={`mt-2 text-sm ${isLight ? "text-slate-600" : "text-slate-300"}`}>
+                แต่ละ card = 1 ไฟล์ใน <code className={`font-mono text-xs px-1 py-0.5 rounded ${isLight ? "bg-slate-200 text-slate-700" : "bg-slate-700 text-slate-300"}`}>services/api/</code> แสดง types, functions ที่ export และทุก endpoint พร้อมหน้าที่เชื่อม — สีบอก HTTP method:{" "}
+                <span className="inline-flex flex-wrap gap-1.5 align-middle">
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-sky-200 bg-sky-100 text-sky-700" : "border-sky-700/50 bg-sky-900/50 text-sky-300"}`}>GET</span>
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-emerald-200 bg-emerald-100 text-emerald-700" : "border-emerald-700/50 bg-emerald-900/50 text-emerald-300"}`}>POST</span>
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-amber-200 bg-amber-100 text-amber-700" : "border-amber-700/50 bg-amber-900/50 text-amber-300"}`}>PUT</span>
+                  <span className={`rounded border px-2 py-0.5 font-mono text-xs font-bold ${isLight ? "border-red-200 bg-red-100 text-red-700" : "border-red-700/50 bg-red-900/50 text-red-300"}`}>DELETE</span>
+                </span>
+              </p>
 
-              <div className="mt-5 grid gap-4">
-                {scenarios.map((scenario) => (
-                  <article
-                    key={scenario.topic}
-                    className={`rounded-xl border p-4 shadow-sm ${
-                      isLight
-                        ? "border-slate-200 bg-slate-50 shadow-slate-200/60"
-                        : "border-slate-700 bg-slate-800/50 shadow-black/20"
-                    }`}
+              <div className="mt-6 space-y-6">
+                {apiModuleDocs.map((mod) => (
+                  <div
+                    key={mod.file}
+                    className={`rounded-xl border ${isLight ? "border-slate-200 bg-slate-50" : "border-slate-700 bg-slate-800/50"}`}
                   >
-                    <h3
-                      className={`text-base font-bold ${
-                        isLight ? "text-slate-900" : "text-slate-100"
-                      }`}
-                    >
-                      {scenario.topic}
-                    </h3>
-                    <p
-                      className={`mt-1 text-sm ${
-                        isLight ? "text-slate-700" : "text-slate-300"
-                      }`}
-                    >
-                      <span
-                        className={`font-semibold ${
-                          isLight ? "text-slate-900" : "text-slate-100"
-                        }`}
-                      >
-                        อาการ:
-                      </span>{" "}
-                      {scenario.symptoms}
-                    </p>
-
-                    <p
-                      className={`mt-3 text-sm font-semibold ${
-                        isLight ? "text-slate-900" : "text-slate-100"
-                      }`}
-                    >
-                      ไฟล์ที่ควรเช็กก่อน
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {scenario.files.map((file) => (
-                        <span
-                          key={`${scenario.topic}-${file}`}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                            isLight
-                              ? "border-slate-300 bg-white text-slate-700"
-                              : "border-slate-600 bg-slate-900 text-slate-300"
-                          }`}
-                        >
-                          {file}
-                        </span>
-                      ))}
+                    {/* Card header */}
+                    <div className={`flex flex-wrap items-baseline gap-3 px-5 py-4 border-b ${isLight ? "border-slate-200" : "border-slate-700"}`}>
+                      <code className={`text-sm font-mono font-bold px-2 py-0.5 rounded ${isLight ? "bg-slate-800 text-slate-100" : "bg-slate-950 text-slate-200"}`}>
+                        {mod.file}
+                      </code>
+                      <span className={`text-base font-semibold ${isLight ? "text-slate-900" : "text-slate-100"}`}>
+                        {mod.domain}
+                      </span>
+                      <span className={`text-sm ${isLight ? "text-slate-500" : "text-slate-400"}`}>
+                        — {mod.description}
+                      </span>
                     </div>
 
-                    <ol
-                      className={`mt-3 list-decimal space-y-1 pl-5 text-sm ${
-                        isLight ? "text-slate-700" : "text-slate-300"
-                      }`}
-                    >
-                      {scenario.steps.map((step) => (
-                        <li key={`${scenario.topic}-${step}`}>{step}</li>
-                      ))}
-                    </ol>
-                  </article>
-                ))}
-              </div>
-            </section>
+                    {/* Types & Functions */}
+                    <div className={`grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2 border-b ${isLight ? "border-slate-200" : "border-slate-700"}`}>
+                      <div>
+                        <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${isLight ? "text-slate-500" : "text-slate-400"}`}>Types ที่ export</p>
+                        {mod.types.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {mod.types.map((t: string) => (
+                              <code key={t} className={`text-xs font-mono px-2 py-0.5 rounded ${isLight ? "bg-violet-100 text-violet-800" : "bg-violet-900/40 text-violet-300"}`}>
+                                {t}
+                              </code>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className={`text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>— (infrastructure only)</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${isLight ? "text-slate-500" : "text-slate-400"}`}>Functions ที่ export</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {mod.functions.map((fn: string) => (
+                            <code key={fn} className={`text-xs font-mono px-2 py-0.5 rounded ${isLight ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-emerald-900/30 text-emerald-300 border border-emerald-800/40"}`}>
+                              {fn}
+                            </code>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
-            <section id="section-12" className={sectionCardClass}>
-              <SectionTitle theme={theme}>
-                12) Release Checklist (ก่อน merge/deploy)
-              </SectionTitle>
-              <ul
-                className={`mt-4 space-y-2 text-sm ${
-                  isLight ? "text-slate-700" : "text-slate-300"
-                }`}
-              >
-                {releaseChecklist.map((item) => (
-                  <li
-                    key={item}
-                    className={`rounded-lg border px-3 py-2 transition-colors ${
-                      isLight
-                        ? "border-slate-200 bg-slate-50 hover:bg-sky-50/70"
-                        : "border-slate-700 bg-slate-800/60 hover:bg-slate-700/60"
-                    }`}
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
+                    {/* Endpoints */}
+                    {mod.endpoints.length > 0 ? (
+                      <div className="px-5 py-4">
+                        <p className={`mb-3 text-xs font-semibold uppercase tracking-wide ${isLight ? "text-slate-500" : "text-slate-400"}`}>Endpoints</p>
+                        <DocTable theme={theme} headers={["Method", "Path", "คำอธิบาย", "หน้าที่เชื่อม"]}>
+                          <ApiEndpointRows items={mod.endpoints} theme={theme} />
+                        </DocTable>
+                      </div>
+                    ) : (
+                      <div className={`px-5 py-3 text-xs ${isLight ? "text-slate-400" : "text-slate-500"}`}>
+                        ไฟล์นี้เป็น infrastructure — ไม่มี endpoint ตรง ๆ (ใช้ผ่าน domain files อื่น)
+                      </div>
+                    )}
 
-              <div
-                className={`mt-5 rounded-xl border p-4 ${
-                  isLight
-                    ? "border-slate-200 bg-slate-900 text-slate-100"
-                    : "border-slate-600 bg-slate-950 text-slate-100"
-                }`}
-              >
-                <p className="mb-2 text-sm font-semibold">
-                  คำสั่งแนะนำก่อนส่งงาน
-                </p>
-                <pre className="overflow-x-auto text-xs md:text-sm">{`pnpm lint
-pnpm build`}</pre>
+                    {/* Notes */}
+                    <div className={`px-5 py-3 rounded-b-xl text-xs border-t ${isLight ? "border-slate-200 bg-amber-50 text-amber-800" : "border-slate-700 bg-amber-900/20 text-amber-300"}`}>
+                      <span className="font-semibold">หมายเหตุ: </span>{mod.notes}
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
           </div>

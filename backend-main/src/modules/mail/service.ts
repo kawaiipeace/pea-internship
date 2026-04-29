@@ -8,6 +8,37 @@ if (!rawAppUrl) {
 
 const APP_URL = `${rawAppUrl.replace(/\/+$/, "")}/`;
 
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === "true",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+export async function sendResetPasswordCodeEmail(
+  to: string,
+  code: string
+) {
+  const html = `
+    <div style="font-family: Arial, sans-serif;">
+      <h2>Reset Password</h2>
+      <p>รหัสสำหรับรีเซ็ตรหัสผ่านของคุณคือ:</p>
+      <h1 style="letter-spacing: 4px;">${code}</h1>
+      <p>รหัสนี้จะหมดอายุภายใน 10 นาที</p>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    to,
+    subject: "Reset Password Code",
+    html,
+  });
+}
+
 const ACCEPT_TEMPLATE = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="th">

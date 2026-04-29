@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import { AnnouncementStats } from "@/types/announcement";
 import {
@@ -11,7 +10,6 @@ import {
   Position,
   userApi,
   applicationApi,
-  UserFullProfileResponse,
 } from "@/services/api";
 
 // Helper function to format date in Thai
@@ -84,10 +82,6 @@ export default function AnnouncementsPage() {
     Record<number, { total: number; accepted: number }>
   >({});
 
-  // Current user profile for announcer display
-  const [ownerProfile, setOwnerProfile] =
-    useState<UserFullProfileResponse | null>(null);
-
   const itemsPerPage = 10;
 
   // Load data from API - filter by user's department
@@ -100,7 +94,6 @@ export default function AnnouncementsPage() {
         // ดึงข้อมูล user profile ก่อนเพื่อรู้ departmentId
         const userProfile = await userApi.getUserProfile();
         const departmentId = userProfile?.departmentId;
-        setOwnerProfile(userProfile);
 
         console.log("User departmentId:", departmentId);
 
@@ -358,7 +351,7 @@ export default function AnnouncementsPage() {
     const pages = [];
     const maxVisiblePages = 10;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
@@ -428,7 +421,6 @@ export default function AnnouncementsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div
           className="flex items-center justify-center"
           style={{ minHeight: "calc(100vh - 5rem)" }}
@@ -441,7 +433,6 @@ export default function AnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <OwnerNavbar />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-42">
@@ -1237,20 +1228,9 @@ export default function AnnouncementsPage() {
 
               <hr className="border-gray-200" />
 
-              {/* รายละเอียดผู้ประกาศรับสมัคร */}
+              {/* รายละเอียดผู้ประกาศรับสมัคร — ดึงจาก FK internship_positions.position_owner */}
               {(() => {
-                // ใช้ข้อมูล current user (ownerProfile) เป็นผู้ประกาศ เพราะ owners[] อาจเรียงลำดับไม่ถูกต้อง
-                const ownerData = ownerProfile
-                  ? {
-                      fname: ownerProfile.fname,
-                      lname: ownerProfile.lname,
-                      email: ownerProfile.email,
-                      phoneNumber: ownerProfile.phoneNumber,
-                    }
-                  : previewPosition.owner ||
-                    (previewPosition.owners && previewPosition.owners.length > 0
-                      ? previewPosition.owners[0]
-                      : null);
+                const ownerData = previewPosition.positionOwner || null;
                 if (!ownerData) return null;
                 return (
                   <>

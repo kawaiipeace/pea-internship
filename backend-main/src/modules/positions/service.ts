@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, or, isNull, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { BadRequestError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -7,8 +7,10 @@ import {
   departments,
   internshipPositionMentors,
   internshipPositions,
+  notifications,
   offices,
   staffProfiles,
+  studentProfiles,
   users,
 } from "@/db/schema";
 import { StaffLogsService } from "@/modules/staff-logs/service";
@@ -27,13 +29,6 @@ type PositionWithMentors = typeof internshipPositions.$inferSelect & {
   mentors: MentorDTO[];
 };
 
-type OwnerDTO = {
-  fname: string | null;
-  lname: string | null;
-  email: string | null;
-  phoneNumber: string | null;
-};
-
 type DepartmentDTO = {
   id: number;
   deptSap: number;
@@ -49,8 +44,16 @@ type OfficeDTO = {
   shortName: string;
 };
 
-type EnrichedPosition = PositionWithMentors & {
-  owners: OwnerDTO[];
+type PositionOwnerDTO = {
+  id: string;
+  fname: string | null;
+  lname: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+};
+
+type EnrichedPosition = Omit<PositionWithMentors, "positionOwner"> & {
+  positionOwner: PositionOwnerDTO | null;
   department: DepartmentDTO | null;
   office: OfficeDTO | null;
 };
@@ -83,9 +86,6 @@ export class PositionService {
     if (!user) throw new ForbiddenError("ไม่พบผู้ใช้งานในระบบ");
   }
 
-  /**
-   * ผู้ใช้ต้องมี department_id
-   */
   private async getUserDepartmentAndOffice(userId: string): Promise<{
     departmentId: number;
     officeId: number;
@@ -110,11 +110,39 @@ export class PositionService {
     return { departmentId: row.departmentId, officeId: row.officeId };
   }
 
-  /**
-   * GET /position
-   * filter ได้ด้วย search, department, office
-   * แสดง mentor
-   */
+  private async assertAssignablePositionOwner(
+    tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+    positionOwnerUserId: string,
+    positionDepartmentId: number
+  ) {
+    const [targetUser] = await tx
+      .select({
+        id: users.id,
+        roleId: users.roleId,
+        departmentId: users.departmentId,
+      })
+      .from(users)
+      .where(eq(users.id, positionOwnerUserId));
+
+    if (!targetUser) {
+      throw new NotFoundError("ไม่พบผู้ใช้งานที่จะตั้งเป็น position owner");
+    }
+
+    if (targetUser.departmentId === null) {
+      throw new BadRequestError(
+        "ผู้ใช้งานที่จะตั้งเป็น position owner ยังไม่มี department"
+      );
+    }
+
+    if (targetUser.departmentId !== positionDepartmentId) {
+      throw new ForbiddenError("position owner ต้องอยู่กองเดียวกับใบประกาศ");
+    }
+
+    if (![1, 2].includes(targetUser.roleId)) {
+      throw new ForbiddenError("position owner ต้องมี role เป็น ADMIN หรือ OWNER");
+    }
+  }
+
   async findAll(query: model.GetPositionsQueryType) {
     const {
       page = 1,
@@ -125,7 +153,9 @@ export class PositionService {
     } = query as model.GetPositionsQueryType & { office?: number };
 
     const offset = (page - 1) * limit;
-    const filters: SQL[] = [];
+    const filters: SQL[] = [
+      isNull(internshipPositions.deletedAt),
+    ];
 
     if (department !== undefined) {
       filters.push(eq(internshipPositions.departmentId, department));
@@ -199,25 +229,38 @@ export class PositionService {
 
     const departmentIds = [...new Set(positions.map((p) => p.departmentId))];
     const officeIds = [...new Set(positions.map((p) => p.officeId))];
+    const positionOwnerIds = [
+      ...new Set(
+        positions
+          .map((p) => p.positionOwner)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
 
-    const owners =
-      departmentIds.length > 0
+    const ownerRows =
+      positionOwnerIds.length > 0
         ? await db
             .select({
-              departmentId: users.departmentId,
+              id: users.id,
               fname: users.fname,
               lname: users.lname,
               email: users.email,
               phoneNumber: users.phoneNumber,
             })
             .from(users)
-            .where(
-              and(
-                or(eq(users.roleId, 1), eq(users.roleId, 2)),
-                or(...departmentIds.map((dId) => eq(users.departmentId, dId)))
-              )
-            )
+            .where(or(...positionOwnerIds.map((id) => eq(users.id, id))))
         : [];
+
+    const ownerMap = new Map<string, PositionOwnerDTO>();
+    for (const owner of ownerRows) {
+      ownerMap.set(owner.id, {
+        id: owner.id,
+        fname: owner.fname ?? null,
+        lname: owner.lname ?? null,
+        email: owner.email ?? null,
+        phoneNumber: owner.phoneNumber ?? null,
+      });
+    }
 
     const departmentData =
       departmentIds.length > 0
@@ -248,28 +291,15 @@ export class PositionService {
             .where(or(...officeIds.map((oId) => eq(offices.id, oId))))
         : [];
 
-    const ownersByDept = new Map<number, OwnerDTO[]>();
-    for (const o of owners) {
-      const deptId = o.departmentId;
-      if (deptId === null) continue;
-
-      const list = ownersByDept.get(deptId) ?? [];
-      list.push({
-        fname: o.fname ?? null,
-        lname: o.lname ?? null,
-        email: o.email ?? null,
-        phoneNumber: o.phoneNumber ?? null,
-      });
-      ownersByDept.set(deptId, list);
-    }
-
     const enriched: EnrichedPosition[] = positions.map((position) => {
       const dept = departmentData.find((d) => d.id === position.departmentId);
       const off = officeData.find((o) => o.id === position.officeId);
 
       return {
         ...position,
-        owners: ownersByDept.get(position.departmentId) ?? [],
+        positionOwner: position.positionOwner
+          ? (ownerMap.get(position.positionOwner) ?? null)
+          : null,
         department: dept
           ? {
               id: dept.id,
@@ -305,11 +335,6 @@ export class PositionService {
     };
   }
 
-  /**
-   * POST /position
-   * ผูก departmentId + officeId จาก user
-   * ผูก mentor
-   */
   async create(userId: string, data: model.CreatePositionBodyType) {
     await this.assertUserExists(userId);
     const { departmentId, officeId } =
@@ -330,6 +355,7 @@ export class PositionService {
         .values({
           departmentId,
           officeId,
+          positionOwner: userId,
 
           name: data.name,
           location: data.location ?? null,
@@ -364,17 +390,13 @@ export class PositionService {
       await staffLogsService.log(
         tx,
         userId,
-        `CREATE_POSITION positionId=${position.id}`
+        `CREATE_POSITION positionId=${position.id} positionOwner=${userId}`
       );
 
       return position;
     });
   }
 
-  /**
-   * PUT /position/:id
-   * แก้ได้เฉพาะ position ใน department ของตัวเอง
-   */
   async update(userId: string, id: number, data: model.UpdatePositionBodyType) {
     await this.assertUserExists(userId);
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
@@ -388,13 +410,33 @@ export class PositionService {
           recruitEnd: internshipPositions.recruitEnd,
           recruitmentStatus: internshipPositions.recruitmentStatus,
           acceptedCount: internshipPositions.acceptedCount,
+          positionOwner: internshipPositions.positionOwner,
         })
         .from(internshipPositions)
-        .where(eq(internshipPositions.id, id));
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            isNull(internshipPositions.deletedAt)
+          )
+        );
 
       if (!existing) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
       if (existing.departmentId !== departmentId) {
         throw new ForbiddenError("ไม่มีสิทธิ์แก้ไขใบประกาศของกองอื่น");
+      }
+
+      if ("positionOwner" in data && data.positionOwner !== undefined) {
+        if (data.positionOwner === null || data.positionOwner === "") {
+          throw new BadRequestError(
+            "ไม่อนุญาตให้ล้าง position owner ผ่าน endpoint นี้"
+          );
+        }
+
+        await this.assertAssignablePositionOwner(
+          tx,
+          data.positionOwner,
+          existing.departmentId
+        );
       }
 
       if ("positionCount" in data) {
@@ -451,8 +493,9 @@ export class PositionService {
 
       if ("name" in data) updateData.name = data.name;
       if ("location" in data) updateData.location = data.location;
-      if ("positionCount" in data)
+      if ("positionCount" in data) {
         updateData.positionCount = data.positionCount;
+      }
       if ("major" in data) updateData.major = data.major;
 
       if ("recruitStart" in data) updateData.recruitStart = data.recruitStart;
@@ -468,13 +511,18 @@ export class PositionService {
       if ("requirement" in data) updateData.requirement = data.requirement;
       if ("benefits" in data) updateData.benefits = data.benefits;
 
+      if ("positionOwner" in data && data.positionOwner !== undefined) {
+        updateData.positionOwner = data.positionOwner;
+      }
+
       const [updated] = await tx
         .update(internshipPositions)
         .set(updateData)
         .where(
           and(
             eq(internshipPositions.id, id),
-            eq(internshipPositions.departmentId, departmentId)
+            eq(internshipPositions.departmentId, departmentId),
+            isNull(internshipPositions.deletedAt)
           )
         )
         .returning();
@@ -499,16 +547,17 @@ export class PositionService {
       await staffLogsService.log(
         tx,
         userId,
-        `UPDATE_POSITION positionId=${updated.id}`
+        `UPDATE_POSITION positionId=${updated.id}${
+          "positionOwner" in data && data.positionOwner !== undefined
+            ? ` positionOwner=${data.positionOwner}`
+            : ""
+        }`
       );
 
       return updated;
     });
   }
 
-  /**
-   * DELETE /position/:id
-   */
   async delete(userId: string, id: number) {
     await this.assertUserExists(userId);
     const { departmentId } = await this.getUserDepartmentAndOffice(userId);
@@ -518,38 +567,89 @@ export class PositionService {
         .select({
           id: internshipPositions.id,
           departmentId: internshipPositions.departmentId,
+          acceptedCount: internshipPositions.acceptedCount,
         })
         .from(internshipPositions)
-        .where(eq(internshipPositions.id, id));
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            isNull(internshipPositions.deletedAt)
+          )
+        );
 
       if (!pos) throw new NotFoundError(`ไม่พบใบประกาศรหัส ${id}`);
+
       if (pos.departmentId !== departmentId) {
         throw new ForbiddenError("ไม่มีสิทธิ์ลบใบประกาศของกองอื่น");
       }
 
-      const [hasApplication] = await tx
-        .select({ id: applicationStatuses.id })
-        .from(applicationStatuses)
-        .where(eq(applicationStatuses.positionId, id))
-        .limit(1);
-
-      if (hasApplication) {
+      if ((pos.acceptedCount ?? 0) > 0) {
         throw new BadRequestError(
-          "เนื่องจากประกาศนี้มีผู้สมัครอยู่ในระบบแล้วจึงไม่สามารถลบประกาศนี้ได้"
+          "ไม่สามารถลบประกาศได้ เนื่องจากมีผู้ได้รับคัดเลือกแล้ว"
         );
       }
 
       await tx
-        .delete(internshipPositions)
-        .where(eq(internshipPositions.id, id));
+        .update(internshipPositions)
+        .set({
+          deletedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(internshipPositions.id, id),
+            isNull(internshipPositions.deletedAt)
+          )
+        );
+
+      const affectedApplications = await tx
+        .select({
+          userId: applicationStatuses.userId,
+        })
+        .from(applicationStatuses)
+        .where(eq(applicationStatuses.positionId, id));
+
+      await tx
+        .update(applicationStatuses)
+        .set({
+          applicationStatus: "ABORT",
+          isActive: false,
+          statusNote: "ใบประกาศฝึกงานถูกลบโดยเจ้าหน้าที่",
+          updatedAt: new Date(),
+        })
+        .where(eq(applicationStatuses.positionId, id));
+
+      if (affectedApplications.length > 0) {
+        const userIds = affectedApplications.map((a) => a.userId);
+
+        await tx
+          .update(studentProfiles)
+          .set({
+            internshipStatus: "IDLE",
+          })
+          .where(or(...userIds.map((uid) => eq(studentProfiles.userId, uid))));
+
+        await tx.insert(notifications).values(
+          userIds.map((uid) => ({
+            userId: uid,
+            title: "ใบสมัครถูกยกเลิก",
+            message:
+              "ใบสมัครของคุณถูกยกเลิก เนื่องจากใบประกาศฝึกงานนี้ถูกลบโดยเจ้าหน้าที่",
+          }))
+        );
+      }
 
       await staffLogsService.log(
         tx,
         userId,
-        `DELETE_POSITION positionId=${id}`
+        `SOFT_DELETE_POSITION positionId=${id} AND_ABORT_APPLICATIONS`
       );
 
-      return { success: true, message: "ลบใบประกาศเรียบร้อยแล้ว" };
+      return {
+        success: true,
+        message:
+          "ลบใบประกาศเรียบร้อยแล้ว และเปลี่ยนสถานะใบสมัครเป็น ABORT",
+      };
     });
   }
 }

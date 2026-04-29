@@ -282,10 +282,7 @@ export default function NavbarIntern({
       ) {
         setIsNotificationOpen(false);
       }
-      if (
-        helpRef.current &&
-        !helpRef.current.contains(event.target as Node)
-      ) {
+      if (helpRef.current && !helpRef.current.contains(event.target as Node)) {
         setIsHelpOpen(false);
       }
     };
@@ -331,7 +328,8 @@ export default function NavbarIntern({
             {/* Navigation Links */}
             <div className="hidden md:flex items-center gap-8 mr-4">
               {/* iTT link — shown only while waiting to start or actively interning */}
-              {(internshipStatus === "AWAITING" || internshipStatus === "ACTIVE") && (
+              {(internshipStatus === "AWAITING" ||
+                internshipStatus === "ACTIVE") && (
                 <Link
                   href="/itt"
                   className={`font-medium transition-colors ${
@@ -381,14 +379,25 @@ export default function NavbarIntern({
                 <button
                   onClick={() => setIsHelpOpen((v) => !v)}
                   className={`flex items-center gap-1 font-medium transition-colors ${
-                    ["/faqs"].includes(pathname) || pathname.startsWith("/guide")
+                    ["/faqs"].includes(pathname) ||
+                    pathname.startsWith("/guide")
                       ? "text-primary-600"
                       : "text-gray-600 hover:text-primary-600"
                   }`}
                 >
                   ช่วยเหลือ
-                  <svg className={`w-4 h-4 transition-transform ${isHelpOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className={`w-4 h-4 transition-transform ${isHelpOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
                 {isHelpOpen && (
@@ -398,8 +407,18 @@ export default function NavbarIntern({
                       onClick={() => setIsHelpOpen(false)}
                       className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname.startsWith("/guide") ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                        />
                       </svg>
                       คู่มือการใช้งาน
                     </Link>
@@ -408,8 +427,18 @@ export default function NavbarIntern({
                       onClick={() => setIsHelpOpen(false)}
                       className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname === "/faqs" ? "text-primary-600 font-medium bg-primary-50" : "text-gray-700"}`}
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       FAQs
                     </Link>
@@ -489,7 +518,21 @@ export default function NavbarIntern({
                           onClick={() => {
                             markAsRead(notification.id);
                             setIsNotificationOpen(false);
-                            router.push("/application-status");
+                            setIsMobileNotificationOpen(false);
+                            if (
+                              notification.title === "การฝึกงานถูกยกเลิก" ||
+                              (notification.title === "ผลการสมัครฝึกงาน" &&
+                                notification.message.includes(
+                                  "ถูกยกเลิกโดยกองงาน",
+                                )) ||
+                              notification.message.includes(
+                                "ตำแหน่งนี้มีผู้ได้รับคัดเลือกครบจำนวนแล้ว",
+                              )
+                            ) {
+                              router.push("/application-history");
+                            } else {
+                              router.push("/application-status");
+                            }
                           }}
                           className={`relative px-4 py-3 pr-14 hover:bg-primary-50 cursor-pointer ${!notification.isRead ? "bg-primary-50/50" : ""}`}
                         >
@@ -720,7 +763,9 @@ export default function NavbarIntern({
                         d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                       />
                     </svg>
-                    <span className="transition-colors">แจ้งปัญหาการใช้งาน</span>
+                    <span className="transition-colors">
+                      แจ้งปัญหาการใช้งาน
+                    </span>
                   </a>
 
                   <hr className="my-2 border-gray-100" />
@@ -822,7 +867,8 @@ export default function NavbarIntern({
             {/* Menu Items */}
             <nav className="flex-1 py-4">
               {/* iTT link in mobile sidebar */}
-              {(internshipStatus === "AWAITING" || internshipStatus === "ACTIVE") && (
+              {(internshipStatus === "AWAITING" ||
+                internshipStatus === "ACTIVE") && (
                 <Link
                   href="/itt"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -832,8 +878,18 @@ export default function NavbarIntern({
                       : "text-gray-700 hover:bg-primary-50 active:bg-primary-100 active:text-primary-600"
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   iTT
                 </Link>
@@ -1351,7 +1407,15 @@ export default function NavbarIntern({
                     onClick={() => {
                       markAsRead(notification.id);
                       setIsMobileNotificationOpen(false);
-                      router.push("/application-status");
+                      if (
+                        notification.title === "การฝึกงานถูกยกเลิก" ||
+                        (notification.title === "ผลการสมัครฝึกงาน" &&
+                          notification.message.includes("ถูกยกเลิกโดยกองงาน"))
+                      ) {
+                        router.push("/application-history");
+                      } else {
+                        router.push("/application-status");
+                      }
                     }}
                     className={`relative rounded-lg px-4 py-3 pr-14 cursor-pointer transition-colors ${!notification.isRead ? "bg-primary-100 hover:bg-primary-150" : "bg-primary-50 hover:bg-primary-100"}`}
                   >

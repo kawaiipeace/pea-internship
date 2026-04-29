@@ -12,7 +12,6 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import VideoLoading from "@/components/ui/VideoLoading";
 import {
   type Application,
@@ -1145,11 +1144,7 @@ function ApplicationsContent() {
         const buddhistYear = now.getFullYear() + 543;
         const rejectedDate = `${buddhistYear}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
         // Use the position owner name (logged-in user who performed the action)
-        const ownerData =
-          positionInfo?.owner ||
-          (positionInfo?.owners && positionInfo.owners.length > 0
-            ? positionInfo.owners[0]
-            : null);
+        const ownerData = positionInfo?.positionOwner || null;
         const ownerName = ownerData
           ? `${ownerData.fname || ""} ${ownerData.lname || ""}`.trim()
           : "เจ้าของหน่วยงาน";
@@ -1833,11 +1828,7 @@ function ApplicationsContent() {
                   <p className="text-gray-500 text-xs">ผู้ดำเนินการ:</p>
                   <p className="text-gray-900 text-sm">
                     {(() => {
-                      const od =
-                        positionInfo?.owner ||
-                        (positionInfo?.owners && positionInfo.owners.length > 0
-                          ? positionInfo.owners[0]
-                          : null);
+                      const od = positionInfo?.positionOwner || null;
                       const ownerName = od
                         ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
                         : "-";
@@ -1981,12 +1972,7 @@ function ApplicationsContent() {
                       <>
                         <p className="font-bold text-gray-900">ยกเลิกฝึกงาน</p>
                         {(() => {
-                          const od =
-                            positionInfo?.owner ||
-                            (positionInfo?.owners &&
-                            positionInfo.owners.length > 0
-                              ? positionInfo.owners[0]
-                              : null);
+                          const od = positionInfo?.positionOwner || null;
                           const ownerName = od
                             ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
                             : null;
@@ -2427,11 +2413,7 @@ function ApplicationsContent() {
             const rejectData = rejectedAppsData.find(
               (a) => a.id === selectedApplication.id,
             );
-            const od =
-              positionInfo?.owner ||
-              (positionInfo?.owners && positionInfo.owners.length > 0
-                ? positionInfo.owners[0]
-                : null);
+            const od = positionInfo?.positionOwner || null;
             const ownerName = od
               ? `${od.fname || ""} ${od.lname || ""}`.trim() || "-"
               : "-";
@@ -2530,7 +2512,7 @@ function ApplicationsContent() {
                 "รอผู้สมัครยื่นเอกสารขอความอนุเคราะห์",
                 "รอ HR ตรวจสอบ",
               ];
-              let currentStepIndex = Math.min(completedSteps, totalSteps - 1);
+              const currentStepIndex = Math.min(completedSteps, totalSteps - 1);
               const nextStepLabel =
                 currentStepIndex + 1 < totalSteps
                   ? currentStepLabel[currentStepIndex + 1]
@@ -3386,12 +3368,7 @@ function ApplicationsContent() {
                       <>
                         <p className="font-bold text-gray-900">ยกเลิกฝึกงาน</p>
                         {(() => {
-                          const od =
-                            positionInfo?.owner ||
-                            (positionInfo?.owners &&
-                            positionInfo.owners.length > 0
-                              ? positionInfo.owners[0]
-                              : null);
+                          const od = positionInfo?.positionOwner || null;
                           const ownerName = od
                             ? `พนักงาน : ${od.fname || ""} ${od.lname || ""}`.trim()
                             : null;
@@ -5179,7 +5156,6 @@ function ApplicationsContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div
           className="flex items-center justify-center"
           style={{ minHeight: "calc(100vh - 5rem)" }}
@@ -5193,7 +5169,6 @@ function ApplicationsContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
-      <OwnerNavbar />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

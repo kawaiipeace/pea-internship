@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 import {
   Application,
   fetchAllApplications,
@@ -624,7 +623,6 @@ function ApplicationDetailContent() {
   if (!application) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <OwnerNavbar />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <p>ไม่พบข้อมูลใบสมัคร</p>
         </div>
@@ -871,7 +869,6 @@ function ApplicationDetailContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <OwnerNavbar />
 
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -1353,12 +1350,7 @@ function ApplicationDetailContent() {
                               (isAbort
                                 ? "ระบบ (อัตโนมัติ)"
                                 : (() => {
-                                    const od =
-                                      positionInfo?.owner ||
-                                      (positionInfo?.owners &&
-                                      positionInfo.owners.length > 0
-                                        ? positionInfo.owners[0]
-                                        : null);
+                                    const od = positionInfo?.positionOwner || null;
                                     return od
                                       ? `${od.fname || ""} ${od.lname || ""}`.trim() ||
                                           "-"

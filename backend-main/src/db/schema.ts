@@ -578,6 +578,7 @@ export const internshipPositions = pgTable(
 
     officeId: integer("office_id").notNull(),
     departmentId: integer("department_id").notNull(),
+    positionOwner: varchar("position_owner", { length: 50 }),
 
     location: varchar({ length: 255 }),
     positionCount: integer("position_count"),
@@ -604,6 +605,7 @@ export const internshipPositions = pgTable(
     updatedAt: timestamp("updated_at", { mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
   },
   (table) => [
     foreignKey({
@@ -613,6 +615,7 @@ export const internshipPositions = pgTable(
     })
       .onUpdate("cascade")
       .onDelete("restrict"),
+
     foreignKey({
       columns: [table.departmentId],
       foreignColumns: [departments.deptSap],
@@ -620,6 +623,22 @@ export const internshipPositions = pgTable(
     })
       .onUpdate("cascade")
       .onDelete("restrict"),
+
+    foreignKey({
+      columns: [table.positionOwner],
+      foreignColumns: [users.id],
+      name: "internship_positions_position_owner_fkey",
+    })
+      .onUpdate("cascade")
+      .onDelete("set null"),
+
+    index("idx_internship_positions_office_id").on(table.officeId),
+    index("idx_internship_positions_department_id").on(table.departmentId),
+    index("idx_internship_positions_recruitment_status").on(
+      table.recruitmentStatus
+    ),
+    index("idx_internship_positions_position_owner").on(table.positionOwner),
+    index("idx_internship_positions_deleted_at").on(table.deletedAt),
   ]
 );
 
@@ -1202,5 +1221,26 @@ export const userFcmTokens = pgTable(
     }).onDelete("cascade"),
     unique("user_fcm_tokens_token_key").on(table.token),
     index("idx_user_fcm_tokens_user_id").on(table.userId),
+  ]
+);
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: serial().primaryKey().notNull(),
+    userId: varchar("user_id", { length: 50 }).notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    used: boolean("used").notNull().default(false),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    unique("password_reset_tokens_token_hash_key").on(table.tokenHash),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "password_reset_tokens_user_id_fkey",
+    }).onDelete("cascade"),
   ]
 );

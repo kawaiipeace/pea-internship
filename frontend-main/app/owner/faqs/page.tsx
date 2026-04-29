@@ -1,7 +1,6 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
-import OwnerNavbar from "@/components/ui/OwnerNavbar";
 
 // FAQ Item Component
 interface FAQItemProps {
@@ -166,7 +165,6 @@ const ownerFaqs = [
 export default function OwnerFAQsPage() {
   return (
     <div className="min-h-screen bg-white">
-      <OwnerNavbar />
 
       <main className="max-w-4xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}

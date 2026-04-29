@@ -122,4 +122,45 @@ export const auth = new Elysia({
           "ใช้สำหรับออกจากระบบ โดยจะทำการลบ session และ revoke token ที่เกี่ยวข้องกับผู้ใช้งาน",
       },
     }
-  );
+  )
+
+  .post(
+  "/request-reset-password",
+  async ({ body, set }) => {
+    const response = await authService.requestResetPassword(body);
+
+    set.status = 200;
+    return response;
+  },
+  {
+    body: model.RequestResetPasswordBody,
+  }
+)
+
+.post(
+  "/verify-reset-code",
+  async ({ body, set }) => {
+    const response = await authService.verifyResetCode(body);
+
+    set.status = 200;
+    return response;
+  },
+  {
+    body: model.VerifyResetCodeBody,
+  }
+)
+
+.post(
+  "/reset-password",
+  async ({ body, set }) => {
+    const response = await authService.resetPassword(body);
+
+    set.status = 200;
+    return response;
+  },
+  {
+    body: model.ResetPasswordBody,
+  }
+);
+
+  

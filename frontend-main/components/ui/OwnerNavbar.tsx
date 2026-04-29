@@ -39,8 +39,11 @@ export default function OwnerNavbar() {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [displayName, setDisplayName] = useState("");
-  const [displayEmail, setDisplayEmail] = useState("");
+  const [displayName, setDisplayName] = useState(() => {
+    const u = authStorage.getUser();
+    return u ? (`${u.fname || ""} ${u.lname || ""}`.trim() || u.username || "-") : "";
+  });
+  const [displayEmail, setDisplayEmail] = useState(() => authStorage.getUser()?.email || "");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showToast, setShowToast] = useState(false);
@@ -51,10 +54,12 @@ export default function OwnerNavbar() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isClearAllConfirm, setIsClearAllConfirm] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
-  const [userRoleId, setUserRoleId] = useState<number | null>(null);
+  const [userRoleId, setUserRoleId] = useState<number | null>(() => authStorage.getUser()?.roleId ?? null);
   const [isSwitchingRole, setIsSwitchingRole] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const helpRef = useRef<HTMLDivElement>(null);
 
   // Load user display name on mount
   useEffect(() => {
@@ -118,6 +123,12 @@ export default function OwnerNavbar() {
         !profileRef.current.contains(event.target as Node)
       ) {
         setShowProfile(false);
+      }
+      if (
+        helpRef.current &&
+        !helpRef.current.contains(event.target as Node)
+      ) {
+        setShowHelp(false);
       }
     };
 
@@ -261,9 +272,9 @@ export default function OwnerNavbar() {
                 <Link
                   href="/owner/announcements"
                   className={`font-medium transition-colors ${pathname === "/owner/announcements" ||
-                      pathname?.startsWith("/owner/announcements/")
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
+                    pathname?.startsWith("/owner/announcements/")
+                    ? "text-primary-600 hover:text-primary-700"
+                    : "text-gray-600 hover:text-primary-600"
                     }`}
                 >
                   ประกาศที่เปิดรับสมัคร
@@ -271,21 +282,66 @@ export default function OwnerNavbar() {
                 <Link
                   href="/owner/dashboard"
                   className={`font-medium transition-colors ${pathname === "/owner/dashboard"
-                      ? "text-primary-600 hover:text-primary-700"
-                      : "text-gray-600 hover:text-primary-600"
+                    ? "text-primary-600 hover:text-primary-700"
+                    : "text-gray-600 hover:text-primary-600"
                     }`}
                 >
                   แดชบอร์ด
                 </Link>
-                <Link
-                  href="/owner/faqs"
-                  className={`font-medium transition-colors ${pathname === "/owner/faqs"
+                {/* Help Dropdown */}
+                <div className="relative" ref={helpRef}>
+                  <button
+                    onClick={() => {
+                      setShowHelp((prev) => !prev);
+                      setShowNotifications(false);
+                      setShowProfile(false);
+                    }}
+                    className={`flex items-center gap-1 font-medium transition-colors ${pathname === "/owner/faqs" || pathname?.startsWith("/guide/owner")
                       ? "text-primary-600 hover:text-primary-700"
                       : "text-gray-600 hover:text-primary-600"
-                    }`}
-                >
-                  FAQs
-                </Link>
+                      }`}
+                  >
+                    ช่วยเหลือ
+                    <svg
+                      className={`w-4 h-4 transition-transform ${showHelp ? "rotate-180" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {showHelp && (
+                    <div className="absolute left-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+                      <Link
+                        href="/owner/faqs"
+                        onClick={() => setShowHelp(false)}
+                        className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname === "/owner/faqs"
+                          ? "text-primary-600 bg-primary-50"
+                          : "text-gray-700 hover:bg-primary-50 hover:text-primary-600"
+                          }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        FAQs
+                      </Link>
+                      <Link
+                        href="/guide/owner"
+                        onClick={() => setShowHelp(false)}
+                        className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${pathname?.startsWith("/guide/owner")
+                          ? "text-primary-600 bg-primary-50"
+                          : "text-gray-700 hover:bg-primary-50 hover:text-primary-600"
+                          }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        คู่มือการใช้งาน
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Role Switch Button - only for roleId=1 */}
@@ -293,7 +349,6 @@ export default function OwnerNavbar() {
                 <button
                   onClick={() => {
                     setIsSwitchingRole(true);
-                    document.cookie = `user_role=admin; path=/; max-age=86400`;
                     setTimeout(() => {
                       router.push("/admin/applications");
                     }, 1000);

@@ -33,6 +33,7 @@ import {
   timeCorrectionRequests,
   userFcmTokens,
   users,
+  passwordResetTokens
 } from "./schema";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -81,6 +82,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   approvedExtensions: many(internshipExtensions, {
     relationName: "approvedByRelation",
   }),
+  createdInternshipPositions: many(internshipPositions, {
+    relationName: "internshipPositionPositionOwner",
+  }),
+  passwordResetTokens: many(passwordResetTokens),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -228,6 +233,11 @@ export const internshipPositionsRelations = relations(
     department: one(departments, {
       fields: [internshipPositions.departmentId],
       references: [departments.deptSap],
+    }),
+    positionOwnerUser: one(users, {
+      fields: [internshipPositions.positionOwner],
+      references: [users.id],
+      relationName: "internshipPositionPositionOwner",
     }),
     mentors: many(internshipPositionMentors),
     favorites: many(favorites),
@@ -469,3 +479,12 @@ export const userFcmTokensRelations = relations(userFcmTokens, ({ one }) => ({
     references: [users.id],
   }),
 }));
+export const passwordResetTokensRelations = relations(
+  passwordResetTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [passwordResetTokens.userId],
+      references: [users.id],
+    }),
+  })
+);

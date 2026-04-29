@@ -30,8 +30,58 @@ const oauthCallbackRoutes = ["/login/owner/callback"];
 const BETTER_AUTH_SESSION_COOKIE = "better-auth.session_token";
 const BETTER_AUTH_SESSION_COOKIE_SECURE = "__Secure-better-auth.session_token";
 
+type AppRole = "intern" | "owner" | "admin";
+
+function mapRoleIdToRole(roleId: unknown): AppRole | undefined {
+  if (roleId === 1) return "admin";
+  if (roleId === 2) return "owner";
+  if (roleId === 3) return "intern";
+  return undefined;
+}
+
+async function resolveSessionRole(
+  request: NextRequest,
+): Promise<{ isAuthenticated: boolean; userRole?: AppRole }> {
+  const hasSessionCookie =
+    !!request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value ||
+    !!request.cookies.get(BETTER_AUTH_SESSION_COOKIE_SECURE)?.value;
+
+  if (!hasSessionCookie) {
+    return { isAuthenticated: false };
+  }
+
+  try {
+    const response = await fetch(new URL("/api/auth/get-session", request.url), {
+      method: "GET",
+      headers: {
+        cookie: request.headers.get("cookie") ?? "",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return { isAuthenticated: false };
+    }
+
+    const session = (await response.json()) as {
+      user?: {
+        roleId?: unknown;
+      };
+    };
+
+    const userRole = mapRoleIdToRole(session?.user?.roleId);
+    if (!userRole) {
+      return { isAuthenticated: false };
+    }
+
+    return { isAuthenticated: true, userRole };
+  } catch {
+    return { isAuthenticated: false };
+  }
+}
+
 // Helper: ดึง home page ตาม role
-function getHomeByRole(role: string | undefined): string {
+function getHomeByRole(role: AppRole | undefined): string {
   switch (role) {
     case "owner":
       return "/owner/announcements";
@@ -43,27 +93,9 @@ function getHomeByRole(role: string | undefined): string {
   }
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const forceLogin = searchParams.get("forceLogin") === "1";
-
-  // ดึง session token จาก Better Auth cookie (check both variants)
-  const sessionToken =
-    request.cookies.get(BETTER_AUTH_SESSION_COOKIE)?.value ||
-    request.cookies.get(BETTER_AUTH_SESSION_COOKIE_SECURE)?.value;
-
-  // Fallback: ตรวจสอบ auth_token ด้วย (สำหรับ backward compatibility)
-  const legacyToken = request.cookies.get("auth_token")?.value;
-
-  // ดึง role ของ user จาก cookie
-  const userRole = request.cookies.get("user_role")?.value; // "intern" | "owner" | "admin"
-
-  // ถือว่า auth จาก Better Auth ได้ต่อเมื่อมี role cookie ด้วย
-  // เพื่อกันกรณี session cookie ค้างหลัง backend restart แต่ role ถูกลบแล้ว
-  const hasBetterAuthSession = !!sessionToken && !!userRole;
-
-  // ตรวจสอบว่า user login แล้วหรือยัง
-  const isAuthenticated = hasBetterAuthSession || !!legacyToken;
 
   // ตรวจสอบประเภท route
   const isInternRoute = internRoutes.some(
@@ -97,7 +129,23 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const publicOnlyRoutes = ["/", "/jobs", "/pea-info"];
+  const isPublicOnlyRoute =
+    pathname === "/" ||
+    publicOnlyRoutes.some(
+      (route) => route !== "/" && (pathname === route || pathname.startsWith(route + "/"))
+    );
+
   const isProtectedRoute = isInternRoute || isAdminRoute || isOwnerRoute;
+
+  // ลดภาระ middleware สำหรับ route ที่ไม่ต้องตรวจ auth state
+  const shouldResolveSession = isProtectedRoute || isAuthRoute || isPublicOnlyRoute;
+  if (!shouldResolveSession) {
+    return NextResponse.next();
+  }
+
+  // ตรวจสอบ role จาก Better Auth session โดยตรง (server-validated)
+  const { isAuthenticated, userRole } = await resolveSessionRole(request);
 
   // ===== 1. ถ้ายังไม่ login และพยายามเข้า protected route → redirect ไปหน้า login =====
   if (!isAuthenticated && isProtectedRoute) {
@@ -128,10 +176,6 @@ export function proxy(request: NextRequest) {
     if (userRole === "admin" && isInternRoute) {
       return NextResponse.redirect(new URL("/admin/applications", request.url));
     }
-    // Admin พยายามเข้า owner routes → redirect ไป admin
-    if (userRole === "admin" && isOwnerRoute) {
-      return NextResponse.redirect(new URL("/admin/applications", request.url));
-    }
   }
 
   // ===== 3. ถ้า login แล้วและพยายามเข้า auth route → redirect ตาม role =====
@@ -140,13 +184,6 @@ export function proxy(request: NextRequest) {
   }
 
   // ===== 4. ถ้า login แล้วและเข้าหน้า public (/, /jobs, /pea-info, /faqs) → redirect ตาม role =====
-  const publicOnlyRoutes = ["/", "/jobs", "/pea-info"];
-  const isPublicOnlyRoute =
-    pathname === "/" ||
-    publicOnlyRoutes.some(
-      (route) => route !== "/" && (pathname === route || pathname.startsWith(route + "/"))
-    );
-
   if (isAuthenticated && isPublicOnlyRoute) {
     return NextResponse.redirect(new URL(getHomeByRole(userRole), request.url));
   }
