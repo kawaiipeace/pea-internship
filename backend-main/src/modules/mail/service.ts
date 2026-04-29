@@ -31,7 +31,7 @@ export async function sendResetPasswordCodeEmail(to: string, code: string) {
   await transporter.sendMail({
     from: process.env.MAIL_FROM ?? process.env.SMTP_USER,
     to,
-    subject: "Reset Password Code",
+    subject: "รีเซ็ตรหัสผ่าน",
     html: resetPasswordTemplate({ code }),
   });
 }
