@@ -93,7 +93,6 @@ services:
     container_name: pea-internship-frontend-main
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      BACKEND_INTERNAL_URL: http://backend-main:2702
     volumes:
       - ./frontend-main:/app
       - /app/node_modules
