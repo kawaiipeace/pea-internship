@@ -83,4 +83,43 @@ export const authApi = {
   signInKeycloak: (): string => {
     return `${API_BASE_URL}/auth/sign-in/keycloak`;
   },
+
+  // ขอรหัส OTP สำหรับ reset password
+  requestResetPassword: async (data: {
+    phoneNumber: string;
+    email: string;
+  }): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post<{ success: boolean; message: string }>(
+      "/auth/request-reset-password",
+      data
+    );
+    return response.data;
+  },
+
+  // ยืนยันรหัส OTP และรับ resetToken
+  verifyResetCode: async (data: {
+    phoneNumber: string;
+    email: string;
+    code: string;
+  }): Promise<{ success: boolean; message: string; resetToken: string }> => {
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      resetToken: string;
+    }>("/auth/verify-reset-code", data);
+    return response.data;
+  },
+
+  // เปลี่ยนรหัสผ่านด้วย resetToken
+  resetPassword: async (data: {
+    resetToken: string;
+    password: string;
+    confirmPassword: string;
+  }): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post<{ success: boolean; message: string }>(
+      "/auth/reset-password",
+      data
+    );
+    return response.data;
+  },
 };
