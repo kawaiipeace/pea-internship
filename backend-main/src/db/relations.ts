@@ -31,6 +31,7 @@ import {
   studentProfiles,
   timeCorrectionRequests,
   users,
+  passwordResetTokens
 } from "./schema";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -75,6 +76,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   createdInternshipPositions: many(internshipPositions, {
     relationName: "internshipPositionPositionOwner",
   }),
+  passwordResetTokens: many(passwordResetTokens),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -437,6 +439,16 @@ export const timeCorrectionRequestsRelations = relations(
       fields: [timeCorrectionRequests.approvedBy],
       references: [users.id],
       relationName: "approvedTimeCorrections",
+    }),
+  })
+);
+
+export const passwordResetTokensRelations = relations(
+  passwordResetTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [passwordResetTokens.userId],
+      references: [users.id],
     }),
   })
 );

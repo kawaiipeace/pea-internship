@@ -1139,3 +1139,25 @@ export const timeCorrectionRequests = pgTable(
     }).onDelete("set null"),
   ]
 );
+
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: serial().primaryKey().notNull(),
+    userId: varchar("user_id", { length: 50 }).notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+    used: boolean("used").notNull().default(false),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [
+    unique("password_reset_tokens_token_hash_key").on(table.tokenHash),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "password_reset_tokens_user_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);

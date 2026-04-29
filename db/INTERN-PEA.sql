@@ -624,6 +624,20 @@ CREATE TABLE public.time_correction_requests (
 
 COMMENT ON TABLE public.time_correction_requests IS 'เก็บข้อมูลคำขอแก้ไขเวลาเข้า-ออกงาน พร้อมไฟล์แนบ รอการอนุมัติ';
 
+CREATE TABLE public.password_reset_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(50) NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT password_reset_tokens_user_id_fkey
+    FOREIGN KEY (user_id)
+    REFERENCES public.users (id)
+    ON DELETE CASCADE
+);
+
 CREATE
 OR REPLACE VIEW public.student_attendance_summary AS
 SELECT

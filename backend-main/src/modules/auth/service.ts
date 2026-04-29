@@ -1,13 +1,15 @@
-import { eq } from "drizzle-orm";
+import crypto from "crypto";
+import { and, desc, eq } from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
   InternalServerError,
 } from "@/common/exceptions";
 import { db } from "@/db";
-import { studentProfiles, users } from "@/db/schema";
+import { accounts, passwordResetTokens, studentProfiles, users } from "@/db/schema";
 import { type Auth, auth } from "@/lib/auth";
 import type * as model from "./model";
+import { sendResetPasswordCodeEmail } from "@/modules/mail/service";
 
 const ROLE_INTERN = 3;
 
@@ -135,6 +137,199 @@ export class AuthService {
     });
 
     return response;
+  }
+
+  async requestResetPassword(data: model.RequestResetPasswordBodyType) {
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.email, data.email),
+          eq(users.phoneNumber, data.phoneNumber)
+        )
+      )
+      .limit(1);
+
+    if (!user || !user.email) {
+      throw new BadRequestError("ไม่พบบัญชีผู้ใช้จากเบอร์โทรศัพท์และอีเมลนี้");
+    }
+
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.userId, user.id));
+
+    const code = crypto.randomInt(100000, 1000000).toString();
+
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(code)
+      .digest("hex");
+
+    await db.insert(passwordResetTokens).values({
+      userId: user.id,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      used: false,
+    });
+
+    await sendResetPasswordCodeEmail(user.email, code);
+
+    return {
+      success: true,
+      message: "ส่งรหัสยืนยันไปยังอีเมลเรียบร้อยแล้ว",
+    };
+  }
+
+  async verifyResetCode(data: model.VerifyResetCodeBodyType) {
+    const [user] = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.email, data.email),
+          eq(users.phoneNumber, data.phoneNumber)
+        )
+      )
+      .limit(1);
+
+    if (!user) {
+      throw new BadRequestError("ไม่พบบัญชีผู้ใช้จากเบอร์โทรศัพท์และอีเมลนี้");
+    }
+
+    const [token] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(
+        and(
+          eq(passwordResetTokens.userId, user.id),
+          eq(passwordResetTokens.used, false)
+        )
+      )
+      .orderBy(desc(passwordResetTokens.createdAt))
+      .limit(1);
+
+    if (!token) {
+      throw new BadRequestError("ไม่พบรหัสยืนยัน หรือรหัสถูกใช้งานไปแล้ว");
+    }
+
+    if (token.expiresAt < new Date()) {
+      await db
+        .update(passwordResetTokens)
+        .set({ used: true })
+        .where(eq(passwordResetTokens.id, token.id));
+
+      throw new BadRequestError("รหัสยืนยันหมดอายุแล้ว กรุณาขอรหัสใหม่");
+    }
+
+    const codeHash = crypto
+      .createHash("sha256")
+      .update(data.code)
+      .digest("hex");
+
+    if (codeHash !== token.tokenHash) {
+      throw new BadRequestError("รหัสยืนยันไม่ถูกต้อง");
+    }
+
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.id, token.id));
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    await db.insert(passwordResetTokens).values({
+      userId: user.id,
+      tokenHash: resetTokenHash,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      used: false,
+    });
+
+    return {
+      success: true,
+      message: "ยืนยันรหัสสำเร็จ",
+      resetToken,
+    };
+  }
+
+  async resetPassword(data: model.ResetPasswordBodyType) {
+    if (data.password !== data.confirmPassword) {
+      throw new BadRequestError("รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน");
+    }
+
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(data.resetToken)
+      .digest("hex");
+
+    const [token] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(
+        and(
+          eq(passwordResetTokens.tokenHash, resetTokenHash),
+          eq(passwordResetTokens.used, false)
+        )
+      )
+      .limit(1);
+
+    if (!token) {
+      throw new BadRequestError("Reset token ไม่ถูกต้อง หรือถูกใช้งานไปแล้ว");
+    }
+
+    if (token.expiresAt < new Date()) {
+      await db
+        .update(passwordResetTokens)
+        .set({ used: true })
+        .where(eq(passwordResetTokens.id, token.id));
+
+      throw new BadRequestError("Reset token หมดอายุแล้ว กรุณาขอรหัสใหม่");
+    }
+
+    const ctx = await auth.$context;
+    const hashedPassword = await ctx.password.hash(data.password);
+
+    const [updatedAccount] = await db
+      .update(accounts)
+      .set({
+        password: hashedPassword,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(accounts.userId, token.userId),
+          eq(accounts.providerId, "credential")
+        )
+      )
+      .returning();
+
+    if (!updatedAccount) {
+      throw new BadRequestError("ไม่พบบัญชีสำหรับเปลี่ยนรหัสผ่าน");
+    }
+
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.id, token.id));
+
+    return {
+      success: true,
+      message: "เปลี่ยนรหัสผ่านสำเร็จ",
+    };
   }
 
   async loginWithKeycloak(headers: Headers) {
