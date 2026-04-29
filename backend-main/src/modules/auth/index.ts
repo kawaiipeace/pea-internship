@@ -134,6 +134,11 @@ export const auth = new Elysia({
   },
   {
     body: model.RequestResetPasswordBody,
+    detail: {
+        summary: "ส่งคำขอรีเซ็ตรหัสผ่าน",
+        description:
+          "ส่งอีเมลที่มี code สำหรับรีเซ็ตรหัสผ่าน ไปยังที่อยู่อีเมลที่ผู้ใช้สมัคร",
+      },
   }
 )
 
@@ -147,6 +152,11 @@ export const auth = new Elysia({
   },
   {
     body: model.VerifyResetCodeBody,
+    detail: {
+        summary: "ยืนยันโค้ดสำหรับรีเซ็ตรหัสผ่าน",
+        description:
+          "นำโค้ดที่ได้จากอีเมลมายืนยันเพื่อรับ reset-password token",
+      },
   }
 )
 
@@ -160,6 +170,11 @@ export const auth = new Elysia({
   },
   {
     body: model.ResetPasswordBody,
+    detail: {
+        summary: "เปลี่ยนรหัสผ่าน",
+        description:
+          "กรอกรหัสผ่านใหม่ที่ต้องการจะเปลี่ยน พร้อมทั้งส่ง reset-password token เพื่อยืนยันตัวตน",
+      },
   }
 );
 
