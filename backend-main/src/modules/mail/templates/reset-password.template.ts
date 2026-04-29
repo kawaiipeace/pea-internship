@@ -11,7 +11,7 @@ export function resetPasswordTemplate({
         <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>รหัสรีเซ็ตรหัสผ่าน</title>
+        <title>รีเซ็ตรหัสผ่าน</title>
         </head>
         <body style="width:100%;height:100%;font-family:Inter, Arial, sans-serif;padding:0;margin:0;background-color:#F6F6F6;">
         <div style="background-color:#F6F6F6;padding:30px 0;">
