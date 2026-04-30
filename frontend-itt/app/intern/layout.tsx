@@ -26,7 +26,7 @@ export default function DefaultLayout({ children }: { children: React.ReactNode 
 
         // Block all statuses that are not yet 'ACTIVE' or 'COMPLETE'
         // This covers IDLE, PENDING, INTERVIEW, REVIEW, ACCEPT, AWAITING
-        const activeStatuses = ['ACTIVE', 'COMPLETE', 'CANCEL'];
+        const activeStatuses = ['ACTIVE', 'EXTENDED', 'COMPLETE'];
         const isNotYetActive = status && !activeStatuses.includes(status);
 
         if (isNotYetActive) {
