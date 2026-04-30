@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavbarPublic from "@/components/ui/NavbarPublic";
+import { authApi } from "@/services/api";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -11,6 +11,8 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<{
     password?: string;
     confirmPassword?: string;
@@ -20,6 +22,14 @@ export default function ResetPasswordPage() {
     password?: boolean;
     confirmPassword?: boolean;
   }>({});
+
+  // redirect กลับถ้าไม่มี resetToken
+  useEffect(() => {
+    const token = sessionStorage.getItem("reset_token");
+    if (!token) {
+      router.replace("/forgot-password");
+    }
+  }, [router]);
 
   const validateForm = () => {
     const newErrors: typeof errors = {};
@@ -40,14 +50,35 @@ export default function ResetPasswordPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ password: true, confirmPassword: true });
 
-    if (validateForm()) {
-      // TODO: Implement actual password reset logic
-      // For demo, redirect to login page
-      router.push("/login/intern");
+    if (!validateForm()) return;
+
+    const resetToken = sessionStorage.getItem("reset_token");
+    if (!resetToken) {
+      setErrors({ general: "Session หมดอายุ กรุณาเริ่มใหม่อีกครั้ง" });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+    try {
+      await authApi.resetPassword({ resetToken, password, confirmPassword });
+      // ล้าง sessionStorage
+      sessionStorage.removeItem("reset_token");
+      sessionStorage.removeItem("reset_phone");
+      sessionStorage.removeItem("reset_email");
+      setSuccess(true);
+      setTimeout(() => router.push("/login/intern"), 2000);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+      setErrors({ general: message });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,7 +107,18 @@ export default function ResetPasswordPage() {
             กรุณากรอกข้อมูลเพื่อเปลี่ยนรหัสผ่าน
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {success ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">เปลี่ยนรหัสผ่านสำเร็จแล้ว</h2>
+              <p className="text-gray-500 text-sm">กำลังพาคุณไปยังหน้าเข้าสู่ระบบ...</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
             {/* Password Field */}
             <div>
               <label
@@ -271,20 +313,23 @@ export default function ResetPasswordPage() {
 
             {/* Buttons */}
             <div className="flex gap-3 pt-2">
-              <Link
-                href="/forgot-password"
+              <button
+                type="button"
+                onClick={() => router.push("/verify-reset-code")}
                 className="flex-1 py-3 border-2 border-primary-600 text-primary-600 rounded-xl font-medium hover:bg-primary-600 hover:text-white transition-colors text-center cursor-pointer"
               >
                 ย้อนกลับ
-              </Link>
+              </button>
               <button
                 type="submit"
-                className="flex-1 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors cursor-pointer"
+                disabled={isLoading}
+                className="flex-1 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                เปลี่ยนรหัสผ่าน
+                {isLoading ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
               </button>
             </div>
           </form>
+          )}
         </div>
       </main>
     </div>

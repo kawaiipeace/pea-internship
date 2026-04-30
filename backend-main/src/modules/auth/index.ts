@@ -129,36 +129,53 @@ export const auth = new Elysia({
     async ({ body, set }) => {
       const response = await authService.requestResetPassword(body);
 
-      set.status = 200;
-      return response;
-    },
-    {
-      body: model.RequestResetPasswordBody,
-    }
-  )
+    set.status = 200;
+    return response;
+  },
+  {
+    body: model.RequestResetPasswordBody,
+    detail: {
+        summary: "ส่งคำขอรีเซ็ตรหัสผ่าน",
+        description:
+          "ส่งอีเมลที่มี code สำหรับรีเซ็ตรหัสผ่าน ไปยังที่อยู่อีเมลที่ผู้ใช้สมัคร",
+      },
+  }
+)
 
   .post(
     "/verify-reset-code",
     async ({ body, set }) => {
       const response = await authService.verifyResetCode(body);
 
-      set.status = 200;
-      return response;
-    },
-    {
-      body: model.VerifyResetCodeBody,
-    }
-  )
+    set.status = 200;
+    return response;
+  },
+  {
+    body: model.VerifyResetCodeBody,
+    detail: {
+        summary: "ยืนยันโค้ดสำหรับรีเซ็ตรหัสผ่าน",
+        description:
+          "นำโค้ดที่ได้จากอีเมลมายืนยันเพื่อรับ reset-password token",
+      },
+  }
+)
 
   .post(
     "/reset-password",
     async ({ body, set }) => {
       const response = await authService.resetPassword(body);
 
-      set.status = 200;
-      return response;
-    },
-    {
-      body: model.ResetPasswordBody,
-    }
-  );
+    set.status = 200;
+    return response;
+  },
+  {
+    body: model.ResetPasswordBody,
+    detail: {
+        summary: "เปลี่ยนรหัสผ่าน",
+        description:
+          "กรอกรหัสผ่านใหม่ที่ต้องการจะเปลี่ยน พร้อมทั้งส่ง reset-password token เพื่อยืนยันตัวตน",
+      },
+  }
+);
+
+  

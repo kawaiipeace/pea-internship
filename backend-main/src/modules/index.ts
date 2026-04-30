@@ -12,6 +12,7 @@ import { fcm } from "./fcm";
 import { file } from "./file";
 import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
+import { departmentTicketRoutes } from "@/modules/department-ticket/route";
 import { leave } from "./leave-requests";
 import { ownerStudents } from "./manualEndInternships";
 import { mentor } from "./mentor";
@@ -42,7 +43,8 @@ const modules = new Elysia({ prefix: "/api" })
   .use(mentor)
   .use(file)
   .use(fcm)
+  .use(departmentTicketRoutes)
   .use(applicationStatusActionsModule)
-  .use(applicationCompleteModal)
-  .use(adminDashboard);
+  .use(adminDashboard)
+  .use(applicationCompleteModal);
 export default modules;
