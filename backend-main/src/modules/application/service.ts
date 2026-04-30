@@ -115,61 +115,7 @@ export class ApplicationService {
     return "ACTIVE";
   }
 
-  private async updateCompletedInternshipsStatus(tx: DbTx) {
-    const now = new Date();
 
-    const expired = await tx
-      .select({
-        applicationId: applicationStatuses.id,
-        userId: applicationStatuses.userId,
-        positionId: applicationStatuses.positionId,
-      })
-      .from(applicationStatuses)
-      .innerJoin(
-        applicationInformations,
-        eq(applicationInformations.applicationStatusId, applicationStatuses.id)
-      )
-      .innerJoin(
-        studentProfiles,
-        eq(studentProfiles.userId, applicationStatuses.userId)
-      )
-      .where(
-        and(
-          eq(applicationStatuses.applicationStatus, "COMPLETE"),
-          eq(applicationStatuses.isActive, true),
-          eq(studentProfiles.internshipStatus, "ACTIVE"),
-          lte(applicationInformations.endDate, now)
-        )
-      );
-
-    for (const app of expired) {
-      await tx
-        .update(applicationStatuses)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(applicationStatuses.id, app.applicationId));
-
-      await tx
-        .update(studentProfiles)
-        .set({ internshipStatus: "COMPLETE" })
-        .where(eq(studentProfiles.userId, app.userId));
-
-      if (app.positionId) {
-        await tx
-          .update(internshipPositions)
-          .set({
-            acceptedCount: sql`GREATEST(${internshipPositions.acceptedCount} - 1, 0)`,
-          })
-          .where(eq(internshipPositions.id, app.positionId));
-      }
-
-      await tx.insert(applicationStatusActions).values({
-        applicationStatusId: app.applicationId,
-        actionBy: "system",
-        oldStatus: "COMPLETE",
-        newStatus: "COMPLETE",
-      });
-    }
-  }
 
   private async cancelPendingApplicationsWhenPositionFilled(
     tx: DbTx,
@@ -1491,8 +1437,6 @@ export class ApplicationService {
       if (!req) throw new ForbiddenError("ไม่พบผู้ใช้งาน");
       if (req.roleId !== 1 && req.roleId !== 2)
         throw new ForbiddenError("อนุญาตเฉพาะ Admin/Owner");
-
-      await this.updateCompletedInternshipsStatus(tx);
 
       const page = query.page ?? 1;
       const limit = query.limit ?? 20;
