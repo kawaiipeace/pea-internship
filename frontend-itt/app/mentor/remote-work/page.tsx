@@ -53,6 +53,20 @@ const RemoteWorkPage = () => {
     const [isAssignedDateDropdownOpen, setIsAssignedDateDropdownOpen] = useState(false);
     const [isAssignerDropdownOpen, setIsAssignerDropdownOpen] = useState(false);
 
+    // Search state
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchTerm);
+            if (searchTerm !== debouncedSearchQuery) {
+                setCurrentPage(1);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm, debouncedSearchQuery]);
+
     // Filter States
     const [staffList, setStaffList] = useState<Staff[]>([]);
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -93,6 +107,10 @@ const RemoteWorkPage = () => {
                 params.targetMentorId = assignerFilter.value;
             }
 
+            if (debouncedSearchQuery) {
+                params.search = debouncedSearchQuery;
+            }
+
             const response = await axiosInstance.get('/offsite-tasks/mentor', { params });
             setTasks(response.data?.data || []);
             setMeta(response.data?.meta || null);
@@ -101,7 +119,7 @@ const RemoteWorkPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [currentMonth, currentYear, currentPage, activeSortField, assignedDateSortOrder, dateSortOrder, assignerFilter]);
+    }, [currentMonth, currentYear, currentPage, activeSortField, assignedDateSortOrder, dateSortOrder, assignerFilter, debouncedSearchQuery]);
 
     const handleDeleteTask = async (id: number) => {
         const result = await Swal.fire({
@@ -377,6 +395,20 @@ const RemoteWorkPage = () => {
                             </>
                         )}
                     </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full mt-1">
+                    <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 !text-[20px]">
+                        search
+                    </span>
+                    <input
+                        type="text"
+                        placeholder="พิมพ์ชื่อนักศึกษา ตำแหน่งเพื่อค้นหา..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white dark:bg-[#121212] border border-[#CECFD2] dark:border-gray-700 rounded-lg pl-11 pr-4 py-2.5 text-[14px] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#A80689] focus:border-[#A80689] transition-all"
+                    />
                 </div>
 
                 {/* Assignment Cards List */}

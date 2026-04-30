@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, sql, inArray, like, or } from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
@@ -11,6 +11,7 @@ import {
   offsiteTaskStudents,
   offsiteTasks,
   users,
+  internshipPositions,
 } from "@/db/schema";
 import { sendNotification } from "../../config/firebase";
 import { FCMService } from "../fcm/service";
@@ -313,6 +314,35 @@ export class OffsiteTaskService {
         gte(offsiteTasks.workDate, startDateStr),
         lte(offsiteTasks.workDate, endDateStr)
       );
+    }
+
+    if (query.search) {
+      const searchKeyword = `%${query.search}%`;
+      const matchingTaskIds = await db
+        .select({ id: offsiteTaskStudents.taskId })
+        .from(offsiteTaskStudents)
+        .leftJoin(users, eq(users.id, offsiteTaskStudents.studentId))
+        .leftJoin(applicationStatuses, eq(applicationStatuses.userId, users.id))
+        .leftJoin(internshipPositions, eq(internshipPositions.id, applicationStatuses.positionId))
+        .where(
+          and(
+            eq(applicationStatuses.isActive, true),
+            or(
+              like(users.fname, searchKeyword),
+              like(users.lname, searchKeyword),
+              like(users.displayUsername, searchKeyword),
+              like(internshipPositions.name, searchKeyword)
+            )
+          )
+        );
+      
+      const tIds = matchingTaskIds.map((t) => t.id);
+      if (tIds.length > 0) {
+        conditions.push(inArray(offsiteTasks.id, tIds));
+      } else {
+        // Force no results
+        conditions.push(eq(offsiteTasks.id, -1));
+      }
     }
 
     const orderCol =
