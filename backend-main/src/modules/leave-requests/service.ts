@@ -343,27 +343,36 @@ export class LeaveService {
   async getLeaveHistory(userId: string, query: model.GetLeaveHistoryQueryType) {
     await this.assertUserExists(userId);
 
-    const { page = 1, limit = 10, type } = query;
-    const now = new Date();
-    const targetYear = query.year || now.getFullYear();
-    const targetMonth = query.month || now.getMonth() + 1;
+    const { page = 1, limit = 10, type, year, month } = query;
 
-    const startOfMonth = new Date(targetYear, targetMonth - 1, 1).toISOString();
-    const endOfMonth = new Date(
-      targetYear,
-      targetMonth,
-      0,
-      23,
-      59,
-      59
-    ).toISOString();
-
-    const baseCondition = and(
+    const listFilters = [
       eq(leaveRequests.userId, userId),
-      gte(leaveRequests.leaveDatetime, startOfMonth),
-      lte(leaveRequests.leaveDatetime, endOfMonth),
       isNull(leaveRequests.deletedAt)
-    );
+    ];
+
+    let targetYear = year || null;
+    let targetMonth = month || null;
+
+    if (year || month) {
+      const now = new Date();
+      targetYear = year || now.getFullYear();
+      targetMonth = month || now.getMonth() + 1;
+
+      const startOfMonth = new Date(targetYear, targetMonth - 1, 1).toISOString();
+      const endOfMonth = new Date(
+        targetYear,
+        targetMonth,
+        0,
+        23,
+        59,
+        59
+      ).toISOString();
+
+      listFilters.push(gte(leaveRequests.leaveDatetime, startOfMonth));
+      listFilters.push(lte(leaveRequests.leaveDatetime, endOfMonth));
+    }
+
+    const baseCondition = and(...listFilters);
 
     const allRecordsForSummary = await db.query.leaveRequests.findMany({
       where: baseCondition,
@@ -384,8 +393,6 @@ export class LeaveService {
       absence: totalAbsence,
       sick: totalSick,
     };
-
-    const listFilters = [baseCondition];
 
     if (type) {
       listFilters.push(eq(leaveRequests.leaveRequestType, type));
