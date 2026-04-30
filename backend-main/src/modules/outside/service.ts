@@ -7,6 +7,7 @@ import {
 import { db } from "@/db";
 import {
   applicationStatuses,
+  notifications,
   offsiteTaskStudents,
   offsiteTasks,
   users,
@@ -59,18 +60,26 @@ export class OffsiteTaskService {
       throw new BadRequestError("ต้องระบุนักศึกษาอย่างน้อย 1 คน");
     }
 
-    const result = await db.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
+      // 1. ดึงข้อมูลพี่เลี้ยงเพื่อเอาชื่อมาใส่ใน Message (ใช้ fname, lname)
+      const mentor = await tx.query.users.findFirst({
+        where: eq(users.id, mentorId),
+      });
+      const mentorName = mentor ? `${mentor.fname} ${mentor.lname}` : "พี่เลี้ยง";
+
+      // 2. บันทึกข้อมูลงานนอกสถานที่ลงตารางหลัก
       const [newTask] = await tx
         .insert(offsiteTasks)
         .values({
           assignedBy: mentorId,
-          workDate: data.workDate,
+          workDate: data.workDate, // ตรวจสอบว่าใน Schema เป็น Date หรือ String
           locationName: data.locationName,
           taskDetail: data.taskDetail,
           note: data.note,
         })
         .returning({ id: offsiteTasks.id });
 
+      // 3. บันทึกรายชื่อนักศึกษาที่ได้รับมอบหมาย
       const studentsToInsert = data.studentIds.map((studentId) => ({
         taskId: newTask.id,
         studentId: studentId,
@@ -78,21 +87,24 @@ export class OffsiteTaskService {
 
       await tx.insert(offsiteTaskStudents).values(studentsToInsert);
 
+      // 4. สร้าง Notification ลงตาราง notifications ให้กับนักศึกษาทุกคน
+      const notificationValues = data.studentIds.map((studentId) => ({
+        userId: studentId,
+        title: "มีงานมอบหมายนอกสถานที่ใหม่",
+        message: `คุณได้รับมอบหมายงานนอกสถานที่ ณ ${data.locationName} ในวันที่ ${data.workDate} โดยพี่เลี้ยง (${mentorName})`,
+        isRead: false,
+      }));
+
+      if (notificationValues.length > 0) {
+        await tx.insert(notifications).values(notificationValues);
+      }
+
       return {
         success: true,
-        message: "มอบหมายงานนอกสถานที่สำเร็จ",
+        message: "มอบหมายงานนอกสถานที่สำเร็จพร้อมแจ้งเตือนนักศึกษา",
         taskId: newTask.id,
       };
     });
-
-    this.sendOffsiteNotification(
-      mentorId,
-      data.studentIds,
-      data.locationName,
-      data.workDate
-    );
-
-    return result;
   }
 
   async getTasksByMentor(mentorId: string) {

@@ -6,10 +6,16 @@ import {
   InternalServerError,
 } from "@/common/exceptions";
 import { db } from "@/db";
-import { accounts, passwordResetTokens, userFcmTokens, studentProfiles, users } from "@/db/schema";
+import {
+  accounts,
+  passwordResetTokens,
+  studentProfiles,
+  userFcmTokens,
+  users,
+} from "@/db/schema";
 import { type Auth, auth } from "@/lib/auth";
-import type * as model from "./model";
 import { sendResetPasswordCodeEmail } from "@/modules/mail/service";
+import type * as model from "./model";
 
 const ROLE_INTERN = 3;
 
@@ -171,10 +177,7 @@ export class AuthService {
 
     const code = crypto.randomInt(100000, 1000000).toString();
 
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(code)
-      .digest("hex");
+    const tokenHash = crypto.createHash("sha256").update(code).digest("hex");
 
     await db.insert(passwordResetTokens).values({
       userId: user.id,

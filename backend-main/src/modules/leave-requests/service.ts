@@ -9,6 +9,7 @@ import {
   inArray,
   isNull,
   lte,
+  or,
   sql,
 } from "drizzle-orm";
 import { NotFoundError } from "elysia";
@@ -19,6 +20,7 @@ import {
   attendanceLogs,
   leaveRequests,
   type leaveStatusEnum,
+  notifications,
   studentProfiles,
   users,
 } from "@/db/schema";
@@ -161,12 +163,15 @@ export class LeaveService {
     return await db.transaction(async (tx) => {
       const student = await tx.query.studentProfiles.findFirst({
         where: eq(studentProfiles.userId, userId),
+        with: {
+          user: true,
+        },
       });
 
       if (!student) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
 
+      const studentName = `${student.user.fname} ${student.user.lname}`;
       const datesToLeave = this.getDatesInRange(data.startDate, data.endDate);
-
       const targetDatetimes = datesToLeave.map((date) => `${date}T00:00:00`);
 
       const existingLeaves = await tx.query.leaveRequests.findMany({
@@ -177,6 +182,32 @@ export class LeaveService {
           isNull(leaveRequests.deletedAt)
         ),
       });
+
+      if (!student.user.departmentId) {
+        throw new Error("นักศึกษาไม่มีสังกัดแผนก ไม่สามารถส่งการแจ้งเตือนได้");
+      }
+
+      const owners = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            or(eq(users.roleId, 1), eq(users.roleId, 2)),
+            eq(users.departmentId, student.user.departmentId)
+          )
+        );
+
+      if (owners.length > 0) {
+        await tx.insert(notifications).values(
+          owners.map((o) => ({
+            userId: o.id,
+            title: "รายการขอลาใหม่",
+            message: `ได้รับคำขอลาของ ${studentName} ตั้งแต่วันที่ ${data.startDate} ถึงวันที่ ${data.endDate}`,
+            isRead: false,
+            // link: `/admin/leaves/${userId}`
+          }))
+        );
+      }
 
       if (existingLeaves.length > 0) {
         const duplicatedDates = existingLeaves
@@ -222,6 +253,14 @@ export class LeaveService {
     await this.assertUserExists(approverUserId);
 
     return await db.transaction(async (tx) => {
+      // 1. ดึงข้อมูลพี่เลี้ยงผู้กดอนุมัติก่อน
+      const approver = await tx.query.users.findFirst({
+        where: eq(users.id, approverUserId),
+      });
+      const approverName = approver
+        ? `${approver.fname} ${approver.lname}`
+        : "ผู้ดูแลระบบ";
+
       const requests = await tx.query.leaveRequests.findMany({
         where: and(
           inArray(leaveRequests.id, ids),
@@ -238,6 +277,9 @@ export class LeaveService {
 
         const student = await tx.query.studentProfiles.findFirst({
           where: eq(studentProfiles.userId, request.userId),
+          with: {
+            user: true,
+          },
         });
 
         if (!student) continue;
@@ -246,6 +288,7 @@ export class LeaveService {
           timeZone: "Asia/Bangkok",
         }).format(new Date(request.leaveDatetime!));
 
+        // 2. Update สถานะการลา
         await tx
           .update(leaveRequests)
           .set({
@@ -255,6 +298,7 @@ export class LeaveService {
           })
           .where(eq(leaveRequests.id, request.id));
 
+        // 3. จัดการ Attendance Log (Logic เดิม)
         const existingLog = await tx.query.attendanceLogs.findFirst({
           where: and(
             eq(attendanceLogs.studentProfileId, student.id),
@@ -267,7 +311,6 @@ export class LeaveService {
             .update(attendanceLogs)
             .set({
               dailyStatus: "LEAVE",
-              // approvedLeaveHours: "7.00",
               isVerified: true,
             })
             .where(eq(attendanceLogs.id, existingLog.id));
@@ -276,16 +319,23 @@ export class LeaveService {
             studentProfileId: student.id,
             workDate: leaveDateStr,
             dailyStatus: "LEAVE",
-            // approvedLeaveHours: "7.00",
-            // actualHoursWorked: "0.00",
             isVerified: true,
           });
         }
+
+        const studentName = `${student.user.fname} ${student.user.lname}`;
+
+        await tx.insert(notifications).values({
+          userId: request.userId,
+          title: "คำขอลาได้รับการอนุมัติ",
+          message: `${studentName} ได้รับการอนุมัติการลาในวันที่ ${leaveDateStr} จากพี่เลี้ยง (${approverName})`,
+          isRead: false,
+        });
       }
 
       return {
         success: true,
-        message: "อนุมัติการลา",
+        message: "อนุมัติการลาเรียบร้อยแล้ว",
       };
     });
   }
@@ -512,32 +562,70 @@ export class LeaveService {
     await this.assertUserExists(approverUserId);
 
     return await db.transaction(async (tx) => {
+      // 1. ดึงข้อมูลพี่เลี้ยงผู้กดปฏิเสธ (ใช้ fname, lname ตาม Schema)
+      const approver = await tx.query.users.findFirst({
+        where: eq(users.id, approverUserId),
+      });
+      const approverName = approver
+        ? `${approver.fname} ${approver.lname}`
+        : "ผู้ดูแลระบบ";
+
+      // 2. ดึงข้อมูลคำขอลา พร้อม Join ข้อมูล User ผ่าน Relation 'user_userId'
       const requests = await tx.query.leaveRequests.findMany({
         where: and(
           inArray(leaveRequests.id, ids),
           isNull(leaveRequests.deletedAt)
         ),
+        with: {
+          user_userId: true, // ใช้ชื่อตามที่ TypeScript แนะนำจาก Error
+        },
       });
 
-      if (requests.length === 0) throw new NotFoundError("ไม่พบคำขอลา");
-
-      const pendingIds = requests
-        .filter((r) => r.status === "PENDING")
-        .map((r) => r.id);
-
-      if (pendingIds.length === 0) {
-        throw new ConflictError("คำขอลาเหล่านี้ถูกดำเนินการไปแล้ว");
+      if (requests.length === 0) {
+        throw new NotFoundError("ไม่พบข้อมูลคำขอลาที่ต้องการปฏิเสธ");
       }
 
+      const pendingRequests = requests.filter((r) => r.status === "PENDING");
+
+      if (pendingRequests.length === 0) {
+        throw new ConflictError(
+          "คำขอลาเหล่านี้ถูกดำเนินการไปแล้วหรือไม่อยู่ในสถานะรออนุมัติ"
+        );
+      }
+
+      const pendingIds = pendingRequests.map((r) => r.id);
+
+      // 3. Update สถานะคำขอลาเป็น REJECTED
       await tx
         .update(leaveRequests)
         .set({
           status: "REJECTED",
           approvedBy: approverUserId,
           approverNote: reason,
-          approvedAt: new Date().toISOString(),
+          approvedAt: new Date().toISOString(), // ส่งเป็น ISO String
         })
         .where(inArray(leaveRequests.id, pendingIds));
+
+      // 4. สร้าง Notification ส่งกลับไปแจ้งเตือนนักศึกษาทุกคนใน List
+      const notificationValues = pendingRequests.map((request) => {
+        const leaveDateStr = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Bangkok",
+        }).format(new Date(request.leaveDatetime!));
+
+        // ดึงชื่อจาก Relation 'user_userId'
+        const studentName = `${request.user_userId.fname} ${request.user_userId.lname}`;
+
+        return {
+          userId: request.userId,
+          title: "คำขอลาไม่ได้รับการอนุมัติ",
+          message: `${studentName} คำขอลาในวันที่ ${leaveDateStr} ไม่ได้รับการอนุมัติจากพี่เลี้ยง (${approverName}) เนื่องจาก: ${reason}`,
+          isRead: false,
+        };
+      });
+
+      if (notificationValues.length > 0) {
+        await tx.insert(notifications).values(notificationValues);
+      }
 
       return {
         success: true,

@@ -25,6 +25,7 @@ import {
   attendanceLogs,
   checkTimes,
   leaveRequests,
+  notifications,
   offsiteTaskStudents,
   offsiteTasks,
   studentProfiles,
@@ -783,12 +784,21 @@ export class CheckTimeService {
     }
 
     return await db.transaction(async (tx) => {
+      // 1. ดึงโปรไฟล์พร้อมข้อมูล User เพื่อใช้ส่ง Notification
       const student = await tx.query.studentProfiles.findFirst({
         where: eq(studentProfiles.userId, userId),
+        with: {
+          user: true,
+        },
       });
 
       if (!student) {
         throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
+      }
+
+      // ป้องกัน Error กรณีแผนกเป็น Null (TypeScript Error)
+      if (!student.user.departmentId) {
+        throw new ConflictError("ไม่สามารถดำเนินการได้เนื่องจากคุณยังไม่มีสังกัดแผนก");
       }
 
       const existingLog = await tx.query.attendanceLogs.findFirst({
@@ -806,8 +816,6 @@ export class CheckTimeService {
       const isMissingOut = existingLog.checkInId && !existingLog.checkOutId;
       const currentStatus = existingLog.dailyStatus;
 
-      // Allow editing if it's MISSING_OUT, ABSENT, LATE, or even PRESENT/LEAVE (if they need to fix details)
-      // The mentor will still need to approve it.
       const allowedToEdit =
         isMissingOut ||
         ["ABSENT", "LATE", "PRESENT", "LEAVE"].includes(currentStatus);
@@ -883,10 +891,33 @@ export class CheckTimeService {
         resultRequest = newRequest;
       }
 
+      // --- สร้าง Notification ส่งหา Mentor/Admin ในแผนก ---
+      const owners = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            or(eq(users.roleId, 1), eq(users.roleId, 2)), // Admin หรือ Staff/Mentor
+            eq(users.departmentId, student.user.departmentId)
+          )
+        );
+
+      if (owners.length > 0) {
+        const studentName = `${student.user.fname} ${student.user.lname}`;
+        await tx.insert(notifications).values(
+          owners.map((o) => ({
+            userId: o.id,
+            title: "คำขอแก้ไขเวลาใหม่",
+            message: `ได้รับคําขอเเก้ไขเวลาของ ${studentName} ในวันที่ ${workDate}`,
+            isRead: false,
+          }))
+        );
+      }
+
       return {
         success: true,
         message: "ส่งคำขอแก้ไขเวลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)",
-        requestId: resultRequest.id,
+        requestId: resultRequest!.id,
         hoursWorked: calculatedHours,
       };
     });

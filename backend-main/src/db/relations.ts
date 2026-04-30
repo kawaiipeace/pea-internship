@@ -24,6 +24,7 @@ import {
   offices,
   offsiteTaskStudents,
   offsiteTasks,
+  passwordResetTokens,
   projects,
   roles,
   sessions,
@@ -33,7 +34,6 @@ import {
   timeCorrectionRequests,
   userFcmTokens,
   users,
-  passwordResetTokens
 } from "./schema";
 
 export const usersRelations = relations(users, ({ one, many }) => ({

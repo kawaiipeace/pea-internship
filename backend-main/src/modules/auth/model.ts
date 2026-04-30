@@ -40,6 +40,7 @@ export const ResetPasswordBody = t.Object({
 
 export type RegisterInternBodyType = typeof RegisterInternBody.static;
 export type LoginInternBodyType = typeof LoginInternBody.static;
-export type RequestResetPasswordBodyType = typeof RequestResetPasswordBody.static;
+export type RequestResetPasswordBodyType =
+  typeof RequestResetPasswordBody.static;
 export type VerifyResetCodeBodyType = typeof VerifyResetCodeBody.static;
 export type ResetPasswordBodyType = typeof ResetPasswordBody.static;

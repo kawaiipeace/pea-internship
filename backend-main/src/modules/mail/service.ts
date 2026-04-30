@@ -18,10 +18,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendResetPasswordCodeEmail(
-  to: string,
-  code: string
-) {
+export async function sendResetPasswordCodeEmail(to: string, code: string) {
   const html = `
     <div style="font-family: Arial, sans-serif;">
       <h2>Reset Password</h2>

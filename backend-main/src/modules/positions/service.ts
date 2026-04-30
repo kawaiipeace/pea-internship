@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, or, isNull, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { NotFoundError } from "elysia";
 import { BadRequestError, ForbiddenError } from "@/common/exceptions";
 import { db } from "@/db";
@@ -153,9 +153,7 @@ export class PositionService {
     } = query as model.GetPositionsQueryType & { office?: number };
 
     const offset = (page - 1) * limit;
-    const filters: SQL[] = [
-      isNull(internshipPositions.deletedAt),
-    ];
+    const filters: SQL[] = [isNull(internshipPositions.deletedAt)];
 
     if (department !== undefined) {
       filters.push(eq(internshipPositions.departmentId, department));
@@ -584,9 +582,7 @@ export class PositionService {
       }
 
       if ((pos.acceptedCount ?? 0) > 0) {
-        throw new BadRequestError(
-          "ไม่สามารถลบประกาศได้ เนื่องจากมีผู้ได้รับคัดเลือกแล้ว"
-        );
+        throw new BadRequestError("ไม่สามารถลบประกาศได้ เนื่องจากมีผู้ได้รับคัดเลือกแล้ว");
       }
 
       await tx
@@ -633,8 +629,7 @@ export class PositionService {
           userIds.map((uid) => ({
             userId: uid,
             title: "ใบสมัครถูกยกเลิก",
-            message:
-              "ใบสมัครของคุณถูกยกเลิก เนื่องจากใบประกาศฝึกงานนี้ถูกลบโดยเจ้าหน้าที่",
+            message: "ใบสมัครของคุณถูกยกเลิก เนื่องจากใบประกาศฝึกงานนี้ถูกลบโดยเจ้าหน้าที่",
           }))
         );
       }
@@ -647,8 +642,7 @@ export class PositionService {
 
       return {
         success: true,
-        message:
-          "ลบใบประกาศเรียบร้อยแล้ว และเปลี่ยนสถานะใบสมัครเป็น ABORT",
+        message: "ลบใบประกาศเรียบร้อยแล้ว และเปลี่ยนสถานะใบสมัครเป็น ABORT",
       };
     });
   }

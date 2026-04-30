@@ -63,7 +63,6 @@ export class MentorService {
       ),
     ];
 
-
     if (viewType !== "ALL" && mentor.departmentId) {
       conditions.push(
         eq(applicationStatuses.departmentId, mentor.departmentId)
