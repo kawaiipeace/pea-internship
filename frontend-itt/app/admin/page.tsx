@@ -147,7 +147,7 @@ const TopUnitWidget = ({ title, subtitle, axisLabel, color, items, isLoading }: 
                         {items.slice(0, 5).map((item, i) => (
                             <BarRow key={i} label={item.name} value={item.value} max={max} color={color} />
                         ))}
-                        <BarRow label="อื่นๆ" value={0} max={max} color={color} isOther />
+                        
                     </>
                 )}
             </div>
@@ -167,110 +167,155 @@ const TopUnitWidget = ({ title, subtitle, axisLabel, color, items, isLoading }: 
 };
 
 
-const badgeStyles: Record<string, { border: string; text: string }> = {
-    มา: { border: 'border-[#17B26A]', text: 'text-[#17B26A]' },
-    สาย: { border: 'border-[#FDB022]', text: 'text-[#FDB022]' },
-    ลา: { border: 'border-[#1AB3FF]', text: 'text-[#1AB3FF]' },
-    ขาด: { border: 'border-[#D92D20]', text: 'text-[#D92D20]' },
-};
-
-const AttendanceBadge = ({ count, type }: AttendanceBadgeProps) => (
-    <div className={`flex h-[52px] w-[52px] flex-col items-center justify-center rounded-xl border-[1.5px] bg-white shadow-sm dark:bg-gray-800 ${badgeStyles[type].border}`}>
-        <span className={`text-lg font-bold leading-none ${badgeStyles[type].text}`}>{count}</span>
-        <span className="mt-1 text-[11px] font-extrabold text-gray-500 uppercase">{type}</span>
-    </div>
-);
-
-const HoursBar = ({ done, total, note }: HoursBarProps) => {
-    const isAlert = note?.includes('สิ้นสุด') || note?.includes('7 วัน');
-    const noteColor = isAlert ? '#B42318' : '#667085';
-    const iconBgColor = isAlert ? '#B42318' : '#94A3B8';
-
-    return (
-        <div className="flex flex-col w-full gap-1">
-            <div className="flex items-baseline justify-center gap-1 mb-0.5">
-                <span className="text-2xl font-bold" style={{ color: '#A80689' }}>{done}</span>
-                <span className="text-[13px] font-medium text-[#667085]">/{total} ชั่วโมง</span>
-            </div>
-            <div className="h-[16px] w-full rounded-full bg-[#F2F4F7] dark:bg-gray-800 overflow-hidden relative shadow-inner">
-                <div
-                    className="h-full rounded-full transition-all duration-1000 ease-out"
-                    style={{
-                        width: `${Math.min(100, (done / total) * 100)}%`,
-                        background: `linear-gradient(180deg, #D414AD 0%, #A80689 45%, #7A0463 100%)`,
-                        boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3)'
-                    }}
-                />
-            </div>
-            {note && (
-                <div className="flex items-center gap-1.5 mt-1">
-                    <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full shrink-0" style={{ backgroundColor: iconBgColor }}>
-                        <IconClock className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    <span className="text-[13px] font-bold" style={{ color: noteColor }}>{note}</span>
-                </div>
-            )}
-        </div>
-    );
-};
+// สมมติว่านี่คือ Props เดิมที่คุณมีอยู่
+interface StudentRowProps {
+    id: string;
+    fullName: string;
+    positionName: string;
+    unitName?: string;
+    statistics: {
+        present: number;
+        late: number;
+        leave: number;
+        absent: number;
+    };
+    workHours: {
+        accumulated: number;
+        goal: number;
+        remainingDays?: number;
+    };
+}
 
 const StudentRow = ({ id, fullName, positionName, unitName, statistics, workHours }: StudentRowProps) => {
     const nameParts = fullName.split(' (');
     const mainName = nameParts[0] ?? fullName;
     const nickname = nameParts[1]?.replace(')', '') ?? '';
-    const router = useRouter()
+    const router = useRouter();
 
     const { accumulated, goal, remainingDays } = workHours;
 
-    const themeColor = '#A80689';
     let hoursNote = '';
-    if (remainingDays === 0 || (goal > 0 && accumulated >= goal)) {
+    const isEnded = remainingDays === 0 || (goal > 0 && accumulated >= goal);
+    
+    if (isEnded) {
         hoursNote = 'สิ้นสุดการฝึกงาน';
     } else if (remainingDays !== undefined) {
         hoursNote = `เหลืออีก ${remainingDays} วัน`;
     }
 
+    // คำนวณเปอร์เซ็นต์สำหรับ Progress bar
+    const progressPercent = goal > 0 ? Math.min((accumulated / goal) * 100, 100) : 0;
+
     return (
-        <tr className="border-b border-[#F2F4F7] transition-colors hover:bg-gray-50/50 dark:border-[#1b2e4b] dark:hover:bg-[#1b2e4b]/50" onClick={()=> router.push(`/admin/${id}`)}>
-            <td className="px-6 py-4">
+        <tr 
+            className="hover:bg-gray-50/50 transition-colors cursor-pointer border-b border-[#F2F4F7] dark:border-[#1b2e4b] dark:hover:bg-[#1b2e4b]/50" 
+            onClick={() => router.push(`/admin/${id}`)}
+        >
+            {/* 1. นักศึกษา */}
+            <td className="py-4 px-6 text-left">
                 <div className="flex items-center gap-4">
                     <ImageWithAuth
                         userId={id}
-                        className="h-12 w-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                        className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
                         fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`}
                     />
-                    <div>
-                        <p className="font-bold text-[#111827] text-[14px]">
-                            {mainName}
-                            {nickname && <span className="text-[#000000] font-bold"> ({nickname})</span>}
-                        </p>
-                        <p className="text-[12px] font-medium text-[#9ca3af]">{positionName}</p>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">
+                                {mainName}
+                            </span>
+                            {nickname && (
+                                <span className="font-bold text-[#000000] text-[14px] whitespace-nowrap">
+                                    ({nickname})
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">
+                            {positionName}
+                        </span>
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-4">
-                <span className="text-[16px] font-bold text-[#111827]">{unitName}</span>
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex gap-2 justify-center">
-                    <AttendanceBadge count={statistics.present} type="มา" />
-                    <AttendanceBadge count={statistics.late} type="สาย" />
-                    <AttendanceBadge count={statistics.leave} type="ลา" />
-                    <AttendanceBadge count={statistics.absent} type="ขาด" />
+
+            {/* 2. สถานะวันนี้ / สังกัด (ใช้ข้อมูล unitName เดิมของคุณ) */}
+            <td className="py-4 px-6">
+                <div className="flex justify-center">
+                    <div className="w-[124px] flex justify-center lg:justify-start">
+                        <span className="text-[16px] font-bold text-[#111827]">{unitName}</span>
+                    </div>
                 </div>
             </td>
-            <td className="px-6 py-4 min-w-[200px]">
-                <HoursBar done={accumulated} total={goal} color={themeColor} note={hoursNote} />
+
+            {/* 3. สถิติการมาฝึกงาน */}
+            <td className="py-4 px-6 text-center">
+                <div className="flex justify-center gap-2">
+                    {/* มา */}
+                    <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                        <span className="text-[18px] font-bold text-[#079455] leading-none">{statistics.present}</span>
+                        <span className="text-[11px] text-[#61646C] font-medium mt-0">มา</span>
+                    </div>
+                    {/* สาย */}
+                    <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                        <span className="text-[18px] font-bold text-[#FDB022] leading-none">{statistics.late}</span>
+                        <span className="text-[11px] text-[#61646C] font-medium mt-0">สาย</span>
+                    </div>
+                    {/* ลา */}
+                    <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                        <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{statistics.leave}</span>
+                        <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
+                    </div>
+                    {/* ขาด */}
+                    <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                        <span className="text-[18px] font-bold text-[#D92D20] leading-none">{statistics.absent}</span>
+                        <span className="text-[11px] text-[#61646C] font-medium mt-0">ขาด</span>
+                    </div>
+                </div>
             </td>
-            <td className="px-6 py-4 text-center">
-                <span className="inline-block rounded-xl px-5 py-2 text-[14px] font-bold bg-[#FFF7ED] text-[#EA580C] border border-[#FED7AA]">
-                    อยู่ระหว่างการฝึกงาน
-                </span>
+
+            {/* 4. ชั่วโมงทำงาน */}
+            <td className="py-4 px-6">
+                <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
+                    <div className="flex items-center justify-end px-1 mb-1">
+                        <span className="text-[10px] text-[#9ca3af] font-medium uppercase tracking-wider">
+                            <b className="text-[#a80689] text-[14px]">{accumulated}</b>
+                            / {goal} ชั่วโมง
+                        </span>
+                    </div>
+                    <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                        <div
+                            className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
+                            style={{ width: `${progressPercent}%` }}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 px-1 mt-1">
+                        <span
+                            className="material-symbols-outlined select-none"
+                            style={{ 
+                                fontVariationSettings: "'FILL' 1", 
+                                fontSize: '20px', 
+                                color: isEnded ? '#B42318' : '#85888E' 
+                            }}
+                        >
+                            schedule
+                        </span>
+                        <span className={`text-[12px] font-normal ${isEnded ? 'text-[#D92D20]' : 'text-[#6b7280]'}`}>
+                            {hoursNote}
+                        </span>
+                    </div>
+                </div>
+            </td>
+
+            {/* 5. ผลการพิจารณา (แทนที่ด้วย Badge เดิมของคุณให้เข้ากับ Layout) */}
+            <td className="py-4 px-6 text-center">
+                <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
+                    <span className="inline-block rounded-xl px-5 py-2 text-[14px] font-bold bg-[#FFF7ED] text-[#EA580C] border border-[#FED7AA] whitespace-nowrap">
+                        อยู่ระหว่างการฝึกงาน
+                    </span>
+                </div>
             </td>
         </tr>
     );
 };
-
 const MONTHS_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const BE_OFFSET = 543;
 
