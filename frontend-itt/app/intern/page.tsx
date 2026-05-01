@@ -202,7 +202,7 @@ const CheckInPage = () => {
         const h = currentTime.getHours();
         const m = currentTime.getMinutes();
         // Allowed from 16:30 (4:30 PM) onwards
-        return h > 16 || (h === 9 && m >= 30);
+        return h > 16 || (h === 16 && m >= 30);
     };
 
     useEffect(() => {
@@ -407,14 +407,14 @@ const CheckInPage = () => {
                                         transform: `translateX(-${progressData?.percentage || 0}%)`
                                     }}
                                 >
-                                    {progressData?.accumulatedHours || 0} ชั่วโมง
+                                    {Math.round(progressData?.accumulatedHours || 0)} ชั่วโมง
                                 </div>
                             </div>
                             {/* Badge at the End */}
                             <div
                                 className="shrink-0 text-white text-[11px] px-3 min-w-[70px] h-[22px] rounded-full font-medium flex items-center justify-center bg-[#A80689] shadow-[inset_0px_-5px_7px_rgba(0,0,0,0.4),inset_0px_2px_4px_rgba(255,255,255,0.4)] whitespace-nowrap z-20 self-start"
                             >
-                                {progressData?.totalHoursGoal || 560} ชั่วโมง
+                                {Math.round(progressData?.totalHoursGoal || 560)} ชั่วโมง
                             </div>
                         </div>
                     </div>
@@ -508,7 +508,7 @@ const CheckInPage = () => {
                             <circle cx="55" cy="55" r="47" stroke="url(#chartGradient)" strokeWidth="8" fill="none" strokeDasharray="295" strokeDashoffset={295 - (295 * (progressData?.percentage || 0) / 100)} strokeLinecap="round" style={{ filter: 'drop-shadow(0px 3px 4px rgba(168,6,137,0.4))' }} />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 mt-[2px]">
-                            <span className="text-[13px] font-medium text-[#111] leading-tight tracking-[0.2px]">{progressData?.accumulatedHours || 0} / {progressData?.totalHoursGoal || 560}</span>
+                            <span className="text-[13px] font-medium text-[#111] leading-tight tracking-[0.2px]">{Math.round(progressData?.accumulatedHours || 0)} / {Math.round(progressData?.totalHoursGoal || 560)}</span>
                             <span className="text-[13px] font-medium text-[#111] leading-tight mt-[6px]">ชั่วโมง</span>
                         </div>
                     </div>

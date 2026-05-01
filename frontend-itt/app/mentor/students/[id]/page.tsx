@@ -7,7 +7,7 @@ import ImageWithAuth from '@/components/ImageWithAuth';
 import Swal from 'sweetalert2';
 
 const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSuccess }: any) => {
-    const defaultMissing = Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0));
+    const defaultMissing = Math.ceil(Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0)));
     const [hours, setHours] = useState<string>(defaultMissing.toString());
 
     useEffect(() => {
@@ -20,6 +20,7 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSu
 
     const parsedHours = parseFloat(hours) || 0;
     const days = Math.ceil(parsedHours / 7);
+    const isExceedMax = parsedHours > defaultMissing;
 
     // Calculate new end date (skipping weekends)
     let endDate = profile?.period?.endDate ? new Date(profile.period.endDate) : new Date();
@@ -37,11 +38,28 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSu
 
     const formatOrigEnd = profile?.period?.endDate ? new Date(profile.period.endDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
 
-    // Calculate remaining days for original end date
+    // Calculate remaining days for original end date (excluding weekends)
     const now = new Date();
     const origEnd = profile?.period?.endDate ? new Date(profile.period.endDate) : new Date();
-    const timeDiff = Math.ceil((origEnd.getTime() - now.getTime()) / (1000 * 3600 * 24));
-    const remainDays = Math.max(0, timeDiff);
+    
+    let remainDays = 0;
+    let tempDate = new Date(now);
+    tempDate.setHours(0, 0, 0, 0);
+    const targetDate = new Date(origEnd);
+    targetDate.setHours(0, 0, 0, 0);
+
+    while (tempDate <= targetDate) {
+        const day = tempDate.getDay();
+        if (day !== 0 && day !== 6) {
+            remainDays++;
+        }
+        tempDate.setDate(tempDate.getDate() + 1);
+    }
+    // Subtract 1 if the current time is already past working hours? 
+    // Usually, if it's the middle of the day, we still count today as 1 day remaining.
+    // The user said "ไม่ใช่ 6 วันหรอ" which matches counting today (Fri 1) and Fri 8 and everything in between except Sat/Sun.
+    
+    remainDays = Math.max(0, remainDays);
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -90,7 +108,7 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSu
                         <p className="font-semibold text-[14px]">ความคืบหน้าในการฝึกงาน</p>
                         <div className="flex justify-between items-end">
                             <p className="text-[22px] font-semibold max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
-                                {progress?.accumulatedHours} <span className="text-[14px] font-normal text-white/80">/{progress?.totalHoursGoal} ชั่วโมง</span>
+                                {Math.round(progress?.accumulatedHours || 0)} <span className="text-[14px] font-normal text-white/80">/{Math.round(progress?.totalHoursGoal || 0)} ชั่วโมง</span>
                             </p>
                             <div className="text-right flex flex-col items-end">
                                 <span className="text-[12px] text-white/80 leading-none">ขาดอีก</span>
@@ -126,10 +144,16 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSu
                                         if (parseFloat(val) < 0) return;
                                         setHours(val);
                                     }}
-                                    className="w-full bg-white border border-[#F2F4F7] rounded-[5px] py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 focus:ring-[#A80689]/20 focus:border-[#A80689] outline-none"
+                                    className={`w-full bg-white border ${isExceedMax ? 'border-[#D92D20]' : 'border-[#F2F4F7]'} rounded-[5px] py-2.5 px-3 pr-14 text-[14px] text-[#111827] focus:ring-2 ${isExceedMax ? 'focus:ring-[#D92D20]/10 focus:border-[#D92D20]' : 'focus:ring-[#A80689]/20 focus:border-[#A80689]'} outline-none`}
                                 />
                                 <span className="absolute right-3 top-2.5 text-[14px] text-[#61646C] pointer-events-none">ชั่วโมง</span>
                             </div>
+                            {isExceedMax && (
+                                <p className="mt-1.5 text-[#D92D20] text-[12px] font-medium flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[16px]">error</span>
+                                    จำนวนชั่วโมงชดเชยต้องไม่เกิน {defaultMissing} ชั่วโมง
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-[14px] font-normal text-[#111827] mb-2">คิดเป็นจำนวนวัน</label>
@@ -160,6 +184,7 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSu
                     </button>
                     <button
                         onClick={async () => {
+                            if (isExceedMax) return;
                             try {
                                 Swal.fire({
                                     title: 'กำลังบันทึกข้อมูล...',
@@ -200,7 +225,12 @@ const CompensationModal = ({ isOpen, onClose, profile, progress, studentId, onSu
                                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกการชดเชยได้', 'error');
                             }
                         }}
-                        className="px-6 py-2.5 bg-[#0EBA67] rounded-xl text-white text-[14px] font-bold hover:bg-[#0da45a] transition-colors shadow-sm"
+                        disabled={isExceedMax}
+                        className={`px-6 py-2.5 rounded-xl text-white text-[14px] font-bold transition-colors shadow-sm ${
+                            isExceedMax 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-[#0EBA67] hover:bg-[#0da45a]'
+                        }`}
                     >
                         ยืนยัน
                     </button>
@@ -634,8 +664,20 @@ const StudentDetailPage = () => {
                                 if (!profile.period?.endDate) return null;
                                 const end = new Date(profile.period.endDate);
                                 const now = new Date();
-                                const diff = end.getTime() - now.getTime();
-                                const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                                
+                                let days = 0;
+                                let tempDate = new Date(now);
+                                tempDate.setHours(0, 0, 0, 0);
+                                const targetDate = new Date(end);
+                                targetDate.setHours(0, 0, 0, 0);
+
+                                while (tempDate <= targetDate) {
+                                    const day = tempDate.getDay();
+                                    if (day !== 0 && day !== 6) {
+                                        days++;
+                                    }
+                                    tempDate.setDate(tempDate.getDate() + 1);
+                                }
 
                                 const isUrgent = days <= 7;
                                 const displayColor = isUrgent ? '#B42318' : '#6b7280';
