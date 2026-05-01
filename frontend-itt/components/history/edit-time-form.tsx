@@ -224,12 +224,12 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                 {/* Form Box */}
                 <div className="w-full max-w-[820px] mx-auto min-h-[337px] bg-[#FEFBF6] dark:bg-[#1C1710] border border-[#CECFD2] rounded-[5px] p-4 sm:p-6 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center gap-[2px] text-[#1C1C1C] dark:text-gray-300 text-[15px] mb-4">
-                        <span className={`material-symbols-rounded text-[24px] ${(selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location) 
+                        <span className={`material-symbols-rounded text-[24px] ${(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                              ? "text-[#079455]" : "text-[#FDB022]"}`}>
-                            {(selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location) 
+                            {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                              ? "apartment" : "globe_location_pin"}
                         </span>
-                        {(selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location) 
+                        {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                          ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                     </div>
 
@@ -428,12 +428,12 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                     {/* Location */}
                     <div className="flex items-center gap-2 text-[#1C1C1C] text-[15px]">
-                        <span className={`material-symbols-rounded text-[24px] ${(selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location) 
+                        <span className={`material-symbols-rounded text-[24px] ${(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                              ? "text-[#079455]" : "text-[#FDB022]"}`}>
-                            {(selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location) 
+                            {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                              ? "apartment" : "globe_location_pin"}
                         </span>
-                        {(selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location) 
+                        {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                          ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                     </div>
 

@@ -1304,15 +1304,15 @@ const AttendanceHistoryPage = () => {
                                                 <span 
                                                   className="material-symbols-rounded text-[18px]"
                                                   style={{ 
-                                                    color: (selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                    color: (selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-")
                                                             ? "#079455" : "#FDB022" 
                                                   }}
                                                 >
-                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                  {(selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-")
                                                     ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                  {(selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-")
                                                     ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
@@ -1376,15 +1376,15 @@ const AttendanceHistoryPage = () => {
                                                 <span 
                                                   className="material-symbols-rounded text-[18px]"
                                                   style={{ 
-                                                    color: (selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                    color: (selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-")
                                                             ? "#079455" : "#FDB022" 
                                                   }}
                                                 >
-                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                  {(selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-")
                                                     ? "apartment" : "globe_location_pin"}
                                                 </span>
                                                 <span className="whitespace-nowrap truncate font-bold">
-                                                  {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                                  {(selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-")
                                                     ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                                 </span>
                                               </div>
@@ -1479,7 +1479,7 @@ const AttendanceHistoryPage = () => {
                                         <div className="flex flex-col gap-1 px-1">
                                           {/* Location Row (Dynamic Icon) */}
                                           <div className="flex items-center gap-2 text-[#1C1C1C] font-bold text-[16px]">
-                                            {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location) ? (
+                                            {(selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-") ? (
                                               <span 
                                                 className="material-symbols-rounded text-[24px]"
                                                 style={{ color: "#079455" }}
@@ -1495,7 +1495,7 @@ const AttendanceHistoryPage = () => {
                                               </span>
                                             )}
                                             <span>
-                                              {(selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location)
+                                              {(selectedHistoryItem.location?.startsWith("ในสถานที่") || selectedHistoryItem.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem.location || selectedHistoryItem.location === "-")
                                                 ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                                             </span>
                                           </div>
