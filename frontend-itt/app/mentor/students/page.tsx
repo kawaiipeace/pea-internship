@@ -82,13 +82,7 @@ const StudentsPage = () => {
                 const nick = s.nickname || detail?.profile?.nickname || extractedNick;
                 const displayName = nick ? `${mainName} (${nick})` : mainName;
 
-                // Check for compensation in statusNote (e.g. "COMPENSATION:2")
-                const statusNote = detail?.profile?.statusNote || '';
-                let compensationDays = 0;
-                if (statusNote.includes('COMPENSATION:')) {
-                    const match = statusNote.match(/COMPENSATION:(\d+)/);
-                    if (match) compensationDays = parseInt(match[1]);
-                }
+                const compensationDays = Math.ceil((detail?.progress?.totalExtendedHours || 0) / 7);
 
                 return {
                     id: s.id,
@@ -303,7 +297,7 @@ const StudentsPage = () => {
             bgColor = 'bg-[#DCFAE6]';
             textColor = 'text-[#079455]';
         } else if (student.internshipStatus === 'EXTENDED') {
-            const days = Math.ceil(Math.max(0, (student.progress.total - student.progress.current)) / 7);
+            const days = student.compensationDays;
             text = `ชดเชยวันทำงาน ${days} วัน`;
             bgColor = 'bg-[#F2F4F7]';
             textColor = 'text-[#FF6B6B]';

@@ -22,6 +22,7 @@ import {
   departments,
   institutions,
   internshipPositions,
+  internshipExtensions,
   leaveRequests,
   offsiteTaskStudents,
   offsiteTasks,
@@ -312,6 +313,7 @@ export class MentorService {
     const [studentInfo] = await db
       .select({
         userId: users.id,
+        applicationStatusId: applicationStatuses.id,
         firstName: users.fname,
         lastName: users.lname,
         username: users.displayUsername,
@@ -319,6 +321,7 @@ export class MentorService {
         phone: users.phoneNumber,
         image: studentProfiles.image,
         internshipStatus: studentProfiles.internshipStatus,
+        statusNote: studentProfiles.statusNote,
         institutionName: institutions.name,
         positionName: internshipPositions.name,
         startDate: applicationInformations.startDate,
@@ -404,6 +407,28 @@ export class MentorService {
       }
     }
     if (remainingDays < 0) remainingDays = 0;
+
+    const [extendedData] = await db
+      .select({
+        totalExtendedHours: sql`SUM(CAST(${internshipExtensions.additionalHours} AS NUMERIC))`,
+        latestNewEndDate: sql`MAX(${internshipExtensions.newEndDate})`,
+        latestApprovedAt: sql`MAX(${internshipExtensions.approvedAt})`
+      })
+      .from(internshipExtensions)
+      .where(
+        and(
+          inArray(
+            internshipExtensions.applicationStatusId,
+            db.select({ id: applicationStatuses.id })
+              .from(applicationStatuses)
+              .where(eq(applicationStatuses.userId, studentId))
+          ),
+          eq(internshipExtensions.status, "APPROVED")
+        )
+      );
+
+    const totalExtendedHours = Number(extendedData?.totalExtendedHours || 0);
+    const extendedEndDate = extendedData?.latestNewEndDate ? new Date(extendedData.latestNewEndDate as string) : null;
 
     let presentCount = 0,
       lateCount = 0,
@@ -565,6 +590,7 @@ export class MentorService {
         email: studentInfo.email,
         phone: studentInfo.phone,
         internshipStatus: studentInfo.internshipStatus,
+        statusNote: studentInfo.statusNote,
         period: {
           startDate: studentInfo.startDate,
           endDate: studentInfo.endDate,
@@ -574,6 +600,9 @@ export class MentorService {
         accumulatedHours: Number(accumulatedHours.toFixed(2)),
         totalHoursGoal: Number(studentInfo.totalHoursGoal || 560),
         remainingDays: remainingDays,
+        totalExtendedHours: totalExtendedHours,
+        extendedEndDate: extendedEndDate,
+        lastExtensionDate: extendedData?.latestApprovedAt ? new Date(extendedData.latestApprovedAt as string) : null,
       },
       summary: {
         present: presentCount,

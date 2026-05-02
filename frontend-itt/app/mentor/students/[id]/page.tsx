@@ -520,10 +520,21 @@ const StudentDetailPage = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const allowedStart = new Date(end);
-        allowedStart.setDate(end.getDate() - 7);
+        let count = 0;
+        let tempDate = new Date(end);
         
-        return today >= allowedStart;
+        if (tempDate.getDay() !== 0 && tempDate.getDay() !== 6) {
+            count = 1;
+        }
+
+        while (count < 7) {
+            tempDate.setDate(tempDate.getDate() - 1);
+            if (tempDate.getDay() !== 0 && tempDate.getDay() !== 6) {
+                count++;
+            }
+        }
+        
+        return today >= tempDate;
     })();
 
     const handleExportExcel = () => {
@@ -630,7 +641,7 @@ const StudentDetailPage = () => {
                                 <div>
                                     <p className="text-[#98A2B3] text-[14px] mb-0.5">ระยะเวลาการฝึกงาน</p>
                                     <p className="text-[#111827] text-[16px] font-normal leading-tight">
-                                        {formatDate(profile.period?.startDate)} - {formatDate(profile.period?.endDate)}
+                                        {formatDate(profile.period?.startDate)} - {formatDate(progress?.extendedEndDate || profile.period?.endDate)}
                                     </p>
                                 </div>
                                 <div>
@@ -661,8 +672,8 @@ const StudentDetailPage = () => {
                                 ></div>
                             </div>
                             {(() => {
-                                if (!profile.period?.endDate) return null;
-                                const end = new Date(profile.period.endDate);
+                                const end = progress?.extendedEndDate ? new Date(progress.extendedEndDate) : (profile.period?.endDate ? new Date(profile.period.endDate) : null);
+                                if (!end) return null;
                                 const now = new Date();
                                 
                                 let days = 0;
@@ -692,7 +703,7 @@ const StudentDetailPage = () => {
                                             schedule
                                         </span>
                                         <span className="text-[14px] font-normal" style={{ color: displayColor }}>
-                                            {days > 0 ? `เหลืออีก ${days} วันก่อนสิ้นสุดการฝึกงาน` : 'สิ้นสุดการฝึกงานแล้ว'}
+                                            {days > 0 ? `เหลืออีก ${days} วันก่อนสิ้นสุดการฝึกงาน` : (progress?.extendedEndDate || profile.period?.endDate) && new Date(progress?.extendedEndDate || profile.period?.endDate).toDateString() === new Date().toDateString() ? 'สิ้นสุดการฝึกงานวันนี้' : 'สิ้นสุดการฝึกงานแล้ว'}
                                         </span>
                                     </div>
                                 );
@@ -706,8 +717,37 @@ const StudentDetailPage = () => {
                                 ผ่านการฝึกงาน
                             </div>
                         ) : profile?.internshipStatus === 'EXTENDED' ? (
-                            <div className="w-full py-3 bg-[#F2F4F7] text-[#FF6B6B] rounded-xl font-bold flex items-center justify-center text-[18px]">
-                                ชดเชยวันทำงาน {Math.ceil(Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0)) / 7)} วัน
+                            <div className="w-full py-3 bg-[#F2F4F7] text-[#FF6B6B] rounded-xl font-bold flex flex-col items-center justify-center text-[18px]">
+                                <div>
+                                    {(() => {
+                                        const rawHours = progress?.totalExtendedHours;
+                                        const hoursFromExtensions = typeof rawHours === 'string' ? parseFloat(rawHours) : (rawHours || 0);
+                                        
+                                        if (hoursFromExtensions > 0) {
+                                            return `ชดเชยวันทำงาน ${Math.ceil(hoursFromExtensions / 7)} วัน`;
+                                        }
+                                        
+                                        // Fallback to statusNote
+                                        const statusNote = profile?.statusNote || '';
+                                        const match = statusNote.match(/COMPENSATION:(\d+)/);
+                                        if (match) {
+                                            return `ชดเชยวันทำงาน ${match[1]} วัน`;
+                                        }
+                                        
+                                        // If status is EXTENDED but no hours found, show 0 or calculate from missing if possible as last resort
+                                        const missingHours = Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0));
+                                        if (missingHours > 0) {
+                                            return `ชดเชยวันทำงาน ${Math.ceil(missingHours / 7)} วัน`;
+                                        }
+                                        
+                                        return 'ชดเชยวันทำงาน 0 วัน';
+                                    })()}
+                                </div>
+                                {progress?.lastExtensionDate && (
+                                    <div className="text-[12px] font-normal text-[#61646C] mt-1">
+                                        (อนุมัติเมื่อ: {new Date(progress.lastExtensionDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })})
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <>
