@@ -113,6 +113,20 @@ export default function CreditsPage() {
   const teamSectionRef = useRef<HTMLDivElement>(null);
   const [teamProgress, setTeamProgress] = useState(0);
 
+  // Card navigation
+  const handleCardNav = useCallback((targetIdx: number) => {
+    const sectionEl = teamSectionRef.current;
+    if (!sectionEl) return;
+    const totalCards = 13;
+    const sectionTop = sectionEl.getBoundingClientRect().top + window.scrollY;
+    const sectionH = sectionEl.offsetHeight;
+    const viewH = window.innerHeight;
+    // +0.05 stays near the start of the slot (cardFrac≈0.05, visually at rest), avoiding floating-point floor errors
+    const targetProgress = (targetIdx + 0.05) / totalCards;
+    const targetScrollY = sectionTop + targetProgress * (sectionH - viewH);
+    window.scrollTo({ top: targetScrollY, behavior: "smooth" });
+  }, []);
+
   // Window width — client only, to avoid hydration mismatch
   const [winW, setWinW] = useState(1280);
   useEffect(() => {
@@ -541,8 +555,8 @@ export default function CreditsPage() {
               data-idx={i}
               data-type="line"
               className={`transition-all duration-700 ${visibleLines[i]
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-8"
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
                 }`}
               style={{ transitionDelay: `${i * 120}ms` }}
             >
@@ -568,8 +582,8 @@ export default function CreditsPage() {
               data-idx={i}
               data-type="logo"
               className={`transition-all duration-[600ms] ${visibleLogos[i]
-                  ? "opacity-100 translate-y-0 scale-100"
-                  : "opacity-0 translate-y-10 scale-75"
+                ? "opacity-100 translate-y-0 scale-100"
+                : "opacity-0 translate-y-10 scale-75"
                 }`}
               style={{ transitionDelay: `${i * 180}ms` }}
             >
@@ -724,211 +738,674 @@ export default function CreditsPage() {
           </div>
         </section>
 
-        {/* ─── Team Horizontal Scroll Section ───────────────────────── */}
+        {/* ─── Team Stacked Card Section ───────────────────────── */}
         <section
           ref={teamSectionRef}
           className="relative"
-          style={{ height: "500vh" }}
+          style={{ height: "1500vh" }}
         >
           <div
             className="sticky top-0 w-full overflow-hidden"
             style={{ height: "100vh" }}
           >
-            {/* Role label top center */}
-            <div className="absolute top-8 left-0 right-0 flex justify-center z-10 pointer-events-none">
+            {/* Role label top center — enhanced design */}
+            <div className="absolute top-6 left-0 right-0 flex justify-center z-10 pointer-events-none">
               {(() => {
-                // developer label active for first 6/13 of scroll, designer after
-                const devEnd = 6 / 13;
-                const isDesigner = teamProgress > devEnd + 0.08;
+                const activeIdx = Math.min(12, Math.floor(teamProgress * 13));
+                const isDesigner = activeIdx >= 7;
+                const activeBorderColor = isDesigner ? "rgba(192,132,252,0.5)" : "rgba(255,184,107,0.5)";
                 return (
-                  <div className="flex gap-12 items-center">
-                    <span
+                  <div
+                    className="relative flex flex-col items-center"
+                    style={{ padding: "0.8rem 0" }}
+                  >
+                    {/* Decorative top line */}
+                    <div
                       style={{
-                        fontFamily: dmSerif.style.fontFamily,
-                        fontSize: "clamp(0.75rem, 1.8vw, 1rem)",
-                        color: "#FFB86B",
-                        letterSpacing: "0.3em",
-                        textTransform: "uppercase",
-                        opacity: isDesigner ? 0.25 : 1,
-                        transition: "opacity 0.6s ease",
+                        width: "60px",
+                        height: "1px",
+                        background: `linear-gradient(90deg, transparent, ${activeBorderColor}, transparent)`,
+                        marginBottom: "0.9rem",
+                        transition: "background 0.6s ease",
                       }}
-                    >
-                      Developer
-                    </span>
-                    <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "1rem" }}>·</span>
-                    <span
+                    />
+                    <div className="flex gap-6 sm:gap-10 items-center">
+                      {/* Developer label */}
+                      <div className="flex flex-col items-center">
+                        <span
+                          style={{
+                            fontFamily: dmSerif.style.fontFamily,
+                            fontSize: "clamp(0.85rem, 2vw, 1.2rem)",
+                            color: "#FFB86B",
+                            letterSpacing: "0.35em",
+                            textTransform: "uppercase",
+                            opacity: isDesigner ? 0.2 : 1,
+                            transition: "all 0.6s ease",
+                            textShadow: !isDesigner ? "0 0 20px rgba(255,184,107,0.4), 0 0 40px rgba(255,184,107,0.15)" : "none",
+                          }}
+                        >
+                          Developer
+                        </span>
+                        <div
+                          style={{
+                            width: isDesigner ? "0%" : "100%",
+                            height: "2px",
+                            background: "linear-gradient(90deg, transparent, #FFB86B, transparent)",
+                            marginTop: "0.4rem",
+                            transition: "width 0.5s ease",
+                            borderRadius: "1px",
+                            boxShadow: "0 0 8px rgba(255,184,107,0.3)",
+                          }}
+                        />
+                      </div>
+
+                      {/* Animated dot separator */}
+                      <div className="flex gap-1.5 items-center">
+                        <div
+                          style={{
+                            width: "3px",
+                            height: "3px",
+                            borderRadius: "50%",
+                            background: isDesigner ? "rgba(192,132,252,0.4)" : "rgba(255,184,107,0.4)",
+                            transition: "background 0.6s ease",
+                          }}
+                        />
+                        <div
+                          style={{
+                            width: "5px",
+                            height: "5px",
+                            borderRadius: "50%",
+                            background: isDesigner ? "rgba(192,132,252,0.7)" : "rgba(255,184,107,0.7)",
+                            transition: "background 0.6s ease",
+                            boxShadow: `0 0 6px ${isDesigner ? "rgba(192,132,252,0.3)" : "rgba(255,184,107,0.3)"}`,
+                          }}
+                        />
+                        <div
+                          style={{
+                            width: "3px",
+                            height: "3px",
+                            borderRadius: "50%",
+                            background: isDesigner ? "rgba(192,132,252,0.4)" : "rgba(255,184,107,0.4)",
+                            transition: "background 0.6s ease",
+                          }}
+                        />
+                      </div>
+
+                      {/* Designer label */}
+                      <div className="flex flex-col items-center">
+                        <span
+                          style={{
+                            fontFamily: dmSerif.style.fontFamily,
+                            fontSize: "clamp(0.85rem, 2vw, 1.2rem)",
+                            color: "#c084fc",
+                            letterSpacing: "0.35em",
+                            textTransform: "uppercase",
+                            opacity: isDesigner ? 1 : 0.2,
+                            transition: "all 0.6s ease",
+                            textShadow: isDesigner ? "0 0 20px rgba(192,132,252,0.4), 0 0 40px rgba(192,132,252,0.15)" : "none",
+                          }}
+                        >
+                          Designer
+                        </span>
+                        <div
+                          style={{
+                            width: isDesigner ? "100%" : "0%",
+                            height: "2px",
+                            background: "linear-gradient(90deg, transparent, #c084fc, transparent)",
+                            marginTop: "0.4rem",
+                            transition: "width 0.5s ease",
+                            borderRadius: "1px",
+                            boxShadow: "0 0 8px rgba(192,132,252,0.3)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {/* Decorative bottom line */}
+                    <div
                       style={{
-                        fontFamily: dmSerif.style.fontFamily,
-                        fontSize: "clamp(0.75rem, 1.8vw, 1rem)",
-                        color: "#c084fc",
-                        letterSpacing: "0.3em",
-                        textTransform: "uppercase",
-                        opacity: isDesigner ? 1 : 0.25,
-                        transition: "opacity 0.6s ease",
+                        width: "120px",
+                        height: "1px",
+                        background: `linear-gradient(90deg, transparent, ${activeBorderColor}, transparent)`,
+                        marginTop: "0.9rem",
+                        transition: "background 0.6s ease",
                       }}
-                    >
-                      Designer
-                    </span>
+                    />
                   </div>
                 );
               })()}
             </div>
 
-            {/* Horizontal track */}
+            {/* Stacked card shuffle + side detail panel */}
             {(() => {
               const members = [
-                { name: "Pat", src: "/images/photodirevtor/pat1.png", role: "Developer" },
-                { name: "Rif", src: "/images/photodirevtor/rif2.png", role: "Developer" },
-                { name: "Yam", src: "/images/photodirevtor/yam3.png", role: "Developer" },
-                { name: "Jom", src: "/images/photodirevtor/jom4.png", role: "Developer" },
-                { name: "Tam", src: "/images/photodirevtor/tam5.png", role: "Developer" },
-                { name: "Ice", src: "/images/photodirevtor/ice6.png", role: "Developer" },
-                { name: "RollYam", src: "/images/photodirevtor/rollyam7.png", role: "Designer" },
-                { name: "Nass", src: "/images/photodirevtor/nass8.png", role: "Designer" },
-                { name: "Pond", src: "/images/photodirevtor/pond9.png", role: "Designer" },
-                { name: "Faii", src: "/images/photodirevtor/faii10.png", role: "Designer" },
-                { name: "Yo", src: "/images/photodirevtor/yo11.png", role: "Designer" },
-                { name: "Cream", src: "/images/photodirevtor/cream12.png", role: "Designer" },
-                { name: "Natty", src: "/images/photodirevtor/natty13.png", role: "Designer" },
+                {
+                  name: "Jom",
+                  src: "/images/photodirevtor/jom4.png",
+                  role: "Developer",
+                  fullName: "",
+                  position: "Backend Developer",
+                  university: "Dhurakij Pundit University",
+                  universityImg: "/images/dpu.png",
+                  email: "65111398@dpu.ac.th",
+                  projects: [
+                    { name: "PEA Internship", logo: "/images/logo.png" },
+                    { name: "PEA ITT", logo: "/images/ittlogo.png" },
+                  ],
+                },
+                {
+                  name: "Pat",
+                  src: "/images/photodirevtor/pat1.png",
+                  role: "Developer",
+                  fullName: "Kittapas Viriyapappaibool",
+                  position: "Frontend Developer",
+                  university: "Mae Fah Luang University",
+                  universityImg: "/images/mfu.png",
+                  email: "kittapas.viriya@gmail.com",
+                  projects: [
+                    { name: "PEA Internship", logo: "/images/logo.png" },
+                    { name: "PEA ITT", logo: "/images/ittlogo.png" },
+                  ],
+                },
+                {
+                  name: "Rif",
+                  src: "/images/photodirevtor/rif2.png",
+                  role: "Developer",
+                  fullName: "",
+                  position: "Backend Developer",
+                  university: "Dhurakij Pundit University",
+                  universityImg: "/images/dpu.png",
+                  email: "",
+                  projects: [
+                    { name: "PEA Internship", logo: "/images/logo.png" },
+                    { name: "PEA ITT", logo: "/images/ittlogo.png" },
+                  ],
+                },
+                {
+                  name: "Yam",
+                  src: "/images/photodirevtor/yam3.png",
+                  role: "Developer",
+                  fullName: "Thanakorn Samngamnu",
+                  position: "Frontend Developer",
+                  university: "Mae Fah Luang University",
+                  universityImg: "/images/mfu.png",
+                  email: "6531503034@lamduan.mfu.ac.th",
+                  projects: [
+                    { name: "PEA Internship", logo: "/images/logo.png" },
+                    { name: "PEA ITT", logo: "/images/ittlogo.png" },
+                  ],
+                },
+                {
+                  name: "Faii",
+                  src: "/images/photodirevtor/faii10.png",
+                  role: "Developer",
+                  fullName: "",
+                  position: "Frontend Developer",
+                  university: "Dhurakij Pundit University",
+                  universityImg: "/images/dpu.png",
+                  email: "",
+                  project: "PEA ITT",
+                  projectLogo: "/images/ittlogo.png",
+                },
+                {
+                  name: "Tam",
+                  src: "/images/photodirevtor/tam5.png",
+                  role: "Developer",
+                  fullName: "",
+                  position: "Frontend Developer",
+                  university: "Dhurakij Pundit University",
+                  universityImg: "/images/dpu.png",
+                  email: "",
+                  project: "PEA ITT",
+                  projectLogo: "/images/ittlogo.png",
+                },
+                {
+                  name: "Cream",
+                  src: "/images/photodirevtor/cream12.png",
+                  role: "Developer",
+                  fullName: "",
+                  position: "Frontend Developer",
+                  university: "Dhurakij Pundit University",
+                  universityImg: "/images/dpu.png",
+                  email: "",
+                  project: "PEA ITT",
+                  projectLogo: "/images/ittlogo.png",
+                },
+                {
+                  name: "Ice",
+                  src: "/images/photodirevtor/ice6.png",
+                  role: "Designer",
+                  fullName: "",
+                  position: "UI/UX Designer",
+                  university: "Phranakhon Rajabhat University",
+                  universityImg: "/images/rajabhat.png",
+                  email: "nongice2546i@gmail.com",
+                  project: "PEA Internship",
+                  projectLogo: "/images/logo.png",
+                },
+                {
+                  name: "RollYam",
+                  src: "/images/photodirevtor/rollyam7.png",
+                  role: "Designer",
+                  fullName: "",
+                  position: "UI/UX Designer",
+                  university: "King Mongkut's University of Technology North Bangkok, Prachinburi Campus",
+                  universityImg: "/images/prajom.png",
+                  email: "S6506021622116@email.kmutnb.ac.th",
+                  project: "PEA Internship",
+                  projectLogo: "/images/logo.png",
+                },
+                {
+                  name: "Nass",
+                  src: "/images/photodirevtor/nass8.png",
+                  role: "Designer",
+                  fullName: "Panadda Paenjak",
+                  position: "UI/UX Designer",
+                  university: "Mae Fah Luang University",
+                  universityImg: "/images/mfu.png",
+                  email: "6531503045@lamduan.mfu.ac.th",
+                  projects: [
+                    { name: "PEA Internship", logo: "/images/logo.png" },
+                    { name: "PEA ITT", logo: "/images/ittlogo.png" },
+                  ],
+                },
+                {
+                  name: "Pond",
+                  src: "/images/photodirevtor/pond9.png",
+                  role: "Designer",
+                  fullName: "",
+                  position: "UI/UX Designer",
+                  university: "King Mongkut's University of Technology Thonburi",
+                  universityImg: "/images/prajom2.png",
+                  email: "poundpon@gmail.com",
+                  projects: [
+                    { name: "PEA Internship", logo: "/images/logo.png" },
+                    { name: "PEA ITT", logo: "/images/ittlogo.png" },
+                  ],
+                },
+                {
+                  name: "Yo",
+                  src: "/images/photodirevtor/yo11.png",
+                  role: "Designer",
+                  fullName: "",
+                  position: "UI/UX Designer",
+                  university: "Mae Fah Luang University",
+                  universityImg: "/images/mfu.png",
+                  email: "6531501008@lamduan.mfu.ac.th",
+                  project: "PEA Internship",
+                  projectLogo: "/images/logo.png",
+                },
+                {
+                  name: "Natty",
+                  src: "/images/photodirevtor/natty13.png",
+                  role: "Designer",
+                  fullName: "",
+                  position: "UI/UX Designer",
+                  university: "Mae Fah Luang University",
+                  universityImg: "/images/mfu.png",
+                  email: "6531501059@lamduan.mfu.ac.th",
+                  projects: [
+                    { name: "PEA Internship", logo: "/images/logo.png" },
+                    { name: "PEA ITT", logo: "/images/ittlogo.png" },
+                  ],
+                },
               ];
 
-              const cardW = 240;
-              const cardH = 340;
-              const gap = 28;
+              const isMobile = winW < 640;
+              const cardW = isMobile ? Math.min(200, winW * 0.46) : 280;
+              const cardH = isMobile ? cardW * (400 / 280) : 400;
               const totalCards = members.length;
-              // total track width minus one viewport
-              const trackW = totalCards * (cardW + gap) - gap;
-              const maxShift = Math.max(0, trackW - winW + cardW * 0.5);
-              const shift = teamProgress * maxShift;
+              const rawIdx = teamProgress * totalCards;
+              const activeIdx = Math.min(totalCards - 1, Math.floor(rawIdx));
+              const cardFrac = activeIdx === totalCards - 1 ? 0 : rawIdx - activeIdx;
+              const activeMember = members[activeIdx];
+              const isDevActive = activeMember.role === "Developer";
+              const gcActive = isDevActive ? "255,184,107" : "192,132,252";
+              const gcColorActive = isDevActive ? "#FFB86B" : "#c084fc";
 
               return (
-                <div
-                  className="absolute inset-0 flex items-center"
-                  style={{ paddingLeft: `${winW * 0.08}px`, paddingRight: `${winW * 0.08}px` }}
-                >
+                <>
+                  {/* Card + detail row (desktop) / column (mobile) */}
                   <div
+                    className="absolute inset-0 flex items-center justify-center"
                     style={{
-                      display: "flex",
-                      gap: `${gap}px`,
-                      transform: `translateX(${-shift}px)`,
-                      willChange: "transform",
+                      flexDirection: isMobile ? "column" : "row",
+                      gap: isMobile ? "1.25rem" : "3rem",
+                      paddingTop: isMobile ? "1rem" : 0,
                     }}
                   >
-                    {members.map((member, i) => {
-                      const isDev = member.role === "Developer";
+                    {/* Card stack */}
+                    <div style={{ position: "relative", width: `${cardW}px`, height: `${cardH}px`, flexShrink: 0 }}>
+                      {members.map((member, i) => {
+                        const isDev = member.role === "Developer";
+                        const diff = i - activeIdx;
 
-                      // ── Entry bounce animation ─────────────────────────────
-                      // Card enters viewport from the right as we scroll.
-                      // entryThreshold = teamProgress at which this card first appears.
-                      const cardLeftAtEntry = winW * 0.08 + i * (cardW + gap);
-                      const entryThreshold = maxShift > 0
-                        ? Math.max(0, (cardLeftAtEntry - winW * 0.92) / maxShift)
-                        : 0;
-                      // How far past threshold (0 → 1 over 7% of total scroll)
-                      const entryT = Math.max(0, Math.min(1, (teamProgress - entryThreshold) / 0.07));
-                      // Spring overshoot: ramp to 1.12 then settle to 1.0
-                      const springT = entryT < 0.65
-                        ? (entryT / 0.65) * 1.12
-                        : 1.12 - 0.12 * ((entryT - 0.65) / 0.35);
-                      const entryY = (1 - Math.min(1, entryT * 1.4)) * 55;
-                      const entryOpacity = Math.min(1, entryT * 2.5);
+                        let tx = 0, rot = 0, sc = 1, op = 1, z = 0;
 
-                      // ── Active glow (center card) ──────────────────────────
-                      const cardCenterX = winW * 0.08 + i * (cardW + gap) + cardW / 2 - shift;
-                      const centerX = winW / 2;
-                      const dist = Math.abs(cardCenterX - centerX);
-                      const activeRadius = cardW * 1.4;
-                      const glow = Math.max(0, 1 - dist / activeRadius);
-                      const isActive = glow > 0.4;
+                        if (diff === 0) {
+                          tx = -cardFrac * 500;
+                          rot = -cardFrac * 12;
+                          sc = 1.05 - cardFrac * 0.2;
+                          op = 1 - cardFrac * 0.6;
+                          z = totalCards + 2;
+                        } else if (diff === 1) {
+                          tx = (1 - cardFrac) * 30;
+                          sc = 0.88 + cardFrac * 0.17;
+                          op = 0.5 + cardFrac * 0.5;
+                          z = totalCards + 1;
+                        } else if (diff > 1 && diff <= 3) {
+                          tx = diff * 15;
+                          sc = 0.88 - diff * 0.04;
+                          op = Math.max(0, 0.3 - diff * 0.1);
+                          z = totalCards - diff;
+                        } else if (diff < 0 && diff >= -3) {
+                          tx = diff * 100 - 200;
+                          rot = diff * 4;
+                          sc = 0.75;
+                          op = Math.max(0, 0.4 + diff * 0.12);
+                          z = i;
+                        } else {
+                          op = 0;
+                          z = 0;
+                        }
 
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            width: `${cardW}px`,
-                            flexShrink: 0,
-                            opacity: entryOpacity,
-                            transform: `translateY(${(isActive ? -12 : 0) + entryY}px) scale(${(isActive ? 1.04 : 1) * springT})`,
-                            transition: entryT >= 1 ? "transform 0.35s ease" : "none",
-                          }}
-                        >
+                        const isGlow = diff === 0 && cardFrac < 0.5;
+                        const gc = isDev ? "255,184,107" : "192,132,252";
+
+                        return (
                           <div
-                            className="relative overflow-hidden"
+                            key={i}
                             style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
                               width: `${cardW}px`,
-                              height: `${cardH}px`,
-                              borderRadius: "1.2rem",
-                              boxShadow: isActive
-                                ? `0 0 50px 8px ${isDev ? "rgba(255,184,107,0.45)" : "rgba(192,132,252,0.45)"}, 0 24px 48px rgba(0,0,0,0.7)`
-                                : "0 8px 32px rgba(0,0,0,0.55)",
-                              transition: "box-shadow 0.35s ease",
+                              zIndex: z,
+                              opacity: op,
+                              transform: `translateX(${tx}px) rotate(${rot}deg) scale(${sc})`,
+                              willChange: "transform, opacity",
+                              transition: diff !== 0 ? "transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s ease" : "none",
                             }}
                           >
-                            <Image
-                              src={member.src}
-                              alt={member.name}
-                              fill
-                              sizes="240px"
-                              className="object-cover object-top"
-                              style={{
-                                filter: isActive
-                                  ? "brightness(1.05) saturate(1.1)"
-                                  : "brightness(0.6) saturate(0.7)",
-                                transition: "filter 0.35s ease",
-                              }}
-                            />
-                            {/* Bottom gradient */}
                             <div
-                              className="absolute inset-0"
+                              className="relative overflow-hidden"
                               style={{
-                                background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 45%, transparent 100%)",
-                              }}
-                            />
-                            {/* Role badge */}
-                            <div
-                              className="absolute top-3 right-3"
-                              style={{
-                                background: isDev ? "rgba(255,184,107,0.18)" : "rgba(192,132,252,0.18)",
-                                border: `1px solid ${isDev ? "rgba(255,184,107,0.7)" : "rgba(192,132,252,0.7)"}`,
-                                borderRadius: "999px",
-                                padding: "2px 10px",
-                                fontSize: "0.58rem",
-                                color: isDev ? "#FFB86B" : "#c084fc",
-                                letterSpacing: "0.15em",
-                                textTransform: "uppercase",
-                                fontFamily: dmSerif.style.fontFamily,
-                                backdropFilter: "blur(4px)",
+                                width: `${cardW}px`,
+                                height: `${cardH}px`,
+                                borderRadius: "1.4rem",
+                                boxShadow: isGlow
+                                  ? `0 0 60px 12px rgba(${gc},0.5), 0 0 100px 25px rgba(${gc},0.15), 0 24px 48px rgba(0,0,0,0.7)`
+                                  : "0 8px 32px rgba(0,0,0,0.6)",
                               }}
                             >
-                              {member.role}
-                            </div>
-                            {/* Name */}
-                            <div
-                              className="absolute bottom-4 left-4 right-4"
-                              style={{
-                                fontFamily: dmSerif.style.fontFamily,
-                                fontSize: "clamp(1.3rem, 3.5vw, 1.9rem)",
-                                color: "white",
-                                textShadow: "0 2px 10px rgba(0,0,0,0.9)",
-                              }}
-                            >
-                              {member.name}
+                              <Image
+                                src={member.src}
+                                alt={member.name}
+                                fill
+                                sizes="280px"
+                                className="object-cover object-top"
+                                style={{
+                                  filter: isGlow
+                                    ? "brightness(1.1) saturate(1.15)"
+                                    : "brightness(0.65) saturate(0.7)",
+                                }}
+                              />
+                              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)" }} />
+                              <div
+                                className="absolute top-3 right-3"
+                                style={{
+                                  background: isDev ? "rgba(255,184,107,0.18)" : "rgba(192,132,252,0.18)",
+                                  border: `1px solid ${isDev ? "rgba(255,184,107,0.7)" : "rgba(192,132,252,0.7)"}`,
+                                  borderRadius: "999px", padding: "2px 10px", fontSize: "0.6rem",
+                                  color: isDev ? "#FFB86B" : "#c084fc",
+                                  letterSpacing: "0.15em", textTransform: "uppercase",
+                                  fontFamily: dmSerif.style.fontFamily, backdropFilter: "blur(4px)",
+                                }}
+                              >
+                                {member.role}
+                              </div>
+                              <div
+                                className="absolute bottom-5 left-5 right-5"
+                                style={{
+                                  fontFamily: dmSerif.style.fontFamily,
+                                  fontSize: "clamp(1.5rem, 4vw, 2.2rem)",
+                                  color: "white", textShadow: "0 2px 10px rgba(0,0,0,0.9)",
+                                }}
+                              >
+                                {member.name}
+                              </div>
                             </div>
                           </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Detail panel — quote/comment style. key=activeIdx triggers slide-in on change */}
+                    <div
+                      key={activeIdx}
+                      style={{
+                        width: isMobile ? `${Math.min(cardW + 40, winW - 32)}px` : "240px",
+                        flexShrink: 0,
+                        animation: "detail-slide-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "relative",
+                          borderRadius: "1.2rem",
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          backdropFilter: "blur(16px)",
+                          padding: isMobile ? "1.2rem 1.2rem 1.2rem 1.5rem" : "1.8rem 1.5rem 1.8rem 1.8rem",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {/* Left accent bar */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            top: "1.5rem",
+                            bottom: "1.5rem",
+                            width: "3px",
+                            borderRadius: "0 3px 3px 0",
+                            background: `linear-gradient(to bottom, ${gcColorActive}, rgba(${gcActive}, 0.15))`,
+                          }}
+                        />
+                        {/* Decorative quote mark */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "-1rem",
+                            right: "0.8rem",
+                            fontSize: "7rem",
+                            lineHeight: 1,
+                            color: `rgba(${gcActive}, 0.07)`,
+                            fontFamily: dmSerif.style.fontFamily,
+                            userSelect: "none",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          "
                         </div>
-                      );
-                    })}
+
+                        {/* University logo */}
+                        {activeMember.universityImg && !isMobile && (
+                          <div style={{ position: "relative", width: "52px", height: "52px", marginBottom: "1rem" }}>
+                            <Image
+                              src={activeMember.universityImg}
+                              alt={activeMember.university || activeMember.name}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                        )}
+
+                        {/* Mobile: logo + name/role inline */}
+                        {isMobile ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.6rem" }}>
+                            {activeMember.universityImg && (
+                              <div style={{ position: "relative", width: "40px", height: "40px", flexShrink: 0 }}>
+                                <Image src={activeMember.universityImg} alt={activeMember.university || activeMember.name} fill className="object-contain" />
+                              </div>
+                            )}
+                            <div>
+                              <div style={{ fontFamily: dmSerif.style.fontFamily, fontSize: "0.95rem", color: "white", lineHeight: 1.2, marginBottom: "0.3rem", WebkitFontSmoothing: "antialiased" } as React.CSSProperties}>
+                                {activeMember.fullName || activeMember.name}
+                              </div>
+                              <div style={{ display: "inline-flex", alignItems: "center", background: isDevActive ? "rgba(255,184,107,0.12)" : "rgba(192,132,252,0.12)", border: `1px solid ${isDevActive ? "rgba(255,184,107,0.35)" : "rgba(192,132,252,0.35)"}`, borderRadius: "999px", padding: "1px 8px", fontSize: "0.52rem", color: gcColorActive, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: dmSerif.style.fontFamily }}>
+                                {activeMember.role}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Full name */}
+                            <div style={{ fontFamily: dmSerif.style.fontFamily, fontSize: "1.2rem", color: "white", lineHeight: 1.25, marginBottom: "0.5rem", WebkitFontSmoothing: "antialiased" } as React.CSSProperties}>
+                              {activeMember.fullName || activeMember.name}
+                            </div>
+                            {/* Role badge */}
+                            <div style={{ display: "inline-flex", alignItems: "center", background: isDevActive ? "rgba(255,184,107,0.12)" : "rgba(192,132,252,0.12)", border: `1px solid ${isDevActive ? "rgba(255,184,107,0.35)" : "rgba(192,132,252,0.35)"}`, borderRadius: "999px", padding: "2px 10px", fontSize: "0.58rem", color: gcColorActive, letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: dmSerif.style.fontFamily, marginBottom: "0.85rem" }}>
+                              {activeMember.role}
+                            </div>
+                          </>
+                        )}
+
+                        {/* Divider */}
+                        <div style={{ width: "100%", height: "1px", background: "rgba(255,255,255,0.07)", marginBottom: isMobile ? "0.6rem" : "0.85rem" }} />
+
+                        {/* Position */}
+                        {activeMember.position && (
+                          <div style={{ fontSize: isMobile ? "0.62rem" : "0.7rem", color: gcColorActive, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: dmSerif.style.fontFamily, marginBottom: "0.4rem", WebkitFontSmoothing: "antialiased" } as React.CSSProperties}>
+                            {activeMember.position}
+                          </div>
+                        )}
+
+                        {/* University */}
+                        {activeMember.university && (
+                          <div style={{ fontSize: isMobile ? "0.65rem" : "0.76rem", color: "rgba(255,255,255,0.42)", fontFamily: dmSerif.style.fontFamily, marginBottom: "0.3rem", lineHeight: 1.5, WebkitFontSmoothing: "antialiased" } as React.CSSProperties}>
+                            {activeMember.university}
+                          </div>
+                        )}
+
+                        {/* Project */}
+                        {(() => {
+                          const projects = activeMember.projects ?? (activeMember.project ? [{ name: activeMember.project, logo: activeMember.projectLogo ?? "" }] : []);
+                          if (projects.length === 0) return null;
+                          return (
+                            <>
+                              <div style={{ width: "100%", height: "1px", background: "rgba(255,255,255,0.07)", margin: isMobile ? "0.5rem 0" : "0.75rem 0" }} />
+                              <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                                {projects.map((p, pi) => (
+                                  <div key={pi} style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                                    {p.logo && (
+                                      <div style={{ position: "relative", width: "24px", height: "24px", flexShrink: 0 }}>
+                                        <Image src={p.logo} alt={p.name} fill className="object-contain" />
+                                      </div>
+                                    )}
+                                    <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.65)", fontFamily: dmSerif.style.fontFamily, WebkitFontSmoothing: "antialiased" } as React.CSSProperties}>
+                                      {p.name}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          );
+                        })()}
+
+                        {/* Contact button */}
+                        {activeMember.email && (
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginTop: isMobile ? "0.6rem" : "1rem" }}>
+                            <a
+                              href={`mailto:${activeMember.email}`}
+                              title={activeMember.email}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "32px",
+                                height: "32px",
+                                borderRadius: "50%",
+                                background: isDevActive ? "rgba(255,184,107,0.12)" : "rgba(192,132,252,0.12)",
+                                border: `1px solid ${isDevActive ? "rgba(255,184,107,0.4)" : "rgba(192,132,252,0.4)"}`,
+                                color: gcColorActive,
+                                fontSize: "0.9rem",
+                                textDecoration: "none",
+                                transition: "background 0.2s ease, transform 0.15s ease",
+                                flexShrink: 0,
+                              } as React.CSSProperties}
+                              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = isDevActive ? "rgba(255,184,107,0.22)" : "rgba(192,132,252,0.22)"; (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1.1)"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = isDevActive ? "rgba(255,184,107,0.12)" : "rgba(192,132,252,0.12)"; (e.currentTarget as HTMLAnchorElement).style.transform = "scale(1)"; }}
+                            >
+                              ✉
+                            </a>
+                            <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.45)", fontFamily: dmSerif.style.fontFamily, wordBreak: "break-all", lineHeight: 1.4, WebkitFontSmoothing: "antialiased" } as React.CSSProperties}>
+                              {activeMember.email}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  {/* Navigation buttons + counter */}
+                  <div className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-3">
+                    <div className="flex items-center gap-6">
+                      <button
+                        onClick={() => {
+                          const cur = Math.min(12, Math.floor(teamProgress * 13));
+                          if (cur > 0) handleCardNav(cur - 1);
+                        }}
+                        style={{
+                          width: "44px", height: "44px", borderRadius: "50%",
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          color: "rgba(255,255,255,0.75)",
+                          fontSize: "1.5rem", lineHeight: 1,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer",
+                          backdropFilter: "blur(8px)",
+                          transition: "background 0.2s ease, transform 0.15s ease",
+                          fontFamily: "sans-serif",
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.15)"; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.1)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+                      >
+                        ‹
+                      </button>
+                      <span style={{ fontFamily: dmSerif.style.fontFamily, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.2em", minWidth: "3rem", textAlign: "center" }}>
+                        {Math.min(13, Math.floor(teamProgress * 13) + 1)} / 13
+                      </span>
+                      <button
+                        onClick={() => {
+                          const cur = Math.min(12, Math.floor(teamProgress * 13));
+                          if (cur < 12) handleCardNav(cur + 1);
+                        }}
+                        style={{
+                          width: "44px", height: "44px", borderRadius: "50%",
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          color: "rgba(255,255,255,0.75)",
+                          fontSize: "1.5rem", lineHeight: 1,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer",
+                          backdropFilter: "blur(8px)",
+                          transition: "background 0.2s ease, transform 0.15s ease",
+                          fontFamily: "sans-serif",
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.15)"; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.1)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+                      >
+                        ›
+                      </button>
+                    </div>
+                    <div style={{ width: "120px", height: "2px", background: "rgba(255,255,255,0.1)", borderRadius: "999px", overflow: "hidden" }}>
+                      <div style={{ width: `${teamProgress * 100}%`, height: "100%", background: "#FFB86B", borderRadius: "999px", transition: "width 300ms ease" }} />
+                    </div>
+                  </div>
+                </>
               );
             })()}
 
-            {/* Progress bar */}
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none">
-              <div style={{ width: "120px", height: "2px", background: "rgba(255,255,255,0.1)", borderRadius: "999px", overflow: "hidden" }}>
-                <div style={{ width: `${teamProgress * 100}%`, height: "100%", background: "#FFB86B", borderRadius: "999px", transition: "width 0ms" }} />
-              </div>
-            </div>
           </div>
         </section>
       </main>
