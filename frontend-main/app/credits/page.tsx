@@ -16,7 +16,7 @@ const dmSerif = DM_Serif_Display({
 // ============================================================
 const _F2 = 0.5 * (Math.sqrt(3) - 1);
 const _G2 = (3 - Math.sqrt(3)) / 6;
-const _GRAD: [number, number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+const _GRAD: [number, number][] = [[1, 1], [-1, 1], [1, -1], [-1, -1], [1, 0], [-1, 0], [0, 1], [0, -1]];
 const _perm = new Uint8Array(512);
 const _permMod8 = new Uint8Array(512);
 (function _seed(s: number) {
@@ -43,12 +43,12 @@ function simplexNoise(xin: number, yin: number): number {
   const x2 = x0 - 1 + 2 * _G2, y2 = y0 - 1 + 2 * _G2;
   const ii = i & 255, jj = j & 255;
   let n0 = 0, n1 = 0, n2 = 0;
-  let t0 = 0.5 - x0*x0 - y0*y0;
-  if (t0 > 0) { t0 *= t0; const g = _GRAD[_permMod8[ii + _perm[jj]]]; n0 = t0*t0*(g[0]*x0+g[1]*y0); }
-  let t1 = 0.5 - x1*x1 - y1*y1;
-  if (t1 > 0) { t1 *= t1; const g = _GRAD[_permMod8[ii+i1+_perm[jj+j1]]]; n1 = t1*t1*(g[0]*x1+g[1]*y1); }
-  let t2 = 0.5 - x2*x2 - y2*y2;
-  if (t2 > 0) { t2 *= t2; const g = _GRAD[_permMod8[ii+1+_perm[jj+1]]]; n2 = t2*t2*(g[0]*x2+g[1]*y2); }
+  let t0 = 0.5 - x0 * x0 - y0 * y0;
+  if (t0 > 0) { t0 *= t0; const g = _GRAD[_permMod8[ii + _perm[jj]]]; n0 = t0 * t0 * (g[0] * x0 + g[1] * y0); }
+  let t1 = 0.5 - x1 * x1 - y1 * y1;
+  if (t1 > 0) { t1 *= t1; const g = _GRAD[_permMod8[ii + i1 + _perm[jj + j1]]]; n1 = t1 * t1 * (g[0] * x1 + g[1] * y1); }
+  let t2 = 0.5 - x2 * x2 - y2 * y2;
+  if (t2 > 0) { t2 *= t2; const g = _GRAD[_permMod8[ii + 1 + _perm[jj + 1]]]; n2 = t2 * t2 * (g[0] * x2 + g[1] * y2); }
   return 70 * (n0 + n1 + n2);
 }
 
@@ -57,20 +57,20 @@ function simplexNoise(xin: number, yin: number): number {
 // ============================================================
 const _EDGES: [number, number][][] = [
   [],             // 0
-  [[3,2]],        // 1
-  [[2,1]],        // 2
-  [[3,1]],        // 3
-  [[0,1]],        // 4
-  [[0,3],[2,1]],  // 5 saddle
-  [[0,2]],        // 6
-  [[0,3]],        // 7
-  [[0,3]],        // 8
-  [[0,2]],        // 9
-  [[0,1],[3,2]],  // 10 saddle
-  [[0,1]],        // 11
-  [[3,1]],        // 12
-  [[2,1]],        // 13
-  [[3,2]],        // 14
+  [[3, 2]],        // 1
+  [[2, 1]],        // 2
+  [[3, 1]],        // 3
+  [[0, 1]],        // 4
+  [[0, 3], [2, 1]],  // 5 saddle
+  [[0, 2]],        // 6
+  [[0, 3]],        // 7
+  [[0, 3]],        // 8
+  [[0, 2]],        // 9
+  [[0, 1], [3, 2]],  // 10 saddle
+  [[0, 1]],        // 11
+  [[3, 1]],        // 12
+  [[2, 1]],        // 13
+  [[3, 2]],        // 14
   [],             // 15
 ];
 
@@ -105,13 +105,30 @@ export default function CreditsPage() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const heroSectionRef = useRef<HTMLDivElement>(null);
 
+  // PLEA zoom-out section
+  const pleaSectionRef = useRef<HTMLDivElement>(null);
+  const [pleaProgress, setPleaProgress] = useState(0);
+
+  // Team horizontal scroll section
+  const teamSectionRef = useRef<HTMLDivElement>(null);
+  const [teamProgress, setTeamProgress] = useState(0);
+
+  // Window width — client only, to avoid hydration mismatch
+  const [winW, setWinW] = useState(1280);
+  useEffect(() => {
+    const update = () => setWinW(window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   // Hero fade-in on mount
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 200);
     return () => clearTimeout(t);
   }, []);
 
-  // Scroll-driven hero shrink
+  // Scroll-driven hero shrink + PLEA + team
   useEffect(() => {
     let ticking = false;
     const onScroll = () => {
@@ -120,6 +137,23 @@ export default function CreditsPage() {
           const maxScroll = window.innerHeight * 0.7;
           const progress = Math.min(1, Math.max(0, window.scrollY / maxScroll));
           setScrollProgress(progress);
+
+          // PLEA zoom-out progress
+          if (pleaSectionRef.current) {
+            const rect = pleaSectionRef.current.getBoundingClientRect();
+            const sectionH = pleaSectionRef.current.offsetHeight;
+            const raw = -rect.top / (sectionH - window.innerHeight);
+            setPleaProgress(Math.min(1, Math.max(0, raw)));
+          }
+
+          // Team horizontal scroll progress
+          if (teamSectionRef.current) {
+            const rect = teamSectionRef.current.getBoundingClientRect();
+            const sectionH = teamSectionRef.current.offsetHeight;
+            const raw = -rect.top / (sectionH - window.innerHeight);
+            setTeamProgress(Math.min(1, Math.max(0, raw)));
+          }
+
           ticking = false;
         });
         ticking = true;
@@ -214,8 +248,8 @@ export default function CreditsPage() {
 
     // Thresholds & styling — same structure as resume Background3D
     const thresholds = [-0.38, -0.24, -0.10, 0.04, 0.18, 0.32, 0.46];
-    const opacities  = [ 0.04,  0.07,  0.10, 0.12, 0.10, 0.07,  0.04];
-    const widths     = [ 0.8,   1.0,   1.3,  1.5,  1.3,  1.0,   0.8 ];
+    const opacities = [0.04, 0.07, 0.10, 0.12, 0.10, 0.07, 0.04];
+    const widths = [0.8, 1.0, 1.3, 1.5, 1.3, 1.0, 0.8];
     const MOUSE_RADIUS = 200;
     const GRID_STEP = 22;
 
@@ -237,8 +271,8 @@ export default function CreditsPage() {
           const nx = c * 0.035, ny = r * 0.035;
 
           let v = simplexNoise(nx + t, ny + t * 0.6) * 0.55
-                + simplexNoise(nx * 2.2 + t * 1.4, ny * 2.2 - t * 0.4) * 0.3
-                + simplexNoise(nx * 4.5 + t * 0.8, ny * 4.5 + t * 1.2) * 0.15;
+            + simplexNoise(nx * 2.2 + t * 1.4, ny * 2.2 - t * 0.4) * 0.3
+            + simplexNoise(nx * 4.5 + t * 0.8, ny * 4.5 + t * 1.2) * 0.15;
 
           // Mouse scatter
           const dx = px - mx, dy = py - my;
@@ -264,13 +298,13 @@ export default function CreditsPage() {
           for (let c = 0; c < cols - 1; c++) {
             const tl = field[r * cols + c];
             const tr = field[r * cols + c + 1];
-            const br = field[(r+1) * cols + c + 1];
-            const bl = field[(r+1) * cols + c];
+            const br = field[(r + 1) * cols + c + 1];
+            const bl = field[(r + 1) * cols + c];
 
             const idx = (tl >= th ? 8 : 0)
-                      | (tr >= th ? 4 : 0)
-                      | (br >= th ? 2 : 0)
-                      | (bl >= th ? 1 : 0);
+              | (tr >= th ? 4 : 0)
+              | (br >= th ? 2 : 0)
+              | (bl >= th ? 1 : 0);
 
             const segs = _EDGES[idx];
             for (let s = 0; s < segs.length; s++) {
@@ -313,15 +347,15 @@ export default function CreditsPage() {
   const marqueeSegment1 = (
     <>
       <span className="text-white">Brightness </span>
-      <span style={{color:'#FFB86B'}}>for Life </span>
+      <span style={{ color: '#FFB86B' }}>for Life </span>
       <span className="text-white">Quality </span>
       <span className="inline-block w-16" />
       <span className="text-white">Brightness </span>
-      <span style={{color:'#FFB86B'}}>for Life </span>
+      <span style={{ color: '#FFB86B' }}>for Life </span>
       <span className="text-white">Quality </span>
       <span className="inline-block w-16" />
       <span className="text-white">Brightness </span>
-      <span style={{color:'#FFB86B'}}>for Life </span>
+      <span style={{ color: '#FFB86B' }}>for Life </span>
       <span className="text-white">Quality </span>
       <span className="inline-block w-16" />
     </>
@@ -329,14 +363,14 @@ export default function CreditsPage() {
 
   const marqueeSegment2 = (
     <>
-      <span style={{color:'#FFB86B'}}>Smart Energy </span>
+      <span style={{ color: '#FFB86B' }}>Smart Energy </span>
       <span className="text-white">for </span>
-      <span style={{color:'#FFB86B'}}>Better Life </span>
+      <span style={{ color: '#FFB86B' }}>Better Life </span>
       <span className="text-white">and Sustainability </span>
       <span className="inline-block w-16" />
-      <span style={{color:'#FFB86B'}}>Smart Energy </span>
+      <span style={{ color: '#FFB86B' }}>Smart Energy </span>
       <span className="text-white">for </span>
-      <span style={{color:'#FFB86B'}}>Better Life </span>
+      <span style={{ color: '#FFB86B' }}>Better Life </span>
       <span className="text-white">and Sustainability </span>
       <span className="inline-block w-16" />
     </>
@@ -506,17 +540,16 @@ export default function CreditsPage() {
               ref={setQuoteRef(i)}
               data-idx={i}
               data-type="line"
-              className={`transition-all duration-700 ${
-                visibleLines[i]
+              className={`transition-all duration-700 ${visibleLines[i]
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-8"
-              }`}
+                }`}
               style={{ transitionDelay: `${i * 120}ms` }}
             >
               <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl leading-snug md:leading-tight italic uppercase mb-1 md:mb-2">
                 <span className="text-white">{line.text}</span>
                 {line.highlight && (
-                  <span style={{color:'#FFB86B'}}>{line.highlight}</span>
+                  <span style={{ color: '#FFB86B' }}>{line.highlight}</span>
                 )}
                 {line.after && (
                   <span className="text-white">{line.after}</span>
@@ -534,11 +567,10 @@ export default function CreditsPage() {
               ref={setLogoRef(i)}
               data-idx={i}
               data-type="logo"
-              className={`transition-all duration-[600ms] ${
-                visibleLogos[i]
+              className={`transition-all duration-[600ms] ${visibleLogos[i]
                   ? "opacity-100 translate-y-0 scale-100"
                   : "opacity-0 translate-y-10 scale-75"
-              }`}
+                }`}
               style={{ transitionDelay: `${i * 180}ms` }}
             >
               <div
@@ -555,6 +587,349 @@ export default function CreditsPage() {
               </div>
             </div>
           ))}
+        </section>
+
+        {/* ─── PLEA Zoom-out Section ─────────────────────────────────── */}
+        {/*
+            Stage 0–25%  : full-screen amber bg, giant "L" centered
+            Stage 25–55% : bg fades out, PLEA zooms out from L-position
+            Stage 55–100%: PLEA final position + taglines fade in
+        */}
+        <section
+          ref={pleaSectionRef}
+          className="relative"
+          style={{ height: "600vh" }}
+        >
+          <div
+            className="sticky top-0 w-full overflow-hidden flex items-center justify-center"
+            style={{ height: "100vh", backgroundColor: "#FFB86B" }}
+          >
+            {/* Dark overlay — fades IN as we scroll, covering the amber */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: "#1a1a1a",
+                opacity: Math.min(1, Math.max(0, pleaProgress / 0.22)),
+                zIndex: 0,
+              }}
+            />
+
+            {/* Stage 1 + 2: L zooms out into PLEA (0–55%) */}
+            {pleaProgress < 0.6 && (() => {
+              // 0–0.25 → just L at scale 1 on amber bg
+              // 0.25–0.55 → PLEA zooms from scale~5 down to scale~1
+              const zoomT = pleaProgress < 0.25 ? 0 : Math.min(1, (pleaProgress - 0.25) / 0.3);
+              const scale = 1 + (1 - zoomT) * 4.5; // 5.5 → 1
+
+              return (
+                <div
+                  className="select-none pointer-events-none absolute"
+                  style={{
+                    fontFamily: dmSerif.style.fontFamily,
+                    display: "flex",
+                    gap: "0.02em",
+                    lineHeight: 1,
+                    transform: `scale(${scale})`,
+                    transformOrigin: "center center",
+                    // Clip so overflow doesn't bleed during zoom
+                    willChange: "transform",
+                  }}
+                >
+                  {["P", "L", "E", "A"].map((letter, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        fontSize: "22vw",
+                        // L E A fade in from 0 → 1 as zoom starts; P always visible
+                        opacity: i === 0 ? 1 : Math.min(1, zoomT * 2),
+                        color: i === 0
+                          ? (pleaProgress < 0.22 ? "#1a1a1a" : "#FFB86B")
+                          : "white",
+                        textShadow: i === 0 && pleaProgress >= 0.22
+                          ? "0 0 80px rgba(255,184,107,0.5)"
+                          : "none",
+                        zIndex: 1,
+                        position: "relative",
+                      }}
+                    >
+                      {letter}
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Stage 3: PLEA locked in final pos + taglines (55–100%) */}
+            {pleaProgress >= 0.55 && (() => {
+              const t = Math.min(1, (pleaProgress - 0.55) / 0.35);
+              const words = [
+                { letter: "P", word: "Play", tagline: "Explore creativity" },
+                { letter: "L", word: "Listen", tagline: "Understand people" },
+                { letter: "E", word: "Eat", tagline: "Enjoy life" },
+                { letter: "A", word: "Art", tagline: "Express everything" },
+              ];
+              return (
+                <div
+                  className="flex flex-row items-end justify-center w-full px-4"
+                  style={{ gap: "clamp(1rem, 4vw, 4rem)" }}
+                >
+                  {words.map((w, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col items-center text-center"
+                      style={{
+                        opacity: t,
+                        transform: `translateY(${(1 - t) * 30}px)`,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "clamp(4rem, 15vw, 12rem)",
+                          lineHeight: 0.85,
+                          fontFamily: dmSerif.style.fontFamily,
+                          color: i === 0 ? "#FFB86B" : "white",
+                          textShadow: i === 0 ? "0 0 60px rgba(255,184,107,0.4)" : "none",
+                        }}
+                      >
+                        {w.letter}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "clamp(0.9rem, 2vw, 1.5rem)",
+                          marginTop: "0.5rem",
+                          color: i === 0 ? "#FFB86B" : "white",
+                          fontFamily: dmSerif.style.fontFamily,
+                          letterSpacing: "0.03em",
+                        }}
+                      >
+                        {w.word}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "clamp(0.55rem, 1vw, 0.8rem)",
+                          color: "rgba(255,255,255,0.45)",
+                          letterSpacing: "0.12em",
+                          textTransform: "uppercase",
+                          marginTop: "0.2rem",
+                          fontFamily: dmSerif.style.fontFamily,
+                        }}
+                      >
+                        {w.tagline}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+
+        {/* ─── Team Horizontal Scroll Section ───────────────────────── */}
+        <section
+          ref={teamSectionRef}
+          className="relative"
+          style={{ height: "500vh" }}
+        >
+          <div
+            className="sticky top-0 w-full overflow-hidden"
+            style={{ height: "100vh" }}
+          >
+            {/* Role label top center */}
+            <div className="absolute top-8 left-0 right-0 flex justify-center z-10 pointer-events-none">
+              {(() => {
+                // developer label active for first 6/13 of scroll, designer after
+                const devEnd = 6 / 13;
+                const isDesigner = teamProgress > devEnd + 0.08;
+                return (
+                  <div className="flex gap-12 items-center">
+                    <span
+                      style={{
+                        fontFamily: dmSerif.style.fontFamily,
+                        fontSize: "clamp(0.75rem, 1.8vw, 1rem)",
+                        color: "#FFB86B",
+                        letterSpacing: "0.3em",
+                        textTransform: "uppercase",
+                        opacity: isDesigner ? 0.25 : 1,
+                        transition: "opacity 0.6s ease",
+                      }}
+                    >
+                      Developer
+                    </span>
+                    <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "1rem" }}>·</span>
+                    <span
+                      style={{
+                        fontFamily: dmSerif.style.fontFamily,
+                        fontSize: "clamp(0.75rem, 1.8vw, 1rem)",
+                        color: "#c084fc",
+                        letterSpacing: "0.3em",
+                        textTransform: "uppercase",
+                        opacity: isDesigner ? 1 : 0.25,
+                        transition: "opacity 0.6s ease",
+                      }}
+                    >
+                      Designer
+                    </span>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Horizontal track */}
+            {(() => {
+              const members = [
+                { name: "Pat", src: "/images/photodirevtor/pat1.png", role: "Developer" },
+                { name: "Rif", src: "/images/photodirevtor/rif2.png", role: "Developer" },
+                { name: "Yam", src: "/images/photodirevtor/yam3.png", role: "Developer" },
+                { name: "Jom", src: "/images/photodirevtor/jom4.png", role: "Developer" },
+                { name: "Tam", src: "/images/photodirevtor/tam5.png", role: "Developer" },
+                { name: "Ice", src: "/images/photodirevtor/ice6.png", role: "Developer" },
+                { name: "RollYam", src: "/images/photodirevtor/rollyam7.png", role: "Designer" },
+                { name: "Nass", src: "/images/photodirevtor/nass8.png", role: "Designer" },
+                { name: "Pond", src: "/images/photodirevtor/pond9.png", role: "Designer" },
+                { name: "Faii", src: "/images/photodirevtor/faii10.png", role: "Designer" },
+                { name: "Yo", src: "/images/photodirevtor/yo11.png", role: "Designer" },
+                { name: "Cream", src: "/images/photodirevtor/cream12.png", role: "Designer" },
+                { name: "Natty", src: "/images/photodirevtor/natty13.png", role: "Designer" },
+              ];
+
+              const cardW = 240;
+              const cardH = 340;
+              const gap = 28;
+              const totalCards = members.length;
+              // total track width minus one viewport
+              const trackW = totalCards * (cardW + gap) - gap;
+              const maxShift = Math.max(0, trackW - winW + cardW * 0.5);
+              const shift = teamProgress * maxShift;
+
+              return (
+                <div
+                  className="absolute inset-0 flex items-center"
+                  style={{ paddingLeft: `${winW * 0.08}px`, paddingRight: `${winW * 0.08}px` }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: `${gap}px`,
+                      transform: `translateX(${-shift}px)`,
+                      willChange: "transform",
+                    }}
+                  >
+                    {members.map((member, i) => {
+                      const isDev = member.role === "Developer";
+
+                      // ── Entry bounce animation ─────────────────────────────
+                      // Card enters viewport from the right as we scroll.
+                      // entryThreshold = teamProgress at which this card first appears.
+                      const cardLeftAtEntry = winW * 0.08 + i * (cardW + gap);
+                      const entryThreshold = maxShift > 0
+                        ? Math.max(0, (cardLeftAtEntry - winW * 0.92) / maxShift)
+                        : 0;
+                      // How far past threshold (0 → 1 over 7% of total scroll)
+                      const entryT = Math.max(0, Math.min(1, (teamProgress - entryThreshold) / 0.07));
+                      // Spring overshoot: ramp to 1.12 then settle to 1.0
+                      const springT = entryT < 0.65
+                        ? (entryT / 0.65) * 1.12
+                        : 1.12 - 0.12 * ((entryT - 0.65) / 0.35);
+                      const entryY = (1 - Math.min(1, entryT * 1.4)) * 55;
+                      const entryOpacity = Math.min(1, entryT * 2.5);
+
+                      // ── Active glow (center card) ──────────────────────────
+                      const cardCenterX = winW * 0.08 + i * (cardW + gap) + cardW / 2 - shift;
+                      const centerX = winW / 2;
+                      const dist = Math.abs(cardCenterX - centerX);
+                      const activeRadius = cardW * 1.4;
+                      const glow = Math.max(0, 1 - dist / activeRadius);
+                      const isActive = glow > 0.4;
+
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            width: `${cardW}px`,
+                            flexShrink: 0,
+                            opacity: entryOpacity,
+                            transform: `translateY(${(isActive ? -12 : 0) + entryY}px) scale(${(isActive ? 1.04 : 1) * springT})`,
+                            transition: entryT >= 1 ? "transform 0.35s ease" : "none",
+                          }}
+                        >
+                          <div
+                            className="relative overflow-hidden"
+                            style={{
+                              width: `${cardW}px`,
+                              height: `${cardH}px`,
+                              borderRadius: "1.2rem",
+                              boxShadow: isActive
+                                ? `0 0 50px 8px ${isDev ? "rgba(255,184,107,0.45)" : "rgba(192,132,252,0.45)"}, 0 24px 48px rgba(0,0,0,0.7)`
+                                : "0 8px 32px rgba(0,0,0,0.55)",
+                              transition: "box-shadow 0.35s ease",
+                            }}
+                          >
+                            <Image
+                              src={member.src}
+                              alt={member.name}
+                              fill
+                              sizes="240px"
+                              className="object-cover object-top"
+                              style={{
+                                filter: isActive
+                                  ? "brightness(1.05) saturate(1.1)"
+                                  : "brightness(0.6) saturate(0.7)",
+                                transition: "filter 0.35s ease",
+                              }}
+                            />
+                            {/* Bottom gradient */}
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 45%, transparent 100%)",
+                              }}
+                            />
+                            {/* Role badge */}
+                            <div
+                              className="absolute top-3 right-3"
+                              style={{
+                                background: isDev ? "rgba(255,184,107,0.18)" : "rgba(192,132,252,0.18)",
+                                border: `1px solid ${isDev ? "rgba(255,184,107,0.7)" : "rgba(192,132,252,0.7)"}`,
+                                borderRadius: "999px",
+                                padding: "2px 10px",
+                                fontSize: "0.58rem",
+                                color: isDev ? "#FFB86B" : "#c084fc",
+                                letterSpacing: "0.15em",
+                                textTransform: "uppercase",
+                                fontFamily: dmSerif.style.fontFamily,
+                                backdropFilter: "blur(4px)",
+                              }}
+                            >
+                              {member.role}
+                            </div>
+                            {/* Name */}
+                            <div
+                              className="absolute bottom-4 left-4 right-4"
+                              style={{
+                                fontFamily: dmSerif.style.fontFamily,
+                                fontSize: "clamp(1.3rem, 3.5vw, 1.9rem)",
+                                color: "white",
+                                textShadow: "0 2px 10px rgba(0,0,0,0.9)",
+                              }}
+                            >
+                              {member.name}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Progress bar */}
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none">
+              <div style={{ width: "120px", height: "2px", background: "rgba(255,255,255,0.1)", borderRadius: "999px", overflow: "hidden" }}>
+                <div style={{ width: `${teamProgress * 100}%`, height: "100%", background: "#FFB86B", borderRadius: "999px", transition: "width 0ms" }} />
+              </div>
+            </div>
+          </div>
         </section>
       </main>
     </div>
