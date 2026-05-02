@@ -174,9 +174,9 @@ const rootFiles: FileDoc[] = [
   },
   {
     file: "proxy.ts",
-    purpose: "route guard, role-based redirect, auth flow control",
-    editWhen: "เพิ่ม route protected/public, แก้ logic redirect",
-    notes: "ไฟล์เสี่ยงสูงสุดเรื่อง login loop และสิทธิ์เข้าถึง",
+    purpose: "route guard, role-based redirect, auth flow control, cookie proxy สำหรับ session validation",
+    editWhen: "เพิ่ม route protected/public, แก้ logic redirect, ปรับ cookie/session proxy",
+    notes: "ไฟล์เสี่ยงสูงสุดเรื่อง login loop และสิทธิ์เข้าถึง; proxy cookie ไปยัง backend เพื่อตรวจ role ก่อน redirect",
   },
   {
     file: "Dockerfile",
@@ -356,16 +356,23 @@ const authRoutes: RouteDoc[] = [
   {
     url: "/forgot-password",
     file: "app/forgot-password/page.tsx",
-    purpose: "ขอรีเซ็ตรหัสผ่าน",
-    editWhen: "แก้ UX/password recovery",
-    risk: "ต้องคุมข้อความ error ให้ชัดเจน",
+    purpose: "ขอรีเซ็ตรหัสผ่าน — กรอกเบอร์โทร+อีเมล เพื่อรับรหัส OTP ทางอีเมล",
+    editWhen: "แก้ UX/password recovery, validation ข้อมูล, loading state",
+    risk: "ต้องคุมข้อความ error ให้ชัดเจน; ใช้ sessionStorage ส่งข้อมูลไปหน้า verify-reset-code",
+  },
+  {
+    url: "/verify-reset-code",
+    file: "app/verify-reset-code/page.tsx",
+    purpose: "หน้ายืนยันรหัส OTP 6 หลักที่ส่งไปทางอีเมล — ได้ resetToken กลับมา",
+    editWhen: "แก้ OTP input UX, resend cooldown, error handling",
+    risk: "ต้องรับ phone/email จาก sessionStorage; ถ้าไม่มีจะ redirect กลับ /forgot-password",
   },
   {
     url: "/reset-password",
     file: "app/reset-password/page.tsx",
-    purpose: "หน้าตั้งรหัสผ่านใหม่",
-    editWhen: "แก้ token check/รูปแบบรหัสผ่าน",
-    risk: "ระวังกรณีลิงก์หมดอายุ",
+    purpose: "หน้าตั้งรหัสผ่านใหม่ — ใช้ resetToken จาก verify-reset-code",
+    editWhen: "แก้ validation รหัสผ่าน, loading state, success flow",
+    risk: "ต้องมี resetToken ใน sessionStorage; หลังสำเร็จจะ redirect ไป /login/intern อัตโนมัติ",
   },
 ];
 
@@ -602,15 +609,15 @@ const componentFiles: FileDoc[] = [
   },
   {
     file: "components/ui/OwnerNavbar.tsx",
-    purpose: "navbar ของ owner",
-    editWhen: "ปรับเมนู owner dashboard/announcement",
-    notes: "เกี่ยวข้อง role owner",
+    purpose: "navbar ของ owner — มีลิงก์คู่มือช่วยเหลือ",
+    editWhen: "ปรับเมนู owner dashboard/announcement, ลิงก์คู่มือ",
+    notes: "เกี่ยวข้อง role owner; มีลิงก์ไปหน้าคู่มือ /guide/owner",
   },
   {
     file: "components/ui/AdminNavbar.tsx",
-    purpose: "navbar ของ admin",
-    editWhen: "ปรับเมนูหรือ notification ฝั่ง admin",
-    notes: "เกี่ยวข้อง role admin",
+    purpose: "navbar ของ admin — แก้ไขปัญหา tab กระพริบเมื่อเปลี่ยนหน้า",
+    editWhen: "ปรับเมนูหรือ notification ฝั่ง admin, แก้ active tab behavior",
+    notes: "ใช้ usePathname แทน router event ; มีลิงก์คู่มือช่วยเหลือ",
   },
   {
     file: "components/ui/SearchSection.tsx",
@@ -790,7 +797,7 @@ const apiDomains: FileDoc[] = [
     file: "services/api/{department,doc-type,role,staff-logs,owner-students}.ts",
     purpose: "domain สนับสนุนฝั่ง admin/owner (กองงาน, ประเภทเอกสาร, role, log, จบฝึกงาน)",
     editWhen: "แก้หน้าบริหารข้อมูลองค์กรและบันทึกการทำงาน",
-    notes: "ไฟล์เล็ก endpoint เดียว/สองตัว — ดูแลง่าย",
+    notes: "department ใช้ /department_ticket สำหรับ lookup เร็ว; ไฟล์อื่นเล็ก endpoint เดียว/สองตัว",
   },
 ];
 
@@ -807,16 +814,19 @@ const apiModuleDocs: ApiModuleDoc[] = [
   {
     file: "auth.ts",
     domain: "authApi — Authentication",
-    description: "จัดการล็อกอิน, ล็อกเอาท์, ตรวจสอบ session และ SSO (Keycloak)",
-    types: ["RegisterInternData", "LoginData", "AuthResponse"],
-    functions: ["authApi.registerIntern()", "authApi.loginIntern()", "authApi.logout()", "authApi.getSession()", "authApi.getKeycloakLoginUrl()"],
-    notes: "เชื่อมกับ proxy.ts และ Better Auth cookie — แก้ auth flow แก้ที่นี่",
+    description: "จัดการล็อกอิน, ล็อกเอาท์, ตรวจสอบ session, SSO (Keycloak) และ password reset ด้วย OTP",
+    types: ["RegisterInternData", "LoginData", "AuthResponse", "SessionResponse"],
+    functions: ["authApi.registerIntern()", "authApi.loginIntern()", "authApi.signOut()", "authApi.getSession()", "authApi.signInKeycloak()", "authApi.requestResetPassword()", "authApi.verifyResetCode()", "authApi.resetPassword()"],
+    notes: "เชื่อมกับ proxy.ts และ Better Auth cookie — flow reset password: forgot-password → verify-reset-code (OTP) → reset-password",
     endpoints: [
       { method: "POST", path: "/auth/sign-up/intern", purpose: "สมัครสมาชิกนักศึกษาใหม่", usedInPages: ["/register"] },
       { method: "POST", path: "/auth/sign-in/intern", purpose: "เข้าสู่ระบบสำหรับนักศึกษา (phone + password)", usedInPages: ["/login/intern"] },
       { method: "POST", path: "/auth/sign-out", purpose: "ออกจากระบบ (ล้าง session/token)", usedInPages: ["ทุกหน้าที่มีปุ่ม logout"] },
       { method: "GET", path: "/auth/get-session", purpose: "ตรวจสอบ session ปัจจุบัน — ดึงข้อมูล user จาก cookie", usedInPages: ["/login/owner/callback", "proxy.ts"] },
       { method: "GET", path: "/auth/sign-in/keycloak", purpose: "Redirect ไปหน้า SSO login ของ Keycloak (owner/admin)", usedInPages: ["/login/owner", "/login/admin"] },
+      { method: "POST", path: "/auth/request-reset-password", purpose: "ขอรหัส OTP สำหรับ reset password (ส่ง phone + email)", usedInPages: ["/forgot-password", "/verify-reset-code"] },
+      { method: "POST", path: "/auth/verify-reset-code", purpose: "ยืนยันรหัส OTP 6 หลัก — ได้ resetToken กลับ", usedInPages: ["/verify-reset-code"] },
+      { method: "POST", path: "/auth/reset-password", purpose: "เปลี่ยนรหัสผ่านด้วย resetToken", usedInPages: ["/reset-password"] },
     ],
   },
   {
@@ -946,12 +956,13 @@ const apiModuleDocs: ApiModuleDoc[] = [
   {
     file: "department.ts",
     domain: "departmentApi — Departments / แผนก",
-    description: "ดึงข้อมูลแผนกภายในองค์กรสำหรับฟอร์มสร้าง/แก้ประกาศ",
-    types: ["Department", "DepartmentsResponse"],
-    functions: ["departmentApi.getDepartments()", "departmentApi.getDepartmentById()"],
-    notes: "ใช้ใน /owner/announcements/create และ dropdown filter ฝั่ง owner",
+    description: "ดึงข้อมูลแผนกภายในองค์กร — getDepartmentByDeptSap ใช้ /department_ticket endpoint แทน pagination เพื่อความเร็ว",
+    types: ["Department", "DepartmentsResponse", "DepartmentTicketResponse"],
+    functions: ["departmentApi.getDepartments()", "departmentApi.getDepartmentByDeptSap()"],
+    notes: "getDepartmentByDeptSap() ใช้ /department_ticket/:id (direct lookup, backend cache 5 นาที) แทนการวนลูป pagination ทุกหน้า — เร็วกว่ามาก",
     endpoints: [
-      { method: "GET", path: "/dept", purpose: "ดึงรายการแผนกทั้งหมด (pagination)", usedInPages: ["/owner/announcements/create", "/owner/announcements/[id]/edit", "/admin/dashboard"] },
+      { method: "GET", path: "/dept", purpose: "ดึงรายการแผนกทั้งหมด (pagination)", usedInPages: ["/owner/announcements/create", "/owner/announcements/[id]/edit"] },
+      { method: "GET", path: "/department_ticket/{id}", purpose: "ดึงข้อมูลแผนกโดย deptSap (direct lookup, cached 5 นาที)", usedInPages: ["/admin/dashboard", "/admin/applications", "/owner/dashboard", "/owner/announcements/create"] },
     ],
   },
   {
