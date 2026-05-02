@@ -50,27 +50,43 @@ const StudentsPage = () => {
                 const total = Math.round(Number(s.workHours?.goal || 560));
                 const percent = total > 0 ? (current / total) * 100 : 0;
 
-                const endDateRaw = detail?.profile?.period?.endDate;
+                const end = detail?.progress?.extendedEndDate 
+                    ? new Date(detail.progress.extendedEndDate) 
+                    : (detail?.profile?.period?.endDate ? new Date(detail.profile.period.endDate) : null);
+                
                 let statusMessage = 'กำลังฝึกงาน';
                 let statusType = 'remaining';
 
-                if (endDateRaw) {
-                    const endDate = new Date(endDateRaw);
+                if (end) {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    endDate.setHours(0, 0, 0, 0);
+                    const targetDate = new Date(end);
+                    targetDate.setHours(0, 0, 0, 0);
 
-                    const diffTime = endDate.getTime() - today.getTime();
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    if (diffDays > 0) {
-                        statusMessage = `เหลืออีก ${diffDays} วันก่อนสิ้นสุดฝึกงาน`;
-                    } else if (diffDays === 0) {
-                        statusMessage = 'ฝึกงานวันสุดท้าย';
-                        statusType = 'last-day';
-                    } else {
+                    if (today > targetDate) {
                         statusMessage = 'สิ้นสุดการฝึกงาน';
                         statusType = 'ended';
+                    } else {
+                        let workingDays = 0;
+                        let tempDate = new Date(today);
+                        while (tempDate <= targetDate) {
+                            const day = tempDate.getDay();
+                            if (day !== 0 && day !== 6) {
+                                workingDays++;
+                            }
+                            tempDate.setDate(tempDate.getDate() + 1);
+                        }
+
+                        if (workingDays > 1) {
+                            statusMessage = `เหลืออีก ${workingDays} วันทำการก่อนสิ้นสุดฝึกงาน`;
+                        } else if (workingDays === 1) {
+                            statusMessage = 'ฝึกงานวันสุดท้าย';
+                            statusType = 'last-day';
+                        } else {
+                            // If today <= targetDate but only weekends are left
+                            statusMessage = 'สิ้นสุดการฝึกงาน';
+                            statusType = 'ended';
+                        }
                     }
                 }
 
