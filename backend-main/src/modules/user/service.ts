@@ -41,6 +41,27 @@ export class UserService {
     return currentDate;
   }
 
+  private calculateAllowedStartDate(endDate: Date, workingDays: number): Date {
+    const date = new Date(endDate);
+    date.setHours(0, 0, 0, 0);
+    let count = 0;
+
+    // Check if the end date itself is a working day
+    const endDay = date.getDay();
+    if (endDay !== 0 && endDay !== 6) {
+      count = 1;
+    }
+
+    while (count < workingDays) {
+      date.setDate(date.getDate() - 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        count++;
+      }
+    }
+    return date;
+  }
+
   async me(userId: string) {
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
@@ -583,14 +604,14 @@ export class UserService {
       }
 
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const currentEndDate = new Date(appInfo.endDate);
 
-      const allowedStartDate = new Date(currentEndDate);
-      allowedStartDate.setDate(currentEndDate.getDate() - 7);
+      const allowedStartDate = this.calculateAllowedStartDate(currentEndDate, 7);
 
       if (today < allowedStartDate) {
         throw new Error(
-          "สามารถขอขยายเวลาได้เฉพาะในช่วง 7 วันสุดท้ายของการฝึกงาน หรือหลังจากจบการฝึกงานแล้วเท่านั้น"
+          "สามารถขอขยายเวลาได้เฉพาะในช่วง 7 วันทำการสุดท้ายของการฝึกงาน หรือหลังจากจบการฝึกงานแล้วเท่านั้น"
         );
       }
 
@@ -600,19 +621,12 @@ export class UserService {
         daysToCompensate
       );
 
-      await tx
-        .update(applicationInformations)
-        .set({
-          endDate: newEndDate,
-          updatedAt: new Date(),
-        })
-        .where(eq(applicationInformations.applicationStatusId, currentApp.id));
-
       // Update สถานะนักศึกษา
       await tx
         .update(studentProfiles)
         .set({
           internshipStatus: "EXTENDED",
+          statusNote: `COMPENSATION:${daysToCompensate}`,
         })
         .where(eq(studentProfiles.userId, data.studentId));
 

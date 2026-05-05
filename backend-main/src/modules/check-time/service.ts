@@ -162,6 +162,19 @@ export class CheckTimeService {
       const officeLat = activeApp.department.office.latitude;
       const officeLon = activeApp.department.office.longitude;
 
+      // Check for approved leave
+      const approvedLeave = await tx.query.leaveRequests.findFirst({
+        where: and(
+          eq(leaveRequests.userId, userId),
+          sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
+          eq(leaveRequests.status, "APPROVED")
+        ),
+      });
+
+      if (approvedLeave) {
+        throw new ConflictError("ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้");
+      }
+
       let isOnsite = false;
       let finalLocationText = "ไม่สามารถระบุพิกัดได้";
 
@@ -302,6 +315,19 @@ export class CheckTimeService {
         day: "2-digit",
       });
       const todayStr = bkkFormatter.format(now);
+
+      // Check for approved leave
+      const approvedLeave = await tx.query.leaveRequests.findFirst({
+        where: and(
+          eq(leaveRequests.userId, userId),
+          sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
+          eq(leaveRequests.status, "APPROVED")
+        ),
+      });
+
+      if (approvedLeave) {
+        throw new ConflictError("ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้");
+      }
 
       const existingLog = await tx.query.attendanceLogs.findFirst({
         where: and(

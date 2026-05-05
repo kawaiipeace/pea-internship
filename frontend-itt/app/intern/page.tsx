@@ -33,6 +33,7 @@ const CheckInPage = () => {
     const [checkInActionType, setCheckInActionType] = useState<'in' | 'out' | null>(null);
     const [hasCheckedInToday, setHasCheckedInToday] = useState<boolean>(false);
     const [hasClockedOutToday, setHasClockedOutToday] = useState<boolean>(false);
+    const [isOnLeaveToday, setIsOnLeaveToday] = useState<boolean>(false);
 
     // Offsite Work States
     const [isOffsiteToday, setIsOffsiteToday] = useState<boolean>(false);
@@ -177,6 +178,12 @@ const CheckInPage = () => {
                 
                 const todayRecord = response.data.records.find((r: any) => r.workDate === todayStr);
                 if (todayRecord) {
+                    if (todayRecord.displayStatus === 'LEAVE') {
+                        setIsOnLeaveToday(true);
+                    } else {
+                        setIsOnLeaveToday(false);
+                    }
+
                     if (todayRecord.checkInTime && todayRecord.checkInTime !== '--:--') {
                         setHasCheckedInToday(true);
                     } else {
@@ -202,7 +209,7 @@ const CheckInPage = () => {
         const h = currentTime.getHours();
         const m = currentTime.getMinutes();
         // Allowed from 16:30 (4:30 PM) onwards
-        return h > 16 || (h === 9 && m >= 30);
+        return h > 16 || (h === 16 && m >= 30);
     };
 
     useEffect(() => {
@@ -223,6 +230,7 @@ const CheckInPage = () => {
                 lastDate = now.toDateString();
                 setHasCheckedInToday(false);
                 setHasClockedOutToday(false);
+                setIsOnLeaveToday(false);
                 fetchTodayStatus();
                 fetchProgress();
                 fetchOffsiteTasks();
@@ -407,14 +415,14 @@ const CheckInPage = () => {
                                         transform: `translateX(-${progressData?.percentage || 0}%)`
                                     }}
                                 >
-                                    {progressData?.accumulatedHours || 0} ชั่วโมง
+                                    {Math.round(progressData?.accumulatedHours || 0)} ชั่วโมง
                                 </div>
                             </div>
                             {/* Badge at the End */}
                             <div
                                 className="shrink-0 text-white text-[11px] px-3 min-w-[70px] h-[22px] rounded-full font-medium flex items-center justify-center bg-[#A80689] shadow-[inset_0px_-5px_7px_rgba(0,0,0,0.4),inset_0px_2px_4px_rgba(255,255,255,0.4)] whitespace-nowrap z-20 self-start"
                             >
-                                {progressData?.totalHoursGoal || 560} ชั่วโมง
+                                {Math.round(progressData?.totalHoursGoal || 560)} ชั่วโมง
                             </div>
                         </div>
                     </div>
@@ -449,8 +457,8 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleCheckIn('in')}
-                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday}
-                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday)
+                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[18px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday)
                                         ? 'bg-[#ECECED] text-[#61646C]  border border-[#98A2B3]  shadow-none cursor-not-allowed'
                                         : 'hover:-translate-y-[1px] bg-[#A80689] text-white'
                                     }`}
@@ -460,12 +468,12 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={handleClockOut}
-                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
-                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[20px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[18px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday)
                                         ? 'bg-[#ECECED] text-[#61646C] border border-[#98A2B3] shadow-none cursor-not-allowed'
                                         : 'hover:-translate-y-[1px] bg-[#A80689] text-white '
                                     }`}
-                                title={!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : ""}
+                                title={isOnLeaveToday ? "ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลา" : (!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : "")}
                             >
                                 ลงเวลาออกงาน
                             </button>
@@ -508,7 +516,7 @@ const CheckInPage = () => {
                             <circle cx="55" cy="55" r="47" stroke="url(#chartGradient)" strokeWidth="8" fill="none" strokeDasharray="295" strokeDashoffset={295 - (295 * (progressData?.percentage || 0) / 100)} strokeLinecap="round" style={{ filter: 'drop-shadow(0px 3px 4px rgba(168,6,137,0.4))' }} />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 mt-[2px]">
-                            <span className="text-[13px] font-medium text-[#111] leading-tight tracking-[0.2px]">{progressData?.accumulatedHours || 0} / {progressData?.totalHoursGoal || 560}</span>
+                            <span className="text-[13px] font-medium text-[#111] leading-tight tracking-[0.2px]">{Math.round(progressData?.accumulatedHours || 0)} / {Math.round(progressData?.totalHoursGoal || 560)}</span>
                             <span className="text-[13px] font-medium text-[#111] leading-tight mt-[6px]">ชั่วโมง</span>
                         </div>
                     </div>
@@ -536,8 +544,8 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={() => handleCheckIn('in')}
-                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday)
+                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday)
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
                                     : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
@@ -547,8 +555,8 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={handleClockOut}
-                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut()}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut())
+                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday)
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
                                     : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
