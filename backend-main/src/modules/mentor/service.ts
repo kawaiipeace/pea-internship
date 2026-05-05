@@ -107,11 +107,11 @@ export class MentorService {
 
     const latestExtensionQuery = db
       .select({
-        studentProfileId: internshipExtensions.studentProfileId,
+        applicationStatusId: internshipExtensions.applicationStatusId,
         extendedEndDate: sql`MAX(${internshipExtensions.newEndDate})`.as("extendedEndDate"),
       })
       .from(internshipExtensions)
-      .groupBy(internshipExtensions.studentProfileId)
+      .groupBy(internshipExtensions.applicationStatusId)
       .as("latestExtension");
 
     const baseQuery = db
@@ -156,7 +156,7 @@ export class MentorService {
       )
       .leftJoin(
         latestExtensionQuery,
-        eq(latestExtensionQuery.studentProfileId, studentProfiles.id)
+        eq(latestExtensionQuery.applicationStatusId, applicationStatuses.id)
       )
       .where(and(...conditions));
 
@@ -166,7 +166,14 @@ export class MentorService {
       return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
     }
 
-    const totalStudents = (await baseQuery).length;
+    const [totalRes] = await db
+      .select({ count: count() })
+      .from(applicationStatuses)
+      .innerJoin(users, eq(users.id, applicationStatuses.userId))
+      .innerJoin(studentProfiles, eq(studentProfiles.userId, users.id))
+      .where(and(...conditions));
+
+    const totalStudents = Number(totalRes.count);
 
     const studentProfileIds = students.map((s) => s.studentProfileId);
     const studentUserIds = students.map((s) => s.userId);
@@ -417,7 +424,7 @@ export class MentorService {
       .from(internshipExtensions)
       .where(
         and(
-          eq(internshipExtensions.studentProfileId, studentInfo.studentProfileId),
+          eq(internshipExtensions.applicationStatusId, studentInfo.applicationStatusId),
           eq(internshipExtensions.status, "APPROVED")
         )
       );
@@ -456,27 +463,6 @@ export class MentorService {
     }
     if (remainingDays < 0) remainingDays = 0;
 
-    const [extendedData] = await db
-      .select({
-        totalExtendedHours: sql`SUM(CAST(${internshipExtensions.additionalHours} AS NUMERIC))`,
-        latestNewEndDate: sql`MAX(${internshipExtensions.newEndDate})`,
-        latestApprovedAt: sql`MAX(${internshipExtensions.approvedAt})`
-      })
-      .from(internshipExtensions)
-      .where(
-        and(
-          inArray(
-            internshipExtensions.applicationStatusId,
-            db.select({ id: applicationStatuses.id })
-              .from(applicationStatuses)
-              .where(eq(applicationStatuses.userId, studentId))
-          ),
-          eq(internshipExtensions.status, "APPROVED")
-        )
-      );
-
-    const totalExtendedHours = Number(extendedData?.totalExtendedHours || 0);
-    const extendedEndDate = extendedData?.latestNewEndDate ? new Date(extendedData.latestNewEndDate as string) : null;
 
     let presentCount = 0,
       lateCount = 0,

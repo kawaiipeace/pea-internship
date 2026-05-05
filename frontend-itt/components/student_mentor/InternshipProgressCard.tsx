@@ -104,11 +104,6 @@ const InternshipProgressCard: React.FC<InternshipProgressCardProps> = ({
                                 return 'ชดเชยวันทำงาน 0 วัน';
                             })()}
                         </div>
-                        {progress?.lastExtensionDate && (
-                            <div className="text-[12px] font-normal text-[#61646C] mt-1">
-                                (อนุมัติเมื่อ: {new Date(progress.lastExtensionDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })})
-                            </div>
-                        )}
                     </div>
                 ) : (
                     <>
