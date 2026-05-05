@@ -15,6 +15,8 @@ import IconMinus from '@/components/icon/icon-minus';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import ImageWithAuth from '@/components/ImageWithAuth';
+import CompensationModal from '@/components/mentor/CompensationModal';
+import Swal from 'sweetalert2';
 
 const StudentsPage = () => {
     const router = useRouter();
@@ -28,6 +30,7 @@ const StudentsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [students, setStudents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [statusFilter, setStatusFilter] = useState('ALL');
 
     const fetchStudents = useCallback(async () => {
         setIsLoading(true);
@@ -50,10 +53,10 @@ const StudentsPage = () => {
                 const total = Math.round(Number(s.workHours?.goal || 560));
                 const percent = total > 0 ? (current / total) * 100 : 0;
 
-                const end = detail?.progress?.extendedEndDate 
-                    ? new Date(detail.progress.extendedEndDate) 
+                const end = detail?.progress?.extendedEndDate
+                    ? new Date(detail.progress.extendedEndDate)
                     : (detail?.profile?.period?.endDate ? new Date(detail.profile.period.endDate) : null);
-                
+
                 let statusMessage = 'กำลังฝึกงาน';
                 let statusType = 'remaining';
 
@@ -94,7 +97,7 @@ const StudentsPage = () => {
                 const nameParts = rawName.split(' (');
                 const mainName = nameParts[0];
                 const extractedNick = nameParts[1] ? nameParts[1].replace(')', '') : '';
-                
+
                 const nick = s.nickname || detail?.profile?.nickname || extractedNick;
                 const displayName = nick ? `${mainName} (${nick})` : mainName;
 
@@ -121,6 +124,11 @@ const StudentsPage = () => {
                     compensationDays,
                     startDate: detail?.profile?.period?.startDate,
                     endDate: detail?.profile?.period?.endDate,
+                    gender: detail?.profile?.gender,
+                    position: detail?.profile?.position,
+                    considerationStatus: detail?.profile?.internshipStatus === 'COMPLETE' ? 'COMPLETE' :
+                        (detail?.profile?.internshipStatus === 'EXTENDED' || compensationDays > 0) ? 'EXTENDED' :
+                        statusType === 'ended' ? 'AWAITING' : 'ACTIVE'
                 };
             });
 
@@ -157,7 +165,7 @@ const StudentsPage = () => {
         if (Array.isArray(dateRange) && dateRange.length > 0) {
             const start = dateRange[0];
             const end = dateRange.length === 2 ? dateRange[1] : dateRange[0];
-            
+
             if (start && end) {
                 const filterStart = new Date(start);
                 const filterEnd = new Date(end);
@@ -174,8 +182,13 @@ const StudentsPage = () => {
             }
         }
 
+        // Filter by status
+        if (statusFilter !== 'ALL') {
+            result = result.filter((item) => item.considerationStatus === statusFilter);
+        }
+
         return result;
-    }, [selectedSchools, searchTerm, students, dateRange]);
+    }, [selectedSchools, searchTerm, students, dateRange, statusFilter]);
 
     const records = useMemo(() => {
         const from = (page - 1) * pageSize;
@@ -303,30 +316,27 @@ const StudentsPage = () => {
         }
     };
 
+
     const renderConsiderationBadge = (student: any) => {
         let text = '-';
         let bgColor = '';
         let textColor = '';
 
-        if (student.internshipStatus === 'COMPLETE') {
+        const { considerationStatus } = student;
+
+        if (considerationStatus === 'COMPLETE') {
             text = 'ผ่านการฝึกงาน';
             bgColor = 'bg-[#DCFAE6]';
             textColor = 'text-[#079455]';
-        } else if (student.internshipStatus === 'EXTENDED') {
+        } else if (considerationStatus === 'EXTENDED') {
             const days = student.compensationDays;
             text = `ชดเชยวันทำงาน ${days} วัน`;
             bgColor = 'bg-[#F2F4F7]';
             textColor = 'text-[#FF6B6B]';
-        } else if (student.statusType === 'ended') {
-            if (student.compensationDays > 0) {
-                text = `ชดเชยวันทำงาน ${student.compensationDays} วัน`;
-                bgColor = 'bg-[#F2F4F7]';
-                textColor = 'text-[#FF6B6B]';
-            } else {
-                text = 'รออนุมัติการฝึกงาน';
-                bgColor = 'bg-[#F2F4F7]';
-                textColor = 'text-[#61646C]';
-            }
+        } else if (considerationStatus === 'AWAITING') {
+            text = 'รออนุมัติการฝึกงาน';
+            bgColor = 'bg-[#F2F4F7]';
+            textColor = 'text-[#61646C]';
         } else {
             text = 'อยู่ในระหว่างฝึกงาน';
             bgColor = 'bg-[#FEF6E0]';
@@ -345,13 +355,13 @@ const StudentsPage = () => {
         let csvContent = BOM + 'ลำดับ,ชื่อนักศึกษา,สถานะวันนี้,มา,สาย,ลา,ขาด,ชั่วโมงทำงาน(ปัจจุบัน),ชั่วโมงทำงาน(ทั้งหมด)\n';
 
         filteredItems.forEach((student, index) => {
-            const statusLabel = 
+            const statusLabel =
                 student.status === 'PRESENT' ? 'เข้างานปกติ' :
-                student.status === 'LEAVE' ? 'ลากิจ' :
-                student.status === 'MISSING_OUT' ? 'ไม่ลงเวลาออก' :
-                student.status === 'ABSENT' ? 'ขาด' :
-                student.status === 'LATE' ? 'สาย' : '';
-            
+                    student.status === 'LEAVE' ? 'ลากิจ' :
+                        student.status === 'MISSING_OUT' ? 'ไม่ลงเวลาออก' :
+                            student.status === 'ABSENT' ? 'ขาด' :
+                                student.status === 'LATE' ? 'สาย' : '';
+
             const row = [
                 index + 1,
                 `"${student.name}"`,
@@ -423,6 +433,43 @@ const StudentsPage = () => {
                         </button>
                     )}
                 </div>
+
+                <div className="relative w-full sm:w-[220px] h-[36px] shrink-0">
+                    <Dropdown
+                        btnClassName="w-full h-full"
+                        button={
+                            <div className="flex items-center justify-between w-full h-full px-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] cursor-pointer hover:border-[#A80689] transition-all">
+                                <span className={statusFilter === 'ALL' ? 'text-[#61646C]' : 'text-[#101828]'}>
+                                    {statusFilter === 'ALL' ? 'ผลการพิจารณา: ทั้งหมด' : 
+                                     statusFilter === 'COMPLETE' ? 'ผ่านการฝึกงาน' :
+                                     statusFilter === 'EXTENDED' ? 'ชดเชยวันทำงาน' :
+                                     statusFilter === 'AWAITING' ? 'รออนุมัติการฝึกงาน' : 'อยู่ในระหว่างฝึกงาน'}
+                                </span>
+                                <IconCaretDown className="w-4 h-4 opacity-70" />
+                            </div>
+                        }
+                    >
+                        <ul className="bg-white shadow-xl rounded-lg border border-gray-100 py-1 min-w-[200px] overflow-hidden z-[110]">
+                            {[
+                                { label: 'ทั้งหมด', value: 'ALL' },
+                                { label: 'ผ่านการฝึกงาน', value: 'COMPLETE' },
+                                { label: 'ชดเชยวันทำงาน', value: 'EXTENDED' },
+                                { label: 'รออนุมัติการฝึกงาน', value: 'AWAITING' },
+                                { label: 'อยู่ในระหว่างฝึกงาน', value: 'ACTIVE' },
+                            ].map((opt) => (
+                                <li key={opt.value}>
+                                    <button
+                                        onClick={() => setStatusFilter(opt.value)}
+                                        className={`w-full text-left px-4 py-2 text-[14px] hover:bg-gray-50 flex items-center justify-between ${statusFilter === opt.value ? 'text-[#A80689] font-bold bg-pink-50/30' : 'text-gray-700'}`}
+                                    >
+                                        {opt.label}
+                                        {statusFilter === opt.value && <span className="material-symbols-outlined text-[18px]">check</span>}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </Dropdown>
+                </div>
             </div>
 
             {isLoading ? (
@@ -455,108 +502,108 @@ const StudentsPage = () => {
                             </thead>
                             <tbody className="divide-y divide-[#F2F4F7]">
                                 {records.map((student) => (
-                                <tr
-                                    key={student.id}
-                                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                                    onClick={() => router.push(`/mentor/students/${student.id}`)}
-                                >
-                                    <td className="py-4 px-6 text-left">
-                                        <div className="flex items-center gap-4">
-                                            <ImageWithAuth
-                                                userId={student.id}
-                                                className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
-                                                fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
-                                            />
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">
-                                                        {student.name.split(' (')[0]}
-                                                    </span>
-                                                    {student.nickname && (
-                                                        <span className="font-bold text-[#000000] text-[14px] whitespace-nowrap">
-                                                            ({student.nickname})
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6">
-                                        <div className="flex justify-center">
-                                            <div className="w-[124px] flex justify-start">
-                                                {renderStatusBadge(student.status)}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6 text-center">
-                                        <div className="flex justify-center gap-2">
-                                            {/* มา */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">มา</span>
-                                            </div>
-                                            {/* สาย */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#FDB022] leading-none">{student.attendance.late}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">สาย</span>
-                                            </div>
-                                            {/* ลา */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
-                                            </div>
-                                            {/* ขาด */}
-                                            <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
-                                                <span className="text-[11px] text-[#61646C] font-medium mt-0">ขาด</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6">
-                                        <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
-                                            <div className="flex items-center justify-end px-1 mb-1">
-                                                <span className="text-[10px] text-[#9ca3af] font-medium uppercase tracking-wider">
-                                                    <b className="text-[#a80689] text-[14px]">{student.progress.current}</b>
-                                                    / {student.progress.total} ชั่วโมง
-                                                </span>
-                                            </div>
-                                            <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
-                                                <div
-                                                    className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
-                                                    style={{ width: `${student.progress.percent}%` }}
+                                    <tr
+                                        key={student.id}
+                                        className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                        onClick={() => router.push(`/mentor/students/${student.id}`)}
+                                    >
+                                        <td className="py-4 px-6 text-left">
+                                            <div className="flex items-center gap-4">
+                                                <ImageWithAuth
+                                                    userId={student.id}
+                                                    className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                                                    fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
                                                 />
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">
+                                                            {student.name.split(' (')[0]}
+                                                        </span>
+                                                        {student.nickname && (
+                                                            <span className="font-bold text-[#000000] text-[14px] whitespace-nowrap">
+                                                                ({student.nickname})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 px-1 mt-1">
-                                                <span
-                                                    className="material-symbols-outlined select-none"
-                                                    style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
-                                                >
-                                                    schedule
-                                                </span>
-                                                <span className={`text-[12px] font-normal ${student.statusType === 'ended' ? 'text-[#D92D20]' :
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex justify-center">
+                                                <div className="w-[124px] flex justify-start">
+                                                    {renderStatusBadge(student.status)}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-center">
+                                            <div className="flex justify-center gap-2">
+                                                {/* มา */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">มา</span>
+                                                </div>
+                                                {/* สาย */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#FDB022] leading-none">{student.attendance.late}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">สาย</span>
+                                                </div>
+                                                {/* ลา */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
+                                                </div>
+                                                {/* ขาด */}
+                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
+                                                    <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
+                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">ขาด</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
+                                                <div className="flex items-center justify-end px-1 mb-1">
+                                                    <span className="text-[10px] text-[#9ca3af] font-medium uppercase tracking-wider">
+                                                        <b className="text-[#a80689] text-[14px]">{student.progress.current}</b>
+                                                        / {student.progress.total} ชั่วโมง
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
+                                                    <div
+                                                        className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
+                                                        style={{ width: `${student.progress.percent}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-2 px-1 mt-1">
+                                                    <span
+                                                        className="material-symbols-outlined select-none"
+                                                        style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
+                                                    >
+                                                        schedule
+                                                    </span>
+                                                    <span className={`text-[12px] font-normal ${student.statusType === 'ended' ? 'text-[#D92D20]' :
                                                         student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
-                                                    }`}>
-                                                    {student.statusMessage}
-                                                </span>
+                                                        }`}>
+                                                        {student.statusMessage}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-6">
-                                        <div className="flex items-center justify-center w-full">
-                                            {renderConsiderationBadge(student)}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex items-center justify-center w-full">
+                                                {renderConsiderationBadge(student)}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
             )}
 
             <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 pb-10 gap-6 px-2">
-                <button 
+                <button
                     onClick={handleExportExcel}
                     className="flex items-center  text-[#A80689] font-bold text-[14px] "
                 >
