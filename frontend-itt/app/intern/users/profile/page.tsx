@@ -26,8 +26,8 @@ const ProfilePage = () => {
         gender: '',
         email: '',
         phone: '',
-        educationStatus: '',
         institution: '',
+        institutionType: '',
         period: '',
         hoursRequired: '',
         department: '',
@@ -156,13 +156,17 @@ const ProfilePage = () => {
                 ? `${formatDate(profile.startDate)} - ${formatDate(profile.endDate)}`
                 : '';
 
-        // การศึกษาปัจจุบัน -> คณะ + สาขา
-        const faculty = profile.faculty ?? '';
-        const major = profile.major ?? '';
-        const eduStatus = faculty && major ? `${faculty} สาขา${major}` : (faculty || major || '');
-
         // ชื่อสถาบัน -> profile.institution?.name หรือ profile.institution
         const instName = profile.institution?.name || profile.institution || '';
+        
+        // ประเภทสถาบัน
+        const instType = profile.institution?.institutionsType || '';
+        let formattedInstType = '-';
+        if (instType === 'UNIVERSITY') formattedInstType = 'มหาวิทยาลัย';
+        else if (instType === 'VOCATIONAL') formattedInstType = 'อาชีวศึกษา';
+        else if (instType === 'SCHOOL') formattedInstType = 'โรงเรียน';
+        else if (instType === 'OTHERS') formattedInstType = 'อื่นๆ';
+        else if (instType) formattedInstType = instType;
 
         setUserData((prev) => ({
             ...prev,
@@ -170,8 +174,8 @@ const ProfilePage = () => {
             gender: data.gender ?? '',
             email: data.email ?? '',
             phone: data.phoneNumber ?? '',
-            educationStatus: eduStatus,
             institution: typeof instName === 'string' ? instName : '',
+            institutionType: formattedInstType,
             period,
             hoursRequired: profile.hours ? `${profile.hours} ชั่วโมง` : '',
         }));
@@ -540,8 +544,8 @@ const ProfilePage = () => {
                         <div className="flex flex-col gap-3">
                             <h2 className="text-[16px] font-bold text-[#2a303b] dark:text-white-light mt-1">ข้อมูลการศึกษา</h2>
                             <div className="flex flex-col">
-                                <span className="text-[13px] font-bold text-[#2a303b] dark:text-gray-300">การศึกษาปัจจุบัน</span>
-                                <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">{userData.educationStatus || '-'}</span>
+                                <span className="text-[13px] font-bold text-[#2a303b] dark:text-gray-300">ประเภทสถานศึกษา</span>
+                                <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5">{userData.institutionType || '-'}</span>
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[13px] font-bold text-[#2a303b] dark:text-gray-300">ชื่อสถาบัน</span>
@@ -755,7 +759,7 @@ const ProfilePage = () => {
                                 <label className="text-[15px] font-bold text-[#2a303b] dark:text-gray-300">การศึกษาปัจจุบัน</label>
                                 <input
                                     type="text"
-                                    value={userData.educationStatus}
+                                    value={userData.institutionType}
                                     readOnly
                                     className="w-full text-[14px] font-medium text-[#6b7280] dark:text-gray-400 bg-[#ECECED] dark:bg-black/20 border border-transparent rounded-[6px] py-[10px] px-4 cursor-not-allowed"
                                 />

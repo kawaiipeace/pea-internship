@@ -85,13 +85,11 @@ export default function CustomLoginForm() {
         <div className="w-full max-w-[340px] mx-auto bg-white rounded-[20px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] p-8 relative border border-white/40">
             {/* Logo area */}
             <div className="flex justify-center mb-10 mt-2">
-                <div className="relative flex items-baseline">
-                    <span className="text-[52px] font-black text-[#680C55] uppercase tracking-tighter drop-shadow-md leading-none">PEA</span>
-                    <div className="relative flex items-baseline ml-1">
-                        <span className="text-[38px] font-black text-[#680C55] uppercase tracking-tighter drop-shadow-md leading-none">iTT</span>
-                        <div className="absolute -top-1 left-[5px] w-2.5 h-2.5 bg-[#D4AE5E] shadow-sm"></div>
-                    </div>
-                </div>
+                <img 
+                    src="/pwa-icon.svg" 
+                    alt="PEA iTT Logo" 
+                    className="h-[54px] w-auto drop-shadow-md"
+                />
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">

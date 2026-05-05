@@ -22,6 +22,7 @@ import {
   departments,
   institutions,
   internshipPositions,
+  internshipExtensions,
   leaveRequests,
   offsiteTaskStudents,
   offsiteTasks,
@@ -34,6 +35,26 @@ import {
 import type * as model from "./model";
 
 export class MentorService {
+  private countWorkingDays(startDate: Date, endDate: Date): number {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
+    if (start > end) return 0;
+
+    let days = 0;
+    let temp = new Date(start);
+    while (temp <= end) {
+      const day = temp.getDay();
+      if (day !== 0 && day !== 6) {
+        days++;
+      }
+      temp.setDate(temp.getDate() + 1);
+    }
+    return days;
+  }
+
   async getStudents(
     mentorUserId: string,
     query: model.GetStudentsUnderCareQueryType
@@ -84,6 +105,15 @@ export class MentorService {
 
     const offset = (page - 1) * limit;
 
+    const latestExtensionQuery = db
+      .select({
+        studentProfileId: internshipExtensions.studentProfileId,
+        extendedEndDate: sql`MAX(${internshipExtensions.newEndDate})`.as("extendedEndDate"),
+      })
+      .from(internshipExtensions)
+      .groupBy(internshipExtensions.studentProfileId)
+      .as("latestExtension");
+
     const baseQuery = db
       .select({
         userId: users.id,
@@ -96,6 +126,7 @@ export class MentorService {
         username: users.displayUsername,
         departmentName: sql<string>`COALESCE(${departments.deptSapShort}, ${departments.deptShort}, ${departments.deptFull})`,
         endDate: applicationInformations.endDate,
+        extendedEndDate: latestExtensionQuery.extendedEndDate,
         institutionName: institutions.name,
         globalAccumulatedHours: studentAttendanceSummary.totalAccumulatedHours,
         globalTotalHoursGoal: studentAttendanceSummary.totalHoursGoal,
@@ -122,6 +153,10 @@ export class MentorService {
       .leftJoin(
         studentAttendanceSummary,
         eq(studentAttendanceSummary.studentProfileId, studentProfiles.id)
+      )
+      .leftJoin(
+        latestExtensionQuery,
+        eq(latestExtensionQuery.studentProfileId, studentProfiles.id)
       )
       .where(and(...conditions));
 
@@ -225,10 +260,8 @@ export class MentorService {
       const remainingHours = totalHoursGoal - accumulatedHours;
       let remainingDays = 0;
       if (remainingHours > 0) {
-        const workingDaysLeft = Math.ceil(remainingHours / 7);
-        // We use a simple approximation for calendar days: working days * 1.4 (to account for weekends)
-        // or just use the endDate if it exists and is further in the future.
-        if (student.endDate) {
+        const finalEndDate = student.extendedEndDate || student.endDate;
+        if (finalEndDate) {
           const nowBkk = new Date(
             new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
           );
@@ -238,7 +271,7 @@ export class MentorService {
             nowBkk.getDate()
           );
           const endBkk = new Date(
-            new Date(student.endDate).toLocaleString("en-US", {
+            new Date(finalEndDate).toLocaleString("en-US", {
               timeZone: "Asia/Bangkok",
             })
           );
@@ -248,10 +281,9 @@ export class MentorService {
             endBkk.getDate()
           );
 
-          const diffTime = end.getTime() - today.getTime();
-          remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          remainingDays = this.countWorkingDays(today, end);
         } else {
-          remainingDays = Math.ceil(workingDaysLeft * 1.4);
+          remainingDays = Math.ceil(remainingHours / 7);
         }
       }
 
@@ -312,6 +344,7 @@ export class MentorService {
     const [studentInfo] = await db
       .select({
         userId: users.id,
+        applicationStatusId: applicationStatuses.id,
         firstName: users.fname,
         lastName: users.lname,
         username: users.displayUsername,
@@ -319,6 +352,7 @@ export class MentorService {
         phone: users.phoneNumber,
         image: studentProfiles.image,
         internshipStatus: studentProfiles.internshipStatus,
+        statusNote: studentProfiles.statusNote,
         institutionName: institutions.name,
         positionName: internshipPositions.name,
         startDate: applicationInformations.startDate,
@@ -374,10 +408,28 @@ export class MentorService {
       accumulatedHours += Number(log.approvedLeaveHours || 0);
     });
 
+    const [extendedData] = await db
+      .select({
+        totalExtendedHours: sql`SUM(CAST(${internshipExtensions.additionalHours} AS NUMERIC))`,
+        latestNewEndDate: sql`MAX(${internshipExtensions.newEndDate})`,
+        latestApprovedAt: sql`MAX(${internshipExtensions.approvedAt})`
+      })
+      .from(internshipExtensions)
+      .where(
+        and(
+          eq(internshipExtensions.studentProfileId, studentInfo.studentProfileId),
+          eq(internshipExtensions.status, "APPROVED")
+        )
+      );
+
+    const totalExtendedHours = Number(extendedData?.totalExtendedHours || 0);
+    const extendedEndDate = extendedData?.latestNewEndDate ? new Date(extendedData.latestNewEndDate as string) : null;
+
     const remainingHours = totalHoursGoal - accumulatedHours;
     let remainingDays = 0;
     if (remainingHours > 0) {
-      if (studentInfo.endDate) {
+      const finalEndDate = extendedEndDate || (studentInfo.endDate ? new Date(studentInfo.endDate) : null);
+      if (finalEndDate) {
         const nowBkk = new Date(
           new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
         );
@@ -387,7 +439,7 @@ export class MentorService {
           nowBkk.getDate()
         );
         const endBkk = new Date(
-          new Date(studentInfo.endDate).toLocaleString("en-US", {
+          finalEndDate.toLocaleString("en-US", {
             timeZone: "Asia/Bangkok",
           })
         );
@@ -397,13 +449,34 @@ export class MentorService {
           endBkk.getDate()
         );
 
-        const diffTime = end.getTime() - today.getTime();
-        remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        remainingDays = this.countWorkingDays(today, end);
       } else {
-        remainingDays = Math.ceil((remainingHours / 7) * 1.4);
+        remainingDays = Math.ceil(remainingHours / 7);
       }
     }
     if (remainingDays < 0) remainingDays = 0;
+
+    const [extendedData] = await db
+      .select({
+        totalExtendedHours: sql`SUM(CAST(${internshipExtensions.additionalHours} AS NUMERIC))`,
+        latestNewEndDate: sql`MAX(${internshipExtensions.newEndDate})`,
+        latestApprovedAt: sql`MAX(${internshipExtensions.approvedAt})`
+      })
+      .from(internshipExtensions)
+      .where(
+        and(
+          inArray(
+            internshipExtensions.applicationStatusId,
+            db.select({ id: applicationStatuses.id })
+              .from(applicationStatuses)
+              .where(eq(applicationStatuses.userId, studentId))
+          ),
+          eq(internshipExtensions.status, "APPROVED")
+        )
+      );
+
+    const totalExtendedHours = Number(extendedData?.totalExtendedHours || 0);
+    const extendedEndDate = extendedData?.latestNewEndDate ? new Date(extendedData.latestNewEndDate as string) : null;
 
     let presentCount = 0,
       lateCount = 0,
@@ -565,6 +638,7 @@ export class MentorService {
         email: studentInfo.email,
         phone: studentInfo.phone,
         internshipStatus: studentInfo.internshipStatus,
+        statusNote: studentInfo.statusNote,
         period: {
           startDate: studentInfo.startDate,
           endDate: studentInfo.endDate,
@@ -574,6 +648,9 @@ export class MentorService {
         accumulatedHours: Number(accumulatedHours.toFixed(2)),
         totalHoursGoal: Number(studentInfo.totalHoursGoal || 560),
         remainingDays: remainingDays,
+        totalExtendedHours: totalExtendedHours,
+        extendedEndDate: extendedEndDate,
+        lastExtensionDate: extendedData?.latestApprovedAt ? new Date(extendedData.latestApprovedAt as string) : null,
       },
       summary: {
         present: presentCount,
