@@ -8,7 +8,10 @@ sidebar_label: ประวัติการอนุมัติ
 หน้านี้ใช้สำหรับ **พี่เลี้ยง (Mentor)** เพื่อตรวจสอบย้อนหลังเกี่ยวกับรายการคำขอต่างๆ ที่ได้พิจารณาไปแล้ว ทั้งในส่วนของคำขอลาและคำขอแก้ไขเวลา
 
 ![Approval History](/img/frontend-itt/approval_history.png)
-*หน้าจอแสดงประวัติการอนุมัติและการปฏิเสธคำขอ*
+*หน้าจอแสดงประวัติการอนุมัติและการปฏิเสธคำขอการลา*
+
+![Approval History](/img/frontend-itt/approval_history_reques.png)
+*หน้าจอแสดงประวัติการอนุมัติและการปฏิเสธคำขอแก้ไขเวลา*
 
 ---
 
@@ -17,8 +20,23 @@ sidebar_label: ประวัติการอนุมัติ
 พี่เลี้ยงสามารถค้นหาและตรวจสอบรายการย้อนหลังได้โดยใช้ตัวกรองที่มีให้:
 
 1. **ตัวกรองสถานะ (Status Filter):** เลือกดูเฉพาะรายการที่ "อนุมัติแล้ว" หรือ "ไม่อนุมัติ"
-2. **ช่วงเวลา (Date Range):** เลือกดูประวัติในช่วงวันที่ต้องการ
-3. **ประเภทคำขอ:** แยกดูตามประเภท เช่น ลาป่วย, ลากิจ หรือแก้ไขเวลา
+![Approval History](/img/frontend-itt/approval_history_all.png)
+*หน้าจอแสดงประวัติการอนุมัติและการปฏิเสธคำขอทั้งหมด*
+
+![Approval History](/img/frontend-itt/approval_history_approval.png)
+*หน้าจอแสดงประวัติการอนุมัติคำขอทั้งหมด*
+
+![Approval History](/img/frontend-itt/approval_history_rejected.png)
+*หน้าจอแสดงประวัติการปฏิเสธคำขอทั้งหมด*
+
+2. **ประเภทคำขอ:** แยกดูตามประเภท เช่น การลา หรือแก้ไขเวลา
+![Approval History](/img/frontend-itt/approval_history_leavereques.png)
+*หน้าจอแสดงประวัติการอนุมัติคำขอการลา*
+
+![Approval History](/img/frontend-itt/approval_history_reques.png)
+*หน้าจอแสดงประวัติการอนุมัติคำขอแก้ไขเวลา*
+
+
 
 ---
 
