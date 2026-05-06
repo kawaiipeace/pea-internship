@@ -140,7 +140,7 @@ const CheckInPage = () => {
         if (!currentTime) return false;
         const h = currentTime.getHours();
         const m = currentTime.getMinutes();
-        return h > 16 || (h === 16 && m >= 30);
+        return h > 16 || (h === 15 && m >= 10);
     };
 
     const handleClockOut = () => {
