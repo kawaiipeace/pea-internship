@@ -1,23 +1,25 @@
 'use client';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import IconXCircle from '@/components/icon/icon-x-circle';
-import Flatpickr from 'react-flatpickr';
 import { useRouter } from 'next/navigation';
 import axiosInstance from '@/api/axios';
-import ImageWithAuth from '@/components/ImageWithAuth';
+import IconXCircle from '@/components/icon/icon-x-circle';
+
+// Shared Components
+import StudentFilter from '@/components/student_mentor/StudentFilter';
+import StudentTable from '@/components/student_mentor/StudentTable';
 
 const StudentsPage = () => {
     const router = useRouter();
     const [page, setPage] = useState(1);
     const PAGE_SIZES = [5, 10, 20, 50];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
-    const [dateRange, setDateRange] = useState<any>('');
-    const [confirmedDateStr, setConfirmedDateStr] = useState('');
+    const [dateRange, setDateRange] = useState<any>(''); // Actual filter state (Date[])
+    const [confirmedDateStr, setConfirmedDateStr] = useState(''); // Last confirmed formatted string
     const flatpickrRef = useRef<any>(null);
-    const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [students, setStudents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [statusFilter, setStatusFilter] = useState('ALL');
 
     const fetchStudents = useCallback(async () => {
         setIsLoading(true);
@@ -36,31 +38,47 @@ const StudentsPage = () => {
 
             const mappedStudents = rawStudents.map((s: any, index: number) => {
                 const detail = details[index]?.data;
-                const current = Number(s.workHours?.accumulated || 0);
-                const total = Number(s.workHours?.goal || 560);
+                const current = Math.round(Number(s.workHours?.accumulated || 0));
+                const total = Math.round(Number(s.workHours?.goal || 560));
                 const percent = total > 0 ? (current / total) * 100 : 0;
 
-                const endDateRaw = detail?.profile?.period?.endDate;
+                const end = detail?.progress?.extendedEndDate
+                    ? new Date(detail.progress.extendedEndDate)
+                    : (detail?.profile?.period?.endDate ? new Date(detail.profile.period.endDate) : null);
+
                 let statusMessage = 'กำลังฝึกงาน';
                 let statusType = 'remaining';
 
-                if (endDateRaw) {
-                    const endDate = new Date(endDateRaw);
+                if (end) {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    endDate.setHours(0, 0, 0, 0);
+                    const targetDate = new Date(end);
+                    targetDate.setHours(0, 0, 0, 0);
 
-                    const diffTime = endDate.getTime() - today.getTime();
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                    if (diffDays > 0) {
-                        statusMessage = `เหลืออีก ${diffDays} วันก่อนสิ้นสุดฝึกงาน`;
-                    } else if (diffDays === 0) {
-                        statusMessage = 'ฝึกงานวันสุดท้าย';
-                        statusType = 'last-day';
-                    } else {
+                    if (today > targetDate) {
                         statusMessage = 'สิ้นสุดการฝึกงาน';
                         statusType = 'ended';
+                    } else {
+                        let workingDays = 0;
+                        let tempDate = new Date(today);
+                        while (tempDate <= targetDate) {
+                            const day = tempDate.getDay();
+                            if (day !== 0 && day !== 6) {
+                                workingDays++;
+                            }
+                            tempDate.setDate(tempDate.getDate() + 1);
+                        }
+
+                        if (workingDays > 1) {
+                            statusMessage = `เหลืออีก ${workingDays} วันทำการก่อนสิ้นสุดฝึกงาน`;
+                        } else if (workingDays === 1) {
+                            statusMessage = 'ฝึกงานวันสุดท้าย';
+                            statusType = 'last-day';
+                        } else {
+                            // If today <= targetDate but only weekends are left
+                            statusMessage = 'สิ้นสุดการฝึกงาน';
+                            statusType = 'ended';
+                        }
                     }
                 }
 
@@ -69,10 +87,10 @@ const StudentsPage = () => {
                 const mainName = nameParts[0];
                 const extractedNick = nameParts[1] ? nameParts[1].replace(')', '') : '';
 
-                // Prioritize nickname field if backend starts providing it separately, 
-                // but always fall back to extracting from the fullName string
                 const nick = s.nickname || detail?.profile?.nickname || extractedNick;
                 const displayName = nick ? `${mainName} (${nick})` : mainName;
+
+                const compensationDays = Math.ceil((detail?.progress?.totalExtendedHours || 0) / 7);
 
                 return {
                     id: s.id,
@@ -91,10 +109,15 @@ const StudentsPage = () => {
                     progress: { current, total, percent: percent > 100 ? 100 : percent },
                     statusMessage,
                     statusType,
-                    consideration: '',
-                    // Period from detail API: profile.period.startDate / endDate
+                    internshipStatus: detail?.profile?.internshipStatus,
+                    compensationDays,
                     startDate: detail?.profile?.period?.startDate,
                     endDate: detail?.profile?.period?.endDate,
+                    gender: detail?.profile?.gender,
+                    position: detail?.profile?.position,
+                    considerationStatus: detail?.profile?.internshipStatus === 'COMPLETE' ? 'COMPLETE' :
+                        (detail?.profile?.internshipStatus === 'EXTENDED' || compensationDays > 0) ? 'EXTENDED' :
+                        statusType === 'ended' ? 'AWAITING' : 'ACTIVE'
                 };
             });
 
@@ -104,7 +127,7 @@ const StudentsPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []); // No dependency on dateRange — fetch once, filter locally
+    }, []);
 
     useEffect(() => {
         fetchStudents();
@@ -112,11 +135,6 @@ const StudentsPage = () => {
 
     const filteredItems = useMemo(() => {
         let result = [...students];
-
-        // Filter by school
-        if (selectedSchools.length > 0) {
-            result = result.filter((item) => selectedSchools.includes(item.university));
-        }
 
         // Filter by search term
         if (searchTerm) {
@@ -128,8 +146,10 @@ const StudentsPage = () => {
         }
 
         // Filter by internship period (date range from calendar)
-        if (Array.isArray(dateRange) && dateRange.length === 2) {
-            const [start, end] = dateRange;
+        if (Array.isArray(dateRange) && dateRange.length > 0) {
+            const start = dateRange[0];
+            const end = dateRange.length === 2 ? dateRange[1] : dateRange[0];
+
             if (start && end) {
                 const filterStart = new Date(start);
                 const filterEnd = new Date(end);
@@ -140,131 +160,24 @@ const StudentsPage = () => {
                     if (!item.startDate || !item.endDate) return false;
                     const itemStart = new Date(item.startDate);
                     const itemEnd = new Date(item.endDate);
-                    // Show if internship period overlaps with the selected range
                     return itemStart <= filterEnd && itemEnd >= filterStart;
                 });
             }
         }
 
+        // Filter by status
+        if (statusFilter !== 'ALL') {
+            result = result.filter((item) => item.considerationStatus === statusFilter);
+        }
+
         return result;
-    }, [selectedSchools, searchTerm, students, dateRange]);
+    }, [searchTerm, students, dateRange, statusFilter]);
 
     const records = useMemo(() => {
         const from = (page - 1) * pageSize;
         const to = from + pageSize;
         return filteredItems.slice(from, to);
     }, [page, pageSize, filteredItems]);
-
-    const flatpickrOptions = useMemo(() => ({
-        mode: 'range' as const,
-        dateFormat: 'd/m/Y',
-        closeOnSelect: false,
-        disableMobile: true,
-        locale: {
-            rangeSeparator: ' - ',
-        },
-        onReady: (_selectedDates: Date[], _dateStr: string, instance: any) => {
-            instance._okClicked = false;
-            const calendarContainer = instance.calendarContainer;
-            if (calendarContainer.querySelector('.custom-btn-container')) return;
-
-            const btnContainer = document.createElement('div');
-            btnContainer.classList.add('custom-btn-container');
-            btnContainer.style.cssText =
-                'display:flex;justify-content:center;gap:12px;padding:12px;border-top:1px solid #E5E7EB;background:#fff;border-bottom-left-radius:8px;border-bottom-right-radius:8px;';
-
-            const clearBtn = document.createElement('button');
-            clearBtn.textContent = 'Clear';
-            clearBtn.type = 'button';
-            clearBtn.style.cssText =
-                'flex:1;padding:12px;border-radius:24px;border:1px solid #E5E7EB;background:#fff;color:#4B5563;font-weight:600;font-size:18px;cursor:pointer;';
-            clearBtn.addEventListener('click', () => {
-                instance.clear();
-                setConfirmedDateStr('');
-                setDateRange('');
-            });
-
-            const okBtn = document.createElement('button');
-            okBtn.textContent = 'Ok';
-            okBtn.type = 'button';
-            okBtn.style.cssText =
-                'flex:1;padding:12px;border-radius:24px;border:none;background:#A80689;color:#fff;font-weight:600;font-size:18px;cursor:pointer;';
-            okBtn.addEventListener('click', () => {
-                instance._okClicked = true;
-                instance.close();
-            });
-
-            btnContainer.appendChild(clearBtn);
-            btnContainer.appendChild(okBtn);
-            calendarContainer.appendChild(btnContainer);
-        },
-        onClose: (selectedDates: Date[], dateStr: string, instance: any) => {
-            if (instance._okClicked) {
-                setDateRange(selectedDates);
-                setConfirmedDateStr(dateStr);
-                instance._okClicked = false;
-            } else {
-                // If they closed without clicking OK, revert the UI to the actual filter state
-                if (Array.isArray(dateRange) && dateRange.length > 0) {
-                    instance.setDate(dateRange, false);
-                } else {
-                    instance.clear();
-                }
-            }
-        }
-    }), [dateRange]);
-
-    const renderStatusBadge = (status: string) => {
-        switch (status) {
-            case 'PRESENT':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#E4FFEE] border border-[#75E0A7] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#079455] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>check</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">เข้างานปกติ</span>
-                    </div>
-                );
-            case 'LEAVE':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#EFF8FF] border border-[#1AB3FF]/50 w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#1AB3FF] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>lab_profile</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ลากิจ</span>
-                    </div>
-                );
-            case 'MISSING_OUT':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#F0F1F1] border border-[#94969C] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#85888E] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '20px' }}>hourglass_disabled</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ไม่ลงเวลาออก</span>
-                    </div>
-                );
-            case 'ABSENT':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF1EF] border border-[#FF8980] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#D92D20] text-white rounded-full shrink-0 shadow-sm">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>close</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">ขาด</span>
-                    </div>
-                );
-            case 'LATE':
-                return (
-                    <div className="flex items-center gap-2 pl-1 pr-4 py-1 rounded-full bg-[#FFF9E5] border border-[#FFCA5F] w-max">
-                        <div className="w-8 h-8 flex items-center justify-center bg-[#FDB022] text-white rounded-full shrink-0 shadow-sm transition-transform">
-                            <span className="material-symbols-outlined text-white text-[20px] select-none" style={{ fontSize: '26px' }}>schedule</span>
-                        </div>
-                        <span className="text-[#4b5563] font-medium text-[12px] whitespace-nowrap">สาย</span>
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
 
     const handleExportExcel = () => {
         const BOM = '\uFEFF';
@@ -311,45 +224,17 @@ const StudentsPage = () => {
                 <p className="text-[16px] font-normal text-[#61646C]">แสดงภาพรวมข้อมูลการฝึกงานของนักศึกษาในความดูแล</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-                <div className="relative w-full sm:w-[328px] h-[36px] shrink-0">
-                    <span className="absolute inset-y-0 left-[12px] flex items-center text-[#667085] pointer-events-none">
-                        <span className="material-symbols-outlined select-none text-[20px]">search</span>
-                    </span>
-                    <input
-                        type="text"
-                        placeholder="พิมพ์ชื่อหรือตำแหน่งที่ต้องการค้นหา..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full h-full pl-[42px] pr-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] placeholder:text-[#61646C] transition-all"
-                    />
-                </div>
-
-                <div className="relative w-full sm:w-[348px] h-[36px] shrink-0">
-                    <Flatpickr
-                        ref={flatpickrRef}
-                        value={confirmedDateStr}
-                        options={flatpickrOptions}
-                        className="w-full h-full px-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] placeholder:text-[#61646C]"
-                        placeholder="เลือกช่วงเวลาที่ต้องการดู..."
-                    />
-                    {confirmedDateStr && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setDateRange('');
-                                setConfirmedDateStr('');
-                                if (flatpickrRef.current?.flatpickr) {
-                                    flatpickrRef.current.flatpickr.clear();
-                                }
-                            }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-danger"
-                        >
-                            <IconXCircle className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-            </div>
+            <StudentFilter 
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                confirmedDateStr={confirmedDateStr}
+                setConfirmedDateStr={setConfirmedDateStr}
+                dateRange={dateRange}
+                setDateRange={setDateRange}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                flatpickrRef={flatpickrRef}
+            />
 
             {isLoading ? (
                 <div className=" flex items-center justify-center py-10 ]  ">
@@ -367,121 +252,7 @@ const StudentsPage = () => {
                     </div>
                 </div>
             ) : (
-                <div className="panel p-0 border-[#CECFD2] border-[1px] shadow-sm overflow-hidden rounded-xl">
-                    <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <table className="w-full border-collapse table-auto min-w-[1100px]">
-                            <thead className="bg-[#F9FAFB] border-b border-[#F2F4F7]">
-                                <tr>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">นักศึกษา</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถานะวันนี้</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">สถิติการมาฝึกงาน</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ชั่วโมงทำงาน</th>
-                                    <th className="py-5 px-6 text-center text-[#111827] font-normal text-[14px] whitespace-nowrap">ผลการพิจารณา</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[#F2F4F7]">
-                                {records.map((student) => (
-                                    <tr
-                                        key={student.id}
-                                        className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                                        onClick={() => router.push(`/admin/mentor/students/${student.id}`)}
-                                    >
-                                        <td className="py-4 px-6 text-left">
-                                            <div className="flex items-center gap-4">
-                                                <ImageWithAuth
-                                                    userId={student.id}
-                                                    className="w-12 h-12 rounded-full object-cover border border-[#E5E7EB] shrink-0"
-                                                    fallbackSrc={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`}
-                                                />
-                                                <div className="flex flex-col">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className="font-bold text-[#111827] text-[14px] whitespace-nowrap">
-                                                            {student.name.split(' (')[0]}
-                                                        </span>
-                                                        {student.nickname && (
-                                                            <span className="font-bold text-[#000000] text-[14px] whitespace-nowrap">
-                                                                ({student.nickname})
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <span className="text-[12px] text-[#9ca3af] whitespace-nowrap font-medium">{student.role}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <div className="flex justify-center">
-                                                <div className="w-[124px] flex justify-start">
-                                                    {renderStatusBadge(student.status)}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <div className="flex justify-center gap-2">
-                                                {/* มา */}
-                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                    <span className="text-[18px] font-bold text-[#079455] leading-none">{student.attendance.present}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">มา</span>
-                                                </div>
-                                                {/* สาย */}
-                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                    <span className="text-[18px] font-bold text-[#FDB022] leading-none">{student.attendance.late}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">สาย</span>
-                                                </div>
-                                                {/* ลา */}
-                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                    <span className="text-[18px] font-bold text-[#0FA3ED] leading-none">{student.attendance.leave}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">ลา</span>
-                                                </div>
-                                                {/* ขาด */}
-                                                <div className="w-[52px] h-[52px] flex flex-col items-center justify-center border-2 border-[#94969C] bg-white rounded-[5px]">
-                                                    <span className="text-[18px] font-bold text-[#D92D20] leading-none">{student.attendance.absent}</span>
-                                                    <span className="text-[11px] text-[#61646C] font-medium mt-0">ขาด</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <div className="flex flex-col gap-2 w-full max-w-[280px] mx-auto">
-                                                <div className="flex items-center justify-end px-1 mb-1">
-                                                    <span className="text-[10px] text-[#9ca3af] font-medium uppercase tracking-wider">
-                                                        <b className="text-[#a80689] text-[14px]">{student.progress.current}</b>
-                                                        / {student.progress.total} ชั่วโมง
-                                                    </span>
-                                                </div>
-                                                <div className="w-full h-[14px] bg-[#f3f4f6] rounded-full overflow-hidden shrink-0 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]">
-                                                    <div
-                                                        className="h-full bg-[#A80689] rounded-full transition-all duration-700 shadow-[inset_0px_-2px_4px_rgba(0,0,0,0.3),inset_0px_1px_2px_rgba(255,255,255,0.3)]"
-                                                        style={{ width: `${student.progress.percent}%` }}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center gap-2 px-1 mt-1">
-                                                    <span
-                                                        className="material-symbols-outlined select-none"
-                                                        style={{ fontVariationSettings: "'FILL' 1", fontSize: '20px', color: (student.statusType === 'ended' || student.statusType === 'last-day') ? '#B42318' : '#85888E' }}
-                                                    >
-                                                        schedule
-                                                    </span>
-                                                    <span className={`text-[12px] font-normal ${student.statusType === 'ended' ? 'text-[#D92D20]' :
-                                                        student.statusType === 'last-day' ? 'text-[#D92D20]' : 'text-[#6b7280]'
-                                                        }`}>
-                                                        {student.statusMessage}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 text-center">
-                                            <div className="flex flex-col items-center justify-center w-full min-h-[40px]">
-                                                <span className={`font-semibold text-[14px] whitespace-nowrap ${student.considerationType === 'compensation' ? 'text-[#ef4444]' : 'text-[#6b7280]'
-                                                    }`}>
-                                                    {student.consideration}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                <StudentTable records={records} router={router} />
             )}
 
             <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 pb-10 gap-6 px-2">
