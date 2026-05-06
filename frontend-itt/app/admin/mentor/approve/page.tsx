@@ -678,7 +678,7 @@ const ApprovalRequestPage = () => {
                 await axiosInstance.post(`/leave/bulk-reject`, { ids: selectedId, reason });
             } else if (activeTab === 'time-edit') {
                 // For time corrections, we handle it individually for now as per backend design
-                await axiosInstance.post(`/check-time/mentor/corrections/${selectedId[0]}/reject`, { reason });
+                await axiosInstance.post(`/check-time/corrections/${selectedId[0]}/reject`, { reason });
             }
 
             setRejectModal({ open: false, title: '' });
@@ -711,7 +711,7 @@ const ApprovalRequestPage = () => {
             if (activeTab === 'leave') {
                 await axiosInstance.post(`/leave/bulk-approve`, { ids: selectedId });
             } else if (activeTab === 'time-edit') {
-                await axiosInstance.post(`/check-time/mentor/corrections/${selectedId[0]}/approve`);
+                await axiosInstance.post(`/check-time/corrections/${selectedId[0]}/approve`);
             }
             setApproveConfirmOpen(false);
             setApproveSuccessOpen(true);

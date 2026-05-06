@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import axiosInstance from '@/api/axios';
 import Swal from 'sweetalert2';
 import ImageWithAuth from "@/components/ImageWithAuth";
+import Link from 'next/link';
 
 interface Student {
     id: string;
@@ -192,8 +193,8 @@ const RemoteWorkDetailPage = () => {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="px-10 pb-10">
-                    <hr className="mb-4 mt-[-16px] border-[#CECFD2] h-[1px] dark:border-gray-800" />
+                <div className="px-6 sm:px-10 pb-6 sm:pb-10">
+                    <hr className="mb-6 mt-[-16px] border-[#CECFD2] h-[1px] dark:border-gray-800" />
                     
                     {/* Date Badge */}
                     <div className="inline-block px-4 py-1.5 bg-[#FFF5E2] dark:bg-[#2a1a10] rounded-lg mb-2">
@@ -233,7 +234,11 @@ const RemoteWorkDetailPage = () => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {task.students.map((student) => (
-                                <div key={student.id} className="p-4 bg-white dark:bg-gray-900 border border-[#CECFD2] dark:border-gray-800 rounded-xl flex items-center gap-4 hover:border-[#A80689] transition-colors group">
+                                <Link 
+                                    key={student.id} 
+                                    href={`/admin/mentor/students/${student.id}`}
+                                    className="p-4 bg-white dark:bg-gray-900 border border-[#CECFD2] dark:border-gray-800 rounded-xl flex items-center gap-4 hover:border-[#A80689] transition-colors group cursor-pointer"
+                                >
                                     <div className="w-12 h-10 rounded-full overflow-hidden shrink-0 border border-gray-100 dark:border-gray-800 ring-2 ring-transparent group-hover:ring-[#A80689]/20 transition-all">
                                         <ImageWithAuth 
                                             userId={student.id} 
@@ -242,14 +247,14 @@ const RemoteWorkDetailPage = () => {
                                         />
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[14px] font-bold text-[#101828] dark:text-white truncate">
+                                        <p className="text-[14px] font-bold text-[#101828] dark:text-white truncate group-hover:text-[#A80689] transition-colors">
                                             {student.name} { `(${student.nickname})`}
                                         </p>
                                         <p className="text-[12px] text-[#667085] dark:text-gray-400 truncate">
                                             {student.positionName }
                                         </p>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     </div>
