@@ -709,13 +709,20 @@ export class UserService {
         .set({
           internshipStatus: "COMPLETE",
           isActive: false,
+          statusNote: note || "จบการฝึกงานสำเร็จ",
         })
         .where(eq(studentProfiles.userId, studentId))
-        .returning();
+        .returning({
+          id: studentProfiles.id,
+        });
+
+      if (!profile) {
+        throw new Error("ไม่พบข้อมูลโปรไฟล์นักศึกษา");
+      }
 
       await tx.insert(internshipEndHistory).values({
         studentProfileId: profile.id,
-        status: "COMPLETE",
+        status: "COMPLETE" as const,
         reason: note || "จบการฝึกงานตามกำหนดเวลา",
         changedBy: actionBy,
       });
