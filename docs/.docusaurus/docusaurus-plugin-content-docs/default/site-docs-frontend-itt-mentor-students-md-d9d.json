@@ -1,0 +1,28 @@
+{
+  "id": "frontend-itt/mentor/students",
+  "title": "นักศึกษาในความดูแล (My Students)",
+  "description": "หน้านี้ใช้สำหรับ พี่เลี้ยง (Mentor) เพื่อติดตามสถานะและสถิติการปฏิบัติงานของนักศึกษาทุกคนที่อยู่ในความรับผิดชอบ",
+  "source": "@site/docs/frontend-itt/mentor/students.md",
+  "sourceDirName": "frontend-itt/mentor",
+  "slug": "/frontend-itt/mentor/students",
+  "permalink": "/docs/frontend-itt/mentor/students",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/frontend-itt/mentor/students.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "sidebar_label": "นักศึกษาในความดูแล"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "พี่เลี้ยง (Mentor)",
+    "permalink": "/docs/category/พี่เลี้ยง-mentor"
+  },
+  "next": {
+    "title": "การอนุมัติคำขอ",
+    "permalink": "/docs/frontend-itt/mentor/approvals"
+  }
+}

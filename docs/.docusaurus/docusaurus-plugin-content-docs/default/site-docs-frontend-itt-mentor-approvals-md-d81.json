@@ -1,0 +1,28 @@
+{
+  "id": "frontend-itt/mentor/approvals",
+  "title": "การอนุมัติคำขอ (Approvals)",
+  "description": "ฟีเจอร์นี้สำหรับ พี่เลี้ยง (Mentor) เพื่อใช้จัดการคำขอต่างๆ จากนักศึกษาในกลุ่มที่ดูแล",
+  "source": "@site/docs/frontend-itt/mentor/approvals.md",
+  "sourceDirName": "frontend-itt/mentor",
+  "slug": "/frontend-itt/mentor/approvals",
+  "permalink": "/docs/frontend-itt/mentor/approvals",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/frontend-itt/mentor/approvals.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2,
+    "sidebar_label": "การอนุมัติคำขอ"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "นักศึกษาในความดูแล",
+    "permalink": "/docs/frontend-itt/mentor/students"
+  },
+  "next": {
+    "title": "ประวัติการอนุมัติ",
+    "permalink": "/docs/frontend-itt/mentor/approval-history"
+  }
+}

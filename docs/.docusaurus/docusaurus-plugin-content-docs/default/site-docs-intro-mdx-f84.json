@@ -1,0 +1,20 @@
+{
+  "id": "intro",
+  "title": "ภาพรวมระบบ Frontend-ITT",
+  "description": "ระบบ PEA Internship Management System (ITT) เป็นแพลตฟอร์มที่ออกแบบมาเพื่อจัดการและติดตามการฝึกงานของนักศึกษาใน กฟภ. โดยครอบคลุมตั้งแต่การลงเวลาเข้า-ออกงาน การลา และการจัดการงานนอกสถานที่",
+  "source": "@site/docs/intro.mdx",
+  "sourceDirName": ".",
+  "slug": "/intro",
+  "permalink": "/docs/intro",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/intro.mdx",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "คู่มือผู้ดูแลระบบ (Admin Guide)",
+    "permalink": "/docs/frontend-itt/admin/"
+  }
+}

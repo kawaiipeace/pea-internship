@@ -1,0 +1,28 @@
+{
+  "id": "frontend-itt/mentor/approval-history",
+  "title": "🕒 ประวัติการอนุมัติ (Approval History)",
+  "description": "หน้านี้ใช้สำหรับ พี่เลี้ยง (Mentor) เพื่อตรวจสอบย้อนหลังเกี่ยวกับรายการคำขอต่างๆ ที่ได้พิจารณาไปแล้ว ทั้งในส่วนของคำขอลาและคำขอแก้ไขเวลา",
+  "source": "@site/docs/frontend-itt/mentor/approval-history.md",
+  "sourceDirName": "frontend-itt/mentor",
+  "slug": "/frontend-itt/mentor/approval-history",
+  "permalink": "/docs/frontend-itt/mentor/approval-history",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/frontend-itt/mentor/approval-history.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3,
+    "sidebar_label": "ประวัติการอนุมัติ"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "การอนุมัติคำขอ",
+    "permalink": "/docs/frontend-itt/mentor/approvals"
+  },
+  "next": {
+    "title": "งานนอกสถานที่",
+    "permalink": "/docs/frontend-itt/mentor/remote-work"
+  }
+}

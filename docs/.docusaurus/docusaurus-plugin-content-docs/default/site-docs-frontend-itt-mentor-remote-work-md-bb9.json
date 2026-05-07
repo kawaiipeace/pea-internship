@@ -1,0 +1,28 @@
+{
+  "id": "frontend-itt/mentor/remote-work",
+  "title": "🌍 งานนอกสถานที่ (Offsite Work)",
+  "description": "ระบบ Remote Work ออกแบบมาเพื่อเพิ่มความคล่องตัวในการปฏิบัติงาน ช่วยให้นักศึกษาสามารถลงเวลาเข้า-ออกงานได้จากสถานที่อื่นๆ นอกเหนือจากสำนักงานหลัก โดยยังคงความถูกต้องของข้อมูลผ่านการอนุมัติจากพี่เลี้ยง",
+  "source": "@site/docs/frontend-itt/mentor/remote-work.md",
+  "sourceDirName": "frontend-itt/mentor",
+  "slug": "/frontend-itt/mentor/remote-work",
+  "permalink": "/docs/frontend-itt/mentor/remote-work",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/frontend-itt/mentor/remote-work.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "sidebar_position": 4,
+    "sidebar_label": "งานนอกสถานที่"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "ประวัติการอนุมัติ",
+    "permalink": "/docs/frontend-itt/mentor/approval-history"
+  },
+  "next": {
+    "title": "ผู้ดูแลระบบ (Admin)",
+    "permalink": "/docs/category/ผู้ดูแลระบบ-admin"
+  }
+}

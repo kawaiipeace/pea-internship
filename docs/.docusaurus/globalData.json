@@ -1,0 +1,93 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs",
+          "mainDocId": "frontend-itt/auth/login",
+          "docs": [
+            {
+              "id": "frontend-itt/admin/index",
+              "path": "/docs/frontend-itt/admin/",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "frontend-itt/auth/login",
+              "path": "/docs/frontend-itt/auth/login",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "frontend-itt/mentor/approval-history",
+              "path": "/docs/frontend-itt/mentor/approval-history",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "frontend-itt/mentor/approvals",
+              "path": "/docs/frontend-itt/mentor/approvals",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "frontend-itt/mentor/remote-work",
+              "path": "/docs/frontend-itt/mentor/remote-work",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "frontend-itt/mentor/students",
+              "path": "/docs/frontend-itt/mentor/students",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "frontend-itt/student/index",
+              "path": "/docs/frontend-itt/student/",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "intro",
+              "path": "/docs/intro",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "/category/frontend-itt",
+              "path": "/docs/category/frontend-itt",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "/category/การเข้าสู่ระบบ-authentication",
+              "path": "/docs/category/การเข้าสู่ระบบ-authentication",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "/category/นักศึกษา-student",
+              "path": "/docs/category/นักศึกษา-student",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "/category/พี่เลี้ยง-mentor",
+              "path": "/docs/category/พี่เลี้ยง-mentor",
+              "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "/category/ผู้ดูแลระบบ-admin",
+              "path": "/docs/category/ผู้ดูแลระบบ-admin",
+              "sidebar": "tutorialSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "tutorialSidebar": {
+              "link": {
+                "path": "/docs/category/frontend-itt",
+                "label": "Frontend-ITT"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}
