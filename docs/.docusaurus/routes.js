@@ -3,6 +3,11 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 
 export default [
   {
+    path: '/blog',
+    component: ComponentCreator('/blog', '98b'),
+    exact: true
+  },
+  {
     path: '/__docusaurus/debug',
     component: ComponentCreator('/__docusaurus/debug', '5ff'),
     exact: true
@@ -38,33 +43,22 @@ export default [
     exact: true
   },
   {
-    path: '/blog',
-    component: ComponentCreator('/blog', '98b'),
-    exact: true
-  },
-  {
     path: '/markdown-page',
     component: ComponentCreator('/markdown-page', '53a'),
     exact: true
   },
   {
     path: '/docs',
-    component: ComponentCreator('/docs', 'ed2'),
+    component: ComponentCreator('/docs', '472'),
     routes: [
       {
         path: '/docs',
-        component: ComponentCreator('/docs', '90d'),
+        component: ComponentCreator('/docs', '266'),
         routes: [
           {
             path: '/docs',
-            component: ComponentCreator('/docs', '749'),
+            component: ComponentCreator('/docs', 'f99'),
             routes: [
-              {
-                path: '/docs/category/frontend-itt',
-                component: ComponentCreator('/docs/category/frontend-itt', 'b05'),
-                exact: true,
-                sidebar: "tutorialSidebar"
-              },
               {
                 path: '/docs/category/การเข้าสู่ระบบ-authentication',
                 component: ComponentCreator('/docs/category/การเข้าสู่ระบบ-authentication', '2ce'),
@@ -86,6 +80,12 @@ export default [
               {
                 path: '/docs/category/พี่เลี้ยง-mentor',
                 component: ComponentCreator('/docs/category/พี่เลี้ยง-mentor', 'c9c'),
+                exact: true,
+                sidebar: "tutorialSidebar"
+              },
+              {
+                path: '/docs/category/frontend-itt',
+                component: ComponentCreator('/docs/category/frontend-itt', 'b05'),
                 exact: true,
                 sidebar: "tutorialSidebar"
               },
