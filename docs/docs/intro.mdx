@@ -1,47 +1,30 @@
+# ภาพรวมระบบ Frontend-ITT
+
+ระบบ **PEA Internship Management System (ITT)** เป็นแพลตฟอร์มที่ออกแบบมาเพื่อจัดการและติดตามการฝึกงานของนักศึกษาใน กฟภ. โดยครอบคลุมตั้งแต่การลงเวลาเข้า-ออกงาน การลา และการจัดการงานนอกสถานที่
+
+## บทบาทผู้ใช้งาน (User Roles)
+
+ระบบแบ่งผู้ใช้งานออกเป็น 3 กลุ่มหลัก ดังนี้:
+
+### 1. นักศึกษา (Intern)
+- **ลงเวลาเข้า-ออกงาน:** บันทึกเวลาปฏิบัติงานในแต่ละวันพร้อมการตรวจสอบตำแหน่ง GPS
+- **ติดตามความคืบหน้า:** ดูจำนวนชั่วโมงสะสมและสถิติการมาฝึกงาน
+- **ส่งคำขอ:** แจ้งลาป่วย/ลากิจ หรือขอแก้ไขเวลาในกรณีที่เกิดข้อผิดพลาด
+
+### 2. พี่เลี้ยง (Mentor)
+- **ตรวจสอบคำขอ:** พิจารณาอนุมัติหรือไม่อนุมัติการลาและคำขอแก้ไขเวลาของนักศึกษาในดูแล
+- **จัดการงานนอกสถานที่:** มอบหมายและตรวจสอบสถานะการทำงานนอกสถานที่
+- **ติดตามนักศึกษา:** ดูสถิติและสถานะปัจจุบันของนักศึกษาทุกคนในกลุ่ม
+
+### 3. ผู้ดูแลระบบ (Admin)
+- **Dashboard สรุปผล:** ดูภาพรวมสถิติการฝึกงานทั้งองค์กร (อัตราการลา, สาย, ขาด)
+- **จัดการข้อมูล:** ตรวจสอบรายชื่อนักศึกษาและพี่เลี้ยงทั้งหมด
+- **ส่งออกข้อมูล:** Export รายงานสรุปผลการฝึกงานเป็นไฟล์ CSV
+
+
+
 ---
-sidebar_position: 1
----
 
-# Tutorial Intro
-
-Let's discover **Docusaurus in less than 5 minutes**.
-
-## Getting Started
-
-Get started by **creating a new site**.
-
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
-
-### What you'll need
-
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
-
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
-```
-
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+## การเข้าใช้งานระบบ
+- รองรับการใช้งานผ่าน Web Browser ทั้งบน Desktop และ Mobile (PWA)
+- มีระบบตรวจสอบตำแหน่ง (Geolocation) เพื่อความถูกต้องในการลงเวลา
