@@ -19,12 +19,15 @@ import {
   applicationStatuses,
   attendanceLogs,
   checkTimes,
+  departments,
   institutions,
+  internshipExtensions,
   internshipPositions,
   leaveRequests,
   offsiteTaskStudents,
   offsiteTasks,
   staffProfiles,
+  studentAttendanceSummary,
   studentProfiles,
   timeCorrectionRequests,
   users,
@@ -32,6 +35,26 @@ import {
 import type * as model from "./model";
 
 export class MentorService {
+  private countWorkingDays(startDate: Date, endDate: Date): number {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
+    if (start > end) return 0;
+
+    let days = 0;
+    const temp = new Date(start);
+    while (temp <= end) {
+      const day = temp.getDay();
+      if (day !== 0 && day !== 6) {
+        days++;
+      }
+      temp.setDate(temp.getDate() + 1);
+    }
+    return days;
+  }
+
   async getStudents(
     mentorUserId: string,
     query: model.GetStudentsUnderCareQueryType
@@ -43,6 +66,7 @@ export class MentorService {
       startDate,
       endDate,
       viewType,
+      status,
     } = query;
 
     const mentor = await db.query.users.findFirst({
@@ -50,13 +74,26 @@ export class MentorService {
       with: { staffProfiles: true },
     });
 
-    if (!mentor || !mentor.staffProfiles) {
+    if (!mentor?.staffProfiles) {
       throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
     }
 
-    const conditions: (SQL | undefined)[] = [
-      eq(applicationStatuses.isActive, true),
-    ];
+    const conditions: (SQL | undefined)[] = [];
+
+    // Status filtering
+    if (status === "active") {
+      conditions.push(eq(applicationStatuses.isActive, true));
+    } else if (status === "completed") {
+      conditions.push(eq(applicationStatuses.applicationStatus, "COMPLETE"));
+    } else {
+      // Default: show both active and completed
+      conditions.push(
+        or(
+          eq(applicationStatuses.isActive, true),
+          eq(applicationStatuses.applicationStatus, "COMPLETE")
+        )
+      );
+    }
 
     if (viewType !== "ALL" && mentor.departmentId) {
       conditions.push(
@@ -66,11 +103,29 @@ export class MentorService {
 
     if (search) {
       conditions.push(
-        or(ilike(users.fname, `%${search}%`), ilike(users.lname, `%${search}%`))
+        or(
+          ilike(users.fname, `%${search}%`),
+          ilike(users.lname, `%${search}%`),
+          ilike(internshipPositions.name, `%${search}%`),
+          ilike(departments.deptShort, `%${search}%`),
+          ilike(departments.deptFull, `%${search}%`),
+          ilike(institutions.name, `%${search}%`)
+        )
       );
     }
 
     const offset = (page - 1) * limit;
+
+    const latestExtensionQuery = db
+      .select({
+        applicationStatusId: internshipExtensions.applicationStatusId,
+        extendedEndDate: sql`MAX(${internshipExtensions.newEndDate})`.as(
+          "extendedEndDate"
+        ),
+      })
+      .from(internshipExtensions)
+      .groupBy(internshipExtensions.applicationStatusId)
+      .as("latestExtension");
 
     const baseQuery = db
       .select({
@@ -82,6 +137,12 @@ export class MentorService {
         totalHoursGoal: applicationInformations.hours,
         positionName: internshipPositions.name,
         username: users.displayUsername,
+        departmentName: sql<string>`COALESCE(${departments.deptSapShort}, ${departments.deptShort}, ${departments.deptFull})`,
+        endDate: applicationInformations.endDate,
+        extendedEndDate: latestExtensionQuery.extendedEndDate,
+        institutionName: institutions.name,
+        globalAccumulatedHours: studentAttendanceSummary.totalAccumulatedHours,
+        globalTotalHoursGoal: studentAttendanceSummary.totalHoursGoal,
       })
       .from(applicationStatuses)
       .innerJoin(users, eq(users.id, applicationStatuses.userId))
@@ -94,6 +155,22 @@ export class MentorService {
         internshipPositions,
         eq(internshipPositions.id, applicationStatuses.positionId)
       )
+      .leftJoin(
+        departments,
+        eq(departments.deptSap, applicationStatuses.departmentId)
+      )
+      .leftJoin(
+        institutions,
+        eq(institutions.id, studentProfiles.institutionId)
+      )
+      .leftJoin(
+        studentAttendanceSummary,
+        eq(studentAttendanceSummary.studentProfileId, studentProfiles.id)
+      )
+      .leftJoin(
+        latestExtensionQuery,
+        eq(latestExtensionQuery.applicationStatusId, applicationStatuses.id)
+      )
       .where(and(...conditions));
 
     const students = await baseQuery.limit(limit).offset(offset);
@@ -102,9 +179,38 @@ export class MentorService {
       return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
     }
 
-    const totalStudents = (await baseQuery).length;
+    const [totalRes] = await db
+      .select({ count: count() })
+      .from(applicationStatuses)
+      .innerJoin(users, eq(users.id, applicationStatuses.userId))
+      .innerJoin(studentProfiles, eq(studentProfiles.userId, users.id))
+      .where(and(...conditions));
+
+    const totalStudents = Number(totalRes.count);
 
     const studentProfileIds = students.map((s) => s.studentProfileId);
+    const studentUserIds = students.map((s) => s.userId);
+
+    const todayStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+    }).format(new Date());
+
+    const todayLeaves =
+      studentUserIds.length > 0
+        ? await db
+            .select({
+              userId: leaveRequests.userId,
+              leaveType: leaveRequests.leaveRequestType,
+            })
+            .from(leaveRequests)
+            .where(
+              and(
+                inArray(leaveRequests.userId, studentUserIds),
+                sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
+                eq(leaveRequests.status, "APPROVED")
+              )
+            )
+        : [];
 
     const logConditions = [
       inArray(attendanceLogs.studentProfileId, studentProfileIds),
@@ -116,10 +222,6 @@ export class MentorService {
       .select()
       .from(attendanceLogs)
       .where(and(...logConditions));
-
-    const todayStr = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Bangkok",
-    }).format(new Date());
 
     const todayLogs = allLogs.filter((log) => {
       const logDate = log.workDate ? String(log.workDate).substring(0, 10) : "";
@@ -138,16 +240,14 @@ export class MentorService {
         late = 0,
         leave = 0,
         absent = 0;
-      let accumulatedHours = 0;
+      const accumulatedHours = Number(student.globalAccumulatedHours || 0);
+      const totalHoursGoal = Number(student.globalTotalHoursGoal || 0);
 
       studentLogs.forEach((log) => {
         if (log.dailyStatus === "PRESENT") present++;
         else if (log.dailyStatus === "LATE") late++;
         else if (log.dailyStatus === "LEAVE") leave++;
         else if (log.dailyStatus === "ABSENT") absent++;
-
-        accumulatedHours += Number(log.actualHoursWorked || 0);
-        accumulatedHours += Number(log.approvedLeaveHours || 0);
       });
 
       let todayStatusText = "ยังไม่ลงเวลา";
@@ -162,6 +262,49 @@ export class MentorService {
         };
         todayStatusCode = todayLog.dailyStatus;
         todayStatusText = statusMap[todayLog.dailyStatus] || "ยังไม่ลงเวลา";
+
+        if (todayLog.dailyStatus === "LEAVE") {
+          const studentLeave = todayLeaves.find(
+            (l) => l.userId === student.userId
+          );
+          if (studentLeave?.leaveType === "SICK") {
+            todayStatusCode = "SICK";
+            todayStatusText = "ลาป่วย";
+          } else if (studentLeave?.leaveType === "ABSENCE") {
+            todayStatusCode = "ABSENCE";
+            todayStatusText = "ลากิจ";
+          }
+        }
+      }
+
+      const remainingHours = totalHoursGoal - accumulatedHours;
+      let remainingDays = 0;
+      if (remainingHours > 0) {
+        const finalEndDate = student.extendedEndDate || student.endDate;
+        if (finalEndDate) {
+          const nowBkk = new Date(
+            new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
+          );
+          const today = new Date(
+            nowBkk.getFullYear(),
+            nowBkk.getMonth(),
+            nowBkk.getDate()
+          );
+          const endBkk = new Date(
+            new Date(String(finalEndDate)).toLocaleString("en-US", {
+              timeZone: "Asia/Bangkok",
+            })
+          );
+          const end = new Date(
+            endBkk.getFullYear(),
+            endBkk.getMonth(),
+            endBkk.getDate()
+          );
+
+          remainingDays = this.countWorkingDays(today, end);
+        } else {
+          remainingDays = Math.ceil(remainingHours / 7);
+        }
       }
 
       return {
@@ -170,6 +313,7 @@ export class MentorService {
         fullName: `${student.firstName} ${student.lastName} (${student.username})`,
         image: student.image,
         positionName: student.positionName || "ไม่ระบุตำแหน่ง",
+        unitName: student.departmentName || "ไม่ระบุหน่วยงาน",
         todayStatus: {
           text: todayStatusText,
           code: todayStatusCode,
@@ -183,6 +327,7 @@ export class MentorService {
         workHours: {
           accumulated: Number(accumulatedHours.toFixed(2)),
           goal: Number(student.totalHoursGoal || 560),
+          remainingDays,
         },
         evaluation: null,
       };
@@ -219,6 +364,7 @@ export class MentorService {
     const [studentInfo] = await db
       .select({
         userId: users.id,
+        applicationStatusId: applicationStatuses.id,
         firstName: users.fname,
         lastName: users.lname,
         username: users.displayUsername,
@@ -226,6 +372,7 @@ export class MentorService {
         phone: users.phoneNumber,
         image: studentProfiles.image,
         internshipStatus: studentProfiles.internshipStatus,
+        statusNote: studentProfiles.statusNote,
         institutionName: institutions.name,
         positionName: internshipPositions.name,
         startDate: applicationInformations.startDate,
@@ -249,22 +396,23 @@ export class MentorService {
         eq(applicationInformations.applicationStatusId, applicationStatuses.id)
       )
       .where(
-        and(eq(users.id, studentId), eq(applicationStatuses.isActive, true))
+        and(
+          eq(users.id, studentId),
+          or(
+            eq(applicationStatuses.isActive, true),
+            eq(applicationStatuses.applicationStatus, "COMPLETE")
+          )
+        )
       )
+
       .limit(1);
 
     if (!studentInfo) {
       throw new NotFoundError("ไม่พบข้อมูลนักศึกษา หรือนักศึกษาไม่ได้อยู่ในสถานะฝึกงาน");
     }
 
-    let remainingDays = 0;
-    if (studentInfo.endDate) {
-      const today = new Date();
-      const end = new Date(studentInfo.endDate);
-      const diffTime = end.getTime() - today.getTime();
-      remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (remainingDays < 0) remainingDays = 0;
-    }
+    const totalHoursGoal = Number(studentInfo.totalHoursGoal || 0);
+    let accumulatedHours = 0;
 
     const allLogsForStats = await db
       .select({
@@ -275,20 +423,76 @@ export class MentorService {
       .from(attendanceLogs)
       .where(eq(attendanceLogs.studentProfileId, studentInfo.studentProfileId));
 
+    allLogsForStats.forEach((log) => {
+      accumulatedHours += Number(log.actualHoursWorked || 0);
+      accumulatedHours += Number(log.approvedLeaveHours || 0);
+    });
+
+    const [extendedData] = await db
+      .select({
+        totalExtendedHours: sql`SUM(CAST(${internshipExtensions.additionalHours} AS NUMERIC))`,
+        latestNewEndDate: sql`MAX(${internshipExtensions.newEndDate})`,
+        latestApprovedAt: sql`MAX(${internshipExtensions.approvedAt})`,
+      })
+      .from(internshipExtensions)
+      .where(
+        and(
+          eq(
+            internshipExtensions.applicationStatusId,
+            studentInfo.applicationStatusId
+          ),
+          eq(internshipExtensions.status, "APPROVED")
+        )
+      );
+
+    const totalExtendedHours = Number(extendedData?.totalExtendedHours || 0);
+    const extendedEndDate = extendedData?.latestNewEndDate
+      ? new Date(extendedData.latestNewEndDate as string)
+      : null;
+
+    const remainingHours = totalHoursGoal - accumulatedHours;
+    let remainingDays = 0;
+    if (remainingHours > 0) {
+      const finalEndDate =
+        extendedEndDate ||
+        (studentInfo.endDate ? new Date(studentInfo.endDate) : null);
+      if (finalEndDate) {
+        const nowBkk = new Date(
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
+        );
+        const today = new Date(
+          nowBkk.getFullYear(),
+          nowBkk.getMonth(),
+          nowBkk.getDate()
+        );
+        const endBkk = new Date(
+          finalEndDate.toLocaleString("en-US", {
+            timeZone: "Asia/Bangkok",
+          })
+        );
+        const end = new Date(
+          endBkk.getFullYear(),
+          endBkk.getMonth(),
+          endBkk.getDate()
+        );
+
+        remainingDays = this.countWorkingDays(today, end);
+      } else {
+        remainingDays = Math.ceil(remainingHours / 7);
+      }
+    }
+    if (remainingDays < 0) remainingDays = 0;
+
     let presentCount = 0,
       lateCount = 0,
       leaveCount = 0,
       absentCount = 0;
-    let accumulatedHours = 0;
 
     allLogsForStats.forEach((log) => {
       if (log.dailyStatus === "PRESENT") presentCount++;
       else if (log.dailyStatus === "LATE") lateCount++;
       else if (log.dailyStatus === "LEAVE") leaveCount++;
       else if (log.dailyStatus === "ABSENT") absentCount++;
-
-      accumulatedHours += Number(log.actualHoursWorked || 0);
-      accumulatedHours += Number(log.approvedLeaveHours || 0);
     });
 
     const offset = (page - 1) * limit;
@@ -316,6 +520,8 @@ export class MentorService {
         checkOutTime: checkOutTable.time,
         checkOutNote: checkOutTable.note,
         leaveReason: leaveRequests.reason,
+        leaveType: leaveRequests.leaveRequestType,
+        leaveFile: leaveRequests.file,
         offsiteLocation: offsiteTasks.locationName,
         offsiteTaskDetail: offsiteTasks.taskDetail,
         correctionReason: timeCorrectionRequests.reason,
@@ -421,8 +627,9 @@ export class MentorService {
         hours:
           Number(log.actualHoursWorked || 0) +
           Number(log.approvedLeaveHours || 0),
-        evidenceUrl: null,
+        evidenceUrl: log.leaveFile || null,
         notes: noteList,
+        leaveType: log.leaveType,
       };
     });
 
@@ -436,6 +643,7 @@ export class MentorService {
         email: studentInfo.email,
         phone: studentInfo.phone,
         internshipStatus: studentInfo.internshipStatus,
+        statusNote: studentInfo.statusNote,
         period: {
           startDate: studentInfo.startDate,
           endDate: studentInfo.endDate,
@@ -445,6 +653,11 @@ export class MentorService {
         accumulatedHours: Number(accumulatedHours.toFixed(2)),
         totalHoursGoal: Number(studentInfo.totalHoursGoal || 560),
         remainingDays: remainingDays,
+        totalExtendedHours: totalExtendedHours,
+        extendedEndDate: extendedEndDate,
+        lastExtensionDate: extendedData?.latestApprovedAt
+          ? new Date(extendedData.latestApprovedAt as string)
+          : null,
       },
       summary: {
         present: presentCount,

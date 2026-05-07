@@ -25,6 +25,7 @@ import {
   attendanceLogs,
   checkTimes,
   leaveRequests,
+  notifications,
   offsiteTaskStudents,
   offsiteTasks,
   studentProfiles,
@@ -100,13 +101,27 @@ export class CheckTimeService {
     const inTime = new Date(1970, 0, 1, inHour, inMin);
     const outTime = new Date(1970, 0, 1, outHour, outMin);
 
-    let totalMs = outTime.getTime() - inTime.getTime();
-    if (totalMs < 0) totalMs = 0;
+    const lunchStart = new Date(1970, 0, 1, 12, 0);
+    const lunchEnd = new Date(1970, 0, 1, 13, 0);
+
+    let totalMs = 0;
+    if (inTime < lunchStart) {
+      const morningEnd = outTime < lunchStart ? outTime : lunchStart;
+      totalMs += Math.max(0, morningEnd.getTime() - inTime.getTime());
+    }
+    if (outTime > lunchEnd) {
+      const afternoonStart = inTime > lunchEnd ? inTime : lunchEnd;
+      totalMs += Math.max(0, outTime.getTime() - afternoonStart.getTime());
+    }
 
     let hours = totalMs / (1000 * 60 * 60);
 
-    if (hours >= 4) {
-      hours -= 1;
+    // Consistency check: If checked in within grace period and stayed past lunch, credit full 7 hours
+    // This matches the logic in the 'out' method for standard working days (e.g., 08:30 - 16:30)
+    if (inHour < 8 || (inHour === 8 && inMin <= 45)) {
+      if (outHour >= 16) {
+        hours = 7;
+      }
     }
 
     if (hours > 7) hours = 7;
@@ -131,7 +146,7 @@ export class CheckTimeService {
         with: { department: { with: { office: true } } },
       });
 
-      if (!activeApp || !activeApp.department?.office) {
+      if (!activeApp?.department?.office) {
         throw new NotFoundError("ไม่พบข้อมูลสำนักงานที่คุณกำลังฝึกงานอยู่");
       }
 
@@ -146,6 +161,21 @@ export class CheckTimeService {
 
       const officeLat = activeApp.department.office.latitude;
       const officeLon = activeApp.department.office.longitude;
+
+      // Check for approved leave
+      const approvedLeave = await tx.query.leaveRequests.findFirst({
+        where: and(
+          eq(leaveRequests.userId, userId),
+          sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
+          eq(leaveRequests.status, "APPROVED")
+        ),
+      });
+
+      if (approvedLeave) {
+        throw new ConflictError(
+          "ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้"
+        );
+      }
 
       let isOnsite = false;
       let finalLocationText = "ไม่สามารถระบุพิกัดได้";
@@ -288,6 +318,21 @@ export class CheckTimeService {
       });
       const todayStr = bkkFormatter.format(now);
 
+      // Check for approved leave
+      const approvedLeave = await tx.query.leaveRequests.findFirst({
+        where: and(
+          eq(leaveRequests.userId, userId),
+          sql`DATE(${leaveRequests.leaveDatetime}) = ${todayStr}`,
+          eq(leaveRequests.status, "APPROVED")
+        ),
+      });
+
+      if (approvedLeave) {
+        throw new ConflictError(
+          "ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้"
+        );
+      }
+
       const existingLog = await tx.query.attendanceLogs.findFirst({
         where: and(
           eq(attendanceLogs.studentProfileId, student.id),
@@ -295,7 +340,7 @@ export class CheckTimeService {
         ),
       });
 
-      if (!existingLog || !existingLog.checkInId) {
+      if (!existingLog?.checkInId) {
         throw new ConflictError(
           "ไม่สามารถออกงานได้ เนื่องจากคุณยังไม่ได้บันทึกเวลาเข้างานในวันนี้"
         );
@@ -313,7 +358,7 @@ export class CheckTimeService {
         with: { department: { with: { office: true } } },
       });
 
-      if (!activeApp || !activeApp.department?.office)
+      if (!activeApp?.department?.office)
         throw new NotFoundError("ไม่พบข้อมูลสำนักงาน");
 
       const officeLat = activeApp.department.office.latitude;
@@ -401,6 +446,11 @@ export class CheckTimeService {
         }
 
         let hours = totalMs / (1000 * 60 * 60);
+
+        if (inTime <= gracePeriod && outTime >= lunchEnd) {
+          hours = 7;
+        }
+
         if (hours < 0) hours = 0;
         if (hours > 7) hours = 7;
 
@@ -764,12 +814,21 @@ export class CheckTimeService {
     }
 
     return await db.transaction(async (tx) => {
+      // 1. ดึงโปรไฟล์พร้อมข้อมูล User เพื่อใช้ส่ง Notification
       const student = await tx.query.studentProfiles.findFirst({
         where: eq(studentProfiles.userId, userId),
+        with: {
+          user: true,
+        },
       });
 
       if (!student) {
         throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
+      }
+
+      // ป้องกัน Error กรณีแผนกเป็น Null (TypeScript Error)
+      if (!student.user.departmentId) {
+        throw new ConflictError("ไม่สามารถดำเนินการได้เนื่องจากคุณยังไม่มีสังกัดแผนก");
       }
 
       const existingLog = await tx.query.attendanceLogs.findFirst({
@@ -786,12 +845,14 @@ export class CheckTimeService {
 
       const isMissingOut = existingLog.checkInId && !existingLog.checkOutId;
       const currentStatus = existingLog.dailyStatus;
+
       const allowedToEdit =
-        isMissingOut || currentStatus === "ABSENT" || currentStatus === "LATE";
+        isMissingOut ||
+        ["ABSENT", "LATE", "PRESENT", "LEAVE"].includes(currentStatus);
 
       if (!allowedToEdit) {
         throw new ConflictError(
-          "ไม่อนุญาตให้แก้ไขเวลา (ทำได้เฉพาะกรณี ขาดงาน, มาสาย หรือ ลืมเช็คเอาท์)"
+          "ไม่อนุญาตให้แก้ไขเวลา (ทำได้เฉพาะกรณี ขาดงาน, มาสาย, ลืมเช็คเอาท์ หรือแก้ไขข้อมูลที่ผิดพลาด)"
         );
       }
 
@@ -860,10 +921,33 @@ export class CheckTimeService {
         resultRequest = newRequest;
       }
 
+      // --- สร้าง Notification ส่งหา Mentor/Admin ในแผนก ---
+      const owners = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            or(eq(users.roleId, 1), eq(users.roleId, 2)), // Admin หรือ Staff/Mentor
+            eq(users.departmentId, student.user.departmentId)
+          )
+        );
+
+      if (owners.length > 0) {
+        const studentName = `${student.user.fname} ${student.user.lname}`;
+        await tx.insert(notifications).values(
+          owners.map((o) => ({
+            userId: o.id,
+            title: "คำขอแก้ไขเวลาใหม่",
+            message: `ได้รับคําขอเเก้ไขเวลาของ ${studentName} ในวันที่ ${workDate}`,
+            isRead: false,
+          }))
+        );
+      }
+
       return {
         success: true,
         message: "ส่งคำขอแก้ไขเวลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)",
-        requestId: resultRequest.id,
+        requestId: resultRequest!.id,
         hoursWorked: calculatedHours,
       };
     });
@@ -951,14 +1035,14 @@ export class CheckTimeService {
     mentorUserId: string,
     query: checkSchema.GetMentorCorrectionsQueryType
   ) {
-    const { page = 1, limit = 10, status, viewType } = query;
+    const { page = 1, limit = 10, status, viewType, excludePending } = query;
 
     const mentor = await db.query.users.findFirst({
       where: eq(users.id, mentorUserId),
       with: { staffProfiles: true },
     });
 
-    if (!mentor || !mentor.staffProfiles) {
+    if (!mentor?.staffProfiles) {
       throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
     }
 
@@ -1004,6 +1088,12 @@ export class CheckTimeService {
       correctionConditions.push(eq(timeCorrectionRequests.status, status));
     }
 
+    if (excludePending === "true") {
+      correctionConditions.push(
+        not(eq(timeCorrectionRequests.status, "PENDING"))
+      );
+    }
+
     const finalCondition = and(...correctionConditions);
 
     const [totalCountResult] = await db
@@ -1014,6 +1104,14 @@ export class CheckTimeService {
     const totalFilteredRecords = Number(totalCountResult.count);
     const totalPages = Math.ceil(totalFilteredRecords / limit);
     const offset = (page - 1) * limit;
+
+    const bkkFormatter2 = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const todayStr = bkkFormatter2.format(new Date());
 
     const requestsData = await db
       .select({
@@ -1028,10 +1126,14 @@ export class CheckTimeService {
         attachmentUrl: timeCorrectionRequests.attachmentUrl,
         status: timeCorrectionRequests.status,
         workDate: attendanceLogs.workDate,
+        dailyStatus: attendanceLogs.dailyStatus,
+        checkInId: attendanceLogs.checkInId,
+        checkOutId: attendanceLogs.checkOutId,
         fname: users.fname,
         lname: users.lname,
         username: users.displayUsername,
         image: studentProfiles.image,
+        approverNote: timeCorrectionRequests.approverNote,
       })
       .from(timeCorrectionRequests)
       .innerJoin(
@@ -1057,20 +1159,36 @@ export class CheckTimeService {
       });
     };
 
-    const records = requestsData.map((record) => ({
-      id: record.id,
-      studentName:
-        `${record.fname || ""} ${record.lname || ""} (${record.username || ""})`.trim(),
-      profileImg: record.image || null,
-      createdAt: record.createdAt,
-      workDate: record.workDate,
-      originalTime: `${formatTime(record.originalCheckIn)} - ${formatTime(record.originalCheckOut)}`,
-      requestedTime: `${formatTime(record.requestedCheckIn)} - ${formatTime(record.requestedCheckOut)}`,
-      hoursWorked: record.calculatedHours,
-      reason: record.reason,
-      attachmentUrl: record.attachmentUrl,
-      status: record.status,
-    }));
+    const records = requestsData.map((record) => {
+      const logDateStr = String(record.workDate).substring(0, 10);
+      let attendanceStatus = record.dailyStatus;
+
+      if (
+        (record.dailyStatus === "PRESENT" || record.dailyStatus === "LATE") &&
+        record.checkInId &&
+        !record.checkOutId &&
+        logDateStr !== todayStr
+      ) {
+        attendanceStatus = "MISSING_OUT";
+      }
+
+      return {
+        id: record.id,
+        studentName:
+          `${record.fname || ""} ${record.lname || ""} (${record.username || ""})`.trim(),
+        profileImg: record.image || null,
+        createdAt: record.createdAt,
+        workDate: record.workDate,
+        originalTime: `${formatTime(record.originalCheckIn)} - ${formatTime(record.originalCheckOut)}`,
+        requestedTime: `${formatTime(record.requestedCheckIn)} - ${formatTime(record.requestedCheckOut)}`,
+        hoursWorked: record.calculatedHours,
+        reason: record.reason,
+        attachmentUrl: record.attachmentUrl,
+        status: record.status,
+        attendanceStatus: attendanceStatus,
+        approverNote: record.approverNote,
+      };
+    });
 
     return {
       data: records,
@@ -1112,7 +1230,7 @@ export class CheckTimeService {
           typeCheck: "IN",
           isOnsite: true,
           location: "แก้ไขเวลาโดยพี่เลี้ยง",
-          note: "แก้ไขเวลาออกงาน",
+          note: "แก้ไขเวลาเข้างาน",
         })
         .returning();
 

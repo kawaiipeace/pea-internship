@@ -1,5 +1,5 @@
 // backend/src/leave/index.ts
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
 import { LeaveService } from "./service";
@@ -15,7 +15,6 @@ export const leave = new Elysia({
     "/",
     async ({ body, set, user }) => {
       const response = await leaveService.submitLeaveRequest(user.id, body);
-
       set.status = 201;
       return response;
     },
@@ -29,51 +28,46 @@ export const leave = new Elysia({
       },
     }
   )
-
   .post(
-    "/:id/approve",
-    async ({ params: { id }, set, user }) => {
-      const response = await leaveService.approveLeaveRequest(user.id, id);
-
-      set.status = 200;
-      return response;
-    },
-    {
-      role: [1, 2],
-      params: model.params,
-      detail: {
-        summary: "อนุมัติคำขอลา (Approve Leave Request)",
-        description: "ยืนยันการอนุมัติคำขอลา และแจกเวลาทำงานให้ 7 ชั่วโมงอัตโนมัติ",
-      },
-    }
-  )
-
-  .post(
-    "/bulk-approve",
+    "/resubmit",
     async ({ body, set, user }) => {
-      const response = await leaveService.bulkApproveLeaveRequests(
+      const response = await leaveService.resubmitLeaveRequests(
         user.id,
         body.ids
       );
-
       set.status = 200;
       return response;
     },
     {
-      role: [1, 2],
-      body: model.BulkApproveBody,
+      role: [3],
+      body: model.ResubmitLeaveBody,
       detail: {
-        summary: "อนุมัติคำขอลาแบบกลุ่ม (Bulk Approve Leave Requests)",
-        description: "อนุมัติรายการลาของนักศึกษาหลายรายการพร้อมกัน",
+        summary: "ส่งคำขอลาซ้ำ (Resubmit Rejected Leave Request)",
+        description: "เปลี่ยนสถานะจาก REJECTED กลับเป็น PENDING เพื่อส่งคำขอเดิมซ้ำ",
       },
     }
   )
-
+  .get(
+    "/history",
+    async ({ query, set, user }) => {
+      const response = await leaveService.getLeaveHistory(user.id, query);
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [3],
+      query: model.GetLeaveHistoryQuery,
+      detail: {
+        summary: "ประวัติการลา (Leave History)",
+        description:
+          "ดึงประวัติการลาของนักศึกษาประจำเดือน พร้อมข้อมูลสรุป (Summary) และการแบ่งหน้า (Pagination)",
+      },
+    }
+  )
   .delete(
     "/:id",
     async ({ params: { id }, set, user }) => {
       const response = await leaveService.deleteLeaveRequest(user.id, id);
-
       set.status = 200;
       return response;
     },
@@ -94,7 +88,6 @@ export const leave = new Elysia({
         user.id,
         body.ids
       );
-
       set.status = 200;
       return response;
     },
@@ -102,31 +95,47 @@ export const leave = new Elysia({
       role: [3],
       body: model.BulkDeleteBody,
       detail: {
-        summary: "ยกเลิกคำขอลาเแบบกลุ่ม (Bulk Cancel Leave Requests)",
+        summary: "ยกเลิกคำขอลาแบบกลุ่ม (Bulk Cancel Leave Requests)",
         description: "ลบกลุ่มรายการลาที่ส่งไปแล้ว",
       },
     }
   )
 
-  .get(
-    "/history",
-    async ({ query, set, user }) => {
-      const response = await leaveService.getLeaveHistory(user.id, query);
-
+  .post(
+    "/:id/approve",
+    async ({ params: { id }, set, user }) => {
+      const response = await leaveService.approveLeaveRequest(user.id, id);
       set.status = 200;
       return response;
     },
     {
-      role: [3],
-      query: model.GetLeaveHistoryQuery,
+      role: [1, 2],
+      params: model.params,
       detail: {
-        summary: "ประวัติการลา (Leave History)",
-        description:
-          "ดึงประวัติการลาของนักศึกษาประจำเดือน พร้อมข้อมูลสรุป (Summary) และการแบ่งหน้า (Pagination)",
+        summary: "อนุมัติคำขอลา (Approve Leave Request)",
+        description: "ยืนยันการอนุมัติคำขอลา และแจกเวลาทำงานให้ 7 ชั่วโมงอัตโนมัติ",
       },
     }
   )
-
+  .post(
+    "/bulk-approve",
+    async ({ body, set, user }) => {
+      const response = await leaveService.bulkApproveLeaveRequests(
+        user.id,
+        body.ids
+      );
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+      body: model.BulkApproveBody,
+      detail: {
+        summary: "อนุมัติคำขอลาแบบกลุ่ม (Bulk Approve Leave Requests)",
+        description: "อนุมัติรายการลาของนักศึกษาหลายรายการพร้อมกัน",
+      },
+    }
+  )
   .post(
     "/:id/reject",
     async ({ params: { id }, body, set, user }) => {
@@ -135,7 +144,6 @@ export const leave = new Elysia({
         id,
         body.reason
       );
-
       set.status = 200;
       return response;
     },
@@ -149,7 +157,6 @@ export const leave = new Elysia({
       },
     }
   )
-
   .post(
     "/bulk-reject",
     async ({ body, set, user }) => {
@@ -158,7 +165,6 @@ export const leave = new Elysia({
         body.ids,
         body.reason
       );
-
       set.status = 200;
       return response;
     },
@@ -179,7 +185,6 @@ export const leave = new Elysia({
         user.id,
         query
       );
-
       set.status = 200;
       return response;
     },
@@ -189,7 +194,45 @@ export const leave = new Elysia({
       detail: {
         summary: "รายการคำขอลาสำหรับ Mentor (Mentor Leave Requests)",
         description:
-          "ดึงรายการคำขอลาของนักศึกษา รองรับการกรองด้วย status (เช่น PENDING) และ viewType (MINE/ALL)",
+          "ดึงรายการคำขอลาของนักศึกษา รองรับการกรองด้วย status และ viewType",
+      },
+    }
+  )
+  .get(
+    "/mentor/audit-list",
+    async ({ query, set, user }) => {
+      const response = await leaveService.getMentorAuditList(user.id, query);
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+      query: t.Object({
+        page: t.Optional(t.Numeric({ default: 1 })),
+        limit: t.Optional(t.Numeric({ default: 10 })),
+        status: t.Optional(t.String()),
+      }),
+      detail: {
+        summary: "รายการประวัติการอนุมัติใบลาทั้งหมด (Mentor Audit List)",
+        description: "ดึงรายการใบลาและสถานะการอนุมัติของนักศึกษาทุกคนในแผนก",
+      },
+    }
+  )
+  .get(
+    "/mentor/audit/:leaveId",
+    async ({ params: { leaveId }, set, user }) => {
+      const response = await leaveService.getMentorAuditView(user.id, leaveId);
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [1, 2],
+      params: t.Object({
+        leaveId: t.Numeric(),
+      }),
+      detail: {
+        summary: "ดูประวัติใบลาของนักศึกษาในดูแล (Mentor Audit View)",
+        description: "ดึง Timeline ของใบลาเฉพาะนักศึกษาที่อยู่ในแผนกเดียวกันเท่านั้น",
       },
     }
   );

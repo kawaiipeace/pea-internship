@@ -207,4 +207,50 @@ export const user = new Elysia({ prefix: "/user", tags: ["Users(ข้อมู�
           "ดึงไฟล์รูปภาพโปรไฟล์จาก Storage เพื่อนำไปแสดงผล โดยระบุ userId ของนักศึกษาที่ต้องการ",
       },
     }
+  )
+  .post(
+    "/internship/extend",
+    async ({ body, user, set }) => {
+      const result = await userService.extendInternship({
+        studentId: body.studentId,
+        hours: body.hours,
+        mentorId: user.id,
+        reason: body.reason,
+      });
+      set.status = 200;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.ADMIN, ROLE_IDS.MENTOR],
+      body: t.Object({
+        studentId: t.String(),
+        hours: t.Number(),
+        reason: t.Optional(t.String()),
+      }),
+    }
+  )
+  .post(
+    "/internship/complete",
+    async ({ body, user, set }) => {
+      const result = await userService.completeInternship(
+        body.studentId,
+        user.id,
+        body.note
+      );
+
+      set.status = 200;
+      return result;
+    },
+    {
+      role: [ROLE_IDS.ADMIN, ROLE_IDS.MENTOR],
+      body: t.Object({
+        studentId: t.String({ description: "ID ของนักศึกษาที่ต้องการให้จบการฝึกงาน" }),
+        note: t.Optional(t.String({ description: "บันทึกเพิ่มเติมหรือเหตุผล" })),
+      }),
+      detail: {
+        summary: "บันทึกจบการฝึกงานให้นักศึกษา",
+        description:
+          "เปลี่ยนสถานะนักศึกษาเป็น COMPLETE ปิด Application ที่ Active และบันทึกลง History",
+      },
+    }
   );

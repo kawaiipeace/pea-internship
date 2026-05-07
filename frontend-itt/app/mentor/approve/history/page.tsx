@@ -25,6 +25,7 @@ interface LeaveRequest {
     hasFile: boolean;
     attachmentUrl?: string;
     status: string;
+    approverNote?: string | null;
 }
 
 interface TimeCorrectionRequest {
@@ -45,6 +46,7 @@ interface TimeCorrectionRequest {
     typeBorder: string;
     typeIcon: string;
     typeCircleBg: string;
+    approverNote?: string | null;
 }
 
 // ---- Helper Methods ----
@@ -99,14 +101,14 @@ const StatusBadge = ({ status, activeTab }: { status: string, activeTab: 'leave'
     
     if (isApproved) {
         return (
-            <span className="px-3 py-1 bg-[#E6F8ED] text-[#074D31] rounded-full text-xs font-semibold whitespace-nowrap">
+            <span className="px-3 py-1 bg-[#E6F8ED] text-[#074D31] rounded-full text-[14px] font-semibold whitespace-nowrap">
                 {textPrefix}{textSuffix}
             </span>
         );
     }
     
     return (
-        <span className="px-3 py-1 bg-red-50 text-red-500 rounded-full text-xs font-semibold whitespace-nowrap">
+        <span className="px-3 py-1 bg-red-50 text-red-500 rounded-full text-[14px] font-semibold whitespace-nowrap">
             {textPrefix}{textSuffix}
         </span>
     );
@@ -133,7 +135,7 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
                         {type}
                     </span>
                 </div>
-                <p className="text-xs text-gray-400">วันที่ส่งคำขอ : {submittedDate}</p>
+                <p className="text-[14px] text-[#85888E]">วันที่ส่งคำขอ : {submittedDate}</p>
             </div>
         </div>
         <StatusBadge status={status} activeTab={activeTab} />
@@ -150,25 +152,27 @@ const LeaveHistoryCard = ({ request }: { request: LeaveRequest }) => (
             <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                 calendar_today
             </span>
-            <span>วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
+            <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
         </div>
 
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-xs text-gray-400 mb-0.5">เหตุผลการลา</p>
-            <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการลา</p>
+            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-            <span className="text-gray-400">ไฟล์แนบ :</span>
+            <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี):</span>
             {request.hasFile ? (
                 <div 
                     onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
                     className="flex items-center gap-1.5 bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
                 >
                     {request.fileIcon === 'image' ? (
-                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
+                    ) : request.fileIcon === 'picture_as_pdf' ? (
+                        <span className="material-symbols-outlined text-[#000000]" style={{ fontSize: '18px' }}>picture_as_pdf</span>
                     ) : (
                         <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -184,6 +188,15 @@ const LeaveHistoryCard = ({ request }: { request: LeaveRequest }) => (
                 </div>
             )}
         </div>
+
+        {request.status === 'REJECTED' && request.approverNote && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white-dark/10">
+                <p className="text-[16px] text-red-500 mb-1.5 font-semibold">เหตุผลที่ไม่อนุมัติ</p>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl px-4 py-3">
+                    <p className="text-[16px] text-red-600 dark:text-red-400 font-medium">{request.approverNote}</p>
+                </div>
+            </div>
+        )}
     </div>
 );
 
@@ -209,18 +222,18 @@ const TimeEditHistoryCard = ({ request }: { request: TimeCorrectionRequest }) =>
             <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                 calendar_today
             </span>
-            <span>วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
+            <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
         </div>
 
         {/* Time Row */}
         <div className="flex flex-col sm:flex-row gap-3 mb-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+            <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                 <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#E4E7EC]">
                     <span className="material-symbols-outlined text-black" style={{ fontSize: '16px' }}>schedule</span>
                 </span>
                 <span>เวลาเดิม : <span className="font-semibold text-gray-800 dark:text-white-light">{request.originalTime}</span></span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+            <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                 <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#A9EFC5]">
                     <span className="material-symbols-outlined text-[#074D31]" style={{ fontSize: '16px' }}>manage_history</span>
                 </span>
@@ -229,19 +242,19 @@ const TimeEditHistoryCard = ({ request }: { request: TimeCorrectionRequest }) =>
         </div>
 
         {/* Work Hours */}
-        <p className="text-sm text-gray-500 mb-3">
+        <p className="text-[16px] text-gray-500 mb-3">
             ชั่วโมงทำงานที่แก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.hoursWorked} ชั่วโมง</span>
         </p>
 
         {/* Reason Box */}
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-xs text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
-            <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
+            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
         </div>
 
         {/* File Attachment */}
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-            <span className="text-gray-400">ไฟล์แนบ :</span>
+            <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี):</span>
             {request.attachmentUrl ? (
                 <div 
                     onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
@@ -253,8 +266,17 @@ const TimeEditHistoryCard = ({ request }: { request: TimeCorrectionRequest }) =>
                 <div className="flex items-center bg-gray-50 border border-gray-200 dark:bg-black/10 dark:border-white-dark/10 px-3 py-1.5 rounded-lg">
                     <span className="text-xs text-gray-500">- ไม่มีไฟล์แนบ -</span>
                 </div>
-            )}
+            )}  
         </div>
+
+        {request.status === 'REJECTED' && request.approverNote && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white-dark/10">
+                <p className="text-[16px] text-red-500 mb-1.5 font-semibold">เหตุผลที่ไม่อนุมัติ</p>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl px-4 py-3">
+                    <p className="text-[16px] text-red-600 dark:text-red-400 font-medium">{request.approverNote}</p>
+                </div>
+            </div>
+        )}
     </div>
 );
 
@@ -289,135 +311,142 @@ const ApprovalHistoryPage = () => {
 
     const fetchLeaveRequests = async () => {
         setLoading(true);
-        setTimeout(() => {
-            const mockLeaveData: LeaveRequest[] = [
-                {
-                    ids: [1],
-                    id: 1,
-                    studentName: 'สมศรี สตรีไทย (เฟิร์น)',
-                    type: 'ลากิจ',
-                    typeBg: 'bg-[#EEEFFF]',
-                    typeText: 'text-[#61646C]',
-                    typeBorder: 'border-[#1A3CFF]',
-                    typeIcon: 'business_center',
-                    typeCircleBg: 'bg-[#1A3CFF]',
-                    submittedDate: '11 มกราคม 2569',
-                    leaveDate: '12 มกราคม 2569',
-                    reason: 'เข้าร่วมกิจกรรมมหาวิทยาลัย ขาดไม่ได้',
-                    profileImg: '/assets/images/profile-1.jpeg',
-                    userId: '1',
-                    fileName: 'หลักฐาน.png',
-                    fileIcon: 'image',
-                    hasFile: true,
-                    attachmentUrl: 'mock.png',
-                    status: 'REJECTED'
-                },
-                {
-                    ids: [2],
-                    id: 2,
-                    studentName: 'สมหมาย สายเสมอ (นาย)',
-                    type: 'ลาป่วย',
-                    typeBg: 'bg-[#FFEFF3]',
-                    typeText: 'text-pink-500',
-                    typeBorder: 'border-[#FF1A7D]',
-                    typeIcon: 'health_cross',
-                    typeCircleBg: 'bg-[#FF1A7D]',
-                    submittedDate: '9 มกราคม 2569',
-                    leaveDate: '10 มกราคม 2569',
-                    reason: 'ท้องเสียเนื่องจากอาหารเป็นพิษ',
-                    profileImg: '/assets/images/profile-2.jpeg',
-                    userId: '2',
-                    fileName: 'หลักฐาน.pdf',
-                    fileIcon: 'pdf',
-                    hasFile: true,
-                    attachmentUrl: 'mock.pdf',
-                    status: 'APPROVED'
-                }
-            ];
-            
-            // Filter by status if not ALL
-            const filteredData = statusFilter === 'ALL' 
-                ? mockLeaveData 
-                : mockLeaveData.filter(item => item.status === statusFilter);
+        try {
+            const params: any = {
+                page: page,
+                limit: PAGE_SIZE
+            };
+            if (statusFilter !== 'ALL') {
+                params.status = statusFilter;
+            }
 
-            setLeaveRequests(filteredData);
-            setLeaveMeta({ totalPages: 1, totalRecords: filteredData.length });
+            const response = await axiosInstance.get('/leave/mentor/audit-list', { params });
+            const result = response.data;
+            if (result.success) {
+                const mappedData: LeaveRequest[] = result.data.map((item: any) => {
+                    const isSick = item.leaveType === 'SICK';
+                    
+                    const fullName = item.studentName || 'นักศึกษา (ไม่ระบุชื่อ)';
+                    const nickname = item.username ? ` (${item.username})` : '';
+                    const displayStudentName = `${fullName}${nickname}`;
+
+                    let fileName = 'ดูไฟล์แนบ';
+                    let fileIcon = 'image';
+                    if (item.file) {
+                        const extension = item.file.split('.').pop()?.toLowerCase();
+                        if (extension === 'pdf') {
+                            fileIcon = 'picture_as_pdf';
+                            fileName = `ไฟล์เอกสาร.${extension}`;
+                        } else {
+                            fileName = `รูปภาพหลักฐาน.${extension}`;
+                        }
+                    }
+
+                    return {
+                        ids: [item.id],
+                        id: item.id,
+                        studentName: displayStudentName,
+                        type: isSick ? 'ลาป่วย' : 'ลากิจ',
+                        typeBg: isSick ? 'bg-[#FFEFF3]' : 'bg-[#EEEFFF]',
+                        typeText: isSick ? 'text-pink-500' : 'text-[#61646C]',
+                        typeBorder: isSick ? 'border-[#FF1A7D]' : 'border-[#1A3CFF]',
+                        typeIcon: isSick ? 'health_cross' : 'business_center',
+                        typeCircleBg: isSick ? 'bg-[#FF1A7D]' : 'bg-[#1A3CFF]',
+                        submittedDate: item.createdAt ? getThaiDate(item.createdAt) : 'ไม่ระบุ',
+                        leaveDate: item.leaveDate ? getThaiDate(item.leaveDate) : 'ไม่ระบุ',
+                        reason: item.reason || '-',
+                        profileImg: item.studentImage,
+                        userId: item.userId,
+                        fileName: fileName,
+                        fileIcon: fileIcon,
+                        hasFile: !!item.file,
+                        attachmentUrl: item.file,
+                        status: item.status,
+                        approverNote: item.approverNote
+                    };
+                });
+                
+                setLeaveRequests(mappedData);
+                setLeaveMeta({
+                    totalPages: result.meta.totalPages || 1,
+                    totalRecords: result.meta.total || 0
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching leave history:', error);
+            setLeaveRequests([]);
+            setLeaveMeta({ totalPages: 1, totalRecords: 0 });
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
 
     const fetchTimeCorrectionRequests = async () => {
         setLoading(true);
-        setTimeout(() => {
-            const mockTimeData: TimeCorrectionRequest[] = [
-                {
-                    id: 3,
-                    studentName: 'สมใจ ใฝ่ฝัน (ใจฝัน)',
-                    profileImg: '/assets/images/profile-3.jpeg',
-                    createdAt: '16 มกราคม 2569',
-                    workDate: '15 มกราคม 2569',
-                    originalTime: '08:30 - ไม่ลงเวลา',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'ลืมลงเวลาออก',
-                    attachmentUrl: null,
-                    status: 'APPROVED',
-                    type: 'ไม่ลงเวลาออก',
-                    typeBg: 'bg-[#F1F5F9]',
-                    typeText: 'text-[#475569]',
-                    typeBorder: 'border-[#94969C]',
-                    typeIcon: 'hourglass_disabled',
-                    typeCircleBg: 'bg-[#85888E]'
-                },
-                {
-                    id: 4,
-                    studentName: 'สมนึก คึกคะนอง (นิก)',
-                    profileImg: '/assets/images/profile-4.jpeg',
-                    createdAt: '15 มกราคม 2569',
-                    workDate: '14 มกราคม 2569',
-                    originalTime: '10:00 - 16:30',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'ระบบขัดข้องทำให้ลงเวลาไม่ได้',
-                    attachmentUrl: null,
-                    status: 'REJECTED',
-                    type: 'สาย',
-                    typeBg: 'bg-[#FEF3C7]',
-                    typeText: 'text-[#D97706]',
-                    typeBorder: 'border-[#FCD34D]',
-                    typeIcon: 'schedule',
-                    typeCircleBg: 'bg-[#F59E0B]'
-                },
-                {
-                    id: 5,
-                    studentName: 'สมชาย ล่าฝัน (ชาย)',
-                    profileImg: '/assets/images/profile-5.jpeg',
-                    createdAt: '11 มกราคม 2569',
-                    workDate: '10 มกราคม 2569',
-                    originalTime: 'ไม่ลงเวลา - ไม่ลงเวลา',
-                    requestedTime: '08:30 - 16:30',
-                    hoursWorked: 7,
-                    reason: 'เกิดอุบัติเหตุ',
-                    attachmentUrl: null,
-                    status: 'APPROVED',
-                    type: 'ขาด',
-                    typeBg: 'bg-[#FEE2E2]',
-                    typeText: 'text-[#EF4444]',
-                    typeBorder: 'border-[#FECACA]',
-                    typeIcon: 'close',
-                    typeCircleBg: 'bg-[#EF4444]'
-                }
-            ];
+        try {
+            const params: any = {
+                page: page,
+                limit: PAGE_SIZE,
+                viewType: 'MINE'
+            };
+            
+            if (statusFilter !== 'ALL') {
+                params.status = statusFilter;
+            } else {
+                params.excludePending = 'true';
+            }
 
-            // Filter by status if not ALL
-            const filteredData = statusFilter === 'ALL' 
-                ? mockTimeData 
-                : mockTimeData.filter(item => item.status === statusFilter);
+            const response = await axiosInstance.get('/check-time/mentor/corrections', { params });
+            const result = response.data;
+            
+            if (result && result.data) {
+                const mappedData: TimeCorrectionRequest[] = result.data.map((item: any) => {
+                    const getAttendanceType = (attendanceStatus?: string) => {
+                        const map: Record<string, { label: string; icon: string; bg: string; text: string; border: string; iconBg: string }> = {
+                            LATE:        { label: 'สาย',           icon: 'schedule',           bg: 'bg-[#FEF3C7]', text: 'text-[#D97706]', border: 'border-[#FCD34D]', iconBg: 'bg-[#F59E0B]' },
+                            ABSENT:      { label: 'ขาด',            icon: 'close',              bg: 'bg-[#FEE2E2]', text: 'text-[#EF4444]', border: 'border-[#FECACA]', iconBg: 'bg-[#EF4444]' },
+                            MISSING_OUT: { label: 'ไม่ลงเวลาออก',  icon: 'hourglass_disabled',  bg: 'bg-[#F1F5F9]', text: 'text-[#475569]', border: 'border-[#94969C]', iconBg: 'bg-[#85888E]' },
+                        };
+                        return map[attendanceStatus || ''] || map.MISSING_OUT;
+                    };
 
-            setTimeCorrectionRequests(filteredData);
-            setTimeMeta({ totalPages: 1, totalRecords: filteredData.length });
+                    const typeConfig = getAttendanceType(item.attendanceStatus);
+                    
+                    return {
+                        id: item.id,
+                        studentName: item.studentName,
+                        profileImg: item.profileImg,
+                        createdAt: item.createdAt,
+                        workDate: item.workDate,
+                        originalTime: item.originalTime,
+                        requestedTime: item.requestedTime,
+                        hoursWorked: item.hoursWorked,
+                        reason: item.reason || '-',
+                        attachmentUrl: item.attachmentUrl,
+                        status: item.status,
+                        type: typeConfig.label,
+                        typeBg: typeConfig.bg,
+                        typeText: typeConfig.text,
+                        typeBorder: typeConfig.border,
+                        typeIcon: typeConfig.icon,
+                        typeCircleBg: typeConfig.iconBg,
+                        approverNote: item.approverNote
+                    };
+                });
+
+                setTimeCorrectionRequests(mappedData);
+                setTimeMeta({ 
+                    totalPages: result.meta?.totalPages || 1, 
+                    totalRecords: result.meta?.totalRecords || mappedData.length 
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching time correction history:', error);
+            setTimeCorrectionRequests([]);
+            setTimeMeta({ totalPages: 1, totalRecords: 0 });
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
 
     useEffect(() => {

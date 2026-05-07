@@ -1,0 +1,8 @@
+{
+  "label": "การเข้าสู่ระบบ (Authentication)",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "ขั้นตอนการเข้าใช้งานระบบสำหรับผู้ใช้งานทุกกลุ่ม"
+  }
+}

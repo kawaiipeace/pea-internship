@@ -11,6 +11,7 @@ export const GetStudentsUnderCareQuery = t.Object({
       default: "MINE",
     })
   ),
+  status: t.Optional(t.Union([t.Literal("active"), t.Literal("completed")])),
 });
 
 export type GetStudentsUnderCareQueryType =

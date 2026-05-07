@@ -1,60 +1,26 @@
 "use client";
 
-import React, { useState, Fragment, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import axiosInstance from '@/api/axios';
-import IconCircleCheck from '@/components/icon/icon-circle-check';
-import IconClock from '@/components/icon/icon-clock';
-import IconFile from '@/components/icon/icon-file';
-import IconXCircle from '@/components/icon/icon-x-circle';
-import { Transition, Dialog } from '@headlessui/react';
-
-import IconCamera from '@/components/icon/icon-camera';
-import IconX from '@/components/icon/icon-x';
-import IconArchive from '@/components/icon/icon-archive';
-import IconPlusCircle from '@/components/icon/icon-plus-circle';
-import IconTrash from '@/components/icon/icon-trash';
-import IconFileText from '@/components/icon/icon-file-text';
-import IconBriefcase from '@/components/icon/icon-briefcase';
-import IconMedicalCross from '@/components/icon/icon-medical-cross';
+import useAuthStore from '@/store/authStore';
 import EditTimeForm from '@/components/history/edit-time-form';
 import MonthPicker from '@/components/history/month-picker';
 import { useRouter } from 'next/navigation';
+import SummarySection from '@/components/leave-history/summary-section';
+import LeaveHistoryList from '@/components/leave-history/leave-history-list';
+import PaginationControl from '@/components/leave-history/pagination-control';
+import LeaveDetailModal from '@/components/leave-history/leave-detail-modal';
 
 const LeaveHistoryPage = () => {
     const router = useRouter();
+    const { user } = useAuthStore();
 
     const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<any>(null);
     const [isEditingTime, setIsEditingTime] = useState(false);
 
-    // Swipe to close state
-    const [touchStart, setTouchStart] = useState<number | null>(null);
-    const [touchTranslateY, setTouchTranslateY] = useState(0);
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        setTouchStart(e.targetTouches[0].clientY);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (touchStart !== null) {
-            const currentY = e.targetTouches[0].clientY;
-            const diff = currentY - touchStart;
-            if (diff > 0) {
-                setTouchTranslateY(diff);
-            }
-        }
-    };
-
-    const handleTouchEnd = () => {
-        if (touchTranslateY > 100) {
-            setIsDetailModalOpen(false);
-            setIsEditingTime(false);
-        }
-        setTouchStart(null);
-        setTouchTranslateY(0);
-    };
 
     // Thai month names
     const thaiMonthsFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -62,8 +28,8 @@ const LeaveHistoryPage = () => {
 
     // Default to current date
     const now = new Date();
-    const [currentMonth, setCurrentMonth] = useState(now.getMonth());
-    const [currentYear, setCurrentYear] = useState(now.getFullYear() + 543);
+    const [currentMonth, setCurrentMonth] = useState<number | null>(null);
+    const [currentYear, setCurrentYear] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [summary, setSummary] = useState({ total: 0, absence: 0, sick: 0 });
@@ -73,22 +39,22 @@ const LeaveHistoryPage = () => {
     const fetchLeaveHistory = useCallback(async () => {
         setIsLoading(true);
         try {
-            const yearAD = currentYear - 543;
-            const month = currentMonth + 1;
-            
             let typeParam = undefined;
             if (selectedFilter === 'ลากิจ') typeParam = 'ABSENCE';
             if (selectedFilter === 'ลาป่วย') typeParam = 'SICK';
 
-            const response = await axiosInstance.get('/leave/history', {
-                params: {
-                    month,
-                    year: yearAD,
-                    page: currentPage,
-                    limit: 10,
-                    type: typeParam
-                }
-            });
+            const params: any = {
+                page: currentPage,
+                limit: 10,
+                type: typeParam
+            };
+
+            if (currentMonth !== null && currentYear !== null) {
+                params.month = currentMonth + 1;
+                params.year = currentYear - 543;
+            }
+
+            const response = await axiosInstance.get('/leave/history', { params });
 
             const data = response.data;
             setHistoryData(data.records.map((r: any) => {
@@ -149,6 +115,51 @@ const LeaveHistoryPage = () => {
             setIsLoading(false);
         }
     }, [currentMonth, currentYear, selectedFilter, currentPage]);
+
+    const handleExport = () => {
+        if (!historyData || historyData.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "ไม่มีข้อมูลสำหรับการส่งออก",
+                confirmButtonText: "ตกลง",
+                buttonsStyling: false,
+                customClass: {
+                    popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
+                    title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
+                    confirmButton: 'bg-[#A80689] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+                }
+            });
+            return;
+        }
+
+        const BOM = "\uFEFF";
+        const header = "วันที่ลา,ชื่อ-นามสกุล,ประเภทการลา,สถานะ,เหตุผลการลา\n";
+        
+        const studentName = user ? `${user.fname} ${user.lname}` : "Student";
+
+        const rows = historyData.map(item => {
+            return `"${item.labelMobile}","${studentName}","${item.leaveType}","${item.status}","${item.leaveReason || "-"}"`;
+        }).join("\n");
+
+        const summarySection = `\nสรุปการลา\nลากิจทั้งหมด,${summary.absence} วัน\nลาป่วยทั้งหมด,${summary.sick} วัน\nลาทั้งหมดรวม,${summary.total} วัน\n`;
+
+        const csvContent = BOM + header + rows + summarySection;
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        
+        const monthLabel = currentMonth !== null ? thaiMonthsFull[currentMonth] : "ทั้งหมด";
+        const yearLabel = currentYear !== null ? currentYear : "";
+        
+        const fileName = `${studentName}_ประวัติการลา_${monthLabel}_${yearLabel}.csv`.replace(/\s+/g, "_");
+        
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
 
     useEffect(() => {
         fetchLeaveHistory();
@@ -237,15 +248,20 @@ const LeaveHistoryPage = () => {
             setIsDetailModalOpen(false);
 
             Swal.fire({
-                title: 'ยกเลิกสำเร็จ!',
-                icon: 'success',
-                confirmButtonText: 'ตกลง',
-                buttonsStyling: false,
+                html: `
+                  <div class="flex flex-col items-center py-4">
+                    <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6]">
+                      <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                        <span class="material-symbols-rounded !text-[32px]">check</span>
+                      </div>
+                    </div>
+                    <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ยกเลิกสำเร็จ!</h2>
+                  </div>
+                `,
+                showConfirmButton: false,
+                timer: 2000,
                 customClass: {
-                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                    title: 'text-[16px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                    htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                    confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                  popup: 'rounded-[20px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
                 }
             });
             
@@ -270,50 +286,53 @@ const LeaveHistoryPage = () => {
 
     const handleAutoResubmitLeave = async (item: any) => {
         const result = await Swal.fire({
-          title: 'ยืนยันการส่งคำขออีกครั้ง',
-          text: 'คุณต้องการส่งคำขอการลานี้ใหม่อีกครั้งโดยใช้ข้อมูลเดิมใช่หรือไม่?',
-          icon: 'question',
+          html: `
+            <div class="flex flex-col items-center">
+              <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#DCFAE6]">
+                <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                  <span class="material-symbols-rounded !text-[24px]">check</span>
+                </div>
+              </div>
+              <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-2">ยืนยันการส่งคำขออีกครั้ง</h2>
+            </div>
+          `,
           showCancelButton: true,
           confirmButtonText: 'ยืนยัน',
           cancelButtonText: 'ยกเลิก',
           buttonsStyling: false,
           customClass: {
-            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-            confirmButton: 'bg-[#A80689] hover:bg-[#8e0574] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center mx-2',
-            cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center mx-2'
+            popup: 'rounded-[16px] p-8 w-auto min-w-[320px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+            actions: 'flex gap-3 w-full px-4 mt-6',
+            confirmButton: 'flex-1 py-2.5 bg-[#11A75C] hover:bg-[#0E8F4D] text-white rounded-xl text-[15px] font-bold order-2 shadow-md',
+            cancelButton: 'flex-1 py-2.5 bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-xl text-[15px] font-bold order-1'
           }
         });
     
         if (result.isConfirmed) {
           try {
             setIsLoading(true);
-            const rawType = item.leaveType === 'ลากิจ' ? 'ABSENCE' : 'SICK';
             
-            // Backend expects startDate, endDate, reason, leaveType, attachment
-            const response = await axiosInstance.post('/leave', {
-                startDate: item.startDateStr,
-                endDate: item.endDateStr,
-                leaveType: rawType,
-                reason: item.leaveReason === 'ไม่ระบุเหตุผล' ? '' : item.leaveReason,
-                attachment: item.evidenceUrl || undefined
-            }, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+            // Only need to send IDs for status-only resubmission
+            const response = await axiosInstance.post('/leave/resubmit', {
+                ids: item.ids
             });
             
             if (response.data && response.data.success) {
               await Swal.fire({
-                title: 'ส่งคำขออีกครั้งสำเร็จ',
-                text: 'ส่งคำขอการลาเรียบร้อยแล้ว (รอผู้ดูแลระบบอนุมัติ)',
-                icon: 'success',
-                confirmButtonText: 'ตกลง',
-                buttonsStyling: false,
+                html: `
+                  <div class="flex flex-col items-center py-4">
+                    <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6]">
+                      <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                        <span class="material-symbols-rounded !text-[32px]">check</span>
+                      </div>
+                    </div>
+                    <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ส่งคำขออีกครั้งสำเร็จ</h2>
+                  </div>
+                `,
+                showConfirmButton: false,
+                timer: 2000,
                 customClass: {
-                  popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                  title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                  htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                  confirmButton: 'bg-[#11A75C] hover:bg-[#0E8F4D] text-white font-bold py-2.5 px-12 min-w-[150px] rounded-[12px] text-[15px] text-center'
+                  popup: 'rounded-[20px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
                 }
               });
               setIsDetailModalOpen(false);
@@ -327,10 +346,10 @@ const LeaveHistoryPage = () => {
               confirmButtonText: 'ตกลง',
               buttonsStyling: false,
               customClass: {
-                popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                confirmButton: 'bg-[#EF4444] text-white font-bold py-2 px-8 min-w-[120px] rounded-[10px] text-[15px] text-center'
+                popup: 'rounded-[16px] p-8 w-auto min-w-[320px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+                title: 'text-[18px] font-bold text-[#1C1C1C] dark:text-white mb-4',
+                htmlContainer: 'text-[14px] text-gray-500 mb-6',
+                confirmButton: 'w-full py-2.5 bg-[#E22E2E] hover:bg-[#C12727] text-white rounded-xl text-[15px] font-bold shadow-md transition-colors'
               }
             });
           } finally {
@@ -339,54 +358,39 @@ const LeaveHistoryPage = () => {
         }
     };
 
-    const handleMonthSelect = (month: number, year: number) => {
+    const handleMonthSelect = (month: number | null, year: number | null) => {
         setCurrentMonth(month);
         setCurrentYear(year);
+        setCurrentPage(1);
     };
 
     const handlePrevMonth = () => {
-        if (currentMonth === 0) {
-            setCurrentMonth(11);
-            setCurrentYear(currentYear - 1);
-        } else {
-            setCurrentMonth(currentMonth - 1);
+        if (currentMonth !== null && currentYear !== null) {
+            if (currentMonth === 0) {
+                setCurrentMonth(11);
+                setCurrentYear(currentYear - 1);
+            } else {
+                setCurrentMonth(currentMonth - 1);
+            }
         }
     };
 
     const handleNextMonth = () => {
-        if (currentMonth === 11) {
-            setCurrentMonth(0);
-            setCurrentYear(currentYear + 1);
-        } else {
-            setCurrentMonth(currentMonth + 1);
+        if (currentMonth !== null && currentYear !== null) {
+            if (currentMonth === 11) {
+                setCurrentMonth(0);
+                setCurrentYear(currentYear + 1);
+            } else {
+                setCurrentMonth(currentMonth + 1);
+            }
         }
     };
 
-    // Summary Data for Leave History (Dynamic)
     const summaryCards = [
         { title: 'ลาทั้งหมด', days: summary.total, icon: 'lab_profile', bgColor: 'bg-[#E3F2FD] dark:bg-blue-900/20', textColor: 'text-[#03A9F4]', activeBorderClass: 'border-[#03A9F4]', hoverBorderClass: 'hover:border-[#03A9F4]' },
         { title: 'ลากิจ', days: summary.absence, icon: 'business_center', bgColor: 'bg-[#E2E4FF] dark:bg-indigo-900/20', textColor: 'text-[#3F51B5]', activeBorderClass: 'border-[#1A3CFF]', hoverBorderClass: 'hover:border-[#1A3CFF]' },
         { title: 'ลาป่วย', days: summary.sick, icon: 'health_cross', bgColor: 'bg-[#FFD7EF] dark:bg-rose-900/20', textColor: 'text-[#FF1A7D]', activeBorderClass: 'border-[#FF1A7D]', hoverBorderClass: 'hover:border-[#FF1A7D]' },
     ];
-
-
-    const getStatusBadge = (type: string, status: string) => {
-        let colorClass = "";
-
-        if (type === "success" || status === "อนุมัติการลา") {
-            colorClass = "px-3 py-1 bg-[#DCFAE6] text-[#067647] rounded-full text-[12px] whitespace-nowrap font-medium";
-        } else if (type === "danger" || status === "ไม่อนุมัติการลา") {
-            colorClass = "px-3 py-1 bg-[#FEE4E2] text-[#B42318] rounded-full text-[12px] whitespace-nowrap font-medium";
-        } else {
-            colorClass = "px-3 py-1 bg-[#F0F1F1] text-[#61646C] rounded-full text-[12px] whitespace-nowrap font-medium";
-        }
-
-        return (
-            <div className={colorClass}>
-                {status}
-            </div>
-        );
-    };
 
     return (
         <div className="-m-6 p-[22px] sm:p-6 text-black dark:text-white-light bg-[#fffbf7] dark:bg-black min-h-screen">
@@ -394,477 +398,61 @@ const LeaveHistoryPage = () => {
                 {/* Header Section */}
                 <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 shrink-0 px-1 sm:px-0">
                     <div>
-                        <h1 className="text-[24px] sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลา</h1>
-                        <p className="text-gray-500 text-xs sm:text-sm">รายงานการลาปฏิบัติงาน ประจำเดือน</p>
+                        <h1 className="text-[20px] sm:text-2xl font-bold mb-1 text-black dark:text-white whitespace-nowrap">ประวัติการลา</h1>
                     </div>
-                    <div className="flex items-center justify-between bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 sm:px-3 sm:py-1.5 shrink-0 shadow-sm">
-                        <button type="button" onClick={handlePrevMonth} className="text-gray-700 dark:text-gray-300 hover:text-primary p-0.5 sm:p-1">
-                            <svg className="w-3.5 h-3.5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-                        <MonthPicker currentMonth={currentMonth} currentYear={currentYear} onSelect={handleMonthSelect} />
-                        <button type="button" onClick={handleNextMonth} className="text-gray-700 dark:text-gray-300 hover:text-primary p-0.5 sm:p-1">
-                            <svg className="w-3.5 h-3.5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
-                    </div>
+                    <MonthPicker 
+                        currentMonth={currentMonth} 
+                        currentYear={currentYear} 
+                        onSelect={handleMonthSelect} 
+                        placeholder="เลือกช่วงเวลาที่ต้องการดู..."
+                    />
                 </div>
 
                 {/* Summary Section */}
-                <div className="shrink-0 flex flex-col gap-[16px]">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-[16px] font-bold text-[#333]">สรุปการลงเวลา ({thaiMonthsFull[currentMonth]})</h2>
-                        {selectedFilter && (
-                            <button
-                                onClick={() => setSelectedFilter(null)}
-                                className="text-sm text-blue-500 hover:underline"
-                            >
-                                แสดงทั้งหมด
-                            </button>
-                        )}
-                    </div>
-                    <div className="flex flex-row overflow-x-auto sm:overflow-visible gap-[13px] pt-1 w-full mx-auto sm:mx-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        {summaryCards.map((item, index) => {
-                            const isSelected = selectedFilter === item.title || (selectedFilter === null && item.title === 'ลาทั้งหมด');
-
-                            return (
-                                <button
-                                    key={index}
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedFilter(isSelected ? null : item.title);
-                                        setCurrentPage(1); // Reset to page 1 on filter change
-                                    }}
-                                    className={`w-[100px] sm:w-auto flex-none sm:flex-1 ${item.bgColor} flex flex-col sm:flex-row justify-between sm:justify-start items-center sm:items-center p-3 sm:px-4 sm:py-5 rounded-[12px] shadow-none h-[115px] sm:h-[90px] text-center sm:text-left transition-all border-2 ${isSelected ? item.activeBorderClass : `border-transparent hover:-translate-y-1 ${item.hoverBorderClass}`}`}
-                                >
-                                    <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full ${
-                                        item.title === 'ลาทั้งหมด' ? 'bg-[#03A9F4]' : 
-                                        item.title === 'ลากิจ' ? 'bg-[#1A3CFF]' : 'bg-[#FF1A7D]'
-                                    } sm:mr-4`}>
-                                        <span className={`material-symbols-rounded !text-[24px] sm:!text-[28px] text-white flex items-center justify-center leading-none translate-x-[0.5px] ${item.icon === 'close' ? 'translate-y-[0.5px]' : '-translate-y-[0.5px]'}`}>
-                                            {item.icon}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col mt-2 sm:mt-0">
-                                        <div className="font-bold text-gray-800 dark:text-gray-200 text-[13px] sm:text-[15px] mb-0.5 sm:mb-0.5 leading-tight">{item.title}</div>
-                                        <div className="text-[15px] sm:text-[22px] font-bold text-black dark:text-white leading-none">{item.days} วัน</div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                    
-                </div>
+                <SummarySection
+                    summaryCards={summaryCards}
+                    selectedFilter={selectedFilter}
+                    onFilterChange={(filter) => {
+                        setSelectedFilter(filter);
+                        setCurrentPage(1);
+                    }}
+                    currentMonth={currentMonth}
+                    thaiMonthsFull={thaiMonthsFull}
+                />
 
                 {/* History List Section */}
-                <div className="shrink-0 flex flex-col gap-[16px]">
-                    <div className="flex items-center justify-between mt-2 px-1 sm:px-0">
-                        <h2 className="text-[20px] font-bold text-[#333]">
-                            รายการประวัติการลา
-                        </h2>
-                        <button 
-                            className="w-[130px] h-[35px] bg-[#A80689] text-white rounded-[10px] text-[13px] font-bold shadow-sm hover:bg-[#900b45] transition-colors flex items-center justify-center gap-1 shrink-0"
-                            onClick={() => router.push('/intern/leave-history/leave-form')}
-                        >
-                            <span className="text-xl font-normal mb-0.5">+</span> ส่งคำขอการลา
-                        </button>
-                    </div>
-                    <div className="flex flex-col gap-[14px]">
-                        {isLoading ? (
-                            <div className="flex flex-col gap-4">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="w-full h-[88px] bg-gray-100 dark:bg-gray-800 animate-pulse rounded-[14px]"></div>
-                                ))}
-                            </div>
-                        ) : historyData.length > 0 ? (
-                            historyData.map((item, index) => (
-                                <div
-                                    key={index}
-                                    className={`relative w-full max-sm:min-h-0 sm:h-[88px] flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5 border border-[#CECFD2] dark:border-gray-700 rounded-[14px] p-3 sm:px-4 sm:py-2 bg-white dark:bg-[#121212] overflow-hidden animate-[fadeIn_0.3s_ease-in-out] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 hover:scale-[1.01] mx-auto sm:mx-0`}
-                                    onClick={() => {
-                                        setSelectedHistoryItem(item);
-                                        setIsDetailModalOpen(true);
-                                    }}
-                                >
-                                    {/* Mobile Responsive Layout */}
-                                    <div className="sm:hidden flex-1 flex flex-col justify-between sm:justify-center py-0.5 sm:gap-1 relative">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <div className="text-[14px] text-[#000000] whitespace-nowrap">
-                                                {item.date} {item.month} {item.year}
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                {getStatusBadge(item.statusType, item.status)}
-                                                {item.statusType === 'warning' && (
-                                                    <button
-                                                        type="button"
-                                                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            Swal.fire({
-                                                                title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
-                                                                icon: 'error',
-                                                                showCancelButton: true,
-                                                                confirmButtonText: 'ตกลง',
-                                                                cancelButtonText: 'ย้อนกลับ',
-                                                                buttonsStyling: false,
-                                                                reverseButtons: true,
-                                                                customClass: {
-                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
-                                                                    actions: 'flex gap-3 w-full justify-center mt-3',
-                                                                    confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                                    cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
-                                                                }
-                                                            }).then((result) => {
-                                                                if (result.isConfirmed) {
-                                                                    handleDeleteLeaveRequest(item.ids);
-                                                                }
-                                                            });
-                                                        }}
-                                                    >
-                                                        <IconTrash className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="font-bold text-[16px] text-gray-900 dark:text-gray-100 leading-none mt-[2px]">
-                                            ลางาน
-                                        </div>
-
-                                        <div className="inline-flex mt-1.5">
-                                            {item.leaveType === 'ลากิจ' ? (
-                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4b5e71] border border-[#1A3CFF] rounded-full text-[10px] font-bold px-1 gap-1">
-                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#1A3CFF] shadow-sm overflow-hidden">
-                                                        <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0.5px]">business_center</span>
-                                                    </div>
-                                                    <span className="leading-none text-gray-500">ลากิจ</span>
-                                                </div>
-                                            ) : (
-                                                <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4b5e71] border border-[#FF1A7D] rounded-full text-[10px] font-bold px-1 gap-1">
-                                                    <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D] shadow-sm overflow-hidden">
-                                                        <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0px]">health_cross</span>
-                                                    </div>
-                                                    <span className="leading-none text-gray-500">ลาป่วย</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Desktop Layout */}
-                                    <div className="hidden sm:flex items-center gap-[14px] w-full">
-                                        {/* Desktop Date Badge */}
-                                        <div className="hidden sm:flex flex-col items-center justify-center bg-[#E4E7EC] dark:bg-gray-800 rounded-xl w-[70px] h-[70px] shrink-0 border border-[#CECFD2] dark:border-gray-700 px-1 text-center">
-                                            <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200 leading-tight mb-1">
-                                                {item.date} {item.month}
-                                            </span>
-                                            <span className="text-[14px] text-gray-800 dark:text-gray-300 font-bold leading-tight">
-                                                {item.year || '2569'}
-                                            </span>
-                                        </div>
-
-                                        {/* Details Container */}
-                                        <div className="flex flex-col w-full gap-2 sm:gap-1 pl-0 sm:pl-1 flex-1">
-                                            <div className="font-bold text-[16px] sm:text-[19px] text-gray-900 dark:text-gray-100 leading-none">ลางาน</div>
-                                            <div className="inline-flex self-start">
-                                                {item.leaveType === 'ลากิจ' ? (
-                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4b5e71] border border-[#4F46E5] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-[#1A3CFF] flex items-center justify-center shrink-0 shadow-sm overflow-hidden text-white">
-                                                            <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0px] -translate-y-[0.5px]">business_center</span>
-                                                        </div>
-                                                        <span className="leading-none text-gray-500">ลากิจ</span>
-                                                    </div>
-                                                ) : item.leaveType === 'ลาป่วย' ? (
-                                                    <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4b5e71] border border-[#FF1A7D] rounded-[15px] text-[10px] font-bold px-1 gap-1">
-                                                        <div className="w-[18px] h-[18px] rounded-full bg-[#FF1A7D] flex items-center justify-center shrink-0 shadow-sm overflow-hidden text-white">
-                                                            <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0px] -translate-y-[0px]">health_cross</span>
-                                                        </div>
-                                                        <span className="leading-none text-gray-500">ลาป่วย</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="inline-flex items-center px-3 py-1 bg-[#f0f9ff] text-[#0ea5e9] border border-[#bae6fd] rounded-full text-xs font-bold gap-1.5">
-                                                        <span className="material-symbols-rounded !text-[14px]">lab_profile</span>
-                                                        {item.leaveType}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 ml-auto sm:absolute sm:top-3 sm:right-4">
-                                            {getStatusBadge(item.statusType, item.status)}
-                                                {item.statusType === 'warning' && (
-                                                    <button
-                                                        type="button"
-                                                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            Swal.fire({
-                                                                title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
-                                                                icon: 'error',
-                                                                showCancelButton: true,
-                                                                confirmButtonText: 'ตกลง',
-                                                                cancelButtonText: 'ย้อนกลับ',
-                                                                buttonsStyling: false,
-                                                                reverseButtons: true,
-                                                                customClass: {
-                                                                    popup: 'rounded-[20px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                    title: 'text-[16px] font-bold text-black dark:text-white pt-3 pb-2 text-center whitespace-nowrap',
-                                                                    actions: 'flex gap-3 w-full justify-center mt-3',
-                                                                    confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                                    cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
-                                                                }
-                                                            }).then((result) => {
-                                                                if (result.isConfirmed) {
-                                                                    handleDeleteLeaveRequest(item.ids);
-                                                                }
-                                                            });
-                                                        }}
-                                                    >
-                                                        <IconTrash className="w-5 h-5" />
-                                                    </button>
-                                                )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-8 text-gray-500 border border-dashed border-gray-300 rounded-xl mt-4">
-                                ไม่พบข้อมูลสำหรับ "{selectedFilter || 'ทั้งหมด'}"
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <LeaveHistoryList
+                    items={historyData}
+                    isLoading={isLoading}
+                    selectedFilter={selectedFilter}
+                    onItemClick={(item) => {
+                        setSelectedHistoryItem(item);
+                        setIsDetailModalOpen(true);
+                    }}
+                    onDeleteRequest={handleDeleteLeaveRequest}
+                    onAddRequest={() => router.push('/intern/leave-history/leave-form')}
+                />
 
                 {/* Footer / Pagination & Export */}
-                <div className="flex flex-row items-center justify-between gap-4 shrink-0 pb-8 mt-auto pt-4">
-                    <button type="button" className="flex items-center gap-2 font-bold text-[15px] hover:opacity-80 text-[#b40e56] whitespace-nowrap">
-                        <span className="material-symbols-rounded !text-[20px] sm:!text-[24px]">
-                            ios_share
-                        </span>
-                        <span className="hidden sm:inline">ส่งออกตาราง</span>
-                        <span className="sm:hidden text-sm">ส่งออกตาราง</span>
-                    </button>
+                <PaginationControl
+                    currentPage={currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={setCurrentPage}
+                    onExport={handleExport}
+                />
 
-                    <div className="inline-flex items-center border border-gray-200 dark:border-gray-700 rounded-lg overflow-x-auto shadow-sm w-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <button 
-                            className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0 disabled:opacity-50"
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        >
-                            <svg className="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-                        
-                        {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`px-2.5 py-1 sm:px-3.5 sm:py-1 text-xs sm:text-base font-bold border-r border-gray-200 dark:border-gray-700 shrink-0 ${
-                                    currentPage === page 
-                                    ? 'bg-[#dce0e5] dark:bg-gray-600 text-gray-800 dark:text-gray-200' 
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212]'
-                                }`}
-                            >
-                                {page}
-                            </button>
-                        ))}
-
-                        <button 
-                            className="px-2 py-1.5 sm:px-3 sm:py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-[#121212] flex items-center justify-center shrink-0 disabled:opacity-50"
-                            disabled={currentPage === pagination.totalPages}
-                            onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                        >
-                            <svg className="w-3.5 h-3.5 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
-                    </div>
-
-                    {/* Detail Modal */}
-                    <Transition appear show={isDetailModalOpen} as={Fragment}>
-                        <Dialog as="div" className="relative z-[999]" open={isDetailModalOpen} onClose={() => { setIsDetailModalOpen(false); setIsEditingTime(false); }}>
-                            <Transition.Child
-                                as={Fragment}
-                                enter="ease-out duration-300"
-                                enterFrom="opacity-0"
-                                enterTo="opacity-100"
-                                leave="ease-in duration-200"
-                                leaveFrom="opacity-100"
-                                leaveTo="opacity-0"
-                            >
-                                <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px]" />
-                            </Transition.Child>
-                            <div className="fixed inset-0 overflow-y-auto">
-                                <div className={`flex min-h-full justify-center p-0 sm:p-4 text-center items-end sm:items-center`}>
-                                      <Transition.Child
-                                        as={Fragment}
-                                        enter="ease-out duration-300"
-                                        enterFrom="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
-                                        enterTo="opacity-100 translate-y-0 sm:scale-100"
-                                        leave="ease-in duration-200"
-                                        leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-                                        leaveTo="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
-                                      >
-                                        <Dialog.Panel
-                                            as="div"
-                                            className={`w-full ${isEditingTime ? 'sm:max-w-[880px]' : 'sm:max-w-[550px]'} transform text-left align-middle shadow-xl transition-all ${isEditingTime
-                                                    ? "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] px-6 pb-6 pt-2 h-[calc(100vh-48px)] mt-12 sm:mt-0 sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden sm:block sm:overflow-y-auto"
-                                                    : "rounded-t-[25px] sm:rounded-2xl bg-white dark:bg-[#1A1A1A] p-6 h-[62vh] sm:h-auto max-h-[62vh] sm:max-h-none flex flex-col overflow-hidden sm:block sm:overflow-y-auto sm:overflow-visible"
-                                                }`}
-                                            style={{
-                                                transform: touchTranslateY > 0 ? `translateY(${touchTranslateY}px)` : undefined,
-                                                transition: touchStart === null ? 'transform 0.3s ease-out' : 'none'
-                                            }}
-                                        >
-
-                                            {/* Drawer Handle for mobile */}
-                                            <div 
-                                                className="flex justify-center py-3 sm:hidden cursor-grab active:cursor-grabbing touch-none"
-                                                onTouchStart={handleTouchStart}
-                                                onTouchMove={handleTouchMove}
-                                                onTouchEnd={handleTouchEnd}
-                                            >
-                                                <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-                                            </div>
-
-                                            {/* Close button for desktop */}
-                                            <button type="button" className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 hidden sm:block" onClick={() => setIsDetailModalOpen(false)}>
-                                                <IconX className="w-5 h-5" />
-                                            </button>
-
-                                            {selectedHistoryItem && (
-                                                    <div className="flex-1 overflow-y-auto sm:overflow-visible space-y-4 text-black dark:text-white-light sm:pb-0 pb-6 pr-0.5 custom-scrollbar">
-                                                        {/* Unified Detail Layout */}
-                                                        <div className="flex flex-col items-center">
-                                                            {/* Header Region */}
-                                                            <div className="w-full h-auto flex flex-col pt-1 touch-none">
-                                                                <div className="flex items-center justify-between mt-1 mb-2">
-                                                                    <div className="text-[16px]  text-gray-800 dark:text-gray-200">
-                                                                        {selectedHistoryItem.date} {selectedHistoryItem.month} {selectedHistoryItem.year}
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        {getStatusBadge(selectedHistoryItem.statusType, selectedHistoryItem.status)}
-                                                                        {selectedHistoryItem.status === 'รอการอนุมัติ' || selectedHistoryItem.status === 'รออนุมัติการลา' ? (
-                                                                            <button
-                                                                                type="button"
-                                                                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    Swal.fire({
-                                                                                        title: 'ต้องการยกเลิกส่งคำขอลาหรือไม่',
-                                                                                        icon: 'error',
-                                                                                        showCancelButton: true,
-                                                                                        confirmButtonText: 'ตกลง',
-                                                                                        cancelButtonText: 'ย้อนกลับ',
-                                                                                        buttonsStyling: false,
-                                                                                        reverseButtons: true,
-                                                                                        customClass: {
-                                                                                            popup: 'rounded-[15px] p-6 w-auto min-w-[360px] max-w-[420px] bg-white dark:bg-[#1A1A1A] flex flex-col items-center justify-center',
-                                                                                            title: 'text-[18px] font-bold text-black dark:text-white pt-2 text-center whitespace-nowrap',
-                                                                                            htmlContainer: 'text-[14px] text-gray-500 text-center mb-4 mt-1',
-                                                                                            actions: 'flex gap-3 w-full justify-center mt-3',
-                                                                                            confirmButton: 'bg-[#C62828] hover:bg-[#B71C1C] text-white font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]',
-                                                                                            cancelButton: 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2.5 px-6 rounded-[12px] text-[15px] flex-1 text-center min-w-[100px]'
-                                                                                        }
-                                                                                    }).then((result) => {
-                                                                                        if (result.isConfirmed) {
-                                                                                            handleDeleteLeaveRequest(selectedHistoryItem.ids);
-                                                                                        }
-                                                                                    });
-                                                                                }}
-                                                                            >
-                                                                                <IconTrash className="w-[18px] h-[18px]" />
-                                                                            </button>
-                                                                        ) : null}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="text-[19px] sm:text-[22px] font-bold text-gray-900 dark:text-white mb-2 leading-tight">
-                                                                    ลางาน
-                                                                </div>
-
-                                                                {/* Leave Type Tag */}
-                                                                <div className="mb-3">
-                                                                    {selectedHistoryItem.leaveType === 'ลากิจ' ? (
-                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4b5e71] border border-[#1A3CFF] rounded-full text-[10px] font-bold px-1 gap-1">
-                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#1A3CFF] shadow-sm overflow-hidden">
-                                                                                <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0.5px]">business_center</span>
-                                                                            </div>
-                                                                            <span className="leading-none text-gray-500">ลากิจ</span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="inline-flex items-center w-[60px] h-[26px] bg-[#FFD7EF] text-[#4b5e71] border border-[#FF1A7D] rounded-full text-[10px] font-bold px-1 gap-1">
-                                                                            <div className="w-[18px] h-[18px] rounded-full flex items-center justify-center shrink-0 bg-[#FF1A7D] shadow-sm overflow-hidden">
-                                                                                <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0px] -translate-y-[0px]">health_cross</span>
-                                                                            </div>
-                                                                            <span className="leading-none text-gray-500">ลาป่วย</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Divider */}
-                                                                <hr className="w-full h-[1px] bg-[#ECECED] dark:bg-gray-700 border-none mb-3" />
-                                                            </div>
-
-                                                            {/* Reasoning Section */}
-                                                            <div className="w-full space-y-3 mb-6">
-                                                                <div className="flex items-center gap-2 text-[16px] text-gray-800 dark:text-gray-200">
-                                                                    รายละเอียดการลา
-                                                                </div>
-                                                                <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-2 min-h-[40px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
-                                                                    {selectedHistoryItem.leaveReason}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Evidence Section */}
-                                                            <div className="w-full space-y-3">
-                                                                <div className="flex items-center gap-2 text-[16px] text-gray-800 dark:text-gray-200">
-                                                                    <span className="whitespace-nowrap">ไฟล์แนบ :</span>
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={() => handleViewFile(selectedHistoryItem)}
-                                                                        className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-auto min-w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                                    >
-                                                                        <div className="flex items-center justify-center shrink-0 text-black">
-                                                                            <span className="material-symbols-rounded !text-[20px]">picture_as_pdf</span>
-                                                                        </div>
-                                                                        <div className="text-[12px] font-medium text-black dark:text-white truncate max-w-[250px] px-1">
-                                                                            {selectedHistoryItem.evidence ? 'หลักฐาน' : 'ไม่มีไฟล์แนบ'}
-                                                                        </div>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Rejection Reason Section */}
-                                                            {selectedHistoryItem.status === "ไม่อนุมัติการลา" && (
-                                                              <div className="w-full space-y-3 mt-6">
-                                                                <div className="flex items-center gap-2 text-[16px] text-[#B42318] font-bold">
-                                                                  <span className="material-symbols-rounded !text-[20px]">error</span>
-                                                                  เหตุผลที่ไม่สามารถอนุมัติการลา
-                                                                </div>
-                                                                <div className="w-full bg-[#FFFBFA] dark:bg-red-900/10 border border-[#FDA29B] dark:border-red-800 rounded-[6px] px-4 py-2 min-h-[40px] flex items-center text-[15px] text-[#B42318] dark:text-red-400 shadow-sm">
-                                                                  {selectedHistoryItem.mentorReason || "ไม่ระบุเหตุผล"}
-                                                                </div>
-                                                              </div>
-                                                            )}
-
-                                                            {/* Action Button */}
-                                                            {selectedHistoryItem.status === "ไม่อนุมัติการลา" && (
-                                                              <div className="mt-6 w-full">
-                                                                <button
-                                                                  type="button"
-                                                                  className="w-full h-[50px] bg-[#A80689] text-white rounded-[12px] text-[17px] font-bold flex items-center justify-center shadow-lg shadow-purple-100 active:scale-[0.98] transition-transform"
-                                                                  onClick={() => handleAutoResubmitLeave(selectedHistoryItem)}
-                                                                >
-                                                                  ส่งคำขอการลาอีกครั้ง
-                                                                </button>
-                                                              </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                        )}
-                                    </Dialog.Panel>
-                                    </Transition.Child>
-                                </div>
-                            </div>
-                        </Dialog>
-                    </Transition>
-                </div>
+                {/* Detail Modal */}
+                <LeaveDetailModal
+                    isOpen={isDetailModalOpen}
+                    onClose={() => {
+                        setIsDetailModalOpen(false);
+                        setIsEditingTime(false);
+                    }}
+                    selectedHistoryItem={selectedHistoryItem}
+                    onViewFile={handleViewFile}
+                    onDeleteRequest={handleDeleteLeaveRequest}
+                    onResubmitLeave={handleAutoResubmitLeave}
+                />
             </div>
         </div>
     );

@@ -96,10 +96,7 @@ export class MailService {
     };
   }
 
-  buildDocumentRejectedEmail(params: {
-    firstname: string;
-    lastname: string;
-  }) {
+  buildDocumentRejectedEmail(params: { firstname: string; lastname: string }) {
     return {
       subject: "เอกสารถูกตีกลับ",
       html: rejectDocTemplate({

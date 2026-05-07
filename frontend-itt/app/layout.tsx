@@ -3,6 +3,9 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import '../styles/tailwind.css';
 import { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
+// import FCMHandler from '@/components/FCMHandler';
+
+
 
 export const viewport: Viewport = {
     themeColor: '#000000',
@@ -49,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 />
             </head>
             <body className={googleSans.variable}>
+                {/* <FCMHandler /> */}
                 <ProviderComponent>{children}</ProviderComponent>
             </body>
         </html>
