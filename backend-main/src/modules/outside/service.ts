@@ -1,4 +1,16 @@
-import { and, asc, desc, eq, gte, isNull, lte, sql, inArray, like, or } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  like,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
@@ -7,11 +19,11 @@ import {
 import { db } from "@/db";
 import {
   applicationStatuses,
+  internshipPositions,
   notifications,
   offsiteTaskStudents,
   offsiteTasks,
   users,
-  internshipPositions,
 } from "@/db/schema";
 import { sendNotification } from "../../config/firebase";
 import { FCMService } from "../fcm/service";
@@ -323,7 +335,10 @@ export class OffsiteTaskService {
         .from(offsiteTaskStudents)
         .leftJoin(users, eq(users.id, offsiteTaskStudents.studentId))
         .leftJoin(applicationStatuses, eq(applicationStatuses.userId, users.id))
-        .leftJoin(internshipPositions, eq(internshipPositions.id, applicationStatuses.positionId))
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
         .where(
           and(
             eq(applicationStatuses.isActive, true),
@@ -335,7 +350,7 @@ export class OffsiteTaskService {
             )
           )
         );
-      
+
       const tIds = matchingTaskIds.map((t) => t.id);
       if (tIds.length > 0) {
         conditions.push(inArray(offsiteTasks.id, tIds));

@@ -172,7 +172,9 @@ export class CheckTimeService {
       });
 
       if (approvedLeave) {
-        throw new ConflictError("ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้");
+        throw new ConflictError(
+          "ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้"
+        );
       }
 
       let isOnsite = false;
@@ -326,7 +328,9 @@ export class CheckTimeService {
       });
 
       if (approvedLeave) {
-        throw new ConflictError("ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้");
+        throw new ConflictError(
+          "ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลาที่ได้รับอนุมัติแล้วในวันนี้"
+        );
       }
 
       const existingLog = await tx.query.attendanceLogs.findFirst({

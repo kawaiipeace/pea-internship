@@ -325,6 +325,7 @@ const AdminDashboardPage = () => {
     const [year, setYear] = useState(now.getFullYear());               // CE year for API
     const [search, setSearch] = useState('');
     const [timeRange, setTimeRange] = useState('');
+    const [status, setStatus] = useState('');
     const [page, setPage] = useState(1);
 
     // Data states
@@ -374,7 +375,7 @@ const AdminDashboardPage = () => {
         fetchTopUnits();
     }, [monthIdx, year]);
 
-    // ── Fetch student list when search / timeRange / page changes ─────────────
+    // ── Fetch student list when search / timeRange / status / page changes ─────────────
     const fetchStudents = useCallback(async () => {
         setStudentsLoading(true);
         try {
@@ -384,6 +385,7 @@ const AdminDashboardPage = () => {
                 limit: 10,
             };
             if (search) params.search = search;
+            if (status) params.status = status;
 
             // Date Range logic
             if (timeRange === 'week') {
@@ -427,7 +429,7 @@ const AdminDashboardPage = () => {
         } finally {
             setStudentsLoading(false);
         }
-    }, [search, timeRange, page, monthIdx, year]);
+    }, [search, timeRange, status, page, monthIdx, year]);
 
     useEffect(() => {
         fetchStudents();
@@ -436,7 +438,7 @@ const AdminDashboardPage = () => {
     // Reset page when any filter changes
     useEffect(() => {
         setPage(1);
-    }, [search, timeRange, monthIdx, year]);
+    }, [search, timeRange, status, monthIdx, year]);
 
     // ── Month navigation ──────────────────────────────────────────────────────
     const prevMonth = () => {
@@ -623,6 +625,20 @@ const AdminDashboardPage = () => {
                         <option value="week">สัปดาห์นี้</option>
                         <option value="month">เดือนนี้</option>
                         <option value="quarter">ไตรมาสนี้</option>
+                    </select>
+                </div>
+                {/* Status Filter */}
+                <div className="flex-1">
+                    <select
+                        id="status-select"
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className={`form-select w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-medium focus:border-primary focus:outline-none dark:border-[#253b5c] dark:bg-[#0e1726] shadow-sm ${status ? 'text-gray-700 dark:text-gray-200' : 'text-[#9CA3AF]'
+                            }`}
+                    >
+                        <option value="">เลือกสถานะที่ต้องการดู...</option>
+                        <option value="active">อยู่ระหว่างการฝึกงาน</option>
+                        <option value="completed">สิ้นสุดการฝึกงาน</option>
                     </select>
                 </div>
             </div>

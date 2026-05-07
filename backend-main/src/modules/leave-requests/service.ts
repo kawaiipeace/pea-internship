@@ -347,7 +347,7 @@ export class LeaveService {
 
     const listFilters = [
       eq(leaveRequests.userId, userId),
-      isNull(leaveRequests.deletedAt)
+      isNull(leaveRequests.deletedAt),
     ];
 
     let targetYear = year || null;
@@ -358,7 +358,11 @@ export class LeaveService {
       targetYear = year || now.getFullYear();
       targetMonth = month || now.getMonth() + 1;
 
-      const startOfMonth = new Date(targetYear, targetMonth - 1, 1).toISOString();
+      const startOfMonth = new Date(
+        targetYear,
+        targetMonth - 1,
+        1
+      ).toISOString();
       const endOfMonth = new Date(
         targetYear,
         targetMonth,
