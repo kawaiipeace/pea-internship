@@ -48,7 +48,7 @@ export class InternshipCompleteCronService {
                         ) AS d
                         WHERE EXTRACT(ISODOW FROM d) NOT IN (6, 7)
                         ORDER BY d
-                        OFFSET 2
+                        OFFSET 3
                         LIMIT 1
                       )`,
                       sql`CURRENT_DATE`
@@ -101,7 +101,7 @@ export class InternshipCompleteCronService {
                         ) AS d
                         WHERE EXTRACT(ISODOW FROM d) NOT IN (6, 7)
                         ORDER BY d
-                        OFFSET 2
+                        OFFSET 3
                         LIMIT 1
                       )`,
                       sql`CURRENT_DATE`

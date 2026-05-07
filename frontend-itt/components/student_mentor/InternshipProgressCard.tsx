@@ -90,32 +90,6 @@ const InternshipProgressCard: React.FC<InternshipProgressCardProps> = ({
                     <div className="w-full py-3 bg-[#DCFAE6] text-[#079455] rounded-xl font-bold flex items-center justify-center text-[18px]">
                         ผ่านการฝึกงาน
                     </div>
-                ) : profile?.internshipStatus === 'EXTENDED' ? (
-                    <div className="w-full py-3 bg-[#F2F4F7] text-[#FF6B6B] rounded-xl font-bold flex flex-col items-center justify-center text-[18px]">
-                        <div>
-                            {(() => {
-                                const rawHours = progress?.totalExtendedHours;
-                                const hoursFromExtensions = typeof rawHours === 'string' ? parseFloat(rawHours) : (rawHours || 0);
-                                
-                                if (hoursFromExtensions > 0) {
-                                    return `ชดเชยวันทำงาน ${Math.ceil(hoursFromExtensions / 7)} วัน`;
-                                }
-                                
-                                const statusNote = profile?.statusNote || '';
-                                const match = statusNote.match(/COMPENSATION:(\d+)/);
-                                if (match) {
-                                    return `ชดเชยวันทำงาน ${match[1]} วัน`;
-                                }
-                                
-                                const missingHours = Math.max(0, (progress?.totalHoursGoal || 0) - (progress?.accumulatedHours || 0));
-                                if (missingHours > 0) {
-                                    return `ชดเชยวันทำงาน ${Math.ceil(missingHours / 7)} วัน`;
-                                }
-                                
-                                return 'ชดเชยวันทำงาน 0 วัน';
-                            })()}
-                        </div>
-                    </div>
                 ) : (
                     <>
                         <button 
@@ -131,17 +105,20 @@ const InternshipProgressCard: React.FC<InternshipProgressCardProps> = ({
                             <span className="material-symbols-outlined text-white text-[24px]">check_circle</span>
                             ผ่านการฝึกงาน
                         </button>
-                        <button
-                            onClick={onCompensateClick}
-                            disabled={!isCompensateAvailable}
-                            className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[18px] ${
-                                isCompensateAvailable 
-                                    ? 'bg-[#FFF5FD] text-[#A80689] border border-[#A80689] hover:bg-pink-50' 
-                                    : 'bg-[#FFF5FD] text-[#98A2B3] border border-[#A80689]/40 cursor-not-allowed'
-                            }`}
-                        >
-                            ชดเชยวันทำงาน
-                        </button>
+
+                        {(progress.accumulatedHours < progress.totalHoursGoal) && (
+                            <button
+                                onClick={onCompensateClick}
+                                disabled={!isCompensateAvailable}
+                                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[18px] ${
+                                    isCompensateAvailable 
+                                        ? 'bg-[#FFF5FD] text-[#A80689] border border-[#A80689] hover:bg-pink-50' 
+                                        : 'bg-[#FFF5FD] text-[#98A2B3] border border-[#A80689]/40 cursor-not-allowed'
+                                }`}
+                            >
+                                ชดเชยวันทำงาน
+                            </button>
+                        )}
                     </>
                 )}
             </div>
