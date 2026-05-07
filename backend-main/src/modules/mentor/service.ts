@@ -21,8 +21,8 @@ import {
   checkTimes,
   departments,
   institutions,
-  internshipPositions,
   internshipExtensions,
+  internshipPositions,
   leaveRequests,
   offsiteTaskStudents,
   offsiteTasks,
@@ -44,7 +44,7 @@ export class MentorService {
     if (start > end) return 0;
 
     let days = 0;
-    let temp = new Date(start);
+    const temp = new Date(start);
     while (temp <= end) {
       const day = temp.getDay();
       if (day !== 0 && day !== 6) {
@@ -66,6 +66,7 @@ export class MentorService {
       startDate,
       endDate,
       viewType,
+      status,
     } = query;
 
     const mentor = await db.query.users.findFirst({
@@ -77,12 +78,22 @@ export class MentorService {
       throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะพี่เลี้ยงเท่านั้น)");
     }
 
-    const conditions: (SQL | undefined)[] = [
-      or(
-        eq(applicationStatuses.isActive, true),
-        eq(applicationStatuses.applicationStatus, "COMPLETE")
-      ),
-    ];
+    const conditions: (SQL | undefined)[] = [];
+
+    // Status filtering
+    if (status === "active") {
+      conditions.push(eq(applicationStatuses.isActive, true));
+    } else if (status === "completed") {
+      conditions.push(eq(applicationStatuses.applicationStatus, "COMPLETE"));
+    } else {
+      // Default: show both active and completed
+      conditions.push(
+        or(
+          eq(applicationStatuses.isActive, true),
+          eq(applicationStatuses.applicationStatus, "COMPLETE")
+        )
+      );
+    }
 
     if (viewType !== "ALL" && mentor.departmentId) {
       conditions.push(
@@ -108,7 +119,9 @@ export class MentorService {
     const latestExtensionQuery = db
       .select({
         applicationStatusId: internshipExtensions.applicationStatusId,
-        extendedEndDate: sql`MAX(${internshipExtensions.newEndDate})`.as("extendedEndDate"),
+        extendedEndDate: sql`MAX(${internshipExtensions.newEndDate})`.as(
+          "extendedEndDate"
+        ),
       })
       .from(internshipExtensions)
       .groupBy(internshipExtensions.applicationStatusId)
@@ -278,7 +291,7 @@ export class MentorService {
             nowBkk.getDate()
           );
           const endBkk = new Date(
-            new Date(finalEndDate).toLocaleString("en-US", {
+            new Date(String(finalEndDate)).toLocaleString("en-US", {
               timeZone: "Asia/Bangkok",
             })
           );
@@ -419,23 +432,30 @@ export class MentorService {
       .select({
         totalExtendedHours: sql`SUM(CAST(${internshipExtensions.additionalHours} AS NUMERIC))`,
         latestNewEndDate: sql`MAX(${internshipExtensions.newEndDate})`,
-        latestApprovedAt: sql`MAX(${internshipExtensions.approvedAt})`
+        latestApprovedAt: sql`MAX(${internshipExtensions.approvedAt})`,
       })
       .from(internshipExtensions)
       .where(
         and(
-          eq(internshipExtensions.applicationStatusId, studentInfo.applicationStatusId),
+          eq(
+            internshipExtensions.applicationStatusId,
+            studentInfo.applicationStatusId
+          ),
           eq(internshipExtensions.status, "APPROVED")
         )
       );
 
     const totalExtendedHours = Number(extendedData?.totalExtendedHours || 0);
-    const extendedEndDate = extendedData?.latestNewEndDate ? new Date(extendedData.latestNewEndDate as string) : null;
+    const extendedEndDate = extendedData?.latestNewEndDate
+      ? new Date(extendedData.latestNewEndDate as string)
+      : null;
 
     const remainingHours = totalHoursGoal - accumulatedHours;
     let remainingDays = 0;
     if (remainingHours > 0) {
-      const finalEndDate = extendedEndDate || (studentInfo.endDate ? new Date(studentInfo.endDate) : null);
+      const finalEndDate =
+        extendedEndDate ||
+        (studentInfo.endDate ? new Date(studentInfo.endDate) : null);
       if (finalEndDate) {
         const nowBkk = new Date(
           new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
@@ -462,7 +482,6 @@ export class MentorService {
       }
     }
     if (remainingDays < 0) remainingDays = 0;
-
 
     let presentCount = 0,
       lateCount = 0,
@@ -636,7 +655,9 @@ export class MentorService {
         remainingDays: remainingDays,
         totalExtendedHours: totalExtendedHours,
         extendedEndDate: extendedEndDate,
-        lastExtensionDate: extendedData?.latestApprovedAt ? new Date(extendedData.latestApprovedAt as string) : null,
+        lastExtensionDate: extendedData?.latestApprovedAt
+          ? new Date(extendedData.latestApprovedAt as string)
+          : null,
       },
       summary: {
         present: presentCount,

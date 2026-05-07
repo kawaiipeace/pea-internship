@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
+import { isAuthenticated } from "@/middlewares/auth.middleware";
 import * as model from "./model";
 import { AuthService } from "./service";
-import { isAuthenticated } from "@/middlewares/auth.middleware";
 
 const authService = new AuthService();
 
@@ -121,8 +121,7 @@ export const auth = new Elysia({
       body: model.RequestResetPasswordBody,
       detail: {
         summary: "ส่งคำขอรีเซ็ตรหัสผ่าน",
-        description:
-          "ส่งอีเมลที่มี code สำหรับรีเซ็ตรหัสผ่าน ไปยังที่อยู่อีเมลที่ผู้ใช้สมัคร",
+        description: "ส่งอีเมลที่มี code สำหรับรีเซ็ตรหัสผ่าน ไปยังที่อยู่อีเมลที่ผู้ใช้สมัคร",
       },
     }
   )
@@ -139,8 +138,7 @@ export const auth = new Elysia({
       body: model.VerifyResetCodeBody,
       detail: {
         summary: "ยืนยันโค้ดสำหรับรีเซ็ตรหัสผ่าน",
-        description:
-          "นำโค้ดที่ได้จากอีเมลมายืนยันเพื่อรับ reset-password token",
+        description: "นำโค้ดที่ได้จากอีเมลมายืนยันเพื่อรับ reset-password token",
       },
     }
   )
@@ -178,6 +176,4 @@ export const auth = new Elysia({
           "ใช้สำหรับออกจากระบบ โดยจะทำการลบ session และ revoke token ที่เกี่ยวข้องกับผู้ใช้งาน",
       },
     }
-  )
-
-
+  );

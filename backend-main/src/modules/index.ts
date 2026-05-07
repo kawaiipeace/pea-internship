@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { departmentTicketRoutes } from "@/modules/department-ticket/route";
 import { adminDashboard } from "./admin-dashboard";
 import { application } from "./application";
 import { applicationStatusActionsModule } from "./application_status_actions";
@@ -12,7 +13,6 @@ import { fcm } from "./fcm";
 import { file } from "./file";
 import { institution } from "./institution";
 import { institutionTicketRoutes } from "./institution-ticket/route";
-import { departmentTicketRoutes } from "@/modules/department-ticket/route";
 import { leave } from "./leave-requests";
 import { ownerStudents } from "./manualEndInternships";
 import { mentor } from "./mentor";

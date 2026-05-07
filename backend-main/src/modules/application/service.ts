@@ -115,8 +115,6 @@ export class ApplicationService {
     return "ACTIVE";
   }
 
-
-
   private async cancelPendingApplicationsWhenPositionFilled(
     tx: DbTx,
     positionId: number,

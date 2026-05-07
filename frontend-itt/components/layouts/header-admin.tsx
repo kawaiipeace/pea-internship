@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { IRootState } from '@/store';
-import { toggleSidebar, setAdminRole } from '@/store/themeConfigSlice';
+import { toggleSidebar } from '@/store/themeConfigSlice';
 import Dropdown from '@/components/dropdown';
 import IconMenu from '@/components/icon/icon-menu';
 import IconXCircle from '@/components/icon/icon-x-circle';
@@ -18,6 +18,7 @@ import Swal from 'sweetalert2';
 import useAuthStore from '@/store/authStore';
 import ImageWithAuth from '../ImageWithAuth';
 import UserAvatar from '../UserAvatar';
+import { RoleSwitchModal } from '../RoleSwitchModal';
 
 const Header = () => {
     const pathname = usePathname();
@@ -28,6 +29,7 @@ const Header = () => {
     const user = useAuthStore((state) => state.user);
     const fullName = user ? [user.fname, user.lname].filter(Boolean).join(' ') : 'Guest';
     const email = user?.email || '';
+    const [showRoleSwitchModal, setShowRoleSwitchModal] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -159,11 +161,7 @@ const Header = () => {
                     <div className="flex items-center justify-center space-x-1.5 ltr:ml-auto rtl:mr-auto rtl:space-x-reverse dark:text-[#d0d2d6] lg:space-x-4">
                         <button
                             type="button"
-                            onClick={() => {
-                                const nextRole = isAdmin ? 'mentor' : 'admin';
-                                dispatch(setAdminRole(nextRole));
-                                router.push(nextRole === 'mentor' ? '/admin/mentor/approve' : '/admin');
-                            }}
+                            onClick={() => setShowRoleSwitchModal(true)}
                             className="flex w-28 items-center gap-2 rounded-xl border-2 border-[#9A0D8A] px-3 py-1.5 text-[#9A0D8A] hover:bg-[#9A0D8A]/5 transition-colors"
                         >
                             <div className="relative">
@@ -286,6 +284,11 @@ const Header = () => {
                 </div>
 
             </div>
+            <RoleSwitchModal
+                isOpen={showRoleSwitchModal}
+                onClose={() => setShowRoleSwitchModal(false)}
+                currentRole={isAdmin ? 'admin' : 'mentor'}
+            />
         </header>
     );
 };
