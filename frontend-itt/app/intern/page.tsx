@@ -3,6 +3,7 @@ import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { Transition } from '@headlessui/react';
 import Swal from 'sweetalert2';
 import axiosInstance from '@/api/axios';
+import useAuthStore from '@/store/authStore';
 import { OFFICE_LAT, OFFICE_LNG, MAX_DISTANCE_METERS, getDistanceInMeters, formatDateThai } from '@/components/check-time/utils';
 import LocationStatus from '@/components/check-time/LocationStatus';
 import ProgressSection from '@/components/check-time/ProgressSection';
@@ -10,6 +11,8 @@ import { SuccessModal, ConfirmOutModal } from '@/components/check-time/CheckTime
 
 const CheckInPage = () => {
     const [currentTime, setCurrentTime] = useState<Date | null>(null);
+    const { user } = useAuthStore();
+    const isInternshipComplete = (user?.profile as any)?.internshipStatus === 'COMPLETE';
     const [locationStatus, setLocationStatus] = useState<'searching' | 'found' | 'outside'>('searching');
     const [currentPosition, setCurrentPosition] = useState<{ lat: number, lng: number } | null>(null);
 
@@ -140,7 +143,7 @@ const CheckInPage = () => {
         if (!currentTime) return false;
         const h = currentTime.getHours();
         const m = currentTime.getMinutes();
-        return h > 16 || (h === 15 && m >= 10);
+        return h > 16 || (h === 16 && m >= 30);
     };
 
     const handleClockOut = () => {
@@ -230,23 +233,24 @@ const CheckInPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleCheckIn('in')}
-                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday}
-                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[18px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday)
+                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday || isInternshipComplete}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[18px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday || isInternshipComplete)
                                         ? 'bg-[#ECECED] text-[#61646C]  border border-[#98A2B3]  shadow-none cursor-not-allowed'
                                         : 'hover:-translate-y-[1px] bg-[#A80689] text-white'
                                     }`}
+                                title={isInternshipComplete ? "สิ้นสุดการฝึกงานแล้ว" : ""}
                             >
                                 ลงเวลาเข้างาน
                             </button>
                             <button
                                 type="button"
                                 onClick={handleClockOut}
-                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday}
-                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[18px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday)
+                                disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday || isInternshipComplete}
+                                className={`w-full max-w-[160px] h-[60px] flex items-center justify-center font-normal rounded-[6px] text-[18px] transition-all ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday || isInternshipComplete)
                                         ? 'bg-[#ECECED] text-[#61646C] border border-[#98A2B3] shadow-none cursor-not-allowed'
                                         : 'hover:-translate-y-[1px] bg-[#A80689] text-white '
                                     }`}
-                                title={isOnLeaveToday ? "ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลา" : (!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : "")}
+                                title={isInternshipComplete ? "สิ้นสุดการฝึกงานแล้ว" : (isOnLeaveToday ? "ไม่สามารถลงเวลาได้เนื่องจากคุณมีการลา" : (!canClockOut() && hasCheckedInToday && !hasClockedOutToday ? "ลงเวลาออกได้ตั้งแต่ 16:30 น." : ""))}
                             >
                                 ลงเวลาออกงาน
                             </button>
@@ -279,8 +283,8 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={() => handleCheckIn('in')}
-                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday)
+                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday || isInternshipComplete}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || hasCheckedInToday || isOnLeaveToday || isInternshipComplete)
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
                                     : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
@@ -290,8 +294,8 @@ const CheckInPage = () => {
                         <button
                             type="button"
                             onClick={handleClockOut}
-                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday}
-                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday)
+                            disabled={(locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday || isInternshipComplete}
+                            className={`w-full h-[48px] flex items-center justify-center rounded-[6px] font-semibold text-[16px] transition-colors ${((locationStatus !== 'found' && !isOffsiteToday) || !hasCheckedInToday || hasClockedOutToday || !canClockOut() || isOnLeaveToday || isInternshipComplete)
                                     ? 'bg-[#ECECED] text-[#9A9A9A] cursor-not-allowed'
                                     : 'bg-[#A80689] text-white hover:bg-[#8B0374]'
                                 }`}
