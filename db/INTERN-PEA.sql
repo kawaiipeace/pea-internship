@@ -741,3 +741,41 @@ FOR EACH ROW EXECUTE FUNCTION trg_set_dept_long_short();
 CREATE TRIGGER trg_before_update_set_dept_long_short 
 BEFORE UPDATE ON public.departments 
 FOR EACH ROW EXECUTE FUNCTION trg_set_dept_long_short();
+
+CREATE OR REPLACE FUNCTION public.trg_normalize_user_department_id()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_resource_code TEXT;
+  v_dept_upper INT;
+BEGIN
+  IF NEW.department_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT
+    TRIM(resource_code),
+    dept_upper
+  INTO
+    v_resource_code,
+    v_dept_upper
+  FROM public.departments
+  WHERE dept_sap = NEW.department_id;
+
+  IF v_resource_code = '500' AND v_dept_upper IS NOT NULL THEN
+    NEW.department_id := v_dept_upper;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_normalize_user_department_id
+ON public.users;
+
+CREATE TRIGGER trg_normalize_user_department_id
+BEFORE INSERT OR UPDATE OF department_id
+ON public.users
+FOR EACH ROW
+EXECUTE FUNCTION public.trg_normalize_user_department_id();
