@@ -11,29 +11,32 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'สำหรับนักศึกษา (Intern)',
-    Svg: require('@site/static/img/undraw_time-change_lyxp.svg').default,
-    description: (
-      <>
-        บันทึกเวลาเข้า-ออกงานผ่านระบบ พร้อมติดตามชั่วโมงการฝึกงานสะสม และส่งคำขอลาหรือแก้ไขเวลาได้ในที่เดียว
-      </>
-    ),
-  },
-  {
-    title: 'สำหรับพี่เลี้ยง (Mentor)',
+    title: 'Easy to Use',
     Svg: require('@site/static/img/undraw_all-checked_d3u6.svg').default,
     description: (
       <>
-        ตรวจสอบและอนุมัติคำขอต่างๆ ของนักศึกษาในดูแลได้อย่างสะดวกรวดเร็ว พร้อมติดตามสถานะการเข้างานและงานนอกสถานที่ได้แบบ Real-time
+        Docusaurus was designed from the ground up to be easily installed and
+        used to get your website up and running quickly.
       </>
     ),
   },
   {
-    title: 'สำหรับผู้ดูแลระบบ (Admin)',
+    title: 'Focus on What Matters',
+    Svg: require('@site/static/img/undraw_time-change_lyxp.svg').default,
+    description: (
+      <>
+        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
+        ahead and move your docs into the <code>docs</code> directory.
+      </>
+    ),
+  },
+  {
+    title: 'Powered by React',
     Svg: require('@site/static/img/undraw_web-app_141a.svg').default,
     description: (
       <>
-        Dashboard สรุปสถิติภาพรวมและข้อมูลรายบุคคลอย่างละเอียด ติดตามสถิติการเข้างาน อัตราการลา และส่งออกรายงานผลการฝึกงานได้อย่างครบถ้วน
+        Extend or customize your website layout by reusing React. Docusaurus can
+        be extended while reusing the same header and footer.
       </>
     ),
   },
