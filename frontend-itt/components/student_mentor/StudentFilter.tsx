@@ -127,6 +127,7 @@ const StudentFilter: React.FC<StudentFilterProps> = ({
 
             <div className="relative w-full sm:w-[220px] h-[36px] shrink-0">
                 <Dropdown
+                    matchWidth
                     btnClassName="w-full h-full"
                     button={
                         <div className="flex items-center justify-between w-full h-full px-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] cursor-pointer hover:border-[#A80689] transition-all">
@@ -140,7 +141,7 @@ const StudentFilter: React.FC<StudentFilterProps> = ({
                         </div>
                     }
                 >
-                    <ul className="bg-white shadow-xl rounded-lg border border-gray-100 py-1 min-w-[200px] overflow-hidden z-[110]">
+                    <ul className="bg-white shadow-xl rounded-lg border border-gray-100 py-1 w-full overflow-hidden z-[110]">
                         {[
                             { label: 'ทั้งหมด', value: 'ALL' },
                             { label: 'ผ่านการฝึกงาน', value: 'COMPLETE' },
