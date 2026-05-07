@@ -17,15 +17,6 @@ const Dropdown = (props: any, forwardedRef: any) => {
                     offset: props.offset || [0],
                 },
             },
-            {
-                name: 'sameWidth',
-                enabled: !!props.matchWidth,
-                fn: ({ state }: any) => {
-                    state.styles.popper.width = `${state.rects.reference.width}px`;
-                },
-                phase: 'beforeWrite',
-                requires: ['computeStyles'],
-            }
         ],
     });
 
