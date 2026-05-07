@@ -291,8 +291,8 @@ const ApprovalHistoryPage = () => {
     const [loading, setLoading] = useState(true);
 
     const PAGE_SIZE = 5;
-    const [leaveMeta, setLeaveMeta] = useState({ totalPages: 1, totalRecords: 2 });
-    const [timeMeta, setTimeMeta] = useState({ totalPages: 1, totalRecords: 3 });
+    const [leaveMeta, setLeaveMeta] = useState({ totalPages: 1, totalRecords: 0 });
+    const [timeMeta, setTimeMeta] = useState({ totalPages: 1, totalRecords: 0 });
     const [page, setPage] = useState(1);
 
     const records = useMemo(() => {
@@ -448,6 +448,13 @@ const ApprovalHistoryPage = () => {
             setLoading(false);
         }
     };
+
+    // Fetch both counts on initial mount so summary cards show correct numbers
+    useEffect(() => {
+        fetchLeaveRequests();
+        fetchTimeCorrectionRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (activeTab === 'leave') {
