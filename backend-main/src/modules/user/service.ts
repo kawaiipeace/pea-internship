@@ -607,7 +607,10 @@ export class UserService {
       today.setHours(0, 0, 0, 0);
       const currentEndDate = new Date(appInfo.endDate);
 
-      const allowedStartDate = this.calculateAllowedStartDate(currentEndDate, 7);
+      const allowedStartDate = this.calculateAllowedStartDate(
+        currentEndDate,
+        7
+      );
 
       if (today < allowedStartDate) {
         throw new Error(
