@@ -135,10 +135,10 @@ export class OwnerStudentStatusService {
 
       if (!sp) throw new NotFoundError("ไม่พบโปรไฟล์นักศึกษา");
 
-      const allowedStatuses = new Set(["ACTIVE", "AWAITING"]);
+      const allowedStatuses = new Set(["ACTIVE", "AWAITING", "EXTENDED"]);
       if (!allowedStatuses.has(sp.internshipStatus)) {
         throw new BadRequestError(
-          "เปลี่ยนสถานะได้เฉพาะนักศึกษาที่อยู่ในสถานะ ACTIVE หรือ AWAITING เท่านั้น"
+          "เปลี่ยนสถานะได้เฉพาะนักศึกษาที่อยู่ในสถานะ ACTIVE, AWAITING, EXTENDED เท่านั้น"
         );
       }
 

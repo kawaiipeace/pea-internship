@@ -9,7 +9,7 @@ export const dailyAttendanceSyncCron = new Elysia({
 }).use(
   cron({
     name: "daily-attendance-sync",
-    pattern: "45 09 * * 1-5",
+    pattern: "59 23 * * 1-5",
     timezone: "Asia/Bangkok",
     async run() {
       console.log("⏰ [CRON] Starting Daily Attendance Sync...");
