@@ -70,7 +70,7 @@ const StudentsPage = () => {
                         }
 
                         if (workingDays > 1) {
-                            statusMessage = `เหลืออีก ${workingDays} วันทำการก่อนสิ้นสุดฝึกงาน`;
+                            statusMessage = `เหลืออีก ${workingDays} วันทำการก่อนสิ้นสุดการฝึกงาน`;
                         } else if (workingDays === 1) {
                             statusMessage = 'ฝึกงานวันสุดท้าย';
                             statusType = 'last-day';

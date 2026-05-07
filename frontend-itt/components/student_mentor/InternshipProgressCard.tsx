@@ -57,6 +57,17 @@ const InternshipProgressCard: React.FC<InternshipProgressCardProps> = ({
                         const displayColor = isUrgent ? '#B42318' : '#6b7280';
                         const iconColor = isUrgent ? '#B42318' : '#85888E';
 
+                        let statusText = '';
+                        if (days > 1) {
+                            statusText = `เหลืออีก ${days} วันทำการก่อนสิ้นสุดการฝึกงาน`;
+                        } else if (days === 1) {
+                            statusText = 'ฝึกงานวันสุดท้าย';
+                        } else {
+                            const isToday = (progress?.extendedEndDate || profile.period?.endDate) && 
+                                          new Date(progress?.extendedEndDate || profile.period?.endDate).toDateString() === new Date().toDateString();
+                            statusText = isToday ? 'สิ้นสุดการฝึกงานวันนี้' : 'สิ้นสุดการฝึกงานแล้ว';
+                        }
+
                         return (
                             <div className="flex items-center gap-2 mb-1">
                                 <span
@@ -66,7 +77,7 @@ const InternshipProgressCard: React.FC<InternshipProgressCardProps> = ({
                                     schedule
                                 </span>
                                 <span className="text-[14px] font-normal" style={{ color: displayColor }}>
-                                    {days > 0 ? `เหลืออีก ${days} วันก่อนสิ้นสุดการฝึกงาน` : (progress?.extendedEndDate || profile.period?.endDate) && new Date(progress?.extendedEndDate || profile.period?.endDate).toDateString() === new Date().toDateString() ? 'สิ้นสุดการฝึกงานวันนี้' : 'สิ้นสุดการฝึกงานแล้ว'}
+                                    {statusText}
                                 </span>
                             </div>
                         );
