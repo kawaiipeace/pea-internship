@@ -22,6 +22,15 @@ export interface DepartmentsResponse {
   };
 }
 
+// Response shape จาก department_ticket endpoint
+export interface DepartmentTicketResponse {
+  deptSap: number;
+  deptShort: string | null;
+  deptFull: string | null;
+  location: string | null;
+  officeId: number;
+}
+
 export const departmentApi = {
   getDepartments: async (
     page: number = 1,
@@ -33,32 +42,29 @@ export const departmentApi = {
     return response.data;
   },
 
+  /**
+   * ค้นหา department ด้วย deptSap ผ่าน department_ticket endpoint (direct lookup)
+   * เร็วกว่าการ paginate ทุกหน้าเพื่อหา department มาก
+   * Backend cache ข้อมูลไว้ 5 นาที
+   */
   getDepartmentByDeptSap: async (
     id: number | string
   ): Promise<Department | null> => {
     try {
       const targetId = Number(id);
-      let page = 1;
-      let hasNextPage = true;
-      const limit = 100;
-
-      while (hasNextPage) {
-        const response = await departmentApi.getDepartments(page, limit);
-
-        const found =
-          response.data.find((d) => {
-            const deptSap = Number(d.deptSap);
-            const deptId = Number(d.id);
-            return deptSap === targetId || deptId === targetId;
-          }) || null;
-
-        if (found) return found;
-
-        hasNextPage = response.meta?.hasNextPage ?? false;
-        page++;
-      }
-
-      return null;
+      const response = await api.get<DepartmentTicketResponse>(
+        `/department_ticket/${targetId}`
+      );
+      const data = response.data;
+      // แปลง DepartmentTicketResponse ให้เป็น Department shape
+      return {
+        id: 0, // ticket endpoint ไม่คืน id ของ row
+        deptSap: data.deptSap,
+        deptShort: data.deptShort,
+        deptFull: data.deptFull,
+        location: data.location,
+        officeId: data.officeId,
+      };
     } catch (error) {
       console.log("getDepartmentByDeptSap error:", error);
       return null;
