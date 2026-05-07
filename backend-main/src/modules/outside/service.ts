@@ -1,4 +1,16 @@
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNull,
+  like,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   BadRequestError,
   ForbiddenError,
@@ -7,30 +19,80 @@ import {
 import { db } from "@/db";
 import {
   applicationStatuses,
+  internshipPositions,
+  notifications,
   offsiteTaskStudents,
   offsiteTasks,
   users,
 } from "@/db/schema";
+import { sendNotification } from "../../config/firebase";
+import { FCMService } from "../fcm/service";
 import type * as offsiteModel from "./model";
 
 export class OffsiteTaskService {
+  private fcmService = new FCMService();
+
+  private async sendOffsiteNotification(
+    mentorId: string,
+    studentIds: string[],
+    location: string,
+    date: string
+  ) {
+    try {
+      const mentor = await db.query.users.findFirst({
+        where: eq(users.id, mentorId),
+        columns: { fname: true, lname: true },
+      });
+
+      const mentorName = mentor
+        ? `${mentor.fname} ${mentor.lname}`
+        : "พี่เลี้ยงของคุณ";
+
+      for (const studentId of studentIds) {
+        const tokens = await this.fcmService.getTokensByUserId(studentId);
+
+        for (const token of tokens) {
+          await sendNotification({
+            token,
+            title: "📍 มอบหมายงานนอกสถานที่ใหม่",
+            body: `${mentorName} ได้มอบหมายงานให้คุณไปที่ ${location} ในวันที่ ${date}`,
+            data: {
+              type: "OFFSITE_TASK",
+              click_action: "/intern/offsite-tasks",
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error("[FCM] Failed to send offsite notifications:", error);
+    }
+  }
+
   async createTask(mentorId: string, data: offsiteModel.CreateOffsiteTaskDto) {
     if (!data.studentIds || data.studentIds.length === 0) {
       throw new BadRequestError("ต้องระบุนักศึกษาอย่างน้อย 1 คน");
     }
 
     return await db.transaction(async (tx) => {
+      // 1. ดึงข้อมูลพี่เลี้ยงเพื่อเอาชื่อมาใส่ใน Message (ใช้ fname, lname)
+      const mentor = await tx.query.users.findFirst({
+        where: eq(users.id, mentorId),
+      });
+      const mentorName = mentor ? `${mentor.fname} ${mentor.lname}` : "พี่เลี้ยง";
+
+      // 2. บันทึกข้อมูลงานนอกสถานที่ลงตารางหลัก
       const [newTask] = await tx
         .insert(offsiteTasks)
         .values({
           assignedBy: mentorId,
-          workDate: data.workDate,
+          workDate: data.workDate, // ตรวจสอบว่าใน Schema เป็น Date หรือ String
           locationName: data.locationName,
           taskDetail: data.taskDetail,
           note: data.note,
         })
         .returning({ id: offsiteTasks.id });
 
+      // 3. บันทึกรายชื่อนักศึกษาที่ได้รับมอบหมาย
       const studentsToInsert = data.studentIds.map((studentId) => ({
         taskId: newTask.id,
         studentId: studentId,
@@ -38,9 +100,21 @@ export class OffsiteTaskService {
 
       await tx.insert(offsiteTaskStudents).values(studentsToInsert);
 
+      // 4. สร้าง Notification ลงตาราง notifications ให้กับนักศึกษาทุกคน
+      const notificationValues = data.studentIds.map((studentId) => ({
+        userId: studentId,
+        title: "มีงานมอบหมายนอกสถานที่ใหม่",
+        message: `คุณได้รับมอบหมายงานนอกสถานที่ ณ ${data.locationName} ในวันที่ ${data.workDate} โดยพี่เลี้ยง (${mentorName})`,
+        isRead: false,
+      }));
+
+      if (notificationValues.length > 0) {
+        await tx.insert(notifications).values(notificationValues);
+      }
+
       return {
         success: true,
-        message: "มอบหมายงานนอกสถานที่สำเร็จ",
+        message: "มอบหมายงานนอกสถานที่สำเร็จพร้อมแจ้งเตือนนักศึกษา",
         taskId: newTask.id,
       };
     });
@@ -48,7 +122,10 @@ export class OffsiteTaskService {
 
   async getTasksByMentor(mentorId: string) {
     const tasks = await db.query.offsiteTasks.findMany({
-      where: eq(offsiteTasks.assignedBy, mentorId),
+      where: and(
+        eq(offsiteTasks.assignedBy, mentorId),
+        isNull(offsiteTasks.deletedAt)
+      ),
       orderBy: [desc(offsiteTasks.workDate)],
       with: {
         students: {
@@ -82,6 +159,7 @@ export class OffsiteTaskService {
       where: eq(offsiteTaskStudents.studentId, studentId),
       with: {
         task: {
+          where: isNull(offsiteTasks.deletedAt),
           with: {
             assignedByUser: {
               columns: { fname: true, lname: true },
@@ -92,14 +170,17 @@ export class OffsiteTaskService {
     });
 
     return assignedTasks
+      .filter((st) => st.task)
       .map((st) => ({
-        taskId: st.task.id,
-        workDate: st.task.workDate,
-        locationName: st.task.locationName,
-        taskDetail: st.task.taskDetail,
-        note: st.task.note,
+        taskId: st.task!.id,
+        workDate: st.task!.workDate,
+        locationName: st.task!.locationName,
+        taskDetail: st.task!.taskDetail,
+        note: st.task!.note,
         positionName: positionName,
-        assignedBy: `${st.task.assignedByUser.fname} ${st.task.assignedByUser.lname}`,
+        assignedBy: `${st.task!.assignedByUser.fname} ${st.task!.assignedByUser.lname}`,
+        createdAt: st.task!.createdAt,
+        updatedAt: st.task!.updatedAt,
       }))
       .sort(
         (a, b) =>
@@ -114,8 +195,12 @@ export class OffsiteTaskService {
   ) {
     return await db.transaction(async (tx) => {
       const existingTask = await tx.query.offsiteTasks.findFirst({
-        where: (tasks, { and, eq }) =>
-          and(eq(tasks.id, taskId), eq(tasks.assignedBy, mentorId)),
+        where: (tasks, { and, eq, isNull }) =>
+          and(
+            eq(tasks.id, taskId),
+            eq(tasks.assignedBy, mentorId),
+            isNull(tasks.deletedAt)
+          ),
       });
 
       if (!existingTask) {
@@ -152,11 +237,16 @@ export class OffsiteTaskService {
       return { success: true, message: "แก้ไขข้อมูลงานนอกสถานที่สำเร็จ" };
     });
   }
+
   async deleteTask(taskId: number, mentorId: string) {
     return await db.transaction(async (tx) => {
       const existingTask = await tx.query.offsiteTasks.findFirst({
-        where: (tasks, { and, eq }) =>
-          and(eq(tasks.id, taskId), eq(tasks.assignedBy, mentorId)),
+        where: (tasks, { and, eq, isNull }) =>
+          and(
+            eq(tasks.id, taskId),
+            eq(tasks.assignedBy, mentorId),
+            isNull(tasks.deletedAt)
+          ),
       });
 
       if (!existingTask) {
@@ -164,10 +254,9 @@ export class OffsiteTaskService {
       }
 
       await tx
-        .delete(offsiteTaskStudents)
-        .where(eq(offsiteTaskStudents.taskId, taskId));
-
-      await tx.delete(offsiteTasks).where(eq(offsiteTasks.id, taskId));
+        .update(offsiteTasks)
+        .set({ deletedAt: new Date() })
+        .where(eq(offsiteTasks.id, taskId));
 
       return { success: true, message: "ลบงานนอกสถานที่สำเร็จ" };
     });
@@ -182,11 +271,11 @@ export class OffsiteTaskService {
       columns: { departmentId: true },
     });
 
-    if (!currentUser || !currentUser.departmentId) {
+    if (!currentUser?.departmentId) {
       throw new BadRequestError("ไม่พบข้อมูลแผนกของคุณ");
     }
 
-    const conditions = [];
+    const conditions = [isNull(offsiteTasks.deletedAt)];
 
     if (query.targetMentorId) {
       const targetMentor = await db.query.users.findFirst({
@@ -239,6 +328,38 @@ export class OffsiteTaskService {
       );
     }
 
+    if (query.search) {
+      const searchKeyword = `%${query.search}%`;
+      const matchingTaskIds = await db
+        .select({ id: offsiteTaskStudents.taskId })
+        .from(offsiteTaskStudents)
+        .leftJoin(users, eq(users.id, offsiteTaskStudents.studentId))
+        .leftJoin(applicationStatuses, eq(applicationStatuses.userId, users.id))
+        .leftJoin(
+          internshipPositions,
+          eq(internshipPositions.id, applicationStatuses.positionId)
+        )
+        .where(
+          and(
+            eq(applicationStatuses.isActive, true),
+            or(
+              like(users.fname, searchKeyword),
+              like(users.lname, searchKeyword),
+              like(users.displayUsername, searchKeyword),
+              like(internshipPositions.name, searchKeyword)
+            )
+          )
+        );
+
+      const tIds = matchingTaskIds.map((t) => t.id);
+      if (tIds.length > 0) {
+        conditions.push(inArray(offsiteTasks.id, tIds));
+      } else {
+        // Force no results
+        conditions.push(eq(offsiteTasks.id, -1));
+      }
+    }
+
     const orderCol =
       query.sortBy === "createdAt"
         ? offsiteTasks.createdAt
@@ -268,7 +389,12 @@ export class OffsiteTaskService {
         students: {
           with: {
             student: {
-              columns: { id: true, fname: true, lname: true },
+              columns: {
+                id: true,
+                displayUsername: true,
+                fname: true,
+                lname: true,
+              },
               with: {
                 studentProfiles: {
                   columns: { image: true },
@@ -286,14 +412,16 @@ export class OffsiteTaskService {
         workDate: t.workDate,
         createdAt: t.createdAt,
         locationName: t.locationName,
+        taskDetail: t.taskDetail,
         assignedBy: t.assignedByUser
           ? `${t.assignedByUser.fname} ${t.assignedByUser.lname}`
           : "ไม่ระบุ",
+        updatedAt: t.updatedAt,
         isOwner: t.assignedByUser?.id === mentorId,
         students: t.students.map((s) => ({
           id: s.student.id,
           name: `${s.student.fname} ${s.student.lname}`,
-          image: s.student.studentProfiles[0]?.image || null,
+          nickname: s.student.displayUsername,
         })),
       })),
       meta: {
@@ -314,7 +442,7 @@ export class OffsiteTaskService {
     if (!currentUser) throw new BadRequestError("ไม่พบข้อมูลผู้ใช้");
 
     const task = await db.query.offsiteTasks.findFirst({
-      where: eq(offsiteTasks.id, taskId),
+      where: and(eq(offsiteTasks.id, taskId), isNull(offsiteTasks.deletedAt)),
       with: {
         assignedByUser: {
           columns: { id: true, fname: true, lname: true, departmentId: true },

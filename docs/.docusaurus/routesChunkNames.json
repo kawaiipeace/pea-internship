@@ -1,0 +1,133 @@
+{
+  "/__docusaurus/debug-5ff": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docusaurus-debugb-38-ad3"
+    }
+  },
+  "/__docusaurus/debug/config-5ba": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docusaurus-debugb-38-ad3"
+    }
+  },
+  "/__docusaurus/debug/content-a2b": {
+    "__comp": "__comp---theme-debug-contentba-8-ce7",
+    "__context": {
+      "plugin": "plugin---docusaurus-debugb-38-ad3"
+    },
+    "__props": "__props---docusaurus-debug-content-3-c-0-be2"
+  },
+  "/__docusaurus/debug/globalData-c3c": {
+    "__comp": "__comp---theme-debug-global-dataede-0fa",
+    "__context": {
+      "plugin": "plugin---docusaurus-debugb-38-ad3"
+    }
+  },
+  "/__docusaurus/debug/metadata-156": {
+    "__comp": "__comp---theme-debug-site-metadata-68-e-3d4",
+    "__context": {
+      "plugin": "plugin---docusaurus-debugb-38-ad3"
+    }
+  },
+  "/__docusaurus/debug/registry-88c": {
+    "__comp": "__comp---theme-debug-registry-679-501",
+    "__context": {
+      "plugin": "plugin---docusaurus-debugb-38-ad3"
+    }
+  },
+  "/__docusaurus/debug/routes-000": {
+    "__comp": "__comp---theme-debug-routes-946-699",
+    "__context": {
+      "plugin": "plugin---docusaurus-debugb-38-ad3"
+    }
+  },
+  "/blog-98b": {
+    "__comp": "__comp---theme-blog-list-pagea-6-a-7ba",
+    "__context": {
+      "plugin": "plugin---blog-369-22e"
+    },
+    "sidebar": "sidebar---blog-814-8ac",
+    "items": [],
+    "__props": "__props---blogc-15-573"
+  },
+  "/markdown-page-53a": {
+    "__comp": "__comp---theme-mdx-page-1-f-3-b90",
+    "__context": {
+      "plugin": "plugin---markdown-pagea-74-7b5"
+    },
+    "content": "content---markdown-page-4-c-6-c89"
+  },
+  "/docs-ed2": {
+    "__comp": "__comp---theme-docs-root-5-e-9-0b6",
+    "__context": {
+      "plugin": "plugin---docsaba-d7c"
+    }
+  },
+  "/docs-90d": {
+    "__comp": "__comp---theme-doc-version-roota-7-b-5de",
+    "__props": "__props---docs-005-788"
+  },
+  "/docs-749": {
+    "__comp": "__comp---theme-doc-roota-94-67a"
+  },
+  "/docs/category/frontend-itt-b05": {
+    "__comp": "__comp---theme-doc-category-generated-index-page-14-e-640",
+    "__props": "__props---docs-category-frontend-ittb-75-93a"
+  },
+  "/docs/category/การเข้าสู่ระบบ-authentication-2ce": {
+    "__comp": "__comp---theme-doc-category-generated-index-page-14-e-640",
+    "__props": "__props---docs-category-การเข้าสู่ระบบ-authenticationd-84-362"
+  },
+  "/docs/category/นักศึกษา-student-ca8": {
+    "__comp": "__comp---theme-doc-category-generated-index-page-14-e-640",
+    "__props": "__props---docs-category-นักศึกษา-studente-4-e-2bf"
+  },
+  "/docs/category/ผู้ดูแลระบบ-admin-c2e": {
+    "__comp": "__comp---theme-doc-category-generated-index-page-14-e-640",
+    "__props": "__props---docs-category-ผู้ดูแลระบบ-admin-329-4b8"
+  },
+  "/docs/category/พี่เลี้ยง-mentor-c9c": {
+    "__comp": "__comp---theme-doc-category-generated-index-page-14-e-640",
+    "__props": "__props---docs-category-พี่เลี้ยง-mentor-691-f2b"
+  },
+  "/docs/frontend-itt/admin/-e93": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-frontend-itt-admin-5-be-c39"
+  },
+  "/docs/frontend-itt/auth/login-b0a": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-frontend-itt-auth-loginb-0-c-7e5"
+  },
+  "/docs/frontend-itt/mentor/approval-history-427": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-frontend-itt-mentor-approval-history-838-8b8"
+  },
+  "/docs/frontend-itt/mentor/approvals-5f2": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-frontend-itt-mentor-approvalsd-81-620"
+  },
+  "/docs/frontend-itt/mentor/remote-work-a52": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-frontend-itt-mentor-remote-workbb-9-471"
+  },
+  "/docs/frontend-itt/mentor/students-f8d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-frontend-itt-mentor-studentsd-9-d-84a"
+  },
+  "/docs/frontend-itt/student/-a02": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-frontend-itt-student-b-3-f-5cf"
+  },
+  "/docs/intro-89a": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-introf-84-2b4"
+  },
+  "/-e5f": {
+    "__comp": "__comp---site-src-pages-index-tsx-1-df-d3e",
+    "__context": {
+      "plugin": "plugin---markdown-pagea-74-7b5"
+    },
+    "config": "config---5-e-9-4f3"
+  }
+}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import {
@@ -6,7 +6,6 @@ import {
   departmentApi,
   userApi,
   AllStudentsHistoryItem,
-  Department,
 } from "@/services/api";
 
 type AdminDocStatus =
@@ -192,21 +191,6 @@ async function fetchAllStudentsHistory(
   return all;
 }
 
-async function fetchAllDepartments(limitPerPage = 100): Promise<Department[]> {
-  let page = 1;
-  let hasNext = true;
-  const all: Department[] = [];
-
-  while (hasNext) {
-    const res = await departmentApi.getDepartments(page, limitPerPage);
-    all.push(...res.data);
-    hasNext = res.meta.hasNextPage;
-    page += 1;
-  }
-
-  return all;
-}
-
 export default function AdminDashboardPage() {
   const [applications, setApplications] = useState<AllStudentsHistoryItem[]>(
     [],
@@ -247,10 +231,7 @@ export default function AdminDashboardPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [all, departments] = await Promise.all([
-        fetchAllStudentsHistory(),
-        fetchAllDepartments(),
-      ]);
+      const all = await fetchAllStudentsHistory();
 
       // Fetch admin's dept name from profile
       try {
@@ -266,13 +247,28 @@ export default function AdminDashboardPage() {
       }
 
       setApplications(all);
-      setDepartmentsById(
-        departments.reduce<Record<number, string>>((acc, dept) => {
-          acc[dept.id] =
-            dept.deptFull || dept.deptShort || `หน่วยงาน ${dept.id}`;
-          return acc;
-        }, {}),
+
+      // ใช้ department_ticket endpoint ดึงเฉพาะ dept ที่ต้องการ แทนการโหลดทั้งหมด
+      const uniqueDeptIds = new Set<number>();
+      for (const item of all) {
+        if (item.departmentId != null) uniqueDeptIds.add(item.departmentId);
+      }
+
+      const deptMap: Record<number, string> = {};
+      await Promise.all(
+        Array.from(uniqueDeptIds).map(async (deptSap) => {
+          try {
+            const dept = await departmentApi.getDepartmentByDeptSap(deptSap);
+            if (dept) {
+              deptMap[deptSap] =
+                dept.deptFull || dept.deptShort || `หน่วยงาน ${deptSap}`;
+            }
+          } catch {
+            /* skip if not found */
+          }
+        }),
       );
+      setDepartmentsById(deptMap);
 
       const years = all
         .map((item) => safeDate(item.createdAt)?.getFullYear() ?? null)

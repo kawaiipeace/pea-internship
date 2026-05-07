@@ -1,0 +1,28 @@
+{
+  "id": "frontend-itt/auth/login",
+  "title": "🔐 การเข้าสู่ระบบ (Authentication)",
+  "description": "ก่อนเริ่มใช้งานระบบ PEA Internship Management System (ITT) ผู้ใช้งานจำเป็นต้องมีบัญชีที่ลงทะเบียนในระบบหลักของ กฟภ. ให้เสร็จสมบูรณ์ และมีสถานะเป็น \"รอฝึกงาน\" หรือ \"กำลังฝึกงาน\" จึงจะสามารถเข้าใช้งานระบบ ITT ได้",
+  "source": "@site/docs/frontend-itt/auth/login.md",
+  "sourceDirName": "frontend-itt/auth",
+  "slug": "/frontend-itt/auth/login",
+  "permalink": "/docs/frontend-itt/auth/login",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/frontend-itt/auth/login.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "sidebar_label": "การเข้าสู่ระบบ"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "การเข้าสู่ระบบ (Authentication)",
+    "permalink": "/docs/category/การเข้าสู่ระบบ-authentication"
+  },
+  "next": {
+    "title": "นักศึกษา (Student)",
+    "permalink": "/docs/category/นักศึกษา-student"
+  }
+}

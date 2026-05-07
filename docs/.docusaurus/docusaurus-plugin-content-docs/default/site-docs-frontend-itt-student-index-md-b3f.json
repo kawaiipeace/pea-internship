@@ -1,0 +1,28 @@
+{
+  "id": "frontend-itt/student/index",
+  "title": "🎓 คู่มือการใช้งานสำหรับนักศึกษา (Intern)",
+  "description": "ยินดีต้อนรับสู่ระบบ PEA Internship Management System (ITT) หน้านี้จะช่วยแนะนำฟีเจอร์สำคัญที่คุณต้องใช้งานในแต่ละวัน เพื่อให้การฝึกงานของคุณเป็นไปอย่างราบรื่นและมีประสิทธิภาพ",
+  "source": "@site/docs/frontend-itt/student/index.md",
+  "sourceDirName": "frontend-itt/student",
+  "slug": "/frontend-itt/student/",
+  "permalink": "/docs/frontend-itt/student/",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/frontend-itt/student/index.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "sidebar_label": "คู่มือนักศึกษา"
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "นักศึกษา (Student)",
+    "permalink": "/docs/category/นักศึกษา-student"
+  },
+  "next": {
+    "title": "พี่เลี้ยง (Mentor)",
+    "permalink": "/docs/category/พี่เลี้ยง-mentor"
+  }
+}

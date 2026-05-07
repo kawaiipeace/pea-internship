@@ -17,6 +17,7 @@ import IconSend from '@/components/icon/icon-send';
 import IconPaperclipPlus from '@/components/icon/icon-paperclip-plus';
 import axiosInstance from '@/api/axios';
 import Swal from 'sweetalert2';
+import TimeWheelPicker from './TimeWheelPicker';
 
 interface EditTimeFormProps {
     selectedHistoryItem: any;
@@ -43,6 +44,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [pickingType, setPickingType] = useState<'in' | 'out' | null>(null);
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -118,7 +120,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             // Extract detailed error from server for 422
             let msg = 'เกิดข้อผิดพลาดในการส่งข้อมูล';
             if (err.response?.data?.message) {
-                msg = err.response.data.message;
+                msg = err.response.message;
             } else if (err.response?.data?.error) {
                 msg = err.response.data.error;
             } else if (err.response?.status === 422) {
@@ -184,23 +186,23 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* Status Badge below time */}
                     <div className="mt-1">
                         {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
-                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold gap-1.5 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
                                 <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px] text-white">check</span>
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px]">check</span>
                                 </div>
                                 เข้างานปกติ
                             </div>
                         ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
-                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
                                 <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">schedule</span>
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px]">schedule</span>
                                 </div>
                                 สาย
                             </div>
                         ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
-                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
                                 <div className="w-4 h-4 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] translate-y-[0.5px]">close</span>
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px]">close</span>
                                 </div>
                                 ขาด
                             </div>
@@ -222,58 +224,39 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                 {/* Form Box */}
                 <div className="w-full max-w-[820px] mx-auto min-h-[337px] bg-[#FEFBF6] dark:bg-[#1C1710] border border-[#CECFD2] rounded-[5px] p-4 sm:p-6 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center gap-[2px] text-[#1C1C1C] dark:text-gray-300 text-[15px] mb-4">
-                        <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
-                            {(selectedHistoryItem?.status === "เข้างานปกติ" || 
-                             selectedHistoryItem?.statusType === "success" || 
-                             selectedHistoryItem?.status === "สาย" || 
-                             selectedHistoryItem?.statusType === "warning" || 
-                             selectedHistoryItem?.status === "ไม่ลงเวลาออก") 
+                        <span className={`material-symbols-rounded text-[24px] ${(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
+                             ? "text-[#079455]" : "text-[#FDB022]"}`}>
+                            {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                              ? "apartment" : "globe_location_pin"}
                         </span>
-                        {(selectedHistoryItem?.status === "เข้างานปกติ" || 
-                         selectedHistoryItem?.statusType === "success" || 
-                         selectedHistoryItem?.status === "สาย" || 
-                         selectedHistoryItem?.statusType === "warning" || 
-                         selectedHistoryItem?.status === "ไม่ลงเวลาออก") 
+                        {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                          ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                     </div>
 
                     {/* เวลาเข้า */}
                     <div className="mb-[14px]">
                         <div className="text-[13px] text-[#828282] font-semibold mb-2">เวลาเข้างาน :</div>
-                        <div className="relative w-full max-w-[450px]">
-                            <input
-                                type="text"
-                                value={checkInTime}
-                                onChange={(e) => setCheckInTime(e.target.value)}
-                                className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
-                            />
-                            <button 
-                                onClick={() => setCheckInTime("")}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]"
-                            >
-                                <IconX className="w-[14px] h-[14px]" />
-                            </button>
-                        </div>
+                        <button 
+                            type="button"
+                            onClick={() => setPickingType('in')}
+                            className="w-full max-w-[450px] h-[43px] px-[14px] border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold flex items-center justify-between hover:border-[#D1D1D1] transition-all"
+                        >
+                            <span>{checkInTime || "--:--"}</span>
+                            <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                        </button>
                     </div>
 
                     {/* เวลาออก */}
                     <div className="mb-2">
                         <div className="text-[13px] text-[#828282] font-semibold mb-2">เวลาออกงาน :</div>
-                        <div className="relative w-full max-w-[450px]">
-                            <input
-                                type="text"
-                                value={checkOutTime}
-                                onChange={(e) => setCheckOutTime(e.target.value)}
-                                className="w-full h-[43px] px-[14px] pr-10 border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold focus:outline-none focus:border-[#D1D1D1] transition-all"
-                            />
-                            <button 
-                                onClick={() => setCheckOutTime("")}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0] hover:text-[#6F6F6F]"
-                            >
-                                <IconX className="w-[14px] h-[14px]" />
-                            </button>
-                        </div>
+                        <button 
+                            type="button"
+                            onClick={() => setPickingType('out')}
+                            className="w-full max-w-[450px] h-[43px] px-[14px] border border-[#CECFD2] rounded-[5px] text-[15px] bg-white text-[#1C1C1C] font-bold flex items-center justify-between hover:border-[#D1D1D1] transition-all"
+                        >
+                            <span>{checkOutTime || "--:--"}</span>
+                            <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                        </button>
                     </div>
 
                     {/* หมายเหตุ */}
@@ -398,23 +381,23 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                     {/* Status Badge below time */}
                     <div className="mt-1">
                         {selectedHistoryItem?.status === 'เข้างานปกติ' ? (
-                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold gap-1.5 border bg-[#E7FAEF] text-[#079455] border-[#079455]">
                                 <div className="w-4 h-4 rounded-full bg-[#079455] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px] text-white">check</span>
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none text-white translate-x-[0.5px]">check</span>
                                 </div>
                                 เข้างานปกติ
                             </div>
                         ) : selectedHistoryItem?.status === 'สาย' || selectedHistoryItem?.statusType === 'warning' ? (
-                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FDF4D6] text-[#FDB022] border-[#FDB022]">
                                 <div className="w-4 h-4 rounded-full bg-[#FDB022] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] -translate-y-[0.5px]">schedule</span>
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px]">schedule</span>
                                 </div>
                                 สาย
                             </div>
                         ) : selectedHistoryItem?.status === 'ขาด' || selectedHistoryItem?.statusType === 'danger' ? (
-                            <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-[11px] font-bold gap-1.5 border bg-[#FCEDED] text-[#EF4444] border-[#EF4444]">
                                 <div className="w-4 h-4 rounded-full bg-[#EF4444] flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden">
-                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px] translate-y-[0.5px]">close</span>
+                                    <span className="material-symbols-rounded !text-[12px] flex items-center justify-center leading-none translate-x-[0.5px]">close</span>
                                 </div>
                                 ขาด
                             </div>
@@ -445,57 +428,37 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
 
                     {/* Location */}
                     <div className="flex items-center gap-2 text-[#1C1C1C] text-[15px]">
-                        <span className="material-symbols-rounded text-[24px] text-[#1C1C1C]">
-                            {(selectedHistoryItem?.status === "เข้างานปกติ" || 
-                             selectedHistoryItem?.statusType === "success" || 
-                             selectedHistoryItem?.status === "สาย" || 
-                             selectedHistoryItem?.statusType === "warning" || 
-                             selectedHistoryItem?.status === "ไม่ลงเวลาออก") 
+                        <span className={`material-symbols-rounded text-[24px] ${(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
+                             ? "text-[#079455]" : "text-[#FDB022]"}`}>
+                            {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                              ? "apartment" : "globe_location_pin"}
                         </span>
-                        {(selectedHistoryItem?.status === "เข้างานปกติ" || 
-                         selectedHistoryItem?.statusType === "success" || 
-                         selectedHistoryItem?.status === "สาย" || 
-                         selectedHistoryItem?.statusType === "warning" || 
-                         selectedHistoryItem?.status === "ไม่ลงเวลาออก") 
+                        {(selectedHistoryItem?.location?.startsWith("ในสถานที่") || selectedHistoryItem?.location === "กฟภ. สำนักงานใหญ่" || !selectedHistoryItem?.location || selectedHistoryItem?.location === "-") 
                          ? "อยู่ในสถานที่" : "อยู่นอกสถานที่"}
                     </div>
 
-                    {/* Time Inputs */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <div className="text-[14px] text-[#828282] font-bold mb-2">เวลาเข้างาน</div>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={checkInTime}
-                                    onChange={(e) => setCheckInTime(e.target.value)}
-                                    className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
-                                />
-                                <button 
-                                    onClick={() => setCheckInTime("")}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
-                                >
-                                    <IconX className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setPickingType('in')}
+                                className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold flex items-center justify-between"
+                            >
+                                <span>{checkInTime || "--:--"}</span>
+                                <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                            </button>
                         </div>
                         <div>
                             <div className="text-[14px] text-[#828282] font-bold mb-2">เวลาออกงาน</div>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    value={checkOutTime}
-                                    onChange={(e) => setCheckOutTime(e.target.value)}
-                                    className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold focus:outline-none"
-                                />
-                                <button 
-                                    onClick={() => setCheckOutTime("")}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A0]"
-                                >
-                                    <IconX className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setPickingType('out')}
+                                className="w-full h-[48px] px-4 border border-[#CECFD2] rounded-[8px] text-[16px] bg-[#F8F9FA] text-[#1C1C1C] font-bold flex items-center justify-between"
+                            >
+                                <span>{checkOutTime || "--:--"}</span>
+                                <span className="material-symbols-rounded !text-[20px] text-gray-400">keyboard_arrow_down</span>
+                            </button>
                         </div>
                     </div>
 
@@ -583,21 +546,21 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             {/* ✅ Modal via Portal */}
             {mounted && showConfirm &&
                 createPortal(
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 lg:pl-[260px]">
-                        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl p-6 w-[290px] text-center flex flex-col items-center mx-4">
-                            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#11A75C] text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12" />
-                                </svg>
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px] lg:pl-[260px]">
+                        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] shadow-2xl p-8 w-[320px] text-center flex flex-col items-center mx-4 border border-white/20">
+                            <div className="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#DCFAE6] shadow-sm">
+                                <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                                    <span className="material-symbols-rounded !text-[24px]">check</span>
+                                </div>
                             </div>
-                            <h3 className="text-base font-bold mb-5 text-gray-800 dark:text-white">
-                                ยืนยันส่งคำขอแก้ไขเวลา
+                            <h3 className="text-[20px] font-bold mb-8 text-[#1C1C1C] dark:text-white">
+                                ยืนยันส่งคำขอ
                             </h3>
 
-                            <div className="flex gap-3 w-full">
+                            <div className="flex gap-4 w-full">
                                 <button
                                     onClick={() => setShowConfirm(false)}
-                                    className="flex-1 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50"
+                                    className="flex-1 py-3 bg-white border border-[#1C1C1C] rounded-[14px] text-[15px] font-bold text-[#1C1C1C] hover:bg-gray-50 transition-colors"
                                 >
                                     ย้อนกลับ
                                 </button>
@@ -605,7 +568,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
                                 <button
                                     onClick={handleSubmit}
                                     disabled={isLoading}
-                                    className={`flex-1 py-2.5 ${isLoading ? 'bg-gray-400' : 'bg-[#11A75C] hover:bg-[#0E8F4D]'} text-white rounded-xl text-sm font-bold flex items-center justify-center`}
+                                    className={`flex-1 py-3 ${isLoading ? 'bg-gray-400' : 'bg-[#11A75C] hover:bg-[#0E8F4D]'} text-white rounded-[14px] text-[15px] font-bold flex items-center justify-center transition-colors shadow-md`}
                                 >
                                     {isLoading ? (
                                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -621,21 +584,33 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             {/* ✅ Success Modal via Portal */}
             {mounted && showSuccess &&
                 createPortal(
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 lg:pl-[260px]">
-                        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl p-8 w-[280px] text-center flex flex-col items-center mx-4">
-                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#11A75C] text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12" />
-                                </svg>
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px] lg:pl-[260px]">
+                        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] shadow-2xl p-10 w-[300px] text-center flex flex-col items-center mx-4 border border-white/20">
+                            <div className="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6] shadow-sm">
+                                <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                                    <span className="material-symbols-rounded !text-[32px]">check</span>
+                                </div>
                             </div>
-                            <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                                ส่งคำขอแก้ไขเวลาสำเร็จ
+                            <h3 className="text-[22px] font-bold text-[#1C1C1C] dark:text-white">
+                                ส่งคำขอเรียบร้อยแล้ว
                             </h3>
                         </div>
                     </div>,
                     document.body
                 )
             }
+
+            {/* ✅ Time Picker Modal */}
+            <TimeWheelPicker 
+                isOpen={!!pickingType}
+                initialTime={pickingType === 'in' ? checkInTime : checkOutTime}
+                onConfirm={(time) => {
+                    if (pickingType === 'in') setCheckInTime(time);
+                    if (pickingType === 'out') setCheckOutTime(time);
+                    setPickingType(null);
+                }}
+                onClose={() => setPickingType(null)}
+            />
         </>
     );
 };

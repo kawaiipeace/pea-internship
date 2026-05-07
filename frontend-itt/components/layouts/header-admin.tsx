@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Link from 'next/link';
 import { IRootState } from '@/store';
-import { toggleSidebar, setAdminRole } from '@/store/themeConfigSlice';
+import { toggleSidebar } from '@/store/themeConfigSlice';
 import Dropdown from '@/components/dropdown';
 import IconMenu from '@/components/icon/icon-menu';
 import IconXCircle from '@/components/icon/icon-x-circle';
@@ -17,6 +17,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
 import useAuthStore from '@/store/authStore';
 import ImageWithAuth from '../ImageWithAuth';
+import UserAvatar from '../UserAvatar';
+import { RoleSwitchModal } from '../RoleSwitchModal';
 
 const Header = () => {
     const pathname = usePathname();
@@ -27,6 +29,7 @@ const Header = () => {
     const user = useAuthStore((state) => state.user);
     const fullName = user ? [user.fname, user.lname].filter(Boolean).join(' ') : 'Guest';
     const email = user?.email || '';
+    const [showRoleSwitchModal, setShowRoleSwitchModal] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -129,12 +132,23 @@ const Header = () => {
 
     return (
         <header className={`z-40 ${themeConfig.semidark && themeConfig.menu === 'horizontal' ? 'dark' : ''}`}>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .dropdown ul li a:hover {
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
+                }
+                .dropdown ul li button:hover {
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
+                }
+            ` }} />
             <div className="shadow-sm">
                 <div className="relative flex w-full items-center bg-white px-5 py-2.5 dark:bg-black">
                     <div className={`flex items-center gap-3 ltr:mr-4 rtl:ml-4 ${themeConfig.sidebar ? 'flex' : 'lg:hidden'}`}>
                         <button
                             type="button"
-                            className="collapse-icon flex flex-none rounded-full p-2 hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
+                            className="collapse-icon flex flex-none rounded-full p-2 hover:bg-[#FDF2FD] hover:text-[#9A0D8A] dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-[#9A0D8A]"
                             onClick={() => dispatch(toggleSidebar())}
                         >
                             <IconMenu className="h-5 w-5 text-[#6B7280]" />
@@ -147,11 +161,7 @@ const Header = () => {
                     <div className="flex items-center justify-center space-x-1.5 ltr:ml-auto rtl:mr-auto rtl:space-x-reverse dark:text-[#d0d2d6] lg:space-x-4">
                         <button
                             type="button"
-                            onClick={() => {
-                                const nextRole = isAdmin ? 'mentor' : 'admin';
-                                dispatch(setAdminRole(nextRole));
-                                router.push(nextRole === 'mentor' ? '/admin/mentor/approve' : '/admin');
-                            }}
+                            onClick={() => setShowRoleSwitchModal(true)}
                             className="flex w-28 items-center gap-2 rounded-xl border-2 border-[#9A0D8A] px-3 py-1.5 text-[#9A0D8A] hover:bg-[#9A0D8A]/5 transition-colors"
                         >
                             <div className="relative">
@@ -163,7 +173,7 @@ const Header = () => {
                             <Dropdown
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative block p-2 rounded-full hover:bg-white-light/90 hover:text-primary dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-primary"
+                                btnClassName="relative block p-2 rounded-full hover:bg-[#FDF2FD] hover:text-[#9A0D8A] dark:text-[#d0d2d6] dark:hover:bg-dark/60 dark:hover:text-[#9A0D8A]"
                                 button={
                                     <span>
                                         <img src="/admin-icon/notifications_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" alt="notification" className="h-8 w-8" />
@@ -233,34 +243,35 @@ const Header = () => {
                             <Dropdown
                                 offset={[0, 8]}
                                 placement={`${isRtl ? 'bottom-start' : 'bottom-end'}`}
-                                btnClassName="relative group block p-2 rounded-full hover:bg-white-light/90 dark:hover:bg-dark/60"
+                                btnClassName="relative group block p-2 rounded-full dark:hover:bg-dark/60"
                                 button={
-                                    <span className="flex items-center hover:text-primary">
-                                        <img src="/admin-icon/account_circle_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" alt="profile" className="h-8 w-8" />
-                                    </span>
+                                    <UserAvatar user={user} size="sm" />
                                 }
                             >
                                 <ul className="w-max min-w-[230px] !py-0 font-semibold text-dark dark:text-white-dark dark:text-white-light/90">
                                     <li>
-                                        <div className="flex flex-col px-4 py-4">
-                                            <h4 className="text-base whitespace-nowrap">
-                                                {fullName}
-                                                <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">แอดมิน</span>
-                                            </h4>
-                                            <button type="button" className="mt-1 text-left text-black/60 hover:text-primary dark:text-dark-light/60 dark:hover:text-white whitespace-nowrap">
-                                                {email}
-                                            </button>
+                                        <div className="flex items-center px-4 py-4">
+                                            <UserAvatar user={user} size="md" className="rounded-md" />
+                                            <div className="ltr:pl-4 rtl:pr-4">
+                                                <h4 className="text-base whitespace-nowrap">
+                                                    {fullName}
+                                                    <span className="rounded bg-success-light px-1 text-xs text-success ltr:ml-2 rtl:ml-2">แอดมิน</span>
+                                                </h4>
+                                                <button type="button" className="mt-1 text-left text-black/60 hover:text-[#9A0D8A] dark:text-dark-light/60 dark:hover:text-white whitespace-nowrap">
+                                                    {email}
+                                                </button>
+                                            </div>
                                         </div>
                                     </li>
                                     <li>
-                                        <Link href="/admin/profile" className="dark:hover:text-white">
+                                        <Link href="/admin/profile" className="hover:bg-[#FDF2FD] hover:!text-[#9A0D8A] dark:hover:text-white">
                                             <IconUser className="h-4.5 w-4.5 shrink-0 ltr:mr-2 rtl:ml-2" />
                                             Profile
                                         </Link>
                                     </li>
 
                                     <li className="border-t border-white-light dark:border-white-light/10">
-                                        <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-white-light/10" onClick={handleLogout}>
+                                        <button type="button" className="!py-3 text-danger flex w-full items-center px-4 hover:bg-[#FDF2FD] hover:text-[#9A0D8A]" onClick={handleLogout}>
                                             <IconLogout className="h-4.5 w-4.5 shrink-0 rotate-90 ltr:mr-2 rtl:ml-2" />
                                             Sign Out
                                         </button>
@@ -273,6 +284,11 @@ const Header = () => {
                 </div>
 
             </div>
+            <RoleSwitchModal
+                isOpen={showRoleSwitchModal}
+                onClose={() => setShowRoleSwitchModal(false)}
+                currentRole={isAdmin ? 'admin' : 'mentor'}
+            />
         </header>
     );
 };

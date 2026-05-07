@@ -2,9 +2,7 @@ export type ResetPasswordTemplateParams = {
   code: string;
 };
 
-export function resetPasswordTemplate({
-  code,
-}: ResetPasswordTemplateParams) {
+export function resetPasswordTemplate({ code }: ResetPasswordTemplateParams) {
   return `
     <!DOCTYPE html>
     <html lang="th">

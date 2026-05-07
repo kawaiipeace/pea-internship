@@ -109,6 +109,17 @@ body {
   }
 }
 
+@keyframes detail-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Navbar blended into dark background for credits page */
 .credits-nav-glass > nav {
   background: transparent !important;

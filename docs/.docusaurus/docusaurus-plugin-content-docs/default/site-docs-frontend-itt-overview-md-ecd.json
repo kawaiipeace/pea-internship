@@ -1,0 +1,20 @@
+{
+  "id": "frontend-itt/overview",
+  "title": "overview",
+  "description": "",
+  "source": "@site/docs/frontend-itt/overview.md",
+  "sourceDirName": "frontend-itt",
+  "slug": "/frontend-itt/overview",
+  "permalink": "/docs/frontend-itt/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/frontend-itt/overview.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "คู่มือผู้ดูแลระบบ (Admin Guide)",
+    "permalink": "/docs/frontend-itt/admin/"
+  }
+}

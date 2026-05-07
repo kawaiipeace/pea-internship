@@ -68,6 +68,11 @@ export const GetOffsiteTasksQuerySchema = t.Object({
       description: "โหมดการดู: 'all' (ทั้งหมดในแผนก), 'mine' (เฉพาะของตัวเอง)",
     })
   ),
+  search: t.Optional(
+    t.String({
+      description: "คำค้นหา (ชื่อนักศึกษา หรือ ตำแหน่ง)",
+    })
+  ),
 });
 
 export type GetOffsiteTasksQueryDto = typeof GetOffsiteTasksQuerySchema.static;

@@ -9,6 +9,9 @@ import { db } from "@/db";
 import {
   applicationInformations,
   applicationStatuses,
+  institutions,
+  internshipEndHistory,
+  internshipExtensions,
   staffProfiles,
   studentAttendanceSummary,
   studentProfiles,
@@ -22,6 +25,43 @@ const ROLE_OWNER = 2;
 const ROLE_INTERN = 3;
 
 export class UserService {
+  private calculateEndDateExcludingWeekends(
+    startDate: Date,
+    daysToAdd: number
+  ): Date {
+    const currentDate = new Date(startDate);
+    let addedDays = 0;
+    while (addedDays < daysToAdd) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        addedDays++;
+      }
+    }
+    return currentDate;
+  }
+
+  private calculateAllowedStartDate(endDate: Date, workingDays: number): Date {
+    const date = new Date(endDate);
+    date.setHours(0, 0, 0, 0);
+    let count = 0;
+
+    // Check if the end date itself is a working day
+    const endDay = date.getDay();
+    if (endDay !== 0 && endDay !== 6) {
+      count = 1;
+    }
+
+    while (count < workingDays) {
+      date.setDate(date.getDate() - 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        count++;
+      }
+    }
+    return date;
+  }
+
   async me(userId: string) {
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
@@ -139,9 +179,29 @@ export class UserService {
       conditions.push(eq(users.departmentId, departmentId));
     }
 
-    return db.query.users.findMany({
-      where: and(...conditions),
-    });
+    return await db
+      .select({
+        id: users.id,
+        fname: users.fname,
+        lname: users.lname,
+        nickname: users.displayUsername,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        departmentId: users.departmentId,
+        image: studentProfiles.image,
+        faculty: studentProfiles.faculty,
+        major: studentProfiles.major,
+        internshipStatus: studentProfiles.internshipStatus,
+        institutionName: institutions.name,
+      })
+      .from(users)
+      .leftJoin(studentProfiles, eq(users.id, studentProfiles.userId))
+      .leftJoin(
+        institutions,
+        eq(studentProfiles.institutionId, institutions.id)
+      )
+      .where(and(...conditions))
+      .orderBy(desc(users.createdAt));
   }
 
   async updateUser(
@@ -487,7 +547,7 @@ export class UserService {
       .where(eq(studentProfiles.userId, userId))
       .limit(1);
 
-    if (!profile || !profile.image) {
+    if (!profile?.image) {
       throw new NotFoundError("ผู้ใช้งานยังไม่ได้ตั้งรูปโปรไฟล์");
     }
 
@@ -509,5 +569,158 @@ export class UserService {
       console.error("Error fetching profile image from MinIO:", error);
       throw new NotFoundError("ไม่พบรูปภาพโปรไฟล์ หรือรูปภาพถูกลบไปแล้ว");
     }
+  }
+
+  async extendInternship(data: {
+    studentId: string;
+    hours: number;
+    mentorId: string;
+    reason?: string;
+  }) {
+    return await db.transaction(async (tx) => {
+      const [currentApp] = await tx
+        .select()
+        .from(applicationStatuses)
+        .where(
+          and(
+            eq(applicationStatuses.userId, data.studentId),
+            eq(applicationStatuses.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!currentApp) {
+        throw new Error("ไม่พบรายการฝึกงานที่กำลังดำเนินการ (Active) อยู่");
+      }
+
+      const [appInfo] = await tx
+        .select()
+        .from(applicationInformations)
+        .where(eq(applicationInformations.applicationStatusId, currentApp.id))
+        .limit(1);
+
+      if (!appInfo?.endDate) {
+        throw new Error("ไม่พบข้อมูลวันสิ้นสุดการฝึกงานเดิม");
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const currentEndDate = new Date(appInfo.endDate);
+
+      const allowedStartDate = this.calculateAllowedStartDate(
+        currentEndDate,
+        7
+      );
+
+      if (today < allowedStartDate) {
+        throw new Error(
+          "สามารถขอขยายเวลาได้เฉพาะในช่วง 7 วันทำการสุดท้ายของการฝึกงาน หรือหลังจากจบการฝึกงานแล้วเท่านั้น"
+        );
+      }
+
+      const daysToCompensate = Math.ceil(data.hours / 7);
+      const newEndDate = this.calculateEndDateExcludingWeekends(
+        currentEndDate,
+        daysToCompensate
+      );
+
+      // Update สถานะนักศึกษา
+      await tx
+        .update(studentProfiles)
+        .set({
+          internshipStatus: "EXTENDED",
+          statusNote: `COMPENSATION:${daysToCompensate}`,
+        })
+        .where(eq(studentProfiles.userId, data.studentId));
+
+      // บันทึกประวัติการขยายเวลา
+      await tx.insert(internshipExtensions).values({
+        applicationStatusId: currentApp.id,
+        requestBy: data.mentorId,
+        newEndDate: newEndDate,
+        additionalHours: String(data.hours),
+        reason: data.reason || "ชดเชยชั่วโมงการฝึกงานที่ยังไม่ครบ",
+        status: "APPROVED",
+        approvedBy: data.mentorId,
+        approvedAt: new Date(),
+      });
+
+      return {
+        success: true,
+        message: "บันทึกการชดเชยเวลาสำเร็จ",
+        newEndDate: newEndDate.toISOString(),
+      };
+    });
+  }
+
+  async completeInternship(studentId: string, actionBy: string, note?: string) {
+    return await db.transaction(async (tx) => {
+      const [currentApp] = await tx
+        .select({
+          id: applicationStatuses.id,
+          endDate: applicationInformations.endDate,
+          hoursGoal: applicationInformations.hours,
+        })
+        .from(applicationStatuses)
+        .leftJoin(
+          applicationInformations,
+          eq(
+            applicationStatuses.id,
+            applicationInformations.applicationStatusId
+          )
+        )
+        .where(
+          and(
+            eq(applicationStatuses.userId, studentId),
+            eq(applicationStatuses.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (!currentApp) {
+        throw new Error("ไม่พบรายการฝึกงานที่กำลังดำเนินการอยู่");
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (currentApp.endDate) {
+        const internEndDate = new Date(currentApp.endDate);
+        internEndDate.setHours(0, 0, 0, 0);
+
+        if (today < internEndDate) {
+          throw new Error(
+            `ยังไม่ถึงกำหนดวันสิ้นสุดการฝึกงาน (กำหนดจบวันที่: ${internEndDate.toLocaleDateString("th-TH")})`
+          );
+        }
+      }
+
+      await tx
+        .update(applicationStatuses)
+        .set({
+          applicationStatus: "COMPLETE",
+          isActive: false,
+          statusNote: note || "จบการฝึกงานสำเร็จ",
+        })
+        .where(eq(applicationStatuses.id, currentApp.id));
+
+      const [profile] = await tx
+        .update(studentProfiles)
+        .set({
+          internshipStatus: "COMPLETE",
+          isActive: false,
+        })
+        .where(eq(studentProfiles.userId, studentId))
+        .returning();
+
+      await tx.insert(internshipEndHistory).values({
+        studentProfileId: profile.id,
+        status: "COMPLETE",
+        reason: note || "จบการฝึกงานตามกำหนดเวลา",
+        changedBy: actionBy,
+      });
+
+      return { success: true, message: "บันทึกการจบการฝึกงานเรียบร้อยแล้ว" };
+    });
   }
 }

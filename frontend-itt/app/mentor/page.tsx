@@ -39,6 +39,7 @@ interface TimeCorrectionRequest {
     reason: string;
     attachmentUrl: string | null;
     status: string;
+    attendanceStatus?: string;
 }
 
 
@@ -306,7 +307,12 @@ const ActionButtons = ({ onReject, onApprove }: { onReject: () => void; onApprov
     </>
 );
 
-const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate }: any) => (
+const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText, typeIcon, typeCircleBg, typeBorder, submittedDate, attendanceStatusBadge }: any) => {
+    const match = typeof studentName === 'string' ? studentName.match(/^(.*?)\s*\(([^)]+)\)\s*$/) : null;
+    const displayName = match ? match[1] : studentName;
+    const nickname = match ? match[2] : null;
+
+    return (
     <div className="flex items-start gap-4 mb-4">
         <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-gray-100">
             <ImageWithAuth 
@@ -317,19 +323,25 @@ const StudentHeader = ({ userId, profileImg, studentName, type, typeBg, typeText
             />
         </div>
         <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-800 dark:text-white-light text-base leading-tight mb-1.5">{studentName}</p>
+            <p className="font-bold text-gray-800 dark:text-white-light text-base leading-tight mb-1.5">
+                {displayName}{nickname && <span className="font-bold text-[#000000] dark:text-white-light"> ({nickname})</span>}
+            </p>
             <div className="flex items-center gap-2 mb-1">
-                <span className={`inline-flex items-center gap-2 text-[12px] pl-1 pr-4 py-1 rounded-full border ${typeBg} ${typeText} ${typeBorder}`}>
-                    <span className={`w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 ${typeCircleBg}`}>
-                        <span className="material-symbols-outlined text-white text-[16px] select-none" style={{ fontSize: '18px' }}>{typeIcon}</span>
+                {type && (
+                    <span className={`inline-flex items-center gap-2 text-[12px] pl-1 pr-4 py-1 rounded-full border ${typeBg} ${typeText} ${typeBorder}`}>
+                        <span className={`w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 ${typeCircleBg}`}>
+                            <span className="material-symbols-outlined text-white text-[16px] select-none" style={{ fontSize: '18px' }}>{typeIcon}</span>
+                        </span>
+                        {type}
                     </span>
-                    {type}
-                </span>
+                )}
+                {attendanceStatusBadge && attendanceStatusBadge}
             </div>
-            <p className="text-xs text-gray-400">วันที่ส่งคำขอ : {submittedDate}</p>
+            <p className="text-[14px] text-[#85888E]">วันที่ส่งคำขอ : {submittedDate}</p>
         </div>
     </div>
-);
+    );
+};
 
 
 // ---- Helper Methods ----
@@ -368,16 +380,16 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
             <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                 calendar_today
             </span>
-            <span>วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
+            <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
         </div>
 
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-xs text-gray-400 mb-0.5">เหตุผลการลา</p>
-            <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการลา</p>
+            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-            <span className="text-gray-400">ไฟล์แนบ :</span>
+            <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี) :</span>
             {request.hasFile ? (
                 <div 
                     onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
@@ -387,6 +399,8 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
                         <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
+                    ) : request.fileIcon === 'picture_as_pdf' ? (
+                        <span className="material-symbols-outlined text-[#000000]" style={{ fontSize: '18px' }}>picture_as_pdf</span>
                     ) : (
                         <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -419,19 +433,33 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
         }
     };
 
+    const getAttendanceStatusBadge = (attendanceStatus?: string) => {
+        if (!attendanceStatus) return null;
+        const map: Record<string, { label: string; icon: string; bg: string; text: string; border: string; iconBg: string }> = {
+            LATE:        { label: 'สาย',           icon: 'schedule',           bg: 'bg-[#FDF4D6]', text: 'text-[#FDB022]', border: 'border-[#FDB022]', iconBg: 'bg-[#FDB022]' },
+            ABSENT:      { label: 'ขาด',            icon: 'close',              bg: 'bg-[#FCEDED]', text: 'text-[#EF4444]', border: 'border-[#EF4444]', iconBg: 'bg-[#EF4444]' },
+            MISSING_OUT: { label: 'ไม่ลงเวลาออก',  icon: 'hourglass_disabled',  bg: 'bg-[#F3F4F6]', text: 'text-[#6B7280]', border: 'border-[#6B7280]', iconBg: 'bg-[#6B7280]' },
+        };
+        const cfg = map[attendanceStatus];
+        if (!cfg) return null;
+        return (
+            <span className={`inline-flex items-center gap-1.5 text-[14px] pl-1 pr-3 py-1 rounded-full border font-bold ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                <span className={`w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0 ${cfg.iconBg}`}>
+                    <span className="material-symbols-rounded text-white" style={{ fontSize: '12px' }}>{cfg.icon}</span>
+                </span>
+                {cfg.label}
+            </span>
+        );
+    };
+
     return (
         <div className="bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-white-dark/10 rounded-2xl p-5 shadow-sm">
             <StudentHeader 
                 userId={undefined} 
                 profileImg={request.profileImg}
                 studentName={request.studentName}
-                type="คำขอแก้ไขเวลา"
-                typeBg="bg-[#FFF6D4]"
-                typeText="text-gray-600"
-                typeBorder="border-[#FFCA5F]"
-                typeIcon="manage_history"
-                typeCircleBg="bg-[#D9692C]"
                 submittedDate={getThaiDate(request.createdAt)}
+                attendanceStatusBadge={getAttendanceStatusBadge(request.attendanceStatus)}
             />
 
             {/* Date */}
@@ -439,18 +467,18 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
                 <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
                     calendar_today
                 </span>
-                <span>วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
+                <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
             </div>
 
             {/* Time Row */}
             <div className="flex flex-col sm:flex-row gap-3 mb-2">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                     <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#E4E7EC]">
                         <span className="material-symbols-outlined text-black" style={{ fontSize: '16px' }}>schedule</span>
                     </span>
                     <span>เวลาเดิม : <span className="font-semibold text-gray-800 dark:text-white-light">{request.originalTime}</span></span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                <div className="flex items-center gap-2 text-[16px] text-gray-600 dark:text-white-dark">
                     <span className="w-[26px] h-[26px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#A9EFC5]">
                         <span className="material-symbols-outlined text-[#074D31]" style={{ fontSize: '16px' }}>manage_history</span>
                     </span>
@@ -459,19 +487,19 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
             </div>
 
             {/* Work Hours */}
-            <p className="text-sm text-gray-500 mb-3">
+            <p className="text-[16px] text-gray-500 mb-3">
                 ชั่วโมงทำงานที่แก้ไข : <span className="font-semibold text-gray-800 dark:text-white-light">{request.hoursWorked} ชั่วโมง</span>
             </p>
 
             {/* Reason Box */}
             <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-                <p className="text-xs text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
-                <p className="text-sm text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+                <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
+                <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
             </div>
 
             {/* File Attachment */}
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
-                <span className="text-gray-400">ไฟล์แนบ :</span>
+                <span className="text-gray-400 text-[16px]">ไฟล์แนบ (ถ้ามี) :</span>
                 {request.attachmentUrl ? (
                     <div 
                         onClick={() => request.attachmentUrl && handleViewFile(request.attachmentUrl)}
@@ -488,6 +516,24 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
         </div>
     );
 };
+
+const EmptyState = ({ tabType }: { tabType: 'leave' | 'time-edit' }) => (
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+        <div className="w-[280px] h-auto mb-6">
+            <img 
+                src="/mentor_approve.png" 
+                alt="No requests" 
+                className="w-full h-full object-contain" 
+            />
+        </div>
+        <h3 className="text-[24px] text-[#61646C] dark:text-white-light mb-2 leading-tight">
+            ไม่มีรายการคำขออนุมัติ{tabType === 'leave' ? 'ลา' : 'แก้ไขเวลา'}ในขณะนี้
+        </h3>
+        <p className="text-[16px] text-[#61646C] dark:text-gray-400">
+            คุณจัดการคำขอทั้งหมดครบถ้วนแล้ว หรือยังไมมีคำขอใหม่ส่งเข้ามาในตอนนี้
+        </p>
+    </div>
+);
 
 // ---- Main Page ----
 
@@ -577,12 +623,16 @@ const ApprovalRequestPage = () => {
                             : `${getDay(startObj)} - ${getThaiDate(endObj)}`;
 
                         const hasFile = !!item.attachmentUrl;
-                        let fileName = '';
+                        let fileName = 'ดูไฟล์แนบ';
                         let fileIcon = 'image';
                         if (hasFile) {
-                            fileName = item.attachmentUrl.split('/').pop() || 'เอกสารแนบ';
-                            const ext = fileName.split('.').pop()?.toLowerCase();
-                            fileIcon = ['jpg', 'jpeg', 'png', 'gif'].includes(ext || '') ? 'image' : 'pdf';
+                            const extension = item.attachmentUrl.split('.').pop()?.toLowerCase();
+                            if (extension === 'pdf') {
+                                fileIcon = 'picture_as_pdf';
+                                fileName = `ไฟล์เอกสาร.${extension}`;
+                            } else {
+                                fileName = `รูปภาพหลักฐาน.${extension}`;
+                            }
                         }
 
                         return {
@@ -595,7 +645,7 @@ const ApprovalRequestPage = () => {
                             typeBorder,
                             typeIcon,
                             typeCircleBg,
-                            submittedDate: getThaiDate(startObj), 
+                            submittedDate: getThaiDate(new Date(item.createdAt)), 
                             leaveDate: leaveDateDisplay,
                             reason: item.reason || '-',
                             profileImg: item.profileImg || '/assets/images/profile-1.jpeg',
@@ -642,6 +692,12 @@ const ApprovalRequestPage = () => {
             setLoading(false);
         }
     };
+
+    // Fetch both counts on initial mount so summary cards show correct numbers
+    useEffect(() => {
+        fetchLeaveRequests();
+        fetchTimeCorrectionRequests();
+    }, []);
 
     useEffect(() => {
         if (activeTab === 'leave') {
@@ -726,7 +782,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'leave' as const,
             title: 'คำขอลา',
-            count: `${activeTab === 'leave' ? leaveMeta.totalRecords : leaveRequests.length} รายการ`,
+            count: `${leaveMeta.totalRecords} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 bg-[#1AB3FF]">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '22px' }}>lab_profile</span>
@@ -740,7 +796,7 @@ const ApprovalRequestPage = () => {
         {
             key: 'time-edit' as const,
             title: 'คำขอแก้ไขเวลา',
-            count: `${activeTab === 'time-edit' ? timeMeta.totalRecords : timeCorrectionRequests.length} รายการ`,
+            count: `${timeMeta.totalRecords} รายการ`,
             icon: (
                 <div className="w-[28px] h-[28px] rounded-full bg-[#D9692C] flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-white" style={{ fontSize: '20px' }}>edit_square</span>
@@ -789,26 +845,21 @@ const ApprovalRequestPage = () => {
 
             {/* Request List */}
             <div className="space-y-4">
-                {activeTab === 'leave' ? (
-                    loading ? (
-                        <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
-                    ) : records.length === 0 ? (
-                        <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอลาในขณะนี้</p>
-                    ) : (
-                        records.map((r) => (
-                            <LeaveCard key={(r as any).id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
-                        ))
-                    )
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="w-10 h-10 border-4 border-gray-100 border-t-blue-500 rounded-full animate-spin mb-4" />
+                        <p className="text-[14px] text-gray-500">กำลังโหลดข้อมูล...</p>
+                    </div>
+                ) : records.length === 0 ? (
+                    <EmptyState tabType={activeTab} />
                 ) : (
-                    loading ? (
-                        <p className="text-center text-sm text-gray-500 py-8">กำลังโหลดข้อมูล...</p>
-                    ) : records.length === 0 ? (
-                        <p className="text-center text-sm text-gray-500 py-8">ไม่มีคำขอแก้ไขเวลาในขณะนี้</p>
-                    ) : (
-                        records.map((r) => (
+                    records.map((r) => (
+                        activeTab === 'leave' ? (
+                            <LeaveCard key={(r as any).id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
+                        ) : (
                             <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', [(r as any).id])} onApprove={() => openApproveConfirm([(r as any).id])} />
-                        ))
-                    )
+                        )
+                    ))
                 )}
             </div>
 

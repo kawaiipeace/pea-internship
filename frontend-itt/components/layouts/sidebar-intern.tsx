@@ -90,6 +90,26 @@ const Sidebar = () => {
 
     return (
         <div className={semidark ? 'dark' : ''}>
+            <style dangerouslySetInnerHTML={{ __html: `
+                .sidebar ul li.nav-item a.active {
+                    background-color: #FDF2FD !important;
+                    color: #9A0D8A !important;
+                }
+                .sidebar ul li.nav-item a.active svg {
+                    color: #9A0D8A !important;
+                }
+                /* Hide the dash/bullet in sub-menu */
+                .sidebar ul li.nav-item ul li a:before {
+                    display: none !important;
+                }
+                .sidebar ul li.nav-item a:hover {
+                    color: #9A0D8A !important;
+                    background-color: #FDF2FD !important;
+                }
+                .sidebar ul li.nav-item a:hover svg {
+                    color: #9A0D8A !important;
+                }
+            ` }} />
             <nav
                 className={`sidebar fixed bottom-0 top-0 z-50 h-full min-h-screen w-[260px] shadow-[5px_0_25px_0_rgba(94,92,154,0.1)] transition-all duration-300 ${semidark ? 'text-white-dark' : ''}`}
             >
@@ -120,15 +140,15 @@ const Sidebar = () => {
                                             <li className="menu nav-item">
                                                 <button
                                                     type="button"
-                                                    className={`${currentMenu === 'chat' ? 'active' : ''} nav-link group w-full`}
+                                                    className={`${currentMenu === 'chat' || pathname === '/intern' || pathname === '/intern/' || pathname === '/intern/history' ? '!bg-[#FDF2FD] !text-[#9A0D8A]' : ''} nav-link group w-full`}
                                                     onClick={() => toggleMenu('chat')}
                                                 >
                                                     <div className="flex items-center">
-                                                        <IconClock className="h-9 w-9 group-hover:!text-[#A80689]" />
-                                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark ">{t('การลงเวลาปฏิบัติงาน')}</span>
+                                                        <IconClock className={`h-9 w-9 ${(currentMenu === 'chat' || pathname === '/intern' || pathname === '/intern/' || pathname === '/intern/history') ? '!text-[#9A0D8A]' : ''} group-hover:!text-[#9A0D8A]`} />
+                                                        <span className={`${(currentMenu === 'chat' || pathname === '/intern' || pathname === '/intern/' || pathname === '/intern/history') ? '!text-[#9A0D8A]' : 'text-black dark:text-[#506690]'} ltr:pl-3 rtl:pr-3 dark:group-hover:text-white-dark `}>{t('การลงเวลาปฏิบัติงาน')}</span>
                                                     </div>
 
-                                                    <div className={currentMenu !== 'chat' ? '-rotate-90 rtl:rotate-90' : ''}>
+                                                    <div className={(currentMenu === 'chat' || pathname === '/intern' || pathname === '/intern/' || pathname === '/intern/history') ? 'text-[#9A0D8A]' : (currentMenu !== 'chat' ? '-rotate-90 rtl:rotate-90' : '')}>
                                                         <IconCaretDown />
                                                     </div>
                                                 </button>
@@ -136,10 +156,10 @@ const Sidebar = () => {
                                                 <AnimateHeight duration={300} height={currentMenu === 'chat' ? 'auto' : 0}>
                                                     <ul className="sub-menu text-gray-500">
                                                         <li>
-                                                            <Link href="/intern/">{t('ลงเวลาเข้า-ออก')}</Link>
+                                                            <Link href="/intern/" className={`${(pathname === '/intern' || pathname === '/intern/') ? '!text-[#9A0D8A]' : ''}`}>{t('ลงเวลาเข้า-ออก')}</Link>
                                                         </li>
                                                         <li>
-                                                            <Link href="/intern/history">{t('ประวัติการลงเวลา')}</Link>
+                                                            <Link href="/intern/history" className={`${pathname === '/intern/history' ? '!text-[#9A0D8A]' : ''}`}>{t('ประวัติการลงเวลา')}</Link>
                                                         </li>
                                                     </ul>
                                                 </AnimateHeight>
@@ -148,15 +168,15 @@ const Sidebar = () => {
                                             <li className="menu nav-item">
                                                 <button
                                                     type="button"
-                                                    className={`${currentMenu === 'leave' ? 'active' : ''} nav-link group w-full`}
+                                                    className={`${currentMenu === 'leave' || pathname === '/intern/leave-history' ? '!bg-[#FDF2FD] !text-[#9A0D8A]' : ''} nav-link group w-full`}
                                                     onClick={() => toggleMenu('leave')}
                                                 >
                                                     <div className="flex items-center">
-                                                        <IconCalendar className="h-9 w-9 group-hover:!text-[#A80689]" />
-                                                        <span className="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">{t('การลาปฏิบัติงาน')}</span>
+                                                        <IconCalendar className={`h-9 w-9 ${(currentMenu === 'leave' || pathname === '/intern/leave-history') ? '!text-[#9A0D8A]' : ''} group-hover:!text-[#9A0D8A]`} />
+                                                        <span className={`${(currentMenu === 'leave' || pathname === '/intern/leave-history') ? '!text-[#9A0D8A]' : 'text-black dark:text-[#506690]'} ltr:pl-3 rtl:pr-3 dark:group-hover:text-white-dark`}>{t('การลาปฏิบัติงาน')}</span>
                                                     </div>
 
-                                                    <div className={currentMenu !== 'leave' ? '-rotate-90 rtl:rotate-90' : ''}>
+                                                    <div className={(currentMenu === 'leave' || pathname === '/intern/leave-history') ? 'text-[#9A0D8A]' : (currentMenu !== 'leave' ? '-rotate-90 rtl:rotate-90' : '')}>
                                                         <IconCaretDown />
                                                     </div>
                                                 </button>
@@ -164,7 +184,7 @@ const Sidebar = () => {
                                                 <AnimateHeight duration={300} height={currentMenu === 'leave' ? 'auto' : 0}>
                                                     <ul className="sub-menu text-gray-500">
                                                         <li>
-                                                            <Link href="/intern/leave-history">{t('ประวัติการลา')}</Link>
+                                                            <Link href="/intern/leave-history" className={`${pathname === '/intern/leave-history' ? '!text-[#9A0D8A]' : ''}`}>{t('ประวัติการลา')}</Link>
                                                         </li>
                                                     </ul>
                                                 </AnimateHeight>

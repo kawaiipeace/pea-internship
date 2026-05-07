@@ -6,10 +6,16 @@ import {
   InternalServerError,
 } from "@/common/exceptions";
 import { db } from "@/db";
-import { accounts, passwordResetTokens, studentProfiles, users } from "@/db/schema";
+import {
+  accounts,
+  passwordResetTokens,
+  studentProfiles,
+  userFcmTokens,
+  users,
+} from "@/db/schema";
 import { type Auth, auth } from "@/lib/auth";
-import type * as model from "./model";
 import { sendResetPasswordCodeEmail } from "@/modules/mail/service";
+import type * as model from "./model";
 
 const ROLE_INTERN = 3;
 
@@ -104,14 +110,14 @@ export class AuthService {
       asResponse: true,
     });
 
-    if (!response || !response.ok) {
+    if (!response?.ok) {
       throw new BadRequestError("Invalid phone number or password");
     }
 
     const authData = await response.clone().json();
     const userId = authData.user.id;
 
-    const studentProfile = await db
+    await db
       .select({
         internshipStatus: studentProfiles.internshipStatus,
       })
@@ -119,22 +125,27 @@ export class AuthService {
       .where(eq(studentProfiles.userId, userId))
       .limit(1);
 
-    const profile = studentProfile[0];
-
-    if (!profile || profile.internshipStatus !== "ACTIVE") {
-      throw new ForbiddenError(
-        "การเข้าสู่ระบบถูกปฏิเสธ: สถานะการฝึกงานของคุณต้องเป็น ACTIVE เท่านั้น"
-      );
-    }
+    // if (!profile || profile.internshipStatus !== "ACTIVE") {
+    //   throw new ForbiddenError(
+    //     "การเข้าสู่ระบบถูกปฏิเสธ: สถานะการฝึกงานของคุณต้องเป็น ACTIVE เท่านั้น"
+    //   );
+    // }
 
     return response;
   }
 
-  async logout(headers: Headers) {
+  async logout(headers: Headers, userId: string) {
     const response = await auth.api.signOut({
       headers: headers,
       asResponse: true,
     });
+
+    try {
+      await db.delete(userFcmTokens).where(eq(userFcmTokens.userId, userId));
+      console.log(`[FCM] All tokens removed for user: ${userId}`);
+    } catch (error) {
+      console.error("[FCM] Failed to remove tokens during logout:", error);
+    }
 
     return response;
   }
@@ -166,10 +177,7 @@ export class AuthService {
 
     const code = crypto.randomInt(100000, 1000000).toString();
 
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(code)
-      .digest("hex");
+    const tokenHash = crypto.createHash("sha256").update(code).digest("hex");
 
     await db.insert(passwordResetTokens).values({
       userId: user.id,
