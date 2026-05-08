@@ -1,6 +1,11 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect, useRef } from "react";
 import { Transition, Dialog } from "@headlessui/react";
+import { createPortal } from "react-dom";
 import EditTimeForm from "@/components/history/edit-time-form";
+import TimeWheelPicker from "./TimeWheelPicker";
+import axiosInstance from "@/api/axios";
+import Swal from "sweetalert2";
+import IconCloudDownload from "@/components/icon/icon-cloud-download";
 
 interface HistoryDetailModalProps {
   isOpen: boolean;
@@ -12,6 +17,7 @@ interface HistoryDetailModalProps {
   onViewFile: (key: string, filename: string) => void;
   onAutoResubmit: (item: any) => void;
   onEditClick: (item: any) => void;
+  onSuccess?: () => void;
   thaiMonthsFull: string[];
 }
 
@@ -25,11 +31,126 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
   onViewFile,
   onAutoResubmit,
   onEditClick,
+  onSuccess,
   thaiMonthsFull,
 }) => {
   // Swipe to close state
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchTranslateY, setTouchTranslateY] = useState(0);
+
+  // In-place editing state for rejected requests
+  const [reason, setReason] = useState("");
+  const [checkInTime, setCheckInTime] = useState("");
+  const [checkOutTime, setCheckOutTime] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pickingType, setPickingType] = useState<'in' | 'out' | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (selectedHistoryItem && selectedHistoryItem.approvalStatus === 'denied') {
+      setReason(selectedHistoryItem.reqReason || "");
+      setCheckInTime(selectedHistoryItem.reqCheckInTime || "08:30");
+      setCheckOutTime(selectedHistoryItem.reqCheckOutTime || "16:30");
+      setSelectedFile(null);
+    }
+  }, [selectedHistoryItem]);
+
+  const handleInPlaceSubmit = async () => {
+    if (!reason.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'กรุณากรอกเหตุผล',
+        confirmButtonText: 'ตกลง',
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: 'bg-[#A80689] text-white px-8 py-2 rounded-lg font-bold'
+        }
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      html: `
+        <div class="flex flex-col items-center">
+          <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#DCFAE6]">
+            <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+              <span class="material-symbols-rounded !text-[24px]">check</span>
+            </div>
+          </div>
+          <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-4">ยืนยันส่งคำขอ</h2>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ย้อนกลับ',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'rounded-[16px] p-8 w-auto min-w-[320px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+        actions: 'flex gap-3 w-full px-4',
+        confirmButton: 'flex-1 py-2.5 bg-[#11A75C] hover:bg-[#0E8F4D] text-white rounded-xl text-[15px] font-bold order-2',
+        cancelButton: 'flex-1 py-2.5 bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-xl text-[15px] font-bold order-1'
+      }
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('attendanceLogId', String(selectedHistoryItem.id));
+      formData.append('checkInTime', checkInTime);
+      formData.append('checkOutTime', checkOutTime);
+      formData.append('reason', reason);
+      if (selectedFile) {
+        formData.append('attachment', selectedFile);
+      }
+
+      await axiosInstance.put('/check-time/edit', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      await Swal.fire({
+        html: `
+          <div class="flex flex-col items-center py-4">
+            <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6]">
+              <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                <span class="material-symbols-rounded !text-[32px]">check</span>
+              </div>
+            </div>
+            <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ส่งคำขอเรียบร้อยแล้ว</h2>
+          </div>
+        `,
+        showConfirmButton: false,
+        timer: 2000,
+        customClass: {
+          popup: 'rounded-[20px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+        }
+      });
+
+      onSuccess?.();
+      onClose();
+    } catch (error: any) {
+      console.error("Failed to resubmit:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: error.response?.data?.message || 'ไม่สามารถส่งคำขอได้',
+        confirmButtonText: 'ตกลง',
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: 'bg-[#EF4444] text-white px-8 py-2 rounded-lg font-bold'
+        }
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientY);
@@ -132,6 +253,10 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                     <EditTimeForm
                       selectedHistoryItem={selectedHistoryItem}
                       setIsEditingTime={setIsEditingTime}
+                      onSuccess={() => {
+                        onSuccess?.();
+                        onClose();
+                      }}
                       handleTouchStart={handleTouchStart}
                       handleTouchMove={handleTouchMove}
                       handleTouchEnd={handleTouchEnd}
@@ -184,7 +309,7 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                         <button
                           type="button"
                           className="w-full h-[48px] bg-[#A80689] text-white rounded-[12px] text-[15px] font-bold shadow-sm hover:bg-[#A80689]/90 transition-colors flex items-center justify-center"
-                          onClick={() => onEditClick(selectedHistoryItem)}
+                          onClick={() => setIsEditingTime(true)}
                         >
                           ส่งคำขอแก้ไขเวลา
                         </button>
@@ -460,7 +585,7 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                                   </div>
 
                                   {/* Card 2: New Time (Requested) */}
-                                  <div className="flex-1 h-[175px] bg-[#FFF5FD] border border-[#A80689] rounded-[16px] p-3 shadow-sm flex flex-col min-w-0">
+                                  <div className={`flex-1 h-[175px] ${selectedHistoryItem.approvalStatus === 'denied' ? 'bg-white border-dashed' : 'bg-[#FFF5FD]'} border border-[#A80689] rounded-[16px] p-3 shadow-sm flex flex-col min-w-0`}>
                                     <div className="inline-flex items-center gap-1.5 text-[#A80689] font-bold text-[14px] mb-2.5">
                                       <div className="w-[30px] h-[30px] rounded-full bg-[#A80689] flex items-center justify-center text-white shrink-0">
                                         <span className="material-symbols-rounded text-[20px]">
@@ -489,23 +614,42 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                                         </span>
                                       </div>
                                       <div className="space-y-1.5 text-[13px] text-[#A80689] font-medium">
-                                        <div>
-                                          เวลาเข้า :{" "}
-                                          {
-                                            selectedHistoryItem.reqCheckInTime
-                                          }
-                                        </div>
-                                        <div>
-                                          เวลาออก :{" "}
-                                          {
-                                            selectedHistoryItem.reqCheckOutTime
-                                          }
-                                        </div>
+                                        {selectedHistoryItem.approvalStatus === 'denied' ? (
+                                          <>
+                                            <div className="flex items-center gap-2">
+                                              เวลาเข้า : 
+                                              <button 
+                                                onClick={() => setPickingType('in')}
+                                                className="px-2 py-0.5 border border-[#A80689] rounded-md font-bold bg-[#FFF5FD] hover:bg-[#A80689] hover:text-white transition-colors"
+                                              >
+                                                {checkInTime}
+                                              </button>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              เวลาออก : 
+                                              <button 
+                                                onClick={() => setPickingType('out')}
+                                                className="px-2 py-0.5 border border-[#A80689] rounded-md font-bold bg-[#FFF5FD] hover:bg-[#A80689] hover:text-white transition-colors"
+                                              >
+                                                {checkOutTime}
+                                              </button>
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <div>
+                                              เวลาเข้า :{" "}
+                                              {selectedHistoryItem.reqCheckInTime}
+                                            </div>
+                                            <div>
+                                              เวลาออก :{" "}
+                                              {selectedHistoryItem.reqCheckOutTime}
+                                            </div>
+                                          </>
+                                        )}
                                         <div className="truncate">
                                           ชั่วโมงทำงาน:{" "}
-                                          {
-                                            selectedHistoryItem.reqWorkingHours
-                                          }
+                                          {selectedHistoryItem.approvalStatus === 'denied' ? 'คำนวณหลังส่ง' : selectedHistoryItem.reqWorkingHours}
                                         </div>
                                       </div>
                                     </div>
@@ -517,10 +661,19 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                                   <div className="flex items-center gap-2 text-[16px]  text-gray-800">
                                     เหตุผลการแก้ไขเวลา
                                   </div>
-                                  <div className="w-full min-h-[42px] bg-[#F9FAFB] border border-[#CECFD2] rounded-[10px] px-4 py-2.5 flex items-center text-[14px] text-gray-700 shadow-sm leading-relaxed">
-                                    {selectedHistoryItem.reqReason ||
-                                      "ไม่ได้ระบุ"}
-                                  </div>
+                                  {selectedHistoryItem.approvalStatus === 'denied' ? (
+                                    <textarea
+                                      rows={1}
+                                      value={reason}
+                                      onChange={(e) => setReason(e.target.value)}
+                                      className="w-full min-h-[42px] bg-white border border-[#A80689] rounded-[10px] px-4 py-2.5 flex items-center text-[14px] text-gray-700 shadow-sm leading-relaxed focus:outline-none resize-none"
+                                      placeholder="กรอกเหตุผลการแก้ไขเวลา"
+                                    />
+                                  ) : (
+                                    <div className="w-full min-h-[42px] bg-[#F9FAFB] border border-[#CECFD2] rounded-[10px] px-4 py-2.5 flex items-center text-[14px] text-gray-700 shadow-sm leading-relaxed">
+                                      {selectedHistoryItem.reqReason || "ไม่ได้ระบุ"}
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Evidence Section (Updated Mobile) */}
@@ -529,7 +682,30 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                                     <span className="whitespace-nowrap">
                                       ไฟล์แนบ :
                                     </span>
-                                    {selectedHistoryItem.evidence ? (
+                                    {selectedHistoryItem.approvalStatus === 'denied' ? (
+                                      <div className="flex items-center gap-2">
+                                        <input
+                                          type="file"
+                                          ref={fileInputRef}
+                                          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                          className="hidden"
+                                          accept="image/*, .pdf"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => fileInputRef.current?.click()}
+                                          className={`flex items-center gap-2 px-3 h-[35px] rounded-lg border text-[12px] font-bold transition-all ${selectedFile ? 'bg-[#E7FAEF] border-[#079455] text-[#079455]' : 'bg-white border-[#A80689] text-[#A80689]'}`}
+                                        >
+                                          <span className="material-symbols-rounded text-[20px]">
+                                            {selectedFile ? 'check_circle' : 'upload_file'}
+                                          </span>
+                                          {selectedFile ? selectedFile.name : 'เลือกไฟล์ใหม่'}
+                                        </button>
+                                        {!selectedFile && selectedHistoryItem.evidence && (
+                                          <span className="text-[11px] text-gray-400 font-medium">(ใช้ไฟล์เดิมหากไม่เลือกใหม่)</span>
+                                        )}
+                                      </div>
+                                    ) : selectedHistoryItem.evidence ? (
                                       <button
                                         type="button"
                                         onClick={() =>
@@ -651,13 +827,18 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                                 className="w-full h-[50px] bg-[#A80689] text-white rounded-[12px] text-[17px] font-bold flex items-center justify-center shadow-lg shadow-purple-100"
                                 onClick={() => {
                                   if (selectedHistoryItem.approvalStatus === 'denied') {
-                                    onAutoResubmit(selectedHistoryItem);
+                                    handleInPlaceSubmit();
                                   } else {
-                                    onEditClick(selectedHistoryItem);
+                                    setIsEditingTime(true);
                                   }
                                 }}
+                                disabled={isSubmitting}
                               >
-                                {selectedHistoryItem.approvalStatus === 'denied' ? 'ส่งคำขอแก้ไขเวลาอีกครั้ง' : 'ส่งคำขอแก้ไขเวลา'}
+                                {isSubmitting ? (
+                                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                  selectedHistoryItem.approvalStatus === 'denied' ? 'ส่งคำขอแก้ไขเวลาอีกครั้ง' : 'ส่งคำขอแก้ไขเวลา'
+                                )}
                               </button>
                             </div>
                           )}
@@ -665,6 +846,23 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
                     </div>
                   )}
                 </div>
+
+                {/* ✅ Time Picker Modal via Portal */}
+                {mounted && 
+                  createPortal(
+                    <TimeWheelPicker 
+                      isOpen={!!pickingType}
+                      initialTime={pickingType === 'in' ? checkInTime : checkOutTime}
+                      onConfirm={(time) => {
+                        if (pickingType === 'in') setCheckInTime(time);
+                        if (pickingType === 'out') setCheckOutTime(time);
+                        setPickingType(null);
+                      }}
+                      onClose={() => setPickingType(null)}
+                    />,
+                    document.body
+                  )
+                }
               </Dialog.Panel>
             </Transition.Child>
           </div>
