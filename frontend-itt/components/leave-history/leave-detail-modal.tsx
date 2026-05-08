@@ -1,7 +1,9 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect, useRef } from "react";
 import { Transition, Dialog } from "@headlessui/react";
+import { createPortal } from "react-dom";
 import IconX from "@/components/icon/icon-x";
 import Swal from "sweetalert2";
+import axiosInstance from "@/api/axios";
 
 interface LeaveHistoryItem {
   id: any;
@@ -32,6 +34,7 @@ interface LeaveDetailModalProps {
   onViewFile: (item: LeaveHistoryItem) => void;
   onDeleteRequest: (ids: number[]) => void;
   onResubmitLeave: (item: LeaveHistoryItem) => void;
+  onSuccess?: () => void;
 }
 
 const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
@@ -41,10 +44,131 @@ const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
   onViewFile,
   onDeleteRequest,
   onResubmitLeave,
+  onSuccess,
 }) => {
   // Swipe to close state
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchTranslateY, setTouchTranslateY] = useState(0);
+
+  // In-place editing state
+  const [leaveType, setLeaveType] = useState<"sick" | "personal">("personal");
+  const [leaveReason, setLeaveReason] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (selectedHistoryItem && selectedHistoryItem.status === "ไม่อนุมัติการลา") {
+      setLeaveType(selectedHistoryItem.leaveType === "ลาป่วย" ? "sick" : "personal");
+      setLeaveReason(selectedHistoryItem.leaveReason || "");
+      setSelectedFile(null);
+    }
+  }, [selectedHistoryItem]);
+
+  const handleInPlaceSubmit = async () => {
+    if (!leaveReason.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'กรุณากรอกเหตุผลการลา',
+        confirmButtonText: 'ตกลง',
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: 'bg-[#A80689] text-white px-8 py-2 rounded-lg font-bold'
+        }
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      html: `
+        <div class="flex flex-col items-center">
+          <div class="mb-6 flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#DCFAE6]">
+            <div class="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+              <span class="material-symbols-rounded !text-[24px]">check</span>
+            </div>
+          </div>
+          <h2 class="text-[20px] font-bold text-[#1C1C1C] dark:text-white mb-4">ยืนยันส่งคำขอลาอีกครั้ง</h2>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ย้อนกลับ',
+      buttonsStyling: false,
+      customClass: {
+        popup: 'rounded-[16px] p-8 w-auto min-w-[320px] max-w-[400px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+        actions: 'flex gap-3 w-full px-4',
+        confirmButton: 'flex-1 py-2.5 bg-[#11A75C] hover:bg-[#0E8F4D] text-white rounded-xl text-[15px] font-bold order-2',
+        cancelButton: 'flex-1 py-2.5 bg-white border border-[#1C1C1C] text-[#1C1C1C] rounded-xl text-[15px] font-bold order-1'
+      }
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsSubmitting(true);
+    try {
+      const formatDate = (date: any) => {
+        if (!date) return "";
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
+      const formData = new FormData();
+      formData.append("startDate", formatDate(selectedHistoryItem!.startDateStr));
+      formData.append("endDate", formatDate(selectedHistoryItem!.endDateStr));
+      formData.append("leaveType", leaveType === "sick" ? "SICK" : "ABSENCE");
+      formData.append("reason", leaveReason);
+      if (selectedFile) {
+        formData.append("attachment", selectedFile);
+      }
+
+      await axiosInstance.post("/leave", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      await Swal.fire({
+        html: `
+          <div class="flex flex-col items-center py-4">
+            <div class="mb-6 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#DCFAE6]">
+              <div class="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#17B26A] text-white">
+                <span class="material-symbols-rounded !text-[32px]">check</span>
+              </div>
+            </div>
+            <h2 class="text-[22px] font-bold text-[#1C1C1C] dark:text-white mt-2">ส่งคำขอลาสำเร็จ</h2>
+          </div>
+        `,
+        showConfirmButton: false,
+        timer: 2000,
+        customClass: {
+          popup: 'rounded-[20px] p-10 w-auto min-w-[300px] bg-white dark:bg-[#1A1A1A] shadow-xl',
+        }
+      });
+
+      onSuccess?.();
+      onClose();
+    } catch (error: any) {
+      console.error("Failed to resubmit leave:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: error.response?.data?.message || 'ไม่สามารถส่งคำขอลาได้',
+        confirmButtonText: 'ตกลง',
+        buttonsStyling: false,
+        customClass: {
+          confirmButton: 'bg-[#EF4444] text-white px-8 py-2 rounded-lg font-bold'
+        }
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientY);
@@ -213,7 +337,7 @@ const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                         ลางาน
                       </div>
 
-                      {/* Leave Type Tag */}
+                      {/* Leave Type Tag (Read-only as requested) */}
                       <div className="mb-3">
                         {selectedHistoryItem.leaveType === "ลากิจ" ? (
                           <div className="inline-flex items-center w-[60px] h-[26px] bg-[#E2E4FF] text-[#4b5e71] border border-[#1A3CFF] rounded-full text-[10px] font-bold px-1 gap-1">
@@ -249,31 +373,66 @@ const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                       <div className="flex items-center gap-2 text-[16px] text-gray-800 dark:text-gray-200">
                         รายละเอียดการลา
                       </div>
-                      <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-2 min-h-[40px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
-                        {selectedHistoryItem.leaveReason}
-                      </div>
+                      {selectedHistoryItem.status === "ไม่อนุมัติการลา" ? (
+                        <textarea
+                          rows={2}
+                          value={leaveReason}
+                          onChange={(e) => setLeaveReason(e.target.value)}
+                          className="w-full min-h-[40px] bg-white dark:bg-gray-800 border border-[#A80689] rounded-[6px] px-4 py-2 text-[15px] text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none resize-none"
+                          placeholder="กรอกเหตุผลการลา"
+                        />
+                      ) : (
+                        <div className="w-full bg-[#F9FAFB] dark:bg-gray-800 border border-[#D0D5DD] dark:border-gray-700 rounded-[6px] px-4 py-2 min-h-[40px] flex items-center text-[15px] text-gray-700 dark:text-gray-300 shadow-sm">
+                          {selectedHistoryItem.leaveReason}
+                        </div>
+                      )}
                     </div>
 
                     {/* Evidence Section */}
                     <div className="w-full space-y-3">
                       <div className="flex items-center gap-2 text-[16px] text-gray-800 dark:text-gray-200">
                         <span className="whitespace-nowrap">ไฟล์แนบ :</span>
-                        <button
-                          type="button"
-                          onClick={() => onViewFile(selectedHistoryItem)}
-                          className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-auto min-w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          <div className="flex items-center justify-center shrink-0 text-black">
-                            <span className="material-symbols-rounded !text-[20px]">
-                              picture_as_pdf
-                            </span>
+                        {selectedHistoryItem.status === "ไม่อนุมัติการลา" ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                              className="hidden"
+                              accept="image/*, .pdf"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className={`flex items-center gap-2 px-3 h-[35px] rounded-lg border text-[12px] font-bold transition-all ${selectedFile ? 'bg-[#E7FAEF] border-[#079455] text-[#079455]' : 'bg-white border-[#A80689] text-[#A80689]'}`}
+                            >
+                              <span className="material-symbols-rounded text-[20px]">
+                                {selectedFile ? 'check_circle' : 'upload_file'}
+                              </span>
+                              {selectedFile ? selectedFile.name : 'เลือกไฟล์ใหม่'}
+                            </button>
+                            {!selectedFile && selectedHistoryItem.evidence && (
+                              <span className="text-[11px] text-gray-400 font-medium">(ใช้ไฟล์เดิม)</span>
+                            )}
                           </div>
-                          <div className="text-[12px] font-medium text-black dark:text-white truncate max-w-[250px] px-1">
-                            {selectedHistoryItem.evidence
-                              ? "หลักฐาน"
-                              : "ไม่มีไฟล์แนบ"}
-                          </div>
-                        </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onViewFile(selectedHistoryItem)}
+                            className="bg-[#F2F4F7] active:scale-95 transition-transform dark:bg-gray-800 border border-[#CECFD2] dark:border-gray-700 rounded-[6px] px-2 flex items-center gap-1.5 w-auto min-w-[111px] h-[35px] shrink-0 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <div className="flex items-center justify-center shrink-0 text-black">
+                              <span className="material-symbols-rounded !text-[20px]">
+                                picture_as_pdf
+                              </span>
+                            </div>
+                            <div className="text-[12px] font-medium text-black dark:text-white truncate max-w-[250px] px-1">
+                              {selectedHistoryItem.evidence
+                                ? "หลักฐาน"
+                                : "ไม่มีไฟล์แนบ"}
+                            </div>
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -297,10 +456,15 @@ const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                       <div className="mt-6 w-full">
                         <button
                           type="button"
+                          disabled={isSubmitting}
                           className="w-full h-[50px] bg-[#A80689] text-white rounded-[12px] text-[17px] font-bold flex items-center justify-center shadow-lg shadow-purple-100 active:scale-[0.98] transition-transform"
-                          onClick={() => onResubmitLeave(selectedHistoryItem)}
+                          onClick={handleInPlaceSubmit}
                         >
-                          ส่งคำขอการลาอีกครั้ง
+                          {isSubmitting ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            'ส่งคำขอการลาอีกครั้ง'
+                          )}
                         </button>
                       </div>
                     )}

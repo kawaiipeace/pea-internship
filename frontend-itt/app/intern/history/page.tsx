@@ -642,6 +642,7 @@ const AttendanceHistoryPage = () => {
             localStorage.setItem("editItem", JSON.stringify(item));
             router.push("/intern/history/edit-time");
           }}
+          onSuccess={fetchHistory}
           thaiMonthsFull={thaiMonthsFull}
         />
         </div>

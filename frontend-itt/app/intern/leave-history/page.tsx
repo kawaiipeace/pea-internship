@@ -452,6 +452,7 @@ const LeaveHistoryPage = () => {
                     onViewFile={handleViewFile}
                     onDeleteRequest={handleDeleteLeaveRequest}
                     onResubmitLeave={handleAutoResubmitLeave}
+                    onSuccess={fetchLeaveHistory}
                 />
             </div>
         </div>
