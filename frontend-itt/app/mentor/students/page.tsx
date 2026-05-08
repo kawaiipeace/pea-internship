@@ -116,8 +116,8 @@ const StudentsPage = () => {
                     gender: detail?.profile?.gender,
                     position: detail?.profile?.position,
                     considerationStatus: detail?.profile?.internshipStatus === 'COMPLETE' ? 'COMPLETE' :
-                        (detail?.profile?.internshipStatus === 'EXTENDED' || compensationDays > 0) ? 'EXTENDED' :
-                        statusType === 'ended' ? 'AWAITING' : 'ACTIVE'
+                        (statusType === 'ended' || statusType === 'last-day') ? 'AWAITING' :
+                        (detail?.profile?.internshipStatus === 'EXTENDED' || compensationDays > 0) ? 'EXTENDED' : 'ACTIVE'
                 };
             });
 
@@ -141,7 +141,8 @@ const StudentsPage = () => {
             const searchLower = searchTerm.toLowerCase();
             result = result.filter((item) =>
                 item.name.toLowerCase().includes(searchLower) ||
-                item.role.toLowerCase().includes(searchLower)
+                item.role.toLowerCase().includes(searchLower) ||
+                item.university.toLowerCase().includes(searchLower)
             );
         }
 

@@ -22,6 +22,7 @@ import TimeWheelPicker from './TimeWheelPicker';
 interface EditTimeFormProps {
     selectedHistoryItem: any;
     setIsEditingTime: (val: boolean) => void;
+    onSuccess?: () => void;
     handleTouchStart?: (e: React.TouchEvent) => void;
     handleTouchMove?: (e: React.TouchEvent) => void;
     handleTouchEnd?: () => void;
@@ -30,6 +31,7 @@ interface EditTimeFormProps {
 const EditTimeForm: React.FC<EditTimeFormProps> = ({ 
     selectedHistoryItem, 
     setIsEditingTime,
+    onSuccess,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd
@@ -112,7 +114,11 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             setTimeout(() => {
                 localStorage.removeItem('editItem');
                 setIsEditingTime(false);
-                router.push('/intern/history');
+                if (onSuccess) {
+                    onSuccess();
+                } else {
+                    router.push('/intern/history');
+                }
             }, 500);
         } catch (err: any) {
             console.error("Failed to submit correction:", err);

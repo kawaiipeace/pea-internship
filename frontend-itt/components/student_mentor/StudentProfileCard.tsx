@@ -34,10 +34,20 @@ const StudentProfileCard: React.FC<StudentProfileCardProps> = ({ profile, studen
                 <div className="flex flex-col items-center sm:items-start w-full">
                     <div className={`px-3 py-1 rounded-full border text-[12px] font-bold flex items-center justify-center gap-2 w-max mb-3 sm:mb-5 ${profile.internshipStatus === 'COMPLETE'
                             ? 'bg-green-50 border-green-200 text-green-700'
+                            : profile.internshipStatus === 'EXTENDED'
+                            ? 'bg-[#F2F4F7] border-[#F2F4F7] text-[#FF6B6B]'
                             : 'bg-[#FEF7EB] border-[#FDB022] text-[#944900]'
                         }`}>
-                        <div className={`w-2.5 h-2.5 rounded-full ${profile.internshipStatus === 'COMPLETE' ? 'bg-green-500' : 'bg-[#FDB022]'}`}></div>
-                        {profile.internshipStatus === 'COMPLETE' ? 'สิ้นสุดการฝึกงาน' : 'อยู่ระหว่างฝึกงาน'}
+                        <div className={`w-2.5 h-2.5 rounded-full ${profile.internshipStatus === 'COMPLETE' 
+                            ? 'bg-green-500' 
+                            : profile.internshipStatus === 'EXTENDED'
+                            ? 'bg-[#FF6B6B]'
+                            : 'bg-[#FDB022]'}`}></div>
+                        {profile.internshipStatus === 'COMPLETE' 
+                            ? 'สิ้นสุดการฝึกงาน' 
+                            : profile.internshipStatus === 'EXTENDED'
+                            ? `ชดเชยวันทำงาน ${Math.ceil((progress?.totalExtendedHours || 0) / 7) || Math.ceil(Math.max(0, (progress.totalHoursGoal - progress.accumulatedHours) / 7))} วัน`
+                            : 'อยู่ระหว่างฝึกงาน'}
                     </div>
                     <h1 className="text-[20px] sm:text-[24px] font-medium text-[#111827] leading-tight">
                         {mainName}
