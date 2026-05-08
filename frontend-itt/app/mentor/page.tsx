@@ -372,20 +372,30 @@ export const handleViewFile = async (attachmentUrl: string) => {
 
 // ---- Leave Request Card ----
 
-const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; onReject: () => void; onApprove: () => void }) => (
+const LeaveCard = ({ request, onReject, onApprove, onViewHistory }: { request: LeaveRequest; onReject: () => void; onApprove: () => void; onViewHistory: (id: number, type: 'leave' | 'time-edit') => void }) => (
     <div className="bg-white dark:bg-[#0e1726] border border-gray-200 dark:border-white-dark/10 rounded-2xl p-5 shadow-sm">
         <StudentHeader {...request} />
 
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark mb-3">
-            <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-                calendar_today
-            </span>
-            <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+                    calendar_today
+                </span>
+                <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ขอลา : <span className="font-[16px] text-gray-800 dark:text-white-light">{request.leaveDate}</span></span>
+            </div>
+            
+            <button 
+                onClick={() => onViewHistory(request.id, 'leave')}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white-dark/20 rounded-lg text-sm transition-colors text-gray-700 dark:text-white-light shadow-sm"
+            >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>history</span>
+                ประวัติคำขอ
+            </button>
         </div>
 
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
             <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการลา</p>
-            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <span className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</span>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
@@ -422,7 +432,7 @@ const LeaveCard = ({ request, onReject, onApprove }: { request: LeaveRequest; on
 // ---- Time Edit Request Card ----
 
 
-const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectionRequest; onReject: () => void; onApprove: () => void }) => {
+const TimeEditCard = ({ request, onReject, onApprove, onViewHistory }: { request: TimeCorrectionRequest; onReject: () => void; onApprove: () => void; onViewHistory: (id: number, type: 'leave' | 'time-edit') => void }) => {
     const getThaiDate = (dateStr: string) => {
         try {
             return new Date(dateStr).toLocaleDateString('th-TH', { 
@@ -462,12 +472,22 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
                 attendanceStatusBadge={getAttendanceStatusBadge(request.attendanceStatus)}
             />
 
-            {/* Date */}
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark mb-3">
-                <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
-                    calendar_today
-                </span>
-                <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
+            {/* Date & Action */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
+                    <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+                        calendar_today
+                    </span>
+                    <span className="text-[16px] text-gray-800 dark:text-white-light">วันที่ : <span className="font-semibold text-gray-800 dark:text-white-light">{getThaiDate(request.workDate)}</span></span>
+                </div>
+
+                <button 
+                    onClick={() => onViewHistory(request.id, 'time-edit')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white-dark/20 rounded-lg text-sm transition-colors text-gray-700 dark:text-white-light shadow-sm"
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>history</span>
+                    ประวัติคำขอ
+                </button>
             </div>
 
             {/* Time Row */}
@@ -517,6 +537,94 @@ const TimeEditCard = ({ request, onReject, onApprove }: { request: TimeCorrectio
     );
 };
 
+// ---- Timeline Modal ----
+
+const TimelineModal = ({ isOpen, onClose, loading, data }: any) => {
+    if (!isOpen) return null;
+
+    const getStatusColor = (status: string) => {
+        switch(status) {
+            case 'APPROVED': return 'bg-[#074D31]';
+            case 'REJECTED': return 'bg-red-500';
+            default: return 'bg-blue-500';
+        }
+    };
+    
+    const getStatusBg = (status: string) => {
+        switch(status) {
+            case 'APPROVED': return 'bg-[#E6F8ED] border-[#074D31] text-[#074D31]';
+            case 'REJECTED': return 'bg-red-50 border-red-500 text-red-500';
+            default: return 'bg-blue-50 border-blue-500 text-blue-500';
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white dark:bg-[#0e1726] rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-white-dark/10 flex items-center justify-between">
+                    <h2 className="text-[18px] font-bold text-gray-800 dark:text-white-light">ประวัติคำขอ</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto">
+                    {loading ? (
+                        <div className="flex justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        </div>
+                    ) : data ? (
+                        <div className="space-y-6">
+                            <p className="text-[16px] font-semibold text-gray-800 dark:text-white-light mb-4">
+                                ผู้ยื่นคำขอ: {data.studentName}
+                            </p>
+                            
+                            <div className="relative border-l-2 border-gray-200 dark:border-white-dark/20 ml-3 space-y-8">
+                                {data.timeline?.map((item: any, idx: number) => (
+                                    <div key={idx} className="relative pl-6">
+                                        <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white dark:border-[#0e1726] ${getStatusColor(item.status)}`} />
+                                        
+                                        <div className="mb-1 flex items-center justify-between">
+                                            <span className={`text-[13px] font-bold px-2 py-0.5 rounded-full border ${getStatusBg(item.status)}`}>
+                                                {item.label}
+                                            </span>
+                                            <span className="text-[13px] text-gray-500">
+                                                {new Date(item.time).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className={`rounded-xl p-3 mt-2 border w-full ${
+                                            item.status === 'APPROVED' 
+                                                ? 'bg-[#E6F8ED] dark:bg-[#074D31]/20 border-[#074D31]/20 dark:border-[#074D31]/30' 
+                                                : item.status === 'REJECTED'
+                                                    ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/30'
+                                                    : 'bg-gray-50 dark:bg-black/20 border-gray-100 dark:border-white-dark/10'
+                                        }`}>
+                                            <p className="text-[14px] text-gray-600 dark:text-white-dark mb-1">
+                                                <span className="font-semibold text-gray-700 dark:text-white-light">โดย :</span> {item.by}
+                                            </p>
+                                            {item.note && (
+                                                <div className="mt-2 text-[14px] text-gray-700 dark:text-white-light whitespace-pre-wrap">
+                                                    {item.status === 'REJECTED' && (
+                                                        <span className="text-red-500 font-medium">เหตุผลที่ไม่อนุมัติ : </span>
+                                                    )}
+                                                    <span className={item.status === 'SUBMITTED' ? 'text-gray-800 dark:text-white-light' : ''}>{item.note}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-center text-gray-500">ไม่พบข้อมูลประวัติ</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const EmptyState = ({ tabType }: { tabType: 'leave' | 'time-edit' }) => (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
         <div className="w-[280px] h-auto mb-6">
@@ -548,6 +656,33 @@ const ApprovalRequestPage = () => {
     const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
     const [approveSuccessOpen, setApproveSuccessOpen] = useState(false);
     const [rejectSuccessOpen, setRejectSuccessOpen] = useState(false);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [modalData, setModalData] = useState<any>(null);
+
+    const handleViewHistory = async (id: number, type: 'leave' | 'time-edit') => {
+        setIsModalOpen(true);
+        setModalLoading(true);
+        setModalData(null);
+        try {
+            if (type === 'leave') {
+                const res = await axiosInstance.get(`/leave/mentor/audit/${id}`);
+                if (res.data.success) {
+                    setModalData(res.data.data);
+                }
+            } else {
+                const res = await axiosInstance.get(`/check-time/mentor/corrections/${id}/audit`);
+                if (res.data.success) {
+                    setModalData(res.data.data);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching history:', error);
+        } finally {
+            setModalLoading(false);
+        }
+    };
 
     const PAGE_SIZE = 5;
     const [leaveMeta, setLeaveMeta] = useState({ totalPages: 1, totalRecords: 0 });
@@ -855,13 +990,32 @@ const ApprovalRequestPage = () => {
                 ) : (
                     records.map((r) => (
                         activeTab === 'leave' ? (
-                            <LeaveCard key={(r as any).id} request={r as any} onReject={() => openRejectModal('leave', (r as any).ids)} onApprove={() => openApproveConfirm((r as any).ids)} />
+                            <LeaveCard 
+                                key={(r as any).id} 
+                                request={r as any} 
+                                onReject={() => openRejectModal('leave', (r as any).ids)} 
+                                onApprove={() => openApproveConfirm((r as any).ids)} 
+                                onViewHistory={handleViewHistory} 
+                            />
                         ) : (
-                            <TimeEditCard key={r.id} request={r as any} onReject={() => openRejectModal('time-edit', [(r as any).id])} onApprove={() => openApproveConfirm([(r as any).id])} />
+                            <TimeEditCard 
+                                key={r.id} 
+                                request={r as any} 
+                                onReject={() => openRejectModal('time-edit', [(r as any).id])} 
+                                onApprove={() => openApproveConfirm([(r as any).id])} 
+                                onViewHistory={handleViewHistory} 
+                            />
                         )
                     ))
                 )}
             </div>
+
+            <TimelineModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                loading={modalLoading} 
+                data={modalData} 
+            />
 
 
             {/* Pagination */}

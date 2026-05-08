@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import {
+  asc,
   aliasedTable,
   and,
   desc,
@@ -406,10 +407,21 @@ export class LeaveService {
 
     const historyData = await db.query.leaveRequests.findMany({
       where: finalCondition,
-      orderBy: [desc(leaveRequests.leaveDatetime)],
+      orderBy: [desc(leaveRequests.leaveDatetime), desc(leaveRequests.createdAt)],
     });
 
-    const rawRecords = historyData.map((record) => {
+    const uniqueHistoryData = [];
+    const seen = new Set<string>();
+    for (const record of historyData) {
+      const dateStr = String(record.leaveDatetime).substring(0, 10);
+      const key = `${dateStr}-${record.leavePeriod}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueHistoryData.push(record);
+      }
+    }
+
+    const rawRecords = uniqueHistoryData.map((record) => {
       return {
         id: record.id,
         userId: record.userId,
@@ -706,15 +718,17 @@ export class LeaveService {
       );
     }
 
-    await db
-      .update(leaveRequests)
-      .set({
-        status: "PENDING",
-        approvedBy: null,
-        approverNote: null,
-        approvedAt: null,
-      })
-      .where(inArray(leaveRequests.id, ids));
+    const newRequests = requests.map((r) => ({
+      leaveRequestType: r.leaveRequestType,
+      leavePeriod: r.leavePeriod,
+      userId: r.userId,
+      leaveDatetime: r.leaveDatetime,
+      reason: r.reason,
+      file: r.file,
+      status: "PENDING" as const,
+    }));
+
+    await db.insert(leaveRequests).values(newRequests);
 
     return {
       success: true,
@@ -729,71 +743,63 @@ export class LeaveService {
 
     if (!mentor) throw new ForbiddenError("ไม่พบข้อมูลผู้ใช้งาน");
 
-    const result = await db
-      .select({
-        leave: leaveRequests,
-        studentName: sql<string>`concat(${users.fname}, ' ', ${users.lname})`,
-        studentDept: users.departmentId,
-      })
-      .from(leaveRequests)
-      .innerJoin(users, eq(leaveRequests.userId, users.id))
-      .where(
-        and(
-          eq(leaveRequests.id, leaveId),
-          isNull(leaveRequests.deletedAt),
-          // ถ้าไม่ใช่ Admin (1) ต้องอยู่แผนกเดียวกัน
-          mentor.roleId !== 1
-            ? eq(users.departmentId, mentor.departmentId!)
-            : undefined
-        )
-      )
-      .limit(1);
+    const baseRequest = await db.query.leaveRequests.findFirst({
+      where: eq(leaveRequests.id, leaveId)
+    });
 
-    if (result.length === 0) {
-      throw new ForbiddenError("คุณไม่มีสิทธิ์เข้าถึงข้อมูลใบลาของนักศึกษาท่านนี้");
-    }
+    if (!baseRequest) throw new NotFoundError("ไม่พบข้อมูลใบลา");
 
-    const data = result[0];
+    const allRequests = await db.query.leaveRequests.findMany({
+      where: and(
+        eq(leaveRequests.userId, baseRequest.userId),
+        eq(leaveRequests.leaveDatetime, baseRequest.leaveDatetime),
+        baseRequest.leavePeriod ? eq(leaveRequests.leavePeriod, baseRequest.leavePeriod) : isNull(leaveRequests.leavePeriod),
+        isNull(leaveRequests.deletedAt)
+      ),
+      orderBy: [asc(leaveRequests.createdAt)],
+    });
 
-    // 3. หาข้อมูลคน Approve (ถ้ามี)
-    let approverInfo = null;
-    if (data.leave.approvedBy) {
-      const approver = await db.query.users.findFirst({
-        where: eq(users.id, data.leave.approvedBy),
-        columns: { fname: true, lname: true },
-      });
-      if (approver) {
-        approverInfo = `${approver.fname} ${approver.lname}`;
-      }
-    }
+    const userRecord = await db.query.users.findFirst({
+      where: eq(users.id, baseRequest.userId)
+    });
+    const studentName = `${userRecord?.fname} ${userRecord?.lname}`;
 
-    // 4. จัด Format เป็น Timeline
-    const timeline = [
-      {
+    const timeline = [];
+    for (const req of allRequests) {
+      timeline.push({
         status: "SUBMITTED",
         label: "นักศึกษาส่งคำขอลา",
-        time: data.leave.leaveDatetime,
-        by: data.studentName,
-        note: data.leave.reason,
-      },
-    ];
-
-    if (data.leave.status !== "PENDING") {
-      timeline.push({
-        status: data.leave.status,
-        label: data.leave.status === "APPROVED" ? "อนุมัติการลา" : "ปฏิเสธการลา",
-        time: data.leave.approvedAt,
-        by: approverInfo || "เจ้าหน้าที่",
-        note: data.leave.approverNote,
+        time: req.createdAt || req.leaveDatetime,
+        by: studentName,
+        note: `เหตุผลการลา : ${req.reason}`,
       });
+
+      if (req.status !== "PENDING") {
+        let approverInfo = "เจ้าหน้าที่";
+        if (req.approvedBy) {
+          const approver = await db.query.users.findFirst({
+            where: eq(users.id, req.approvedBy),
+            columns: { fname: true, lname: true },
+          });
+          if (approver) approverInfo = `${approver.fname} ${approver.lname}`;
+        }
+
+        timeline.push({
+          status: req.status,
+          label: req.status === "APPROVED" ? "อนุมัติการลา" : "ปฏิเสธการลา",
+          time: req.approvedAt,
+          by: approverInfo,
+          note: req.approverNote,
+        });
+      }
     }
 
     return {
       success: true,
       data: {
-        leaveId: data.leave.id,
-        studentName: data.studentName,
-        currentStatus: data.leave.status,
+        leaveId: baseRequest.id,
+        studentName: studentName,
+        currentStatus: baseRequest.status,
         timeline,
       },
     };
@@ -814,10 +820,11 @@ export class LeaveService {
 
     const approver = aliasedTable(users, "approver");
 
-    const records = await db
+    const allRecords = await db
       .select({
         id: leaveRequests.id,
         leaveType: leaveRequests.leaveRequestType,
+        leavePeriod: leaveRequests.leavePeriod,
         leaveDate: leaveRequests.leaveDatetime,
         status: leaveRequests.status,
         reason: leaveRequests.reason,
@@ -840,44 +847,36 @@ export class LeaveService {
           isNull(leaveRequests.deletedAt),
           mentor.roleId !== 1
             ? eq(users.departmentId, mentor.departmentId!)
-            : undefined,
-          status
-            ? eq(
-                leaveRequests.status,
-                status as (typeof leaveStatusEnum.enumValues)[number]
-              )
-            : inArray(leaveRequests.status, ["APPROVED", "REJECTED"])
+            : undefined
         )
       )
       .orderBy(
         desc(leaveRequests.approvedAt),
+        desc(leaveRequests.createdAt),
         desc(leaveRequests.leaveDatetime)
-      )
-      .limit(limit)
-      .offset(offset);
-
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(leaveRequests)
-      .innerJoin(users, eq(leaveRequests.userId, users.id))
-      .where(
-        and(
-          isNull(leaveRequests.deletedAt),
-          mentor.roleId !== 1
-            ? eq(users.departmentId, mentor.departmentId!)
-            : undefined,
-          status
-            ? eq(
-                leaveRequests.status,
-                status as (typeof leaveStatusEnum.enumValues)[number]
-              )
-            : inArray(leaveRequests.status, ["APPROVED", "REJECTED"])
-        )
       );
+
+    const uniqueRecords = [];
+    const seen = new Set<string>();
+    for (const r of allRecords) {
+      const dateStr = String(r.leaveDate).substring(0, 10);
+      const key = `${r.userId}-${dateStr}-${r.leavePeriod || ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        
+        const matchesStatus = status ? r.status === status : (r.status === "APPROVED" || r.status === "REJECTED");
+        if (matchesStatus) {
+            uniqueRecords.push(r);
+        }
+      }
+    }
+
+    const count = uniqueRecords.length;
+    const paginatedRecords = uniqueRecords.slice(offset, offset + limit);
 
     return {
       success: true,
-      data: records,
+      data: paginatedRecords,
       meta: {
         page,
         limit,

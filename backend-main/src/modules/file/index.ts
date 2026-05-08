@@ -12,7 +12,7 @@ export const file = new Elysia({
   .get(
     "/:key",
     async ({ params, set }) => {
-      const { key } = params;
+      const key = decodeURIComponent(params.key);
       const result = await fileService.getFile(key);
 
       set.headers["Content-Type"] = result.contentType;

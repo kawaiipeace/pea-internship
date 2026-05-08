@@ -93,7 +93,7 @@ const StudentFilter: React.FC<StudentFilterProps> = ({
                 </span>
                 <input
                     type="text"
-                    placeholder="พิมพ์ชื่อหรือตำแหน่งที่ต้องการค้นหา..."
+                    placeholder="พิมพ์ชื่อ, ตำแหน่ง หรือมหาวิทยาลัย..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full h-full pl-[42px] pr-[12px] bg-white border border-[#CECFD2] rounded-[5px] outline-none text-[14px] text-[#101828] placeholder:text-[#61646C] transition-all"
