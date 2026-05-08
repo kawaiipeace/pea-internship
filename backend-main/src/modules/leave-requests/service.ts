@@ -847,13 +847,7 @@ export class LeaveService {
           isNull(leaveRequests.deletedAt),
           mentor.roleId !== 1
             ? eq(users.departmentId, mentor.departmentId!)
-            : undefined,
-          status
-            ? eq(
-                leaveRequests.status,
-                status as (typeof leaveStatusEnum.enumValues)[number]
-              )
-            : inArray(leaveRequests.status, ["APPROVED", "REJECTED"])
+            : undefined
         )
       )
       .orderBy(
@@ -869,7 +863,11 @@ export class LeaveService {
       const key = `${r.userId}-${dateStr}-${r.leavePeriod || ''}`;
       if (!seen.has(key)) {
         seen.add(key);
-        uniqueRecords.push(r);
+        
+        const matchesStatus = status ? r.status === status : (r.status === "APPROVED" || r.status === "REJECTED");
+        if (matchesStatus) {
+            uniqueRecords.push(r);
+        }
       }
     }
 

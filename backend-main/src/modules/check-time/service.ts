@@ -1065,16 +1065,6 @@ export class CheckTimeService {
       inArray(timeCorrectionRequests.studentProfileId, profileIds),
     ];
 
-    if (status) {
-      correctionConditions.push(eq(timeCorrectionRequests.status, status));
-    }
-
-    if (excludePending === "true") {
-      correctionConditions.push(
-        not(eq(timeCorrectionRequests.status, "PENDING"))
-      );
-    }
-
     const finalCondition = and(...correctionConditions);
 
     const allRequestsData = await db
@@ -1118,7 +1108,14 @@ export class CheckTimeService {
     for (const r of allRequestsData) {
       if (!seenLogs.has(r.attendanceLogId)) {
         seenLogs.add(r.attendanceLogId);
-        uniqueRequests.push(r);
+        
+        let shouldInclude = true;
+        if (status && r.status !== status) shouldInclude = false;
+        if (excludePending === "true" && r.status === "PENDING") shouldInclude = false;
+
+        if (shouldInclude) {
+          uniqueRequests.push(r);
+        }
       }
     }
 
