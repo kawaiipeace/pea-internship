@@ -141,7 +141,8 @@ const StudentsPage = () => {
             const searchLower = searchTerm.toLowerCase();
             result = result.filter((item) =>
                 item.name.toLowerCase().includes(searchLower) ||
-                item.role.toLowerCase().includes(searchLower)
+                item.role.toLowerCase().includes(searchLower) ||
+                item.university.toLowerCase().includes(searchLower)
             );
         }
 
