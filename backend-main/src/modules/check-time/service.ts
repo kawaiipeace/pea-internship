@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
+  asc,
   and,
   desc,
   eq,
@@ -694,6 +695,7 @@ export class CheckTimeService {
           attendanceLogId: true,
           status: true,
         },
+        orderBy: [desc(timeCorrectionRequests.createdAt)],
       })) as CorrectionRequestData[];
     }
 
@@ -859,6 +861,7 @@ export class CheckTimeService {
       const duplicateCheckInTx =
         await tx.query.timeCorrectionRequests.findFirst({
           where: eq(timeCorrectionRequests.attendanceLogId, existingLog.id),
+          orderBy: [desc(timeCorrectionRequests.createdAt)],
         });
 
       if (duplicateCheckInTx && duplicateCheckInTx.status !== "REJECTED") {
@@ -880,46 +883,24 @@ export class CheckTimeService {
         data.checkOutTime
       );
 
-      let resultRequest: { id: number } | null = null;
+      const finalAttachmentUrl = uploadedAttachmentUrl || (duplicateCheckInTx?.attachmentUrl ?? null);
 
-      if (duplicateCheckInTx) {
-        // Update existing rejected request
-        const [updatedRequest] = await tx
-          .update(timeCorrectionRequests)
-          .set({
-            originalCheckIn: originalIn,
-            originalCheckOut: originalOut,
-            requestedCheckIn: newInDate,
-            requestedCheckOut: newOutDate,
-            calculatedHours: calculatedHours,
-            reason: data.reason,
-            attachmentUrl:
-              uploadedAttachmentUrl || duplicateCheckInTx.attachmentUrl,
-            status: "PENDING",
-            updatedAt: new Date(),
-          })
-          .where(eq(timeCorrectionRequests.id, duplicateCheckInTx.id))
-          .returning();
-        resultRequest = updatedRequest;
-      } else {
-        // Create new request
-        const [newRequest] = await tx
-          .insert(timeCorrectionRequests)
-          .values({
-            attendanceLogId: existingLog.id,
-            studentProfileId: student.id,
-            originalCheckIn: originalIn,
-            originalCheckOut: originalOut,
-            requestedCheckIn: newInDate,
-            requestedCheckOut: newOutDate,
-            calculatedHours: calculatedHours,
-            reason: data.reason,
-            attachmentUrl: uploadedAttachmentUrl,
-            status: "PENDING",
-          })
-          .returning();
-        resultRequest = newRequest;
-      }
+      const [newRequest] = await tx
+        .insert(timeCorrectionRequests)
+        .values({
+          attendanceLogId: existingLog.id,
+          studentProfileId: student.id,
+          originalCheckIn: originalIn,
+          originalCheckOut: originalOut,
+          requestedCheckIn: newInDate,
+          requestedCheckOut: newOutDate,
+          calculatedHours: calculatedHours,
+          reason: data.reason,
+          attachmentUrl: finalAttachmentUrl,
+          status: "PENDING",
+        })
+        .returning();
+      const resultRequest = newRequest;
 
       // --- สร้าง Notification ส่งหา Mentor/Admin ในแผนก ---
       const owners = await tx
@@ -1096,24 +1077,7 @@ export class CheckTimeService {
 
     const finalCondition = and(...correctionConditions);
 
-    const [totalCountResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(timeCorrectionRequests)
-      .where(finalCondition);
-
-    const totalFilteredRecords = Number(totalCountResult.count);
-    const totalPages = Math.ceil(totalFilteredRecords / limit);
-    const offset = (page - 1) * limit;
-
-    const bkkFormatter2 = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Bangkok",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const todayStr = bkkFormatter2.format(new Date());
-
-    const requestsData = await db
+    const allRequestsData = await db
       .select({
         id: timeCorrectionRequests.id,
         createdAt: timeCorrectionRequests.createdAt,
@@ -1134,6 +1098,7 @@ export class CheckTimeService {
         username: users.displayUsername,
         image: studentProfiles.image,
         approverNote: timeCorrectionRequests.approverNote,
+        attendanceLogId: timeCorrectionRequests.attendanceLogId,
       })
       .from(timeCorrectionRequests)
       .innerJoin(
@@ -1146,9 +1111,21 @@ export class CheckTimeService {
       )
       .innerJoin(users, eq(users.id, studentProfiles.userId))
       .where(finalCondition)
-      .orderBy(desc(timeCorrectionRequests.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .orderBy(desc(timeCorrectionRequests.createdAt));
+
+    const uniqueRequests = [];
+    const seenLogs = new Set<number>();
+    for (const r of allRequestsData) {
+      if (!seenLogs.has(r.attendanceLogId)) {
+        seenLogs.add(r.attendanceLogId);
+        uniqueRequests.push(r);
+      }
+    }
+
+    const totalFilteredRecords = uniqueRequests.length;
+    const totalPages = Math.ceil(totalFilteredRecords / limit);
+    const offset = (page - 1) * limit;
+    const paginatedRequests = uniqueRequests.slice(offset, offset + limit);
 
     const formatTime = (timeStr: Date | string | null) => {
       if (!timeStr) return "ไม่ลงเวลา";
@@ -1159,7 +1136,15 @@ export class CheckTimeService {
       });
     };
 
-    const records = requestsData.map((record) => {
+    const bkkFormatter2 = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Bangkok",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const todayStr = bkkFormatter2.format(new Date());
+
+    const records = paginatedRequests.map((record) => {
       const logDateStr = String(record.workDate).substring(0, 10);
       let attendanceStatus = record.dailyStatus;
 
@@ -1197,6 +1182,85 @@ export class CheckTimeService {
         limit,
         totalPages,
         totalRecords: totalFilteredRecords,
+      },
+    };
+  }
+
+  async getMentorCorrectionAuditView(mentorUserId: string, requestId: number) {
+    const mentor = await db.query.users.findFirst({
+      where: eq(users.id, mentorUserId),
+    });
+
+    if (!mentor) throw new ForbiddenError("ไม่พบข้อมูลผู้ใช้งาน");
+
+    const baseRequest = await db.query.timeCorrectionRequests.findFirst({
+      where: eq(timeCorrectionRequests.id, requestId),
+      with: {
+        studentProfile: {
+          with: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!baseRequest) throw new NotFoundError("ไม่พบข้อมูลคำขอแก้ไขเวลา");
+
+    // Fetch all requests for this attendance log
+    const allRequests = await db.query.timeCorrectionRequests.findMany({
+      where: eq(timeCorrectionRequests.attendanceLogId, baseRequest.attendanceLogId),
+      orderBy: [asc(timeCorrectionRequests.createdAt)],
+    });
+
+    const studentName = `${baseRequest.studentProfile?.user?.fname} ${baseRequest.studentProfile?.user?.lname}`;
+
+    const formatTime = (timeStr: string | null | Date) => {
+      if (!timeStr) return "ไม่ลงเวลา";
+      return new Date(timeStr).toLocaleTimeString("en-GB", {
+        timeZone: "Asia/Bangkok",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const timeline = [];
+    for (const req of allRequests) {
+      const reqTimeStr = `${formatTime(req.requestedCheckIn)} - ${formatTime(req.requestedCheckOut)}`;
+      timeline.push({
+        status: "SUBMITTED",
+        label: "นักศึกษาส่งคำขอแก้ไขเวลา",
+        time: req.createdAt,
+        by: studentName,
+        note: `ขอแก้ไขเวลาเป็น ${reqTimeStr} (${req.calculatedHours} ชม.) เหตุผล: ${req.reason}`,
+      });
+
+      if (req.status !== "PENDING") {
+        let approverInfo = "เจ้าหน้าที่";
+        if (req.approvedBy) {
+          const approver = await db.query.users.findFirst({
+            where: eq(users.id, req.approvedBy),
+            columns: { fname: true, lname: true },
+          });
+          if (approver) approverInfo = `${approver.fname} ${approver.lname}`;
+        }
+
+        timeline.push({
+          status: req.status,
+          label: req.status === "APPROVED" ? "อนุมัติการแก้ไขเวลา" : "ปฏิเสธการแก้ไขเวลา",
+          time: req.updatedAt || req.createdAt,
+          by: approverInfo,
+          note: req.approverNote,
+        });
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        correctionId: baseRequest.id,
+        studentName: studentName,
+        currentStatus: baseRequest.status,
+        timeline,
       },
     };
   }

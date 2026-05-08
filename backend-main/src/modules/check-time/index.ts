@@ -174,6 +174,25 @@ export const checkTime = new Elysia({
       },
     }
   )
+  .get(
+    "/mentor/corrections/:id/audit",
+    async ({ params, set, user }) => {
+      const response = await checkTimeService.getMentorCorrectionAuditView(
+        user.id,
+        params.id
+      );
+      set.status = 200;
+      return response;
+    },
+    {
+      role: [ROLE_IDS.MENTOR, ROLE_IDS.ADMIN],
+      params: t.Object({ id: t.Numeric() }),
+      detail: {
+        summary: "ดูประวัติคำขอแก้ไขเวลาของนักศึกษา (Mentor)",
+        description: "ดึง Timeline ประวัติคำขอแก้ไขเวลาทั้งหมดของรายการลงเวลานี้",
+      },
+    }
+  )
   .post(
     "/mentor/corrections/:id/approve",
     async ({ params, set, user }) => {
