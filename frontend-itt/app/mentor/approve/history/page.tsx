@@ -167,7 +167,7 @@ const LeaveHistoryCard = ({ request }: { request: LeaveRequest }) => (
 
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
             <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการลา</p>
-            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <span className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</span>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-white-dark">
@@ -268,8 +268,7 @@ const TimeEditHistoryCard = ({ request }: { request: TimeCorrectionRequest }) =>
 
         {/* Reason Box */}
         <div className="bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white-dark/10 rounded-xl px-4 py-3 mb-3">
-            <p className="text-[14px] text-gray-400 mb-0.5">เหตุผลการแก้ไขเวลา</p>
-            <p className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</p>
+            <span className="text-[16px] text-gray-700 dark:text-white-light font-medium">{request.reason}</span>
         </div>
 
         {/* File Attachment */}
@@ -354,7 +353,7 @@ const TimelineModal = ({ isOpen, onClose, loading, data }: any) => {
                                             </span>
                                         </div>
                                         
-                                        <div className={`rounded-xl p-3 mt-2 border ${
+                                        <div className={`rounded-xl p-3 mt-2 border w-full ${
                                             item.status === 'APPROVED' 
                                                 ? 'bg-[#E6F8ED] dark:bg-[#074D31]/20 border-[#074D31]/20 dark:border-[#074D31]/30' 
                                                 : item.status === 'REJECTED'
@@ -369,7 +368,7 @@ const TimelineModal = ({ isOpen, onClose, loading, data }: any) => {
                                                     {item.status === 'REJECTED' && (
                                                         <span className="text-red-500 font-medium">เหตุผลที่ไม่อนุมัติ : </span>
                                                     )}
-                                                    {item.note}
+                                                    <span className={item.status === 'SUBMITTED' ? 'text-gray-800 dark:text-white-light' : ''}>{item.note}</span>
                                                 </div>
                                             )}
                                         </div>

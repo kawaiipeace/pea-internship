@@ -771,7 +771,7 @@ export class LeaveService {
         label: "นักศึกษาส่งคำขอลา",
         time: req.createdAt || req.leaveDatetime,
         by: studentName,
-        note: req.reason,
+        note: `เหตุผลการลา : ${req.reason}`,
       });
 
       if (req.status !== "PENDING") {

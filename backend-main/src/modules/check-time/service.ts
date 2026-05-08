@@ -1223,12 +1223,15 @@ export class CheckTimeService {
     const timeline = [];
     for (const req of allRequests) {
       const reqTimeStr = `${formatTime(req.requestedCheckIn)} - ${formatTime(req.requestedCheckOut)}`;
+      const originalTimeStr = `${formatTime(req.originalCheckIn)} - ${formatTime(req.originalCheckOut)}`;
       timeline.push({
         status: "SUBMITTED",
         label: "นักศึกษาส่งคำขอแก้ไขเวลา",
         time: req.createdAt,
         by: studentName,
-        note: `ขอแก้ไขเวลาเป็น ${reqTimeStr} (${req.calculatedHours} ชม.) เหตุผล: ${req.reason}`,
+        note: `เหตุผลการแก้ไขเวลา : ${req.reason}`,
+        originalTime: originalTimeStr,
+        requestedTime: reqTimeStr,
       });
 
       if (req.status !== "PENDING") {
