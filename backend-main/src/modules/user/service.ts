@@ -605,6 +605,7 @@ export class UserService {
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+
       const currentEndDate = new Date(appInfo.endDate);
 
       const allowedStartDate = this.calculateAllowedStartDate(
@@ -618,10 +619,24 @@ export class UserService {
         );
       }
 
-      const daysToCompensate = Math.ceil(data.hours / 7);
+      const [extendedData] = await tx
+        .select({
+          totalPreviousHours: sql<number>`SUM(CAST(${internshipExtensions.additionalHours} AS NUMERIC))`,
+        })
+        .from(internshipExtensions)
+        .where(
+          and(
+            eq(internshipExtensions.applicationStatusId, currentApp.id),
+            eq(internshipExtensions.status, "APPROVED")
+          )
+        );
+
+      const totalHours = Number(extendedData?.totalPreviousHours || 0) + data.hours;
+      const totalDays = Math.ceil(totalHours / 7);
+
       const newEndDate = this.calculateEndDateExcludingWeekends(
         currentEndDate,
-        daysToCompensate
+        totalDays
       );
 
       // Update สถานะนักศึกษา
@@ -629,7 +644,7 @@ export class UserService {
         .update(studentProfiles)
         .set({
           internshipStatus: "EXTENDED",
-          statusNote: `COMPENSATION:${daysToCompensate}`,
+          statusNote: `COMPENSATION:${totalDays}`,
         })
         .where(eq(studentProfiles.userId, data.studentId));
 
