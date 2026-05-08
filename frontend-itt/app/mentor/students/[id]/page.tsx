@@ -185,8 +185,9 @@ const StudentDetailPage = () => {
     }, [fetchDetail]);
 
     const isPassAvailable = useMemo(() => {
-        if (!studentData?.profile?.period?.endDate) return false;
-        const end = new Date(studentData.profile.period.endDate);
+        const endDate = studentData?.progress?.extendedEndDate || studentData?.profile?.period?.endDate;
+        if (!endDate) return false;
+        const end = new Date(endDate);
         end.setHours(0, 0, 0, 0);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -194,8 +195,9 @@ const StudentDetailPage = () => {
     }, [studentData]);
 
     const isCompensateAvailable = useMemo(() => {
-        if (!studentData?.profile?.period?.endDate) return false;
-        const end = new Date(studentData.profile.period.endDate);
+        const endDate = studentData?.progress?.extendedEndDate || studentData?.profile?.period?.endDate;
+        if (!endDate) return false;
+        const end = new Date(endDate);
         end.setHours(0, 0, 0, 0);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
