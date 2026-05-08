@@ -95,7 +95,7 @@ const InternshipProgressCard: React.FC<InternshipProgressCardProps> = ({
                         {/* Before Last Day & Already Extended: Show only Status Text */}
                         {!isPassAvailable && profile?.internshipStatus === 'EXTENDED' ? (
                             <div className="w-full py-3 bg-[#F2F4F7] text-[#FF6B6B] rounded-xl font-bold flex items-center justify-center text-[18px]">
-                                ชดเชยวันทำงาน {Math.ceil((progress?.totalExtendedHours || 0) / 7) || Math.ceil(Math.max(0, (progress.totalHoursGoal - progress.accumulatedHours) / 7))} วัน
+                                ชดเชยวันทำงานทั้งหมด {Math.ceil((progress?.totalExtendedHours || 0) / 7) || Math.ceil(Math.max(0, (progress.totalHoursGoal - progress.accumulatedHours) / 7))} วัน
                             </div>
                         ) : (
                             /* Last Day or (Not Last Day but Not Extended yet) */
@@ -121,7 +121,7 @@ const InternshipProgressCard: React.FC<InternshipProgressCardProps> = ({
                                                 : 'bg-[#FFF5FD] text-[#98A2B3] border border-[#A80689]/40 cursor-not-allowed'
                                         }`}
                                     >
-                                        ชดเชยวันทำงาน
+                                        ชดเชยวันทำงานทั้งหมด
                                     </button>
                                 )}
                             </>
