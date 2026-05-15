@@ -246,7 +246,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
           setCurrentUser(user);
         }
       } catch (error) {
-        console.log("Failed to load current user:", error);
+                    if (process.env.NODE_ENV === "development") {
+                      console.error(error);
+                    }
       } finally {
         setLoadingUser(false);
       }
@@ -270,7 +272,9 @@ export default function EditAnnouncementPage({ params }: PageProps) {
         });
         setStaffList(validStaff);
       } catch (error) {
-        console.log("Failed to load staff list:", error);
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
+        }
         setStaffList([]);
       } finally {
         setLoadingStaff(false);
@@ -377,10 +381,11 @@ export default function EditAnnouncementPage({ params }: PageProps) {
             );
           }
 
-          console.log("Loaded position:", position);
         }
-      } catch (error) {
-        console.error("Error loading announcement:", error);
+      } catch(error) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -591,7 +596,6 @@ export default function EditAnnouncementPage({ params }: PageProps) {
         ...(ownerUserId ? { positionOwner: ownerUserId } : {}),
       };
 
-      console.log("Updating position:", positionId, updateData);
       // บันทึกเบอร์โทรของผู้ประกาศที่เลือก (self → updateUser, other → updateStaffPhone)
       if (formData.contactPhone && ownerUserId) {
         try {

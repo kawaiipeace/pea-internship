@@ -177,9 +177,11 @@ export default function CreateAnnouncementPage() {
         } else {
           setDocTypes(defaultDocTypes);
         }
-      } catch (error) {
-        // Fallback to default doc types if API fails (404, network error, etc.)
-        console.log("Using default doc types (API not available)");
+      } catch(error) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
+        }
+      
         setDocTypes(defaultDocTypes);
       } finally {
         setLoadingDocTypes(false);
@@ -216,15 +218,15 @@ export default function CreateAnnouncementPage() {
           let departmentName = "";
           if (profile.departmentId) {
             try {
-              console.log("department name loaded");
               const dept = await departmentApi.getDepartmentByDeptSap(
                 profile.departmentId,
               );
               departmentName =
                 dept?.deptFull || dept?.deptShort || `${profile.departmentId}`;
-            } catch (error) {
-              console.log("can't load department name", error);
-              departmentName = `${profile.departmentId}`;
+            } catch(error) {
+                if (process.env.NODE_ENV === "development") {
+                  console.error(error);
+              }
             }
           }
 
@@ -237,8 +239,10 @@ export default function CreateAnnouncementPage() {
             contactEmail: profile.email || "",
           }));
         }
-      } catch (error) {
-        console.log("Failed to load current user:", error);
+      } catch(error) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
+        }
       } finally {
         setLoadingUser(false);
       }
@@ -254,8 +258,6 @@ export default function CreateAnnouncementPage() {
 
       try {
         const staff = await userApi.getStaff();
-        console.log("Staff list from API:", staff);
-        console.log("Current user departmentId:", currentUser?.departmentId);
 
         // Filter เฉพาะ staff ที่:
         // 1. มี staffProfileId (จำเป็นสำหรับ mentorStaffIds)
@@ -268,10 +270,12 @@ export default function CreateAnnouncementPage() {
           return hasProfileId && sameDepartment;
         });
 
-        console.log("Filtered staff (same department):", validStaff.length);
         setStaffList(validStaff);
-      } catch (error) {
-        console.log("Failed to load staff list:", error);
+      } catch(error) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
+        }
+      
         setStaffList([]);
       } finally {
         setLoadingStaff(false);
@@ -491,7 +495,6 @@ export default function CreateAnnouncementPage() {
     });
 
     setErrors(newErrors);
-    console.log("Validation errors:", newErrors);
 
     // Scroll ไปหา field แรกที่ error
     if (Object.keys(newErrors).length > 0) {
@@ -554,7 +557,6 @@ export default function CreateAnnouncementPage() {
         mentorStaffIds,
       };
 
-      console.log("Submitting position data:", apiData);
       // Save phone number to user profile (non-blocking)
       if (formData.contactPhone) {
         try {
@@ -595,7 +597,6 @@ export default function CreateAnnouncementPage() {
       const axiosError = error as {
         response?: { status?: number; data?: unknown };
       };
-      console.log("Error response:", axiosError.response?.data);
 
       if (axiosError.response?.status === 401) {
         alert("กรุณาเข้าสู่ระบบก่อนสร้างประกาศ");

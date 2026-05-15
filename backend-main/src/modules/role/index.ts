@@ -1,9 +1,11 @@
 import { Elysia } from "elysia";
 import * as model from "./model";
 import { RoleService } from "./service";
+import { isAuthenticated } from "@/middlewares/auth.middleware";
 
 const roleService = new RoleService();
 export const role = new Elysia({ prefix: "/role", tags: ["Roles(บทบาทผู้ใช้)"] })
+  .use(isAuthenticated)
   .get(
     "/",
     async ({ set }) => {
@@ -13,6 +15,7 @@ export const role = new Elysia({ prefix: "/role", tags: ["Roles(บทบาท�
       return response;
     },
     {
+      role: 1,
       detail: {
         summary: "ค้นหาข้อมูลบทบาททั้งหมด (Get All Roles)",
         description: "ดึงข้อมูลรายชื่อบทบาท (Roles) ทั้งหมดที่มีในระบบ",
@@ -29,6 +32,7 @@ export const role = new Elysia({ prefix: "/role", tags: ["Roles(บทบาท�
       return response;
     },
     {
+      role: 1, 
       body: model.CreateRoleBody,
       detail: {
         summary: "สร้างบทบาทผู้ใช้งานใหม่ (Create Role)",
@@ -46,6 +50,7 @@ export const role = new Elysia({ prefix: "/role", tags: ["Roles(บทบาท�
       return response;
     },
     {
+      role: 1,
       params: model.params,
       body: model.UpdateRoleBody,
       detail: {
@@ -64,6 +69,7 @@ export const role = new Elysia({ prefix: "/role", tags: ["Roles(บทบาท�
       return response;
     },
     {
+      role: 1,
       params: model.params,
       detail: {
         summary: "ลบข้อมูลบทบาท (Delete Role)",

@@ -55,9 +55,6 @@ function isUserLoggedIn(): boolean {
     );
 
   const result = hasAuthToken || hasBetterAuth;
-  console.log(
-    `[IdleTimeout] isUserLoggedIn: authToken=${hasAuthToken}, betterAuth=${hasBetterAuth} → ${result}`,
-  );
   return result;
 }
 
@@ -73,8 +70,6 @@ export default function IdleTimeoutProvider({
   const performLogout = useCallback(async () => {
     if (isLoggingOutRef.current) return;
     isLoggingOutRef.current = true;
-
-    console.log("[IdleTimeout] ⏰ หมดเวลา — กำลัง logout...");
 
     // ใช้ role จาก user cache ก่อน หากไม่มีใช้ route ปัจจุบันช่วยตัดสินหน้า login
     const roleId = authStorage.getUser()?.roleId;
@@ -97,7 +92,6 @@ export default function IdleTimeoutProvider({
       const loginPath = isStaff ? "/login/owner" : "/login/intern";
       const loginUrl = new URL(loginPath, window.location.origin);
       loginUrl.searchParams.set("sessionExpired", "1");
-      console.log("[IdleTimeout] Redirect →", loginUrl.toString());
       window.location.replace(loginUrl.toString());
     }
   }, []);
@@ -118,10 +112,6 @@ export default function IdleTimeoutProvider({
     const isPublic = isPublicPath(pathname);
     const isLoggedIn = isUserLoggedIn();
 
-    console.log(
-      `[IdleTimeout] pathname=${pathname}, isPublic=${isPublic}, isLoggedIn=${isLoggedIn}`,
-    );
-
     // ไม่ต้องตรวจ idle ถ้าอยู่หน้า public หรือไม่ได้ login
     if (isPublic || !isLoggedIn) {
       if (timerRef.current) {
@@ -130,11 +120,6 @@ export default function IdleTimeoutProvider({
       }
       return;
     }
-
-    console.log(
-      `[IdleTimeout] ✅ เริ่ม idle timer ${IDLE_TIMEOUT_MS / 1000} วินาที`,
-    );
-
     // เริ่มนับ timer
     resetTimer();
 

@@ -65,8 +65,11 @@ export const departmentApi = {
         location: data.location,
         officeId: data.officeId,
       };
-    } catch (error) {
-      console.log("getDepartmentByDeptSap error:", error);
+    } catch(error) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
+        }
+      
       return null;
     }
   },

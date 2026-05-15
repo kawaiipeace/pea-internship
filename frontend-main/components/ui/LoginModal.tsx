@@ -133,7 +133,6 @@ export default function LoginModal({
         }
 
         // Login สำเร็จ
-        console.log("Login สำเร็จ");
 
         onClose();
         if (onLoginSuccess) {

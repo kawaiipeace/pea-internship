@@ -93,14 +93,7 @@ const EditTimeForm: React.FC<EditTimeFormProps> = ({
             }
 
             // Log exact payload to console for verification
-            console.log("Submit Payload:", {
-                id: selectedHistoryItem.id,
-                in: checkInTime,
-                out: checkOutTime,
-                reason: reason,
-                file: selectedFile?.name
-            });
-
+            
             await axiosInstance.put('/check-time/edit', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'

@@ -45,9 +45,6 @@ export function middleware(request: NextRequest) {
   const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
   const userRole = request.cookies.get("user_role")?.value;
 
-  console.log(`[Middleware] มีคนกำลังเข้าหน้า: ${pathname}`);
-  console.log(`[Middleware] Role ที่มันอ่านได้จาก Cookie คือ: "${userRole}"`);
-
   // isAuthenticated แค่มี session token ก็พอ แล้วเดี๋ยว fallback ไปหน้า intern ถ้ายกเว้นไม่เจอ role
   const isAuthenticated = !!sessionToken;
 

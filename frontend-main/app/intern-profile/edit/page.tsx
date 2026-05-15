@@ -220,9 +220,11 @@ export default function EditProfilePage() {
                 }
                 isHighSchool = eduKey === "high_school";
               }
-            } catch {
-              console.log("Cannot fetch institution data");
+            } catch (error) {
+              if (process.env.NODE_ENV === "development") {
+                console.error(error);
             }
+          }
           }
 
           setForm({
@@ -301,17 +303,23 @@ export default function EditProfilePage() {
                           : "",
                     }));
                   }
-                } catch {
-                  console.log("Cannot fetch position data");
+                } catch (error) {
+                    if (process.env.NODE_ENV === "development") {
+                      console.error(error);
+                    }
                 }
               }
             }
-          } catch {
-            console.log("Cannot fetch application data");
-          }
+          } catch (error) {
+                    if (process.env.NODE_ENV === "development") {
+                      console.error(error);
+                    }
+                }
         }
       } catch (error) {
-        console.error("Error fetching profile:", error);
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
+          }
       } finally {
         setIsLoading(false);
       }
@@ -483,7 +491,6 @@ export default function EditProfilePage() {
             ? new Date(endDate).toISOString()
             : undefined,
       };
-      console.log("Saving student profile:", profilePayload);
       await userApi.updateStudentProfile(profilePayload);
 
       // Update application_informations (hours/dates) so me() returns correct data

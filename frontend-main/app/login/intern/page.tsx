@@ -79,7 +79,6 @@ function InternLoginContent() {
         // Set token cookie สำหรับ iTT SSO (shared on same domain)
         document.cookie = `token=${response.token}; path=/; max-age=86400; SameSite=Lax`;
 
-        console.log("Login สำเร็จ:", response.user);
         // Redirect to intern home page
         router.push("/intern-home");
       } catch (error: unknown) {

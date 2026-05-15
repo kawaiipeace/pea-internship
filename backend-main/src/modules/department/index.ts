@@ -38,6 +38,7 @@ export const department = new Elysia({
       return response;
     },
     {
+      role: 1,
       body: model.CreateDepartmentBody,
       detail: {
         summary: "สร้างแผนกใหม่ (Create Department)",
@@ -73,6 +74,7 @@ export const department = new Elysia({
       return response;
     },
     {
+      role: 1,
       params: model.params,
       detail: {
         summary: "ลบข้อมูลแผนก (Delete Department)",

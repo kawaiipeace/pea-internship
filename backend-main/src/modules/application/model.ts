@@ -32,7 +32,7 @@ export const UploadDocumentBody = t.Object({
     type: ["application/pdf", "image/jpeg", "image/png"],
   }),
 });
-
+ 
 export const ReviewDocumentBody = t.Object({
   status: t.Union([t.Literal("VERIFIED"), t.Literal("INVALID")]),
   note: t.Optional(t.String()),

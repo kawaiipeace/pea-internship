@@ -23,8 +23,6 @@ export const requestForToken = async () => {
       scope: '/'
     });
 
-    console.log('Service Worker registered with scope:', registration.scope);
-
     await navigator.serviceWorker.ready;
 
     const currentToken = await getToken(messaging, {
@@ -33,7 +31,6 @@ export const requestForToken = async () => {
     });
 
     if (currentToken) {
-      console.log('FCM Token generated:', currentToken);
       return currentToken;
     }
     return null;

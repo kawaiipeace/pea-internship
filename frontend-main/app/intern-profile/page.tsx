@@ -334,8 +334,10 @@ export default function InternProfilePage() {
                   }
                   isHighSchool = eduKey === "high_school";
                 }
-              } catch {
-                console.log("Cannot fetch institution data");
+              } catch(error) {
+                  if (process.env.NODE_ENV === "development") {
+                    console.error(error);
+                  }
               }
             }
 
@@ -384,13 +386,17 @@ export default function InternProfilePage() {
                     if (pos) {
                       setApplicationPosition(pos);
                     }
-                  } catch {
-                    console.log("Cannot fetch position data for application");
+                  } catch(error) {
+                      if (process.env.NODE_ENV === "development") {
+                        console.error(error);
+                      }
                   }
                 }
               }
-            } catch {
-              console.log("Cannot fetch application data");
+            } catch(error) {
+                if (process.env.NODE_ENV === "development") {
+                  console.error(error);
+                }
             }
 
             // Status logic based on internshipStatus
@@ -410,10 +416,9 @@ export default function InternProfilePage() {
             }
             return; // สำเร็จแล้ว ไม่ต้อง fallback
           }
-        } catch (profileError) {
-          console.log(
-            "User profile API not available, falling back to old API",
-          );
+        } catch (error) {
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
         }
 
         // Fallback: ลองใช้ API เก่า /users/me/profile
@@ -461,9 +466,10 @@ export default function InternProfilePage() {
                   }
                   fallbackIsHighSchool = eduKey === "high_school";
                 }
-              } catch {
-                console.log("Cannot fetch institution data");
-              }
+              } catch (error) {
+                  if (process.env.NODE_ENV === "development") {
+                    console.error(error);
+                }
             }
 
             setInternData({
@@ -507,24 +513,20 @@ export default function InternProfilePage() {
             }
             return; // สำเร็จแล้ว ไม่ต้อง fallback
           }
-        } catch (profileError) {
-          console.log(
-            "Profile API not available, falling back to session data",
-          );
         }
 
         // Fallback: ใช้ข้อมูลจาก Better Auth session + student profile API แยก
         const sessionData = await authApi.getSession();
         if (sessionData && sessionData.user) {
           const user = sessionData.user;
-          console.log("Using session data:", user);
 
           // ลองดึง student profile แยก (ถ้ามี API)
           let studentData = null;
           try {
             studentData = await studentProfileApi.getMyStudentProfileFull();
-          } catch {
-            console.log("Student profile API not available");
+          } catch (error) {
+            if (process.env.NODE_ENV === "development") {
+              console.error(error);
           }
 
           // Format internship period if student data available
@@ -604,9 +606,10 @@ export default function InternProfilePage() {
                   }
                   sessionIsHighSchool2 = eduKey === "high_school";
                 }
-              } catch {
-                console.log("Cannot fetch institution data");
-              }
+              } catch (error) {
+                  if (process.env.NODE_ENV === "development") {
+                    console.error(error);
+                }
             }
 
             major = sessionIsHighSchool2

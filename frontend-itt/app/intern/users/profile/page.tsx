@@ -199,11 +199,8 @@ const ProfilePage = () => {
             const historyRes = await axiosInstance.get('/applications/history/me');
             const history: any[] = historyRes.data ?? [];
 
-            console.log('Internship history:', history);
-
             // หา active record ล่าสุด
             const activeApp = history.find((h) => h.isActive) ?? history[0];
-            console.log('Active application:', activeApp);
             if (!activeApp) return;
 
             const positionName: string = activeApp.positionName ?? '';
@@ -219,10 +216,8 @@ const ProfilePage = () => {
             // ดึง mentor จาก /position?departmentId=xxx
             const posRes = await axiosInstance.get(`/position?department=${departmentId}`);
             const positions: any[] = posRes.data?.data ?? posRes.data ?? [];
-            console.log('Fetched positions for dept:', departmentId, positions);
 
             const matchedPos = positions.find((p: any) => p.id === activeApp.positionId) ?? positions[0];
-            console.log('Matched position:', matchedPos);
 
             // ชื่อกองงาน จาก department
             const deptName: string =

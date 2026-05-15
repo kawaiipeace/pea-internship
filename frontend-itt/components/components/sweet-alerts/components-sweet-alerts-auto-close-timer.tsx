@@ -20,11 +20,7 @@ const ComponentsSweetAlertsAutoCloseTimer = () => {
             willClose: () => {
                 if (timerInterval) clearInterval(timerInterval);
             },
-        }).then((result: any) => {
-            if (result.dismiss === Swal.DismissReason.timer) {
-                console.log('I was closed by the timer');
-            }
-        });
+        })
     };
 
     return (

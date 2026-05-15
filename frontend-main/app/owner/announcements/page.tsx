@@ -95,8 +95,6 @@ export default function AnnouncementsPage() {
         const userProfile = await userApi.getUserProfile();
         const departmentId = userProfile?.departmentId;
 
-        console.log("User departmentId:", departmentId);
-
         // ดึง positions โดย filter ตาม department (ถ้ามี)
         const response = await positionApi.getPositions({
           limit: 100,
