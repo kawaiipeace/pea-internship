@@ -1,6 +1,11 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+
+if (process.env.NODE_ENV !== "development") {
+  notFound();
+}
 
 type FileDoc = {
   file: string;

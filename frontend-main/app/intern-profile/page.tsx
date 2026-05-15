@@ -297,19 +297,16 @@ export default function InternProfilePage() {
           if (profileData) {
             const studentProfile = extractStudentProfile(profileData.profile);
 
-            // Format internship period
             let internshipPeriod = "-";
             if (studentProfile?.startDate && studentProfile?.endDate) {
               internshipPeriod = `${formatDateThai(studentProfile.startDate)} - ${formatDateThai(studentProfile.endDate)}`;
             }
 
-            // faculty เป็น string ตรงๆ จาก backend (ไม่ใช่ object)
             const facultyName = studentProfile?.faculty || "-";
             let institutionName = "-";
             let educationLabel = "-";
             let isHighSchool = false;
 
-            // ดึงข้อมูล institution จาก API ตาม institutionId
             if (studentProfile?.institutionId) {
               try {
                 const inst = await institutionApi.getInstitutionById(
@@ -317,7 +314,6 @@ export default function InternProfilePage() {
                 );
                 if (inst) {
                   institutionName = inst.name;
-                  // แปลง institutionsType เป็น education label
                   const typeToEducation: { [key: string]: string } = {
                     UNIVERSITY: "university",
                     VOCATIONAL: "vocational",
@@ -328,18 +324,17 @@ export default function InternProfilePage() {
                     typeToEducation[inst.institutionsType] || "other";
                   setEducationType(eduKey);
                   educationLabel = getEducationLabel(eduKey);
-                  // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
                   if (eduKey === "other" && studentProfile?.studentNote) {
                     educationLabel = studentProfile.studentNote;
                   }
                   isHighSchool = eduKey === "high_school";
                 }
-              } catch(error) {
-                  if (process.env.NODE_ENV === "development") {
-                    console.error(error);
-                  }
+              } catch (error) {
+                if (process.env.NODE_ENV === "development") {
+                  console.error(error);
+                }
               }
-            }
+            } // <--- ปีกกาปิด if
 
             setInternData({
               fullName:
@@ -368,7 +363,6 @@ export default function InternProfilePage() {
               profileImage: studentProfile?.image || "",
             });
 
-            // Fetch latest application to determine hasApplication and get position data
             try {
               const latestApp = await applicationApi.getMyLatestApplication();
               if (
@@ -377,7 +371,6 @@ export default function InternProfilePage() {
                 latestApp.applicationStatus !== "ABORT"
               ) {
                 setHasApplication(true);
-                // Fetch position data for owner/mentor info
                 if (latestApp.positionId) {
                   try {
                     const pos = await positionApi.getPositionById(
@@ -386,20 +379,19 @@ export default function InternProfilePage() {
                     if (pos) {
                       setApplicationPosition(pos);
                     }
-                  } catch(error) {
-                      if (process.env.NODE_ENV === "development") {
-                        console.error(error);
-                      }
+                  } catch (error) {
+                    if (process.env.NODE_ENV === "development") {
+                      console.error(error);
+                    }
                   }
                 }
               }
-            } catch(error) {
-                if (process.env.NODE_ENV === "development") {
-                  console.error(error);
-                }
+            } catch (error) {
+              if (process.env.NODE_ENV === "development") {
+                console.error(error);
+              }
             }
 
-            // Status logic based on internshipStatus
             if (studentProfile?.internshipStatus) {
               const statusMap: { [key: string]: string } = {
                 AWAITING: "รอเริ่มฝึกงาน",
@@ -411,7 +403,7 @@ export default function InternProfilePage() {
               if (mappedStatus) {
                 setCurrentStatus(mappedStatus);
               } else {
-                setCurrentStatus(""); // ไม่แสดง badge ถ้าไม่ตรงกับเงื่อนไข
+                setCurrentStatus("");
               }
             }
             return; // สำเร็จแล้ว ไม่ต้อง fallback
@@ -419,6 +411,7 @@ export default function InternProfilePage() {
         } catch (error) {
           if (process.env.NODE_ENV === "development") {
             console.error(error);
+          }
         }
 
         // Fallback: ลองใช้ API เก่า /users/me/profile
@@ -428,7 +421,6 @@ export default function InternProfilePage() {
             const { user, studentProfile, mentor, supervisor, department } =
               profileData;
 
-            // Format internship period
             let internshipPeriod = "-";
             if (studentProfile?.startDate && studentProfile?.endDate) {
               internshipPeriod = `${formatDateThai(studentProfile.startDate)} - ${formatDateThai(studentProfile.endDate)}`;
@@ -436,13 +428,11 @@ export default function InternProfilePage() {
 
             setEducationType("university");
 
-            // faculty เป็น string ตรงๆ
             const fallbackFacultyName = studentProfile?.faculty || "-";
             let fallbackInstitutionName = "-";
             let fallbackEducationLabel = "-";
             let fallbackIsHighSchool = false;
 
-            // ดึงข้อมูล institution จาก API ตาม institutionId
             if (studentProfile?.institutionId) {
               try {
                 const inst = await institutionApi.getInstitutionById(
@@ -460,17 +450,17 @@ export default function InternProfilePage() {
                     typeToEducation[inst.institutionsType] || "other";
                   setEducationType(eduKey);
                   fallbackEducationLabel = getEducationLabel(eduKey);
-                  // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
                   if (eduKey === "other" && studentProfile?.studentNote) {
                     fallbackEducationLabel = studentProfile.studentNote;
                   }
                   fallbackIsHighSchool = eduKey === "high_school";
                 }
               } catch (error) {
-                  if (process.env.NODE_ENV === "development") {
-                    console.error(error);
+                if (process.env.NODE_ENV === "development") {
+                  console.error(error);
                 }
-            }
+              }
+            } // <--- ตรงนี้ที่ปีกกาเคยหายไป
 
             setInternData({
               fullName: `${user.fname || ""} ${user.lname || ""}`.trim() || "-",
@@ -511,7 +501,11 @@ export default function InternProfilePage() {
                 setCurrentStatus(mappedStatus);
               }
             }
-            return; // สำเร็จแล้ว ไม่ต้อง fallback
+            return;
+          }
+        } catch (error) { // <--- ตรงนี้ที่ catch เคยหายไป
+          if (process.env.NODE_ENV === "development") {
+            console.error(error);
           }
         }
 
@@ -520,16 +514,15 @@ export default function InternProfilePage() {
         if (sessionData && sessionData.user) {
           const user = sessionData.user;
 
-          // ลองดึง student profile แยก (ถ้ามี API)
           let studentData = null;
           try {
             studentData = await studentProfileApi.getMyStudentProfileFull();
           } catch (error) {
             if (process.env.NODE_ENV === "development") {
               console.error(error);
+            }
           }
 
-          // Format internship period if student data available
           let internshipPeriod = "-";
           let totalHours = "-";
           let institution = "-";
@@ -537,7 +530,6 @@ export default function InternProfilePage() {
           let major = "-";
           let sessionEducationLabel = "-";
 
-          // ลองใช้ข้อมูลจาก API ก่อน
           if (studentData?.studentProfile) {
             const sp = studentData.studentProfile;
             if (sp.startDate && sp.endDate) {
@@ -547,7 +539,6 @@ export default function InternProfilePage() {
             institution = studentData.institution?.name || "-";
             faculty = sp.faculty || "-";
 
-            // ดึง education จาก institution type
             let sessionIsHighSchool = false;
             if (studentData.institution?.institutionsType) {
               const typeToEducation: { [key: string]: string } = {
@@ -561,7 +552,6 @@ export default function InternProfilePage() {
                 "other";
               setEducationType(eduKey);
               sessionEducationLabel = getEducationLabel(eduKey);
-              // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
               if (eduKey === "other" && sp.studentNote) {
                 sessionEducationLabel = sp.studentNote;
               }
@@ -571,9 +561,7 @@ export default function InternProfilePage() {
             major = sessionIsHighSchool
               ? sp.studentNote || "-"
               : sp.major || "-";
-          }
-          // ถ้าไม่มีจาก API ลองใช้จาก session.user.studentProfile
-          else if (user.studentProfile) {
+          } else if (user.studentProfile) {
             const sp = user.studentProfile;
             if (sp.startDate && sp.endDate) {
               internshipPeriod = `${formatDateThai(sp.startDate)} - ${formatDateThai(sp.endDate)}`;
@@ -581,7 +569,6 @@ export default function InternProfilePage() {
             totalHours = sp.hours ? `${Number(sp.hours)} ชั่วโมง` : "-";
             faculty = sp.faculty || "-";
 
-            // ดึง institution จาก API
             let sessionIsHighSchool2 = false;
             if (sp.institutionId) {
               try {
@@ -600,17 +587,17 @@ export default function InternProfilePage() {
                     typeToEducation[inst.institutionsType] || "other";
                   setEducationType(eduKey);
                   sessionEducationLabel = getEducationLabel(eduKey);
-                  // สำหรับ "อื่น ๆ" — แสดงประเภทการศึกษาจาก studentNote
                   if (eduKey === "other" && sp.studentNote) {
                     sessionEducationLabel = sp.studentNote;
                   }
                   sessionIsHighSchool2 = eduKey === "high_school";
                 }
               } catch (error) {
-                  if (process.env.NODE_ENV === "development") {
-                    console.error(error);
+                if (process.env.NODE_ENV === "development") {
+                  console.error(error);
                 }
-            }
+              }
+            } // <--- ตรงนี้ที่ปีกกาเคยหายไปอีกจุด
 
             major = sessionIsHighSchool2
               ? sp.studentNote || "-"
@@ -641,7 +628,6 @@ export default function InternProfilePage() {
             profileImage: "",
           });
         } else {
-          // ไม่มี session - แสดงข้อมูลว่าง
           setInternData({
             ...defaultInternData,
             fullName: "-",
