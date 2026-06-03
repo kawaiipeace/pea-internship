@@ -10,7 +10,6 @@ import { relatedFieldOptions } from "../../../data/relatedFieldOptions";
 import {
   positionApi,
   CreatePositionData,
-  docTypeApi,
   DocType,
   userApi,
   StaffUser,
@@ -73,10 +72,12 @@ export default function CreateAnnouncementPage() {
   const [customMajorOptions, setCustomMajorOptions] = useState<string[]>([]);
   const majorDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Document types from API
-  const [docTypes, setDocTypes] = useState<DocType[]>([]);
+  // Document types (hardcoded)
+  const [docTypes] = useState<DocType[]>([
+    { id: 1, name: "Portfolio", description: "ผลงานของนักศึกษา", isRequired: false },
+    { id: 2, name: "Resume", description: "เอกสารประวัติส่วนตัว", isRequired: false },
+  ]);
   const [selectedDocTypes, setSelectedDocTypes] = useState<number[]>([]);
-  const [loadingDocTypes, setLoadingDocTypes] = useState(true);
 
   // Staff list for mentor selection
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
@@ -131,21 +132,7 @@ export default function CreateAnnouncementPage() {
   const [showQualificationsTooltip, setShowQualificationsTooltip] =
     useState(false);
 
-  // Default document types (fallback when API is not available)
-  const defaultDocTypes: DocType[] = [
-    {
-      id: 1,
-      name: "Portfolio",
-      description: "ผลงานของนักศึกษา",
-      isRequired: false,
-    },
-    {
-      id: 2,
-      name: "Resume",
-      description: "เอกสารประวัติส่วนตัว",
-      isRequired: false,
-    },
-  ];
+
 
   // Close major dropdown when clicking outside
   useEffect(() => {
@@ -167,28 +154,7 @@ export default function CreateAnnouncementPage() {
     };
   }, [showFieldDropdown]);
 
-  // Load doc types from API
-  useEffect(() => {
-    const fetchDocTypes = async () => {
-      try {
-        const types = await docTypeApi.getDocTypes();
-        if (types && types.length > 0) {
-          setDocTypes(types);
-        } else {
-          setDocTypes(defaultDocTypes);
-        }
-      } catch(error) {
-          if (process.env.NODE_ENV === "development") {
-            console.error(error);
-        }
-      
-        setDocTypes(defaultDocTypes);
-      } finally {
-        setLoadingDocTypes(false);
-      }
-    };
-    fetchDocTypes();
-  }, []);
+
 
   // Load current user profile for contact section
   useEffect(() => {
@@ -710,7 +676,7 @@ export default function CreateAnnouncementPage() {
     setBenefitsList(benefitsList.filter((_, i) => i !== index));
   };
 
-  if (loadingUser || loadingDocTypes) {
+  if (loadingUser) {
     return (
       <div className="min-h-screen bg-gray-50">
         <VideoLoading message="กำลังโหลดข้อมูล..." />
@@ -1211,13 +1177,7 @@ export default function CreateAnnouncementPage() {
                 เลือกเอกสารที่ต้องการให้นักศึกษาแนบมาพร้อมใบสมัคร
               </p>
 
-              {loadingDocTypes ? (
-                <div className="flex gap-4">
-                  <div className="animate-pulse flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg w-40 h-16 bg-gray-100"></div>
-                  <div className="animate-pulse flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg w-40 h-16 bg-gray-100"></div>
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4">
                   {docTypes.map((docType) => (
                     <label
                       key={docType.id}
@@ -1269,7 +1229,6 @@ export default function CreateAnnouncementPage() {
                     </label>
                   ))}
                 </div>
-              )}
             </div>
 
             {/* Job Details */}
