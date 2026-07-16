@@ -14,12 +14,12 @@ test.describe('Applicant Authentication - Login', () => {
 
     // ระบบต้องไม่อนุญาตให้เข้าสู่ระบบ และต้องยังอยู่ที่หน้า login เดิม
     await expect(page).toHaveURL(/\/login\/intern/);
-    await expect(page.getByText(/เบอร์โทรศัพท์หรือรหัสผ่าน ไม่ถูกต้อง/)).toBeVisible();
+    await expect(page.getByText(/เบอร์โทรศัพท์หรือรหัสผ่าน ไม่ถูกต้อง กรุณาระบุข้อมูลอีกครั้ง/)).toBeVisible();
   });
 
   test('IT-TC-003: login fails when password is incorrect', async ({ page }) => {
     // เบอร์โทรศัพท์นี้มีลงทะเบียนอยู่ในระบบแล้ว แต่กรอกรหัสผ่านผิด 
-    await page.getByPlaceholder('เบอร์โทรศัพท์').fill('0812345678');
+    await page.getByPlaceholder('เบอร์โทรศัพท์').fill('0971549754');
     await page.getByPlaceholder('รหัสผ่าน').fill('wrongpass123');
     await page.getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
 
