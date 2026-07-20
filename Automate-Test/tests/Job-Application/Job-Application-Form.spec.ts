@@ -1,0 +1,96 @@
+import { test, expect, type Page } from '@playwright/test';
+
+test.describe('Job Application', () => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
+
+    /* หมายเหตุ: Test case ต้องรันทีละ case เพราะ Test 1 ครั้งจะมีเปลี่ยนแปลงสถานะของใบสมัครงาน
+    และ หลังจากรัน Test 1 case ต้องเข้าไปกดยกเลิกใบสมัครงานก่อนถึงจะเริ่ม Test case ต่อไปได้ */
+
+
+    // ต้อง login เข้าระบบก่อนเสมอ
+    await page.goto('http://localhost:2700/login/intern');
+    await page.getByPlaceholder('เบอร์โทรศัพท์').fill('0853652555');
+    await page.getByPlaceholder('รหัสผ่าน', { exact: true }).fill('12345678');
+    await page.locator('form').getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
+    await expect(page).not.toHaveURL(/\/login/);
+
+    await page.goto('http://localhost:2700/intern-info?positionId=3');
+  });
+
+  test('IT-TC-036: application fails when training hours is set to 0', async ({ page }) => {
+    // (Excel STATUS: FAIL) — ทีม Tester แนะนำให้ล็อคช่องชั่วโมงไม่ให้แก้ไขเองได้
+    test.fail(true, 'Known bug: ระบบยังอนุญาตให้กรอกจำนวนชั่วโมงเป็น 0 ได้');
+
+    await page.getByPlaceholder('จำนวนชั่วโมงที่ฝึก').fill('0');
+    await page.getByPlaceholder('ทักษะด้านต่าง ๆ').fill('มีพื้นฐานภาษา Python และ SQL');
+    await page.getByPlaceholder('โปรดระบุสิ่งที่คาดหวังจากการฝึกงาน').fill('ต้องการเรียนรู้การทำงานจริงในองค์กร');
+    await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+
+    // เผื่อระบบเปิด popup ยืนยันขึ้นมาก่อน (พฤติกรรมจริงที่อาจเกิดคล้ายกรณีอื่นๆ ที่เจอมาก่อน)
+    const confirmButton = page.getByRole('button', { name: 'ยืนยัน', exact: true });
+    if (await confirmButton.isVisible().catch(() => false)) {
+      await confirmButton.click();
+    }
+
+    // Expected ที่ถูกต้อง: ต้องไม่อนุญาตให้ส่งฟอร์มสำเร็จ ต้องมีข้อความเตือนว่าห้ามเป็น "ชั่วโมงที่ฝึกไม่ถูกต้อง" หรือ ระบบควรทำให้ช่องชั่วโมงไม่สามารถแก้ไขเองได้ (ล็อคช่อง)
+    await expect(page).toHaveURL(/intern-info/);
+    await expect(page.getByText(/ชั่วโมงที่ฝึกไม่ถูกต้อง/)).toBeVisible();
+  });
+
+  test('IT-TC-037: application fails when training hours exceed a realistic maximum for the selected period', async ({ page }) => {
+    // (Excel STATUS: FAIL) — ทีมแนะนำให้ล็อคช่องชั่วโมงไม่ให้แก้ไขเองได้เช่นกัน
+    test.fail(true, 'Known bug: ระบบยังอนุญาตให้กรอกจำนวนชั่วโมงเกินความเป็นจริงเมื่อเทียบกับระยะเวลาที่เลือก');
+
+    await page.getByPlaceholder('จำนวนชั่วโมงที่ฝึก').fill('20000');
+    await page.getByPlaceholder('ทักษะด้านต่าง ๆ').fill('มีพื้นฐานภาษา Python และ SQL');
+    await page.getByPlaceholder('โปรดระบุสิ่งที่คาดหวังจากการฝึกงาน').fill('ต้องการเรียนรู้การทำงานจริงในองค์กร');
+    await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+
+    const confirmButton = page.getByRole('button', { name: 'ยืนยัน', exact: true });
+    if (await confirmButton.isVisible().catch(() => false)) {
+      await confirmButton.click();
+    }
+
+    // Expected ที่ถูกต้อง: ต้องไม่อนุญาตให้ส่งฟอร์มสำเร็จ ต้องมีข้อความเตือนว่าชั่วโมงไม่สอดคล้องกับระยะเวลา หรือ ระบบควรทำให้ช่องชั่วโมงไม่สามารถแก้ไขเองได้ (ล็อคช่อง)
+    await expect(page).toHaveURL(/intern-info/);
+    await expect(page.getByText(/ชั่วโมง.*ไม่สอดคล้องกับระยะเวลา/)).toBeVisible();
+  });
+
+  test('IT-TC-038: application fails when skills/expectation fields contain only a single character', async ({ page }) => {
+    // (Excel STATUS: FAIL) — ทีม Tester แนะนำให้ตั้งเงื่อนไข min length ให้ฟิลด์นี้ หรือ มีการตรวจสอบ value เป็นคำ
+    test.fail(true, 'Known bug: ระบบยังอนุญาตให้กรอกฟิลด์ทักษะ/ความคาดหวังแค่ตัวอักษรเดียว');
+
+    await page.getByPlaceholder('จำนวนชั่วโมงที่ฝึก').fill('200');
+    await page.getByPlaceholder('ทักษะด้านต่าง ๆ').fill('.');
+    await page.getByPlaceholder('โปรดระบุสิ่งที่คาดหวังจากการฝึกงาน').fill('A');
+    await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+
+    const confirmButton = page.getByRole('button', { name: 'ยืนยัน', exact: true });
+    if (await confirmButton.isVisible().catch(() => false)) {
+      await confirmButton.click();
+    }
+
+    // Expected ที่ถูกต้อง: ต้องไม่อนุญาตให้ส่งฟอร์มสำเร็จ ต้องขึ้นข้อความเตือนให้ระบุข้อมูลเพิ่มเติม
+    await expect(page).toHaveURL(/intern-info/);
+    await expect(page.getByText(/กรุณาระบุข้อมูลเพิ่มเติม/)).toBeVisible();
+  });
+
+  test('IT-TC-039: application status page displays correctly after submitting valid data', async ({ page }) => {
+    await page.getByPlaceholder('จำนวนชั่วโมงที่ฝึก').fill('320');
+    await page.getByPlaceholder('ทักษะด้านต่าง ๆ').fill('มีพื้นฐานภาษา Python, SQL และทักษะการเทสต์ระบบ');
+    await page.getByPlaceholder('โปรดระบุสิ่งที่คาดหวังจากการฝึกงาน').fill('ต้องการเรียนรู้การทำงานจริงในองค์กร');
+    await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
+
+    // กดยืนยันแล้วต้องเปลี่ยนไปหน้า application-status ทันที
+    await expect(page).toHaveURL(/\/application-status/);
+
+    // เช็คหัวข้อ "เอกสารที่ต้องอัปโหลด" และรายชื่อเอกสารที่ต้องใช้ต้องแสดงครบ
+    await expect(page.getByText('เอกสารที่ต้องอัปโหลด')).toBeVisible();
+    await expect(page.getByText('Transcript*')).toBeVisible();
+    await expect(page.getByText('Resume*')).toBeVisible();
+    await expect(page.getByText('Portfolio*')).toBeVisible();
+
+    // สถานะใบสมัครต้องแสดงเป็น "รอยื่นเอกสาร"
+    await page.locator('div').filter({ hasText: /^รอยื่นเอกสาร$/ }).click();
+  });
+});
