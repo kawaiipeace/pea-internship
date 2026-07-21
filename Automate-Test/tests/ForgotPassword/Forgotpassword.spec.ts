@@ -8,7 +8,7 @@ test.describe('Forgot Password', () => {
     await page.getByRole('link', { name: 'ลืมรหัสผ่าน' }).click();
   });
 
-    // IT-TC-040 กรณีไม่กรอกข้อมูลใด ๆ เลย
+    // IT-TC-040: กรณีไม่กรอกข้อมูลใด ๆ เลย
   test('IT-TC-040: In the event that there is absolutely no information available', async ({ page }) => {
     await page.getByRole('button', { name: 'ยืนยัน' }).click();
 
@@ -17,7 +17,7 @@ test.describe('Forgot Password', () => {
     await expect(page.getByText(/ระบุอีเมล/)).toBeVisible();
   });
     
-    // IT-TC-041 กรณีกรอกตัวอักษรลงในช่องเบอร์โทรศัพท์
+    // IT-TC-041: กรณีกรอกตัวอักษรลงในช่องเบอร์โทรศัพท์
     // Status: FAIL — ทีม Tester แนะนำให้ไม่สามารถกรอกตัวอักษรลงในช่องเบอร์โทรศัพท์ได้ (ควรเป็นตัวเลขเท่านั้น) แต่ระบบยังอนุญาตให้กรอกตัวอักษรลงไปได้
   test('IT-TC-041: Entering characters into the phone number field' , async ({ page }) => {
     test.fail(true, 'Known bug: ระบบยังอนุญาตให้กรอกตัวอักษรลงในช่องเบอร์โทรศัพท์ได้');
@@ -29,7 +29,7 @@ test.describe('Forgot Password', () => {
     await expect(page.getByText(/รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง/)).toBeVisible();
   });
 
-    // IT-TC-042 กรณีระบบแจ้งเตือนเมื่อกรอกเบอร์โทรศัพท์หรืออีเมลที่ไม่ถูกต้องหรือไม่ถูกต้อง
+    // IT-TC-042: กรณีระบบแจ้งเตือนเมื่อกรอกเบอร์โทรศัพท์หรืออีเมลที่ไม่ถูกต้องหรือไม่ถูกต้อง
   test ('IT-TC-042: System notification regarding the entry of an incorrect or invalid phone number or email address.', async ({ page }) => {
     await page.getByRole('textbox', { name: 'เบอร์โทรศัพท์' }).fill('0999999999');
     await page.getByRole('textbox', { name: 'อีเมล' }).fill('wrongdata@gmail.com');
@@ -39,7 +39,7 @@ test.describe('Forgot Password', () => {
     await expect(page.getByText(/ไม่พบบัญชีผู้ใช้จากเบอร์โทรศัพท์และอีเมลนี้/)).toBeVisible();
   });
 
-    // IT-TC-043 การเข้าสู่หน้ายืนยันรหัส OTP เมื่อกรอกเบอร์โทรศัพท์และอีเมลถูกต้องตรงกับฐานข้อมูล
+    // IT-TC-043: การเข้าสู่หน้ายืนยันรหัส OTP เมื่อกรอกเบอร์โทรศัพท์และอีเมลถูกต้องตรงกับฐานข้อมูล
   test ('IT-TC-043: Entering a valid phone number and email address.', async ({ page }) => {
     await page.getByRole('textbox', { name: 'เบอร์โทรศัพท์' }).fill('0971549754');
     await page.getByRole('textbox', { name: 'อีเมล' }).fill('66111810@dpu.ac.th');
@@ -52,7 +52,7 @@ test.describe('Forgot Password', () => {
     await expect(page.getByText('ไม่ได้รับรหัส? ส่งรหัสใหม่')).toBeVisible();
   });
 
-    // IT-TC-044 การแจ้งเตือนของระบบ กรณีกรอกรหัส OTP ไม่ถูกต้อง
+    // IT-TC-044: การแจ้งเตือนของระบบ กรณีกรอกรหัส OTP ไม่ถูกต้อง
   test ('IT-TC-044: System notification for entering an incorrect OTP code.', async ({ page }) => {
     await page.getByRole('textbox', { name: 'เบอร์โทรศัพท์' }).fill('0971549754');
     await page.getByRole('textbox', { name: 'อีเมล' }).fill('66111810@dpu.ac.th');

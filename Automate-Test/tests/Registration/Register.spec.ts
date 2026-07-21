@@ -1,8 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
 
-// หมายเหตุ: IT-TC-011 (การทำงานของปุ่ม "ย้อนกลับ") ถูกไฮไลท์สีเทา/ดำในไฟล์ Excel
-// ตามที่ตกลงกันไว้ว่าจะข้าม case นี้ไป ไม่รวมอยู่ในไฟล์นี้
-
 test.describe('Applicant Registration', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:2700/register');
@@ -17,6 +14,7 @@ test.describe('Applicant Registration', () => {
     await page.getByRole('radio', { name: data.gender }).check();
   }
 
+  // IT-TC-007: กรณีกรอกข้อมูลถูกต้องครบถ้วนและกดยืนยันแล้วต้องลงทะเบียนสำเร็จ
   test('IT-TC-007: registration succeeds with valid and complete information', async ({ page }) => {
     // ใช้ timestamp ทำให้อีเมล/เบอร์โทรไม่ซ้ำทุกครั้งที่รัน ป้องกัน fail จาก duplicate data
     const uniqueId = Date.now().toString().slice(-8);
@@ -29,7 +27,7 @@ test.describe('Applicant Registration', () => {
       gender: 'ชาย',
     });
 
-    // Test data ต้นฉบับไม่ได้ระบุระดับการศึกษาไว้ เลือก "มัธยมศึกษาตอนปลาย" เป็นตัวอย่าง (ฟิลด์น้อยสุด)
+  
     await page.getByRole('radio', { name: 'มัธยมศึกษาตอนปลาย' }).check();
     await page.getByPlaceholder('มัธยมศึกษาตอนปลาย').fill('โรงเรียนทดสอบ');
     await page.getByPlaceholder('แผนการเรียน').fill('วิทย์-คณิต');
@@ -41,11 +39,12 @@ test.describe('Applicant Registration', () => {
     // ระบบต้องแสดงป๊อปอัปยืนยันก่อน submit จริง
     await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
 
-    // ต้องบันทึกสำเร็จ แสดงข้อความแจ้งเตือน และพากลับไปหน้า Login
+    // Expected: ต้องบันทึกสำเร็จ แสดงข้อความแจ้งเตือน และพากลับไปหน้า Login
     await expect(page.getByText(/ลงทะเบียนสำเร็จ/)).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
 
+  // IT-TC-008 : การลงทะเบียนกรณี รหัสผ่านน้อยกว่า 8 ตัวอักษร
   test('IT-TC-008: registration fails when password is less than 8 characters', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
@@ -62,10 +61,11 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('รหัสผ่าน', { exact: true }).fill('1234567');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
 
-    // แสดงข้อความเตือนใต้ input รหัสผ่านทันที ไม่ต้องมี popup ยืนยัน
+    // Expected: แสดงข้อความเตือนใต้ input ว่า "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" และ ต้องไม่มี popup ยืนยัน
     await expect(page.getByText('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')).toBeVisible();
   });
 
+  // IT-TC-009 : การลงทะเบียนกรณี ยืนยันรหัสผ่านไม่ตรงกัน
   test('IT-TC-009: registration fails when password confirmation does not match', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
@@ -83,9 +83,11 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('ยืนยันรหัสผ่าน').fill('1dr0wssaP');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
 
+   // Expected: แสดงข้อความเตือนใต้ input ว่า "รหัสผ่านไม่ตรงกัน" 
     await expect(page.getByText('รหัสผ่านไม่ตรงกัน')).toBeVisible();
   });
 
+  // IT-TC-010 : การลงทะเบียนกรณี อีเมลผิดรูปแบบ
   test('IT-TC-010: registration fails when email format is invalid', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
@@ -103,13 +105,14 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('ยืนยันรหัสผ่าน').fill('Pass1234');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
 
+    // Expected: ต้องไม่ปล่อยให้ลงทะเบียนสำเร็จ และต้องเห็นข้อความเตือน "รูปแบบอีเมลไม่ถูกต้อง"
     await expect(page.getByText('รูปแบบอีเมลไม่ถูกต้อง')).toBeVisible();
   });
 
+  // IT-TC-011 : การลงทะเบียนกรณี เบอร์โทรผิดรูปแบบ
+  // (STATUS CASE: FAIL) — ระบบยังอนุญาตให้ลงทะเบียนสำเร็จ ด้วยเบอร์โทรผิดรูปแบบ ทั้งที่ควรบล็อก
   test('IT-TC-012: registration fails when phone number format is invalid', async ({ page }) => {
-  // (STATUS CASE: FAIL) — ระบบยังอนุญาตให้ลงทะเบียนสำเร็จ
-  // ด้วยเบอร์โทรผิดรูปแบบ ทั้งที่ควรบล็อก รอแก้ไข
-  test.fail(true, 'case status fail : ระบบอนุญาตให้ลงทะเบียนสำเร็จด้วยเบอร์ผิดรูปแบบ');
+    test.fail(true, 'case status fail : ระบบอนุญาตให้ลงทะเบียนสำเร็จด้วยเบอร์ผิดรูปแบบ');
 
   await fillBasicInfo(page, {
     firstName: 'ทดสอบ',
@@ -138,6 +141,7 @@ test.describe('Applicant Registration', () => {
   await expect(page.getByText('รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง')).toBeVisible();
 });
 
+  // IT-TC-013 : การลงทะเบียนกรณี กรอกข้อมูลถูกต้องครบถ้วนและกดยืนยันแล้วต้องไปหน้า login
   test('IT-TC-013: registration accepts free text for "มหาวิทยาลัย" education level', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
@@ -156,10 +160,11 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('ยืนยันรหัสผ่าน').fill('Pass1234');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
 
-    // ระบบต้องยอมรับข้อความทั่วไปและแสดงป๊อปอัปยืนยันเพื่อบันทึกชื่อสถานศึกษาใหม่นี้
+    // Expected: ระบบต้องยอมรับข้อความทั่วไปและแสดงป๊อปอัปยืนยันเพื่อบันทึกชื่อสถานศึกษาใหม่นี้
     await expect(page.getByRole('button', { name: 'ยืนยัน', exact: true })).toBeVisible();
   });
 
+  // IT-TC-014 : ลงทะเบียนของระดับการศึกษา "มัธยมศึกษาตอนปลาย" เมื่อกรอกข้อมูลด้วยข้อความทั่วไป
   test('IT-TC-014: registration accepts free text for "มัธยมศึกษาตอนปลาย" education level', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
@@ -177,9 +182,11 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('ยืนยันรหัสผ่าน').fill('Pass1234');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
 
+    // Expected: ระบบต้องยอมรับข้อความทั่วไป และแสดงหน้าต่างป๊อปอัป "ยืนยันการลงทะเบียน" เพื่อให้ดำเนินขั้นตอนต่อไปได้
     await expect(page.getByRole('button', { name: 'ยืนยัน', exact: true })).toBeVisible();
   });
 
+  // IT-TC-015 : ลงทะเบียนของระดับการศึกษา "ประกาศนียบัตรวิชาชีพ (ปวช.)" เมื่อกรอกข้อมูลด้วยข้อความทั่วไป
   test('IT-TC-015: registration accepts free text for "ปวช." education level', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
@@ -197,9 +204,11 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('ยืนยันรหัสผ่าน').fill('Pass1234');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
 
+    // Expected: ระบบต้องยอมรับข้อความทั่วไป และแสดงหน้าต่างป๊อปอัป "ยืนยันการลงทะเบียน" เพื่อให้ดำเนินขั้นตอนต่อไปได้
     await expect(page.getByRole('button', { name: 'ยืนยัน', exact: true })).toBeVisible();
   });
 
+  // IT-TC-016 : ลงทะเบียนของระดับการศึกษา "ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)" เมื่อกรอกข้อมูลด้วยข้อความทั่วไป
   test('IT-TC-016: registration accepts free text for "ปวส." education level', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
@@ -216,11 +225,13 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('รหัสผ่าน', { exact: true }).fill('Pass1234');
     await page.getByPlaceholder('ยืนยันรหัสผ่าน').fill('Pass1234');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
-
+    
+    // Expected: ระบบต้องยอมรับข้อความทั่วไป และแสดงหน้าต่างป๊อปอัป "ยืนยันการลงทะเบียน" เพื่อให้ดำเนินขั้นตอนต่อไปได้
     await expect(page.getByRole('button', { name: 'ยืนยัน', exact: true })).toBeVisible();
   });
 
- test('IT-TC-017: registration accepts free text for "อื่น ๆ" education level', async ({ page }) => {
+  // IT-TC-017 : ลงทะเบียนของระดับการศึกษา "อื่นๆ" เมื่อกรอกข้อมูลด้วยข้อความทั่วไป 
+  test('IT-TC-017: registration accepts free text for "อื่น ๆ" education level', async ({ page }) => {
     await fillBasicInfo(page, {
       firstName: 'ทดสอบ',
       lastName: 'การศึกษาอื่นๆ',
@@ -239,9 +250,11 @@ test.describe('Applicant Registration', () => {
     await page.getByPlaceholder('ยืนยันรหัสผ่าน').fill('Pass1234');
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
  
+    // Expected: ระบบต้องยอมรับข้อความทั่วไป และแสดงหน้าต่างป๊อปอัป "ยืนยันการลงทะเบียน" เพื่อให้ดำเนินขั้นตอนต่อไปได้
     await expect(page.getByRole('button', { name: 'ยืนยัน', exact: true })).toBeVisible();
   });
 
+  // IT-TC-018: กรณีกรอกเบอร์โทรศัพท์ซ้ำกับที่มีอยู่ในระบบแล้ว
   test('IT-TC-018: registration fails when phone number is already registered', async ({ page }) => {
     // เบอร์ 0971549754 ต้องมีอยู่ในระบบแล้วก่อนรัน test 
     await fillBasicInfo(page, {
@@ -262,13 +275,14 @@ test.describe('Applicant Registration', () => {
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
     await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
 
-    // ระบบต้องแสดง Error Popup แจ้งว่าเบอร์โทรศัพท์ถูกใช้งานแล้ว
+    // Expected: ระบบต้องแสดง Error Popup แจ้งว่าเบอร์โทรศัพท์ถูกใช้งานแล้ว
     await expect(page.getByText('ลงทะเบียนไม่สำเร็จ')).toBeVisible();
     await expect(page.getByText('เบอร์โทรศัพท์นี้ถูกใช้งานแล้ว กรุณาใช้เบอร์โทรอื่น')).toBeVisible();
   });
 
+  // IT-TC-019: กรณีกรอกอีเมลซ้ำกับที่มีอยู่ในระบบแล้ว
   test('IT-TC-019: registration fails when email is already registered', async ({ page }) => {
-    // อีเมล 61111810@dpu.ac.th ต้องมีอยู่ในระบบแล้วก่อนรัน test นี้ (ตาม Precondition)
+    // อีเมล 61111810@dpu.ac.th ต้องมีอยู่ในระบบแล้วก่อนรัน test นี้ 
     await fillBasicInfo(page, {
       firstName: 'Kobchai',
       lastName: 'Leawjuntron',
@@ -287,7 +301,7 @@ test.describe('Applicant Registration', () => {
     await page.getByRole('button', { name: 'ลงทะเบียน' }).click();
     await page.getByRole('button', { name: 'ยืนยัน', exact: true }).click();
 
-    // expected: ระบบต้องแสดง Error Popup แจ้งว่าอีเมลถูกใช้งานแล้ว
+    // Expected: ระบบต้องแสดง Error Popup แจ้งว่าอีเมลถูกใช้งานแล้ว
     await expect(page.getByText('ลงทะเบียนไม่สำเร็จ')).toBeVisible();
     await expect(page.getByText('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น')).toBeVisible();
   });
