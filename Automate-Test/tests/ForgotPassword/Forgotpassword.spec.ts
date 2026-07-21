@@ -4,7 +4,7 @@ test.describe('Forgot Password', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:2700/login/intern');
 
-   // Click on the "Forgot Password" link first
+   // Click on the "Forgot Password" link first every time to run test case
     await page.getByRole('link', { name: 'ลืมรหัสผ่าน' }).click();
   });
 
