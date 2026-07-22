@@ -287,7 +287,7 @@ test.describe('Applicant Registration', () => {
       firstName: 'Kobchai',
       lastName: 'Leawjuntron',
       email: 'hayatekungtar@gmail.com',
-      phone: '0123445567',
+      phone: '0978947964',
       gender: 'ชาย',
     });
 
