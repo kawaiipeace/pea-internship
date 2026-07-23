@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login } from '../Automatic-function/Login';
+import { login } from '../Function/Login';
 
 test.describe('Applicant Authentication - Login', () => {
   test.beforeEach(async ({ page }) => {

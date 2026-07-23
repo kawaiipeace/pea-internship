@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login } from '../Automatic-function/Login';
+import { login } from '../Function/Login';
 
 test.describe('Job Application', () => {
   test.beforeEach(async ({ page }: { page: Page }) => {
