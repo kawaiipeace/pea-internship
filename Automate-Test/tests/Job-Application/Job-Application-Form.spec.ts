@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { login } from '../Automatic-function/Login';
 
 test.describe('Job Application', () => {
   test.beforeEach(async ({ page }: { page: Page }) => {
@@ -9,9 +10,7 @@ test.describe('Job Application', () => {
 
     // ต้อง login เข้าระบบก่อนเสมอ (User ต้องมีอยู่ในระบบ)
     await page.goto('http://localhost:2700/login/intern');
-    await page.getByPlaceholder('เบอร์โทรศัพท์').fill('0853652555');
-    await page.getByPlaceholder('รหัสผ่าน', { exact: true }).fill('12345678');
-    await page.locator('form').getByRole('button', { name: 'เข้าสู่ระบบ' }).click();
+    await login(page, '0853652555', '12345678');
     await expect(page).not.toHaveURL(/\/login/);
 
     await page.goto('http://localhost:2700/intern-info?positionId=3');
