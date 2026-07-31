@@ -1,19 +1,21 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from '../Function/Login';
+import { cancelPendingApplication } from '../Function/Cancelapplication';
 
 test.describe('Job Application', () => {
   test.beforeEach(async ({ page }: { page: Page }) => {
-
-    /* หมายเหตุ!! : Test case ต้องรันทีละ case เพราะ Test 1 ครั้งจะมีเปลี่ยนแปลงสถานะของใบสมัครงาน
-    และ หลังจากรัน Test 1 case ต้องเข้าไปกดยกเลิกใบสมัครงานก่อนถึงจะเริ่ม Test case ต่อไปได้ */
-
-
     // ต้อง login เข้าระบบก่อนเสมอ (User ต้องมีอยู่ในระบบ)
     await page.goto('http://localhost:2700/login/intern');
     await login(page, '0853652555', '12345678');
     await expect(page).not.toHaveURL(/\/login/);
 
     await page.goto('http://localhost:2700/intern-info?positionId=3');
+  });
+
+  // หลังจบทุก test case ให้ยกเลิกใบสมัครที่เพิ่งสร้างไว้อัตโนมัติ
+  // เพื่อให้ test case ถัดไปสมัครตำแหน่งเดิมซ้ำได้โดยไม่ติดปัญหา "มีใบสมัครค้างอยู่"
+  test.afterEach(async ({ page }) => {
+    await cancelPendingApplication(page);
   });
 
   // IT-TC-036: กรณีกรอกจำนวนชั่วโมงฝึกงานเป็น 0 
